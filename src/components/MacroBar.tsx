@@ -9,72 +9,93 @@ interface MacroBarProps {
 
 export const MacroBar: React.FC<MacroBarProps> = ({ nutrition, isDark }) => {
   const theme = {
-    bg: isDark ? 'rgba(16, 185, 129, 0.12)' : '#ecfdf5',
+    cardBg: isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc',
+    border: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
     label: isDark ? '#94a3b8' : '#64748b',
+    text: isDark ? '#f8fafc' : '#0f172a',
     calories: '#10b981',
-    protein: '#3b82f6',
-    carbs: '#f59e0b',
-    fat: '#ec4899',
+    caloriesBg: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5',
+    protein: '#38bdf8',
+    carbs: '#fbbf24',
+    fat: '#f87171',
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      <View style={styles.macroItem}>
+    <View style={styles.grid}>
+      {/* Calories Card */}
+      <View
+        style={[
+          styles.macroCard,
+          {
+            backgroundColor: theme.caloriesBg,
+            borderColor: isDark ? 'rgba(16, 185, 129, 0.3)' : '#a7f3d0',
+          },
+        ]}
+      >
         <Text style={[styles.macroValue, { color: theme.calories }]}>{nutrition.calories}</Text>
-        <Text style={[styles.macroLabel, { color: theme.label }]}>kcal</Text>
+        <Text style={[styles.macroLabel, { color: theme.label }]}>KCAL</Text>
       </View>
 
-      <View style={styles.separator} />
-
-      <View style={styles.macroItem}>
+      {/* Protein Card */}
+      <View
+        style={[
+          styles.macroCard,
+          { backgroundColor: theme.cardBg, borderColor: theme.border },
+        ]}
+      >
         <Text style={[styles.macroValue, { color: theme.protein }]}>{nutrition.proteinGrams}g</Text>
-        <Text style={[styles.macroLabel, { color: theme.label }]}>Proteine</Text>
+        <Text style={[styles.macroLabel, { color: theme.label }]}>PROTEINĂ</Text>
       </View>
 
-      <View style={styles.separator} />
-
-      <View style={styles.macroItem}>
+      {/* Carbs Card */}
+      <View
+        style={[
+          styles.macroCard,
+          { backgroundColor: theme.cardBg, borderColor: theme.border },
+        ]}
+      >
         <Text style={[styles.macroValue, { color: theme.carbs }]}>{nutrition.carbsGrams}g</Text>
-        <Text style={[styles.macroLabel, { color: theme.label }]}>Carbo</Text>
+        <Text style={[styles.macroLabel, { color: theme.label }]}>CARBOHIDRAȚI</Text>
       </View>
 
-      <View style={styles.separator} />
-
-      <View style={styles.macroItem}>
+      {/* Fat Card */}
+      <View
+        style={[
+          styles.macroCard,
+          { backgroundColor: theme.cardBg, borderColor: theme.border },
+        ]}
+      >
         <Text style={[styles.macroValue, { color: theme.fat }]}>{nutrition.fatGrams}g</Text>
-        <Text style={[styles.macroLabel, { color: theme.label }]}>Grăsimi</Text>
+        <Text style={[styles.macroLabel, { color: theme.label }]}>GRĂSIMI</Text>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  grid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    gap: 8,
     width: '100%',
   },
-  macroItem: {
-    alignItems: 'center',
+  macroCard: {
     flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   macroValue: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '900',
     marginBottom: 2,
+    letterSpacing: -0.2,
   },
   macroLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  separator: {
-    width: 1,
-    height: 22,
-    backgroundColor: 'rgba(0,0,0,0.08)',
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });

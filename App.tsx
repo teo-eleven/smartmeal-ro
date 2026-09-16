@@ -40,14 +40,15 @@ export default function App() {
   }, [hydrateStorage]);
 
   const theme = {
-    background: isDark ? '#0f172a' : '#f8fafc',
-    card: isDark ? '#1e293b' : '#ffffff',
+    background: isDark ? '#0b1120' : '#f8fafc',
+    card: isDark ? '#131d31' : '#ffffff',
     text: isDark ? '#f8fafc' : '#0f172a',
     textMuted: isDark ? '#94a3b8' : '#64748b',
     primary: '#10b981',
-    primaryLight: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5',
-    border: isDark ? '#334155' : '#e2e8f0',
-    accentBg: isDark ? '#1e293b' : '#f1f5f9',
+    primaryLight: isDark ? 'rgba(16, 185, 129, 0.16)' : '#ecfdf5',
+    border: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+    accentBg: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
+    glassBg: isDark ? 'rgba(19, 29, 49, 0.85)' : 'rgba(255, 255, 255, 0.9)',
   };
 
   // If in onboarding wizard
@@ -80,12 +81,17 @@ export default function App() {
 
       {/* Main Container */}
       <View style={styles.dashboardContainer}>
-        {/* Top App Bar */}
-        <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+        {/* Top App Bar with VisionOS-inspired translucent card style */}
+        <View style={[styles.topBar, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View>
-            <Text style={[styles.brandTitle, { color: theme.primary }]}>SmartMeal RO</Text>
+            <View style={styles.brandRow}>
+              <Text style={[styles.brandTitle, { color: theme.text }]}>SmartMeal</Text>
+              <View style={[styles.brandBadge, { backgroundColor: theme.primaryLight }]}>
+                <Text style={[styles.brandBadgeText, { color: theme.primary }]}>RO 🇷🇴</Text>
+              </View>
+            </View>
             <Text style={[styles.brandSubtitle, { color: theme.textMuted }]}>
-              {market ? `${market.name} • ${currentPlan?.peopleCount} persoane` : 'Meniu activ'}
+              {market ? `${market.name} • ${currentPlan?.peopleCount} pers` : 'Meniu activ'}
             </Text>
           </View>
 
@@ -99,6 +105,7 @@ export default function App() {
                   borderColor: theme.border,
                 },
               ]}
+              activeOpacity={0.7}
             >
               <Text
                 style={[
@@ -106,54 +113,71 @@ export default function App() {
                   { color: userEmail ? theme.primary : theme.textMuted },
                 ]}
               >
-                {userEmail ? '☁️ Sincronizat' : '☁️ Cloud Sync'}
+                {userEmail ? '☁️ Sincron' : '☁️ Cloud'}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={resetOnboarding}
               style={[styles.resetBtn, { backgroundColor: theme.primaryLight }]}
+              activeOpacity={0.7}
             >
               <Text style={[styles.resetBtnText, { color: theme.primary }]}>+ Plan Nou</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* View Switcher Tabs */}
-        <View style={[styles.tabsRow, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-          <TouchableOpacity
-            onPress={() => setActiveView('meals')}
-            style={[
-              styles.tabBtn,
-              activeView === 'meals' && { borderBottomColor: theme.primary, borderBottomWidth: 3 },
-            ]}
-          >
-            <Text
+        {/* Futuristic Floating Segmented Dock */}
+        <View style={styles.tabsDockContainer}>
+          <View style={[styles.tabsDock, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <TouchableOpacity
+              onPress={() => setActiveView('meals')}
+              activeOpacity={0.8}
               style={[
-                styles.tabText,
-                { color: activeView === 'meals' ? theme.primary : theme.textMuted },
+                styles.dockItem,
+                activeView === 'meals' && [
+                  styles.dockItemActive,
+                  { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                ],
               ]}
             >
-              🍽️ Mesele Săptămânii ({currentPlan?.days.length ?? 0})
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.dockItemText,
+                  {
+                    color: activeView === 'meals' ? theme.primary : theme.textMuted,
+                    fontWeight: activeView === 'meals' ? '800' : '600',
+                  },
+                ]}
+              >
+                🍽️ Mese ({currentPlan?.days.length ?? 0})
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => setActiveView('grocery')}
-            style={[
-              styles.tabBtn,
-              activeView === 'grocery' && { borderBottomColor: theme.primary, borderBottomWidth: 3 },
-            ]}
-          >
-            <Text
+            <TouchableOpacity
+              onPress={() => setActiveView('grocery')}
+              activeOpacity={0.8}
               style={[
-                styles.tabText,
-                { color: activeView === 'grocery' ? theme.primary : theme.textMuted },
+                styles.dockItem,
+                activeView === 'grocery' && [
+                  styles.dockItemActive,
+                  { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                ],
               ]}
             >
-              🛒 Cumpărături ({purchasedCount}/{groceryItems.length})
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.dockItemText,
+                  {
+                    color: activeView === 'grocery' ? theme.primary : theme.textMuted,
+                    fontWeight: activeView === 'grocery' ? '800' : '600',
+                  },
+                ]}
+              >
+                🛒 Cumpărături ({purchasedCount}/{groceryItems.length})
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* VIEW BODY */}
@@ -188,20 +212,35 @@ const styles = StyleSheet.create({
   topBar: {
     width: '100%',
     maxWidth: 480,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   brandTitle: {
     fontSize: 20,
     fontWeight: '900',
     letterSpacing: -0.5,
   },
+  brandBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  brandBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+  },
   brandSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '500',
     marginTop: 2,
   },
   topBarActions: {
@@ -216,7 +255,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   syncBtnText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
   resetBtn: {
@@ -226,21 +265,36 @@ const styles = StyleSheet.create({
   },
   resetBtnText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
   },
-  tabsRow: {
+  tabsDockContainer: {
     width: '100%',
     maxWidth: 480,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  tabsDock: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 4,
   },
-  tabBtn: {
+  dockItem: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  tabText: {
+  dockItemActive: {
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  dockItemText: {
     fontSize: 13,
-    fontWeight: '700',
   },
 });

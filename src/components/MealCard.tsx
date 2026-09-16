@@ -1,5 +1,13 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useRef } from 'react';
+import {
+  Animated,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { DayOfWeek, MealPlanDay } from '../types';
 
 interface MealCardProps {
@@ -20,13 +28,13 @@ const DAY_LABELS: Record<DayOfWeek, string> = {
 };
 
 const MOOD_LABELS: Record<string, string> = {
-  speedy: 'Mese Rapide',
-  low_calorie: 'Low Calorie',
-  family_fav: 'Favorit Familie',
-  healthy_comfort: 'Healthy Comfort',
-  fakeaway: 'Fakeaway',
-  high_protein: 'Proteic',
-  romanian_classic: 'Tradițional',
+  speedy: '⚡ Rapid',
+  low_calorie: '🥗 Low Calorie',
+  family_fav: '❤️ Favorit Familie',
+  healthy_comfort: '🍲 Comfort Food',
+  fakeaway: '🍟 Fakeaway',
+  high_protein: '💪 Proteic',
+  romanian_classic: '🇷🇴 Tradițional',
 };
 
 export const MealCard: React.FC<MealCardProps> = ({
@@ -36,188 +44,330 @@ export const MealCard: React.FC<MealCardProps> = ({
   isDark,
 }) => {
   const { recipe } = day;
-  const primaryMood = recipe.moodTags[0] ? MOOD_LABELS[recipe.moodTags[0]] ?? recipe.moodTags[0] : 'Delicios';
+  const primaryMood = recipe.moodTags[0]
+    ? MOOD_LABELS[recipe.moodTags[0]] ?? recipe.moodTags[0]
+    : 'Delicios';
+
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      speed: 40,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 6,
+    }).start();
+  };
 
   const theme = {
-    card: isDark ? '#1e293b' : '#ffffff',
+    card: isDark ? '#131d31' : '#ffffff',
     text: isDark ? '#f8fafc' : '#0f172a',
     textMuted: isDark ? '#94a3b8' : '#64748b',
-    border: isDark ? '#334155' : '#e2e8f0',
+    border: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
     primary: '#10b981',
-    primaryLight: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5',
-    accentBg: isDark ? 'rgba(0,0,0,0.2)' : '#f8fafc',
+    primaryLight: isDark ? 'rgba(16, 185, 129, 0.18)' : '#ecfdf5',
+    glassBg: isDark ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.85)',
+    accentBg: isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc',
+    shadowColor: isDark ? '#000000' : '#0f172a',
   };
 
   const totalCookingTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
+  const imageSource = recipe.imageUrl
+    ? { uri: recipe.imageUrl }
+    : { uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80' };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={onPressRecipe}
-      style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
-    >
-      {/* Day & Mood Header */}
-      <View style={styles.topRow}>
-        <View style={[styles.dayBadge, { backgroundColor: theme.primaryLight }]}>
-          <Text style={[styles.dayBadgeText, { color: theme.primary }]}>
-            {DAY_LABELS[day.dayOfWeek]}
+    <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%' }}>
+      <TouchableOpacity
+        activeOpacity={0.92}
+        onPress={onPressRecipe}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[
+          styles.card,
+          {
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+            shadowColor: theme.shadowColor,
+          },
+        ]}
+      >
+        {/* Visual Hero Image Container */}
+        <View style={styles.imageContainer}>
+          <Image source={imageSource} style={styles.image} resizeMode="cover" />
+
+          {/* Smooth Bottom Gradient for Contrast */}
+          <LinearGradient
+            colors={['transparent', isDark ? 'rgba(19, 29, 49, 0.95)' : 'rgba(0, 0, 0, 0.6)']}
+            style={styles.gradientOverlay}
+          />
+
+          {/* Floating Day Badge (Top-Left) */}
+          <View style={[styles.floatingBadge, styles.dayBadge, { backgroundColor: theme.glassBg }]}>
+            <Text style={[styles.dayBadgeText, { color: theme.primary }]}>
+              {DAY_LABELS[day.dayOfWeek].toUpperCase()}
+            </Text>
+          </View>
+
+          {/* Floating Price Badge (Top-Right) */}
+          <View style={[styles.floatingBadge, styles.priceBadge, { backgroundColor: theme.glassBg }]}>
+            <Text style={styles.priceBadgeText}>~{day.estimatedCostRon} lei</Text>
+            <Text style={[styles.priceSubText, { color: theme.textMuted }]}>/ porție</Text>
+          </View>
+
+          {/* Bottom Info Floating on Image */}
+          <View style={styles.imageBottomRow}>
+            <View style={[styles.pillBadge, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
+              <Text style={styles.pillText}>{primaryMood}</Text>
+            </View>
+            <View style={[styles.pillBadge, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
+              <Text style={styles.pillText}>⏱️ {totalCookingTime} min</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Content Body */}
+        <View style={styles.contentBody}>
+          <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
+            {recipe.title}
           </Text>
-        </View>
 
-        <View style={[styles.moodTag, { backgroundColor: theme.accentBg }]}>
-          <Text style={[styles.moodTagText, { color: theme.textMuted }]}>{primaryMood}</Text>
-        </View>
-      </View>
-
-      {/* Recipe Info */}
-      <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
-        {recipe.title}
-      </Text>
-
-      <Text style={[styles.description, { color: theme.textMuted }]} numberOfLines={2}>
-        {recipe.description}
-      </Text>
-
-      {/* Metrics Row (Time, Servings, Cost) */}
-      <View style={[styles.metricsRow, { backgroundColor: theme.accentBg }]}>
-        <View style={styles.metricItem}>
-          <Text style={styles.metricIcon}>⏱️</Text>
-          <Text style={[styles.metricText, { color: theme.text }]}>{totalCookingTime}m</Text>
-        </View>
-
-        <View style={styles.metricItem}>
-          <Text style={styles.metricIcon}>👥</Text>
-          <Text style={[styles.metricText, { color: theme.text }]}>
-            {day.servings} {day.servings === 1 ? 'porție' : 'porții'}
+          <Text style={[styles.description, { color: theme.textMuted }]} numberOfLines={2}>
+            {recipe.description}
           </Text>
+
+          {/* Macro Mini-Grid */}
+          <View style={[styles.macroRow, { backgroundColor: theme.accentBg, borderColor: theme.border }]}>
+            <View style={styles.macroCol}>
+              <Text style={[styles.macroVal, { color: theme.text }]}>
+                {recipe.nutritionPerServing.calories}
+              </Text>
+              <Text style={[styles.macroLbl, { color: theme.textMuted }]}>kcal</Text>
+            </View>
+            <View style={styles.macroDivider} />
+
+            <View style={styles.macroCol}>
+              <Text style={[styles.macroVal, { color: '#38bdf8' }]}>
+                {recipe.nutritionPerServing.proteinGrams}g
+              </Text>
+              <Text style={[styles.macroLbl, { color: theme.textMuted }]}>proteină</Text>
+            </View>
+            <View style={styles.macroDivider} />
+
+            <View style={styles.macroCol}>
+              <Text style={[styles.macroVal, { color: '#fbbf24' }]}>
+                {recipe.nutritionPerServing.carbsGrams}g
+              </Text>
+              <Text style={[styles.macroLbl, { color: theme.textMuted }]}>carbo</Text>
+            </View>
+            <View style={styles.macroDivider} />
+
+            <View style={styles.macroCol}>
+              <Text style={[styles.macroVal, { color: '#f87171' }]}>
+                {recipe.nutritionPerServing.fatGrams}g
+              </Text>
+              <Text style={[styles.macroLbl, { color: theme.textMuted }]}>grăsimi</Text>
+            </View>
+          </View>
+
+          {/* Footer Action Bar */}
+          <View style={styles.footerRow}>
+            <View style={styles.servingsIndicator}>
+              <Text style={[styles.servingsText, { color: theme.textMuted }]}>
+                👥 {day.servings} {day.servings === 1 ? 'porție' : 'porții'}
+              </Text>
+            </View>
+
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                onPress={onSwapMeal}
+                style={[styles.swapBtn, { backgroundColor: theme.accentBg, borderColor: theme.border }]}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.swapBtnText, { color: theme.text }]}>🔄 Schimbă</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={onPressRecipe}
+                style={[styles.viewBtn, { backgroundColor: theme.primary }]}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.viewBtnText}>Vezi Rețeta →</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-
-        <View style={styles.metricItem}>
-          <Text style={styles.metricIcon}>🔥</Text>
-          <Text style={[styles.metricText, { color: theme.text }]}>
-            {recipe.nutritionPerServing.calories} kcal
-          </Text>
-        </View>
-
-        <View style={styles.metricItem}>
-          <Text style={styles.metricIcon}>🏷️</Text>
-          <Text style={[styles.costHighlight, { color: theme.primary }]}>
-            ~{day.estimatedCostRon} lei
-          </Text>
-        </View>
-      </View>
-
-      {/* Card Action Row */}
-      <View style={styles.actionRow}>
-        <Text style={[styles.viewRecipeHint, { color: theme.primary }]}>
-          Vezi rețeta completă →
-        </Text>
-
-        <TouchableOpacity
-          onPress={(e) => {
-            e.stopPropagation();
-            onSwapMeal();
-          }}
-          style={[styles.swapBtn, { borderColor: theme.border }]}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.swapBtnText, { color: theme.text }]}>🔄 Schimbă</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
-    borderWidth: 1.5,
-    padding: 16,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    borderRadius: 24,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 20,
+    elevation: 5,
+    marginBottom: 16,
   },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+  imageContainer: {
+    width: '100%',
+    height: 190,
+    position: 'relative',
+    backgroundColor: '#0f172a',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 100,
+  },
+  floatingBadge: {
+    position: 'absolute',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   dayBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+    top: 14,
+    left: 14,
   },
   dayBadgeText: {
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  moodTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  moodTagText: {
     fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  priceBadge: {
+    top: 14,
+    right: 14,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  priceBadgeText: {
+    color: '#10b981',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  priceSubText: {
+    fontSize: 10,
     fontWeight: '600',
   },
+  imageBottomRow: {
+    position: 'absolute',
+    bottom: 12,
+    left: 14,
+    right: 14,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  pillBadge: {
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  pillText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  contentBody: {
+    padding: 18,
+  },
   title: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
-    marginBottom: 4,
-    lineHeight: 22,
+    letterSpacing: -0.3,
+    marginBottom: 6,
+    lineHeight: 24,
   },
   description: {
     fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 12,
+    lineHeight: 19,
+    marginBottom: 14,
   },
-  metricsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    marginBottom: 12,
-  },
-  metricItem: {
+  macroRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 16,
   },
-  metricIcon: {
+  macroCol: {
+    alignItems: 'center',
+  },
+  macroVal: {
     fontSize: 13,
+    fontWeight: '800',
   },
-  metricText: {
+  macroLbl: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 2,
+    textTransform: 'uppercase',
+  },
+  macroDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: 'rgba(148, 163, 184, 0.2)',
+  },
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  servingsIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  servingsText: {
     fontSize: 12,
     fontWeight: '600',
   },
-  costHighlight: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  actionRow: {
+  actionButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  viewRecipeHint: {
-    fontSize: 12,
-    fontWeight: '700',
+    gap: 8,
   },
   swapBtn: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingVertical: 8,
+    borderRadius: 12,
     borderWidth: 1,
   },
   swapBtnText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  viewBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  viewBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
   },
 });

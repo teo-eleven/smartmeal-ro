@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useRef } from 'react';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GroceryListItem } from '../types';
 
 interface GroceryItemRowProps {
@@ -9,83 +9,110 @@ interface GroceryItemRowProps {
 }
 
 export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({ item, onToggle, isDark }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handleToggleWithFeedback = () => {
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 80,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 4,
+        tension: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    onToggle();
+  };
+
   const theme = {
-    card: isDark ? '#1e293b' : '#ffffff',
+    card: isDark ? '#131d31' : '#ffffff',
     text: isDark ? '#f8fafc' : '#0f172a',
     textMuted: isDark ? '#94a3b8' : '#64748b',
-    border: isDark ? '#334155' : '#e2e8f0',
+    border: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
     primary: '#10b981',
     stapleBg: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7',
     stapleText: isDark ? '#fbbf24' : '#b45309',
+    checkedBg: isDark ? 'rgba(19, 29, 49, 0.4)' : '#f1f5f9',
   };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={onToggle}
-      style={[
-        styles.row,
-        {
-          backgroundColor: theme.card,
-          borderColor: theme.border,
-          opacity: item.isPurchased ? 0.6 : 1,
-        },
-      ]}
-    >
-      {/* Checkbox */}
-      <View
+    <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%' }}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={handleToggleWithFeedback}
         style={[
-          styles.checkbox,
+          styles.row,
           {
-            backgroundColor: item.isPurchased ? theme.primary : 'transparent',
-            borderColor: item.isPurchased ? theme.primary : theme.border,
+            backgroundColor: item.isPurchased ? theme.checkedBg : theme.card,
+            borderColor: item.isPurchased ? 'transparent' : theme.border,
+            opacity: item.isPurchased ? 0.65 : 1,
           },
         ]}
       >
-        {item.isPurchased && <Text style={styles.checkmark}>✓</Text>}
-      </View>
+        {/* Animated Checkbox */}
+        <View
+          style={[
+            styles.checkbox,
+            {
+              backgroundColor: item.isPurchased ? theme.primary : 'transparent',
+              borderColor: item.isPurchased ? theme.primary : theme.border,
+            },
+          ]}
+        >
+          {item.isPurchased && <Text style={styles.checkmark}>✓</Text>}
+        </View>
 
-      {/* Item info */}
-      <View style={styles.content}>
-        <View style={styles.titleRow}>
+        {/* Item info */}
+        <View style={styles.content}>
+          <View style={styles.titleRow}>
+            <Text
+              style={[
+                styles.name,
+                {
+                  color: theme.text,
+                  textDecorationLine: item.isPurchased ? 'line-through' : 'none',
+                },
+              ]}
+            >
+              {item.name}
+            </Text>
+
+            {item.isPantryStaple && (
+              <View style={[styles.stapleBadge, { backgroundColor: theme.stapleBg }]}>
+                <Text style={[styles.stapleText, { color: theme.stapleText }]}>Cămară</Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={[styles.details, { color: theme.textMuted }]}>
+            Necesar: <Text style={{ fontWeight: '700' }}>{item.neededAmount}{item.unit}</Text> • Cumperi:{' '}
+            <Text style={{ fontWeight: '700', color: item.isPurchased ? theme.textMuted : theme.text }}>
+              {item.packsToBuy} × pachet {item.packSize}{item.unit}
+            </Text>
+          </Text>
+        </View>
+
+        {/* Price */}
+        <View style={styles.priceContainer}>
           <Text
             style={[
-              styles.name,
+              styles.price,
               {
-                color: theme.text,
+                color: item.isPurchased ? theme.textMuted : theme.primary,
                 textDecorationLine: item.isPurchased ? 'line-through' : 'none',
               },
             ]}
           >
-            {item.name}
+            {item.estimatedPriceRon} lei
           </Text>
-
-          {item.isPantryStaple && (
-            <View style={[styles.stapleBadge, { backgroundColor: theme.stapleBg }]}>
-              <Text style={[styles.stapleText, { color: theme.stapleText }]}>Cămară</Text>
-            </View>
-          )}
         </View>
-
-        <Text style={[styles.details, { color: theme.textMuted }]}>
-          Necesar: <Text style={{ fontWeight: '700' }}>{item.neededAmount}{item.unit}</Text> • Cumperi:{' '}
-          <Text style={{ fontWeight: '700' }}>{item.packsToBuy} × pachet {item.packSize}{item.unit}</Text>
-        </Text>
-      </View>
-
-      {/* Price */}
-      <Text
-        style={[
-          styles.price,
-          {
-            color: item.isPurchased ? theme.textMuted : theme.primary,
-            textDecorationLine: item.isPurchased ? 'line-through' : 'none',
-          },
-        ]}
-      >
-        {item.estimatedPriceRon} lei
-      </Text>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
@@ -93,54 +120,57 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
     borderWidth: 1,
-    gap: 12,
+    gap: 14,
     marginBottom: 8,
   },
   checkbox: {
     width: 24,
     height: 24,
-    borderRadius: 7,
-    borderWidth: 1.8,
+    borderRadius: 8,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkmark: {
     color: '#ffffff',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '900',
+    lineHeight: 18,
   },
   content: {
     flex: 1,
+    gap: 3,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 3,
+    gap: 8,
   },
   name: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
   },
   stapleBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 1.5,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     borderRadius: 6,
   },
   stapleText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   details: {
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+  },
+  priceContainer: {
+    alignItems: 'flex-end',
   },
   price: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
   },
 });

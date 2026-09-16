@@ -11,6 +11,7 @@ import { SUPERMARKET_LIST } from '../../data/supermarkets';
 import { DayOfWeek, DietType, MoodTag, SupermarketId } from '../../types';
 import { BudgetSlider } from '../../components/BudgetSlider';
 import { ApplianceSelector } from '../../components/ApplianceSelector';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface OnboardingWizardProps {
   isDark: boolean;
@@ -107,11 +108,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
 
         {/* Progress Bar */}
         <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
-          <View
-            style={[
-              styles.progressBar,
-              { width: `${progressPercent}%`, backgroundColor: theme.primary },
-            ]}
+          <LinearGradient
+            colors={['#10b981', '#06b6d4']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressBar, { width: `${progressPercent}%` }]}
           />
         </View>
       </View>
@@ -402,12 +403,19 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
       <View style={[styles.footer, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
         <TouchableOpacity
           onPress={handleNextOrFinish}
-          activeOpacity={0.8}
-          style={[styles.continueButton, { backgroundColor: theme.primary }]}
+          activeOpacity={0.85}
+          style={{ width: '100%', maxWidth: 480 }}
         >
-          <Text style={styles.continueButtonText}>
-            {currentStep === totalSteps ? 'Generează Meniul Săptămânal 🎉' : 'Continuă →'}
-          </Text>
+          <LinearGradient
+            colors={['#10b981', '#059669']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.continueButton}
+          >
+            <Text style={styles.continueButtonText}>
+              {currentStep === totalSteps ? '✨ Generează Meniul Săptămânal' : 'Continuă →'}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </View>
