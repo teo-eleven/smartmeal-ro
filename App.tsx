@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   StatusBar,
@@ -13,19 +13,31 @@ import { OnboardingWizard } from './src/screens/onboarding/OnboardingWizard';
 import { GeneratingPlanModal } from './src/screens/onboarding/GeneratingPlanModal';
 import { MealBoardScreen } from './src/screens/MealBoardScreen';
 import { GroceryScreen } from './src/screens/GroceryScreen';
+import { AuthModal } from './src/screens/AuthModal';
 import { SUPERMARKETS } from './src/data/supermarkets';
 
 export default function App() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const [authModalVisible, setAuthModalVisible] = useState(false);
 
   const {
     activeView,
     currentPlan,
     groceryItems,
+    userEmail,
+    isSyncing,
+    lastSyncedAt,
     setActiveView,
     resetOnboarding,
+    hydrateStorage,
+    setUserEmail,
+    syncWithCloud,
   } = useAppStore();
+
+  useEffect(() => {
+    void hydrateStorage();
+  }, [hydrateStorage]);
 
   const theme = {
     background: isDark ? '#0f172a' : '#f8fafc',
@@ -77,12 +89,34 @@ export default function App() {
             </Text>
           </View>
 
-          <TouchableOpacity
-            onPress={resetOnboarding}
-            style={[styles.resetBtn, { backgroundColor: theme.primaryLight }]}
-          >
-            <Text style={[styles.resetBtnText, { color: theme.primary }]}>+ Plan Nou</Text>
-          </TouchableOpacity>
+          <View style={styles.topBarActions}>
+            <TouchableOpacity
+              onPress={() => setAuthModalVisible(true)}
+              style={[
+                styles.syncBtn,
+                {
+                  backgroundColor: userEmail ? theme.primaryLight : theme.accentBg,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.syncBtnText,
+                  { color: userEmail ? theme.primary : theme.textMuted },
+                ]}
+              >
+                {userEmail ? '☁️ Sincronizat' : '☁️ Cloud Sync'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={resetOnboarding}
+              style={[styles.resetBtn, { backgroundColor: theme.primaryLight }]}
+            >
+              <Text style={[styles.resetBtnText, { color: theme.primary }]}>+ Plan Nou</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* View Switcher Tabs */}
@@ -126,6 +160,18 @@ export default function App() {
         {activeView === 'meals' && <MealBoardScreen isDark={isDark} />}
         {activeView === 'grocery' && <GroceryScreen isDark={isDark} />}
       </View>
+
+      {/* Cloud & Auth Sync Modal */}
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
+        isDark={isDark}
+        userEmail={userEmail}
+        onUserChanged={(email) => setUserEmail(email)}
+        onSyncTriggered={syncWithCloud}
+        isSyncing={isSyncing}
+        lastSyncedAt={lastSyncedAt}
+      />
     </SafeAreaView>
   );
 }
@@ -156,6 +202,21 @@ const styles = StyleSheet.create({
   brandSubtitle: {
     fontSize: 12,
     marginTop: 2,
+  },
+  topBarActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  syncBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  syncBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   resetBtn: {
     paddingHorizontal: 12,

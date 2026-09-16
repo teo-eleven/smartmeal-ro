@@ -8,17 +8,25 @@ import {
   MoodTag,
   SupermarketId,
   UserPreferences,
+  Recipe,
 } from '../types';
 import { generateMealPlan, swapMealInPlan } from '../engine/plannerEngine';
 import { aggregateGroceryList } from '../engine/groceryAggregator';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
-import { Recipe } from '../types';
+import { storageService } from '../services/storage';
+import { cloudSyncService } from '../services/supabase';
 
 export interface AppState {
   // Navigation & View State
   currentStep: number;
   totalSteps: number;
   activeView: 'onboarding' | 'generating' | 'meals' | 'grocery';
+
+  // Persistence & Hydration
+  isHydrated: boolean;
+  userEmail: string | null;
+  isSyncing: boolean;
+  lastSyncedAt: string | null;
 
   // User Preferences for Onboarding
   preferences: UserPreferences;
@@ -49,6 +57,11 @@ export interface AppState {
   replaceMealWithRecipe: (dayOfWeek: DayOfWeek, newRecipe: Recipe) => void;
   toggleGroceryItem: (ingredientId: string) => void;
   setActiveView: (view: 'onboarding' | 'generating' | 'meals' | 'grocery') => void;
+
+  // Persistence & Sync Actions
+  hydrateStorage: () => Promise<void>;
+  setUserEmail: (email: string | null) => void;
+  syncWithCloud: () => Promise<void>;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -66,29 +79,75 @@ export const useAppStore = create<AppState>((set, get) => ({
   currentStep: 1,
   totalSteps: 7,
   activeView: 'onboarding',
+  isHydrated: false,
+  userEmail: null,
+  isSyncing: false,
+  lastSyncedAt: null,
   preferences: { ...DEFAULT_PREFERENCES },
   currentPlan: null,
   groceryItems: [],
 
-  setSupermarket: (id: SupermarketId) =>
-    set((state) => ({
-      preferences: { ...state.preferences, supermarketId: id },
-    })),
+  hydrateStorage: async () => {
+    try {
+      const storedPrefs = await storageService.loadPreferences();
+      const { plan, items } = await storageService.loadPlanAndGrocery();
 
-  setPeopleCount: (count: number) =>
-    set((state) => ({
-      preferences: {
+      set((state) => ({
+        isHydrated: true,
+        preferences: storedPrefs || state.preferences,
+        currentPlan: plan || state.currentPlan,
+        groceryItems: items.length > 0 ? items : state.groceryItems,
+        activeView: plan ? 'meals' : state.activeView,
+      }));
+    } catch (e) {
+      console.warn('[useAppStore] Hydration error:', e);
+      set({ isHydrated: true });
+    }
+  },
+
+  setUserEmail: (email: string | null) => {
+    set({ userEmail: email });
+  },
+
+  syncWithCloud: async () => {
+    const { userEmail, currentPlan, groceryItems } = get();
+    if (!userEmail) return;
+
+    set({ isSyncing: true });
+    try {
+      const res = await cloudSyncService.saveMealPlan(userEmail, currentPlan, groceryItems);
+      if (res.success) {
+        set({ lastSyncedAt: new Date().toLocaleTimeString('ro-RO') });
+      }
+    } finally {
+      set({ isSyncing: false });
+    }
+  },
+
+  setSupermarket: (id: SupermarketId) => {
+    set((state) => {
+      const nextPrefs = { ...state.preferences, supermarketId: id };
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
+    });
+  },
+
+  setPeopleCount: (count: number) => {
+    set((state) => {
+      const nextPrefs = {
         ...state.preferences,
         peopleCount: Math.max(1, Math.min(10, count)),
-      },
-    })),
+      };
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
+    });
+  },
 
-  toggleCookingDay: (day: DayOfWeek) =>
+  toggleCookingDay: (day: DayOfWeek) => {
     set((state) => {
       const current = state.preferences.cookingDays;
       const exists = current.includes(day);
 
-      // Keep at least 1 day selected
       if (exists && current.length <= 1) {
         return state;
       }
@@ -103,82 +162,82 @@ export const useAppStore = create<AppState>((set, get) => ({
         'sunday',
       ];
 
-      const nextDays = exists
-        ? current.filter((d) => d !== day)
-        : [...current, day].sort((a, b) => daysOrder.indexOf(a) - daysOrder.indexOf(b));
+      const updated = exists ? current.filter((d) => d !== day) : [...current, day];
+      const sorted = daysOrder.filter((d) => updated.includes(d));
 
-      return {
-        preferences: {
-          ...state.preferences,
-          cookingDays: nextDays,
-        },
-      };
-    }),
+      const nextPrefs = { ...state.preferences, cookingDays: sorted };
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
+    });
+  },
 
-  setBudget: (budget: number) =>
-    set((state) => ({
-      preferences: {
+  setBudget: (budget: number) => {
+    set((state) => {
+      const nextPrefs = {
         ...state.preferences,
         budgetRon: Math.max(20, Math.round(budget)),
-      },
-    })),
+      };
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
+    });
+  },
 
-  toggleMoodTag: (tag: MoodTag) =>
+  toggleMoodTag: (tag: MoodTag) => {
     set((state) => {
       const current = state.preferences.moodTags;
       const exists = current.includes(tag);
 
       if (exists) {
-        return {
-          preferences: {
-            ...state.preferences,
-            moodTags: current.filter((t) => t !== tag),
-          },
+        if (current.length <= 1) return state;
+        const nextPrefs = {
+          ...state.preferences,
+          moodTags: current.filter((t) => t !== tag),
         };
+        void storageService.savePreferences(nextPrefs);
+        return { preferences: nextPrefs };
       }
 
-      // Max 3 mood tags allowed (like in the inspiration video)
       if (current.length >= 3) {
         return state;
       }
 
-      return {
-        preferences: {
-          ...state.preferences,
-          moodTags: [...current, tag],
-        },
-      };
-    }),
+      const nextPrefs = { ...state.preferences, moodTags: [...current, tag] };
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
+    });
+  },
 
-  setDietType: (diet: DietType) =>
-    set((state) => ({
-      preferences: { ...state.preferences, dietType: diet },
-    })),
+  setDietType: (diet: DietType) => {
+    set((state) => {
+      const nextPrefs = { ...state.preferences, dietType: diet };
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
+    });
+  },
 
-  toggleAppliance: (appliance: Appliance) =>
+  toggleAppliance: (appliance: Appliance) => {
     set((state) => {
       const current = state.preferences.appliances;
       const exists = current.includes(appliance);
 
-      // Keep at least 1 appliance selected
       if (exists && current.length <= 1) {
         return state;
       }
 
-      return {
-        preferences: {
-          ...state.preferences,
-          appliances: exists
-            ? current.filter((a) => a !== appliance)
-            : [...current, appliance],
-        },
-      };
-    }),
+      const updated = exists
+        ? current.filter((a) => a !== appliance)
+        : [...current, appliance];
 
-  setExcludePantryStaples: (exclude: boolean) =>
+      const nextPrefs = { ...state.preferences, appliances: updated };
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
+    });
+  },
+
+  setExcludePantryStaples: (exclude: boolean) => {
     set((state) => {
       const nextPrefs = { ...state.preferences, excludePantryStaples: exclude };
-      let nextGroceryItems = state.groceryItems;
+      void storageService.savePreferences(nextPrefs);
 
       if (state.currentPlan) {
         const aggregated = aggregateGroceryList(
@@ -186,14 +245,25 @@ export const useAppStore = create<AppState>((set, get) => ({
           nextPrefs.supermarketId,
           exclude
         );
-        nextGroceryItems = aggregated.items;
+
+        const updatedPlan: MealPlan = {
+          ...state.currentPlan,
+          totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+          totalCartCostRon: aggregated.totalCartCostRon,
+        };
+
+        void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);
+
+        return {
+          preferences: nextPrefs,
+          currentPlan: updatedPlan,
+          groceryItems: aggregated.items,
+        };
       }
 
-      return {
-        preferences: nextPrefs,
-        groceryItems: nextGroceryItems,
-      };
-    }),
+      return { preferences: nextPrefs };
+    });
+  },
 
   nextStep: () =>
     set((state) => ({
@@ -210,13 +280,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       currentStep: Math.max(1, Math.min(state.totalSteps, step)),
     })),
 
-  resetOnboarding: () =>
+  resetOnboarding: () => {
+    void storageService.clearAll();
     set(() => ({
       currentStep: 1,
       activeView: 'onboarding',
       currentPlan: null,
       groceryItems: [],
-    })),
+    }));
+  },
 
   setActiveView: (view) => set(() => ({ activeView: view })),
 
@@ -229,6 +301,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.supermarketId,
       preferences.excludePantryStaples
     );
+
+    void storageService.savePlanAndGrocery(plan, aggregated.items);
 
     set(() => ({
       currentPlan: plan,
@@ -247,6 +321,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.supermarketId,
       preferences.excludePantryStaples
     );
+
+    void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);
 
     set(() => ({
       currentPlan: updatedPlan,
@@ -281,23 +357,31 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.excludePantryStaples
     );
 
+    const updatedPlan: MealPlan = {
+      ...currentPlan,
+      totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+      totalCartCostRon: aggregated.totalCartCostRon,
+      days: updatedDays,
+    };
+
+    void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);
+
     set(() => ({
-      currentPlan: {
-        ...currentPlan,
-        totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
-        totalCartCostRon: aggregated.totalCartCostRon,
-        days: updatedDays,
-      },
+      currentPlan: updatedPlan,
       groceryItems: aggregated.items,
     }));
   },
 
-  toggleGroceryItem: (ingredientId: string) =>
-    set((state) => ({
-      groceryItems: state.groceryItems.map((item) =>
+  toggleGroceryItem: (ingredientId: string) => {
+    const { currentPlan } = get();
+    set((state) => {
+      const nextItems = state.groceryItems.map((item) =>
         item.ingredientId === ingredientId
           ? { ...item, isPurchased: !item.isPurchased }
           : item
-      ),
-    })),
+      );
+      void storageService.savePlanAndGrocery(currentPlan, nextItems);
+      return { groceryItems: nextItems };
+    });
+  },
 }));

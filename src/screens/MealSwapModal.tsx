@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   SafeAreaView,
   ScrollView,
@@ -11,6 +12,7 @@ import {
 import { DayOfWeek, MealPlan, Recipe, UserPreferences } from '../types';
 import { getEligibleRecipes } from '../engine/plannerEngine';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
+import { aiProxyService, SmartSwapResult } from '../services/aiProxy';
 
 interface MealSwapModalProps {
   visible: boolean;
@@ -41,10 +43,14 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   onSelectReplacement,
   isDark,
 }) => {
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<SmartSwapResult | null>(null);
+
   if (!visible || !dayOfWeek || !currentPlan) return null;
 
   const currentMealDay = currentPlan.days.find((d) => d.dayOfWeek === dayOfWeek);
-  const currentRecipeId = currentMealDay?.recipe.id;
+  const currentRecipe = currentMealDay?.recipe;
+  const currentRecipeId = currentRecipe?.id;
 
   // Find all eligible recipes that are not the current recipe
   const eligible = getEligibleRecipes(preferences);
@@ -65,6 +71,24 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
     border: isDark ? '#334155' : '#e2e8f0',
     primary: '#10b981',
     primaryLight: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5',
+    aiBg: isDark ? 'rgba(99, 102, 241, 0.15)' : '#eef2ff',
+    aiBorder: isDark ? '#4f46e5' : '#818cf8',
+    aiText: isDark ? '#c7d2fe' : '#4338ca',
+  };
+
+  const handleAskAi = async () => {
+    if (!currentRecipe) return;
+    setIsAiLoading(true);
+    try {
+      const result = await aiProxyService.suggestSmartSwap(
+        currentRecipe,
+        candidates,
+        preferences
+      );
+      setAiResult(result);
+    } finally {
+      setIsAiLoading(false);
+    }
   };
 
   return (
@@ -95,8 +119,58 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
               </View>
             )}
 
+            {/* AI Assistant Quick Trigger Banner */}
+            <View style={[styles.aiBanner, { backgroundColor: theme.aiBg, borderColor: theme.aiBorder }]}>
+              <View style={styles.aiBannerTextCol}>
+                <Text style={[styles.aiBannerTitle, { color: theme.aiText }]}>
+                  ✨ Asistent Culinar Inteligent
+                </Text>
+                <Text style={[styles.aiBannerDesc, { color: theme.textMuted }]}>
+                  Găsește instant cea mai potrivită înlocuire calculată pentru profilul tău.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={handleAskAi}
+                disabled={isAiLoading}
+                style={[styles.aiTriggerBtn, { backgroundColor: theme.aiText }]}
+              >
+                {isAiLoading ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <Text style={styles.aiTriggerBtnText}>Întreabă AI</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* AI Suggestion Highlight Card if triggered */}
+            {aiResult && (
+              <View style={[styles.aiResultCard, { backgroundColor: theme.card, borderColor: '#10b981' }]}>
+                <View style={styles.aiResultHeader}>
+                  <Text style={styles.aiResultBadge}>
+                    {aiResult.isAiGenerated ? '🤖 Sugestie Gemini AI' : '🎯 Sugestie Optimă'}
+                  </Text>
+                  <Text style={[styles.aiResultReason, { color: theme.textMuted }]}>
+                    {aiResult.reason}
+                  </Text>
+                </View>
+
+                <Text style={[styles.candidateTitle, { color: theme.text }]}>
+                  {aiResult.recipe.title}
+                </Text>
+
+                <TouchableOpacity
+                  onPress={() => onSelectReplacement(aiResult.recipe)}
+                  style={[styles.selectBtn, { backgroundColor: theme.primary, marginTop: 8 }]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.selectBtnText}>Alege sugestia ({aiResult.recipe.prepTimeMinutes} min)</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             <Text style={[styles.sectionHeading, { color: theme.text }]}>
-              Alege o alternativă compatibilă ({candidates.length} opțiuni):
+              Toate opțiunile compatibile ({candidates.length}):
             </Text>
 
             {/* List of replacement alternatives */}
@@ -109,10 +183,18 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                   preferences.excludePantryStaples
                 );
 
+                const isSuggested = aiResult?.recipe.id === candidate.id;
+
                 return (
                   <View
                     key={candidate.id}
-                    style={[styles.candidateCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+                    style={[
+                      styles.candidateCard,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: isSuggested ? theme.primary : theme.border,
+                      },
+                    ]}
                   >
                     <Text style={[styles.candidateTitle, { color: theme.text }]}>
                       {candidate.title}
@@ -124,7 +206,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                     {/* Metrics */}
                     <View style={styles.metricsRow}>
                       <Text style={[styles.metricText, { color: theme.textMuted }]}>
-                        ⏱️ {candidate.cookTimeMinutes} min
+                        ⏱️ {candidate.prepTimeMinutes} min
                       </Text>
                       <Text style={[styles.metricText, { color: theme.textMuted }]}>
                         🔥 {candidate.nutritionPerServing.calories} kcal
@@ -189,7 +271,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     padding: 14,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   currentLabel: {
     fontSize: 11,
@@ -200,6 +282,59 @@ const styles = StyleSheet.create({
   currentTitle: {
     fontSize: 16,
     fontWeight: '800',
+  },
+  aiBanner: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    padding: 14,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  aiBannerTextCol: {
+    flex: 1,
+    marginRight: 12,
+  },
+  aiBannerTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  aiBannerDesc: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  aiTriggerBtn: {
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aiTriggerBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  aiResultCard: {
+    borderRadius: 16,
+    borderWidth: 2,
+    padding: 14,
+    marginBottom: 16,
+  },
+  aiResultHeader: {
+    marginBottom: 6,
+  },
+  aiResultBadge: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#10b981',
+    marginBottom: 2,
+  },
+  aiResultReason: {
+    fontSize: 12,
+    fontStyle: 'italic',
   },
   sectionHeading: {
     fontSize: 15,
