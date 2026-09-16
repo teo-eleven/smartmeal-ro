@@ -57,13 +57,28 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   const currentRecipeId = currentRecipe?.id;
   const slotTitle = targetMeal ? ` ${targetMeal.slotLabelRo}` : '';
 
-  // Find all eligible recipes that are not the current recipe
+  // Filter eligible recipes suitable for this specific meal slot
   const eligible = getEligibleRecipes(preferences);
-  const usedRecipeIds = new Set(currentPlan.days.map((d) => d.recipe.id));
+  const slotFiltered = eligible.filter((r) =>
+    slot && r.suitableSlots ? r.suitableSlots.includes(slot) : true
+  );
+  const baseCandidates = slotFiltered.length > 0 ? slotFiltered : eligible;
+
+  // Collect recipe IDs used in plan
+  const usedRecipeIds = new Set<string>();
+  currentPlan.days.forEach((d) => {
+    if (d.meals) {
+      d.meals.forEach((m) => usedRecipeIds.add(m.recipe.id));
+    } else {
+      usedRecipeIds.add(d.recipe.id);
+    }
+  });
 
   // Prioritize recipes not currently used this week
-  const unusedCandidates = eligible.filter((r) => !usedRecipeIds.has(r.id));
-  const otherCandidates = eligible.filter(
+  const unusedCandidates = baseCandidates.filter(
+    (r) => !usedRecipeIds.has(r.id) && r.id !== currentRecipeId
+  );
+  const otherCandidates = baseCandidates.filter(
     (r) => r.id !== currentRecipeId && usedRecipeIds.has(r.id)
   );
   const candidates = [...unusedCandidates, ...otherCandidates];

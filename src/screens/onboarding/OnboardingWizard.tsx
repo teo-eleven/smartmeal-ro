@@ -58,6 +58,21 @@ const MEAL_SLOT_OPTIONS: { slot: MealSlot; label: string; icon: string }[] = [
   { slot: 'dinner', label: 'Cină', icon: '🍽️' },
 ];
 
+const EXTRA_SLOT_OPTIONS: { slot: 'snack' | 'dessert'; title: string; subtitle: string; icon: string }[] = [
+  {
+    slot: 'snack',
+    title: 'Ronțăială & Gustare (Film / Meci)',
+    subtitle: 'Popcorn aromat cu parmezan, nachos cu guacamole, hummus cremos sau chipsuri la airfryer.',
+    icon: '🍿',
+  },
+  {
+    slot: 'dessert',
+    title: 'Desert de Casă',
+    subtitle: 'Clătite subțiri cu gem, orez cu lapte și scorțișoară, salam de biscuiți sau lava cake cald.',
+    icon: '🍰',
+  },
+];
+
 const MOOD_OPTIONS: { id: MoodTag; label: string; icon: string }[] = [
   { id: 'speedy', label: 'Mese Rapide', icon: '⚡' },
   { id: 'low_calorie', label: 'Low Calorie', icon: '🥗' },
@@ -85,6 +100,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
     toggleCookingDay,
     setMealsPerDayCount,
     setMealSlots,
+    toggleExtraSlot,
     setBudget,
     toggleMoodTag,
     setDietType,
@@ -400,6 +416,63 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                       >
                         {slotOpt.label}
                       </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={[styles.customizeSlotsHeading, { color: theme.textMuted, marginTop: 18 }]}>
+                Răsfăț & Gustări (Film, Meci sau Desert de casă):
+              </Text>
+
+              <View style={styles.extraSlotsGrid}>
+                {EXTRA_SLOT_OPTIONS.map((extra) => {
+                  const isSelected = preferences.mealSlots.includes(extra.slot);
+                  return (
+                    <TouchableOpacity
+                      key={extra.slot}
+                      onPress={() => toggleExtraSlot(extra.slot)}
+                      activeOpacity={0.7}
+                      style={[
+                        styles.extraSlotCard,
+                        {
+                          backgroundColor: isSelected
+                            ? isDark
+                              ? 'rgba(245, 158, 11, 0.15)'
+                              : '#fffbeb'
+                            : theme.accentBg,
+                          borderColor: isSelected ? '#f59e0b' : theme.border,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.extraSlotIcon}>{extra.icon}</Text>
+                      <View style={styles.extraSlotInfo}>
+                        <Text
+                          style={[
+                            styles.extraSlotTitle,
+                            {
+                              color: isSelected ? (isDark ? '#fbbf24' : '#b45309') : theme.text,
+                              fontWeight: isSelected ? '800' : '700',
+                            },
+                          ]}
+                        >
+                          {extra.title}
+                        </Text>
+                        <Text style={[styles.extraSlotSubtitle, { color: theme.textMuted }]}>
+                          {extra.subtitle}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.extraCheckbox,
+                          {
+                            backgroundColor: isSelected ? '#f59e0b' : 'transparent',
+                            borderColor: isSelected ? '#f59e0b' : theme.border,
+                          },
+                        ]}
+                      >
+                        {isSelected && <Text style={styles.extraCheckmark}>✓</Text>}
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -805,6 +878,45 @@ const styles = StyleSheet.create({
   },
   slotPillText: {
     fontSize: 13,
+  },
+  extraSlotsGrid: {
+    gap: 10,
+    marginTop: 4,
+  },
+  extraSlotCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    gap: 12,
+  },
+  extraSlotIcon: {
+    fontSize: 24,
+  },
+  extraSlotInfo: {
+    flex: 1,
+  },
+  extraSlotTitle: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  extraSlotSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  extraCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  extraCheckmark: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
   },
   moodGrid: {
     flexDirection: 'row',

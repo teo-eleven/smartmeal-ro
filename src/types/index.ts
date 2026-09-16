@@ -86,9 +86,10 @@ export interface Recipe {
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
   imageUrl?: string;
+  suitableSlots?: MealSlot[];
 }
 
-export type MealSlot = 'breakfast' | 'lunch' | 'dinner';
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert';
 
 export interface PlannedMeal {
   id: string;

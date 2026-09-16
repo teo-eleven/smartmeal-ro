@@ -29,6 +29,9 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     resetOnboarding,
     replaceMealWithRecipe,
     setMealsPerDayCount,
+    toggleExtraSlot,
+    addExtraMealToDay,
+    removeMealFromDay,
   } = useAppStore();
 
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -44,7 +47,9 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     );
   }
 
-  const currentMealsPerDayCount = preferences.mealSlots?.length || 1;
+  const baseMealsCount = preferences.mealSlots?.filter(
+    (s) => s === 'breakfast' || s === 'lunch' || s === 'dinner'
+  ).length || 1;
 
   const handleOpenDetail = (recipe: Recipe, servings: number) => {
     setSelectedRecipe(recipe);
@@ -93,9 +98,9 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
               Mese planificate pe zi:
             </Text>
             <Text style={[styles.mealsPerDaySubtitle, { color: theme.primary }]}>
-              {currentMealsPerDayCount === 1 && '1 Masă (Cină)'}
-              {currentMealsPerDayCount === 2 && '2 Mese (Prânz + Cină)'}
-              {currentMealsPerDayCount === 3 && '3 Mese (Mic Dejun + Prânz + Cină)'}
+              {baseMealsCount === 1 && '1 Masă (Cină)'}
+              {baseMealsCount === 2 && '2 Mese (Prânz + Cină)'}
+              {baseMealsCount === 3 && '3 Mese (Mic Dejun + Prânz + Cină)'}
             </Text>
           </View>
 
@@ -104,7 +109,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
               onPress={() => setMealsPerDayCount(1)}
               style={[
                 styles.segmentBtn,
-                currentMealsPerDayCount === 1 && [
+                baseMealsCount === 1 && [
                   styles.segmentBtnActive,
                   { backgroundColor: theme.primaryLight, borderColor: theme.primary },
                 ],
@@ -115,8 +120,8 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                 style={[
                   styles.segmentText,
                   {
-                    color: currentMealsPerDayCount === 1 ? theme.primary : theme.textMuted,
-                    fontWeight: currentMealsPerDayCount === 1 ? '800' : '600',
+                    color: baseMealsCount === 1 ? theme.primary : theme.textMuted,
+                    fontWeight: baseMealsCount === 1 ? '800' : '600',
                   },
                 ]}
               >
@@ -128,7 +133,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
               onPress={() => setMealsPerDayCount(2)}
               style={[
                 styles.segmentBtn,
-                currentMealsPerDayCount === 2 && [
+                baseMealsCount === 2 && [
                   styles.segmentBtnActive,
                   { backgroundColor: theme.primaryLight, borderColor: theme.primary },
                 ],
@@ -139,8 +144,8 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                 style={[
                   styles.segmentText,
                   {
-                    color: currentMealsPerDayCount === 2 ? theme.primary : theme.textMuted,
-                    fontWeight: currentMealsPerDayCount === 2 ? '800' : '600',
+                    color: baseMealsCount === 2 ? theme.primary : theme.textMuted,
+                    fontWeight: baseMealsCount === 2 ? '800' : '600',
                   },
                 ]}
               >
@@ -152,7 +157,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
               onPress={() => setMealsPerDayCount(3)}
               style={[
                 styles.segmentBtn,
-                currentMealsPerDayCount === 3 && [
+                baseMealsCount === 3 && [
                   styles.segmentBtnActive,
                   { backgroundColor: theme.primaryLight, borderColor: theme.primary },
                 ],
@@ -163,12 +168,69 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                 style={[
                   styles.segmentText,
                   {
-                    color: currentMealsPerDayCount === 3 ? theme.primary : theme.textMuted,
-                    fontWeight: currentMealsPerDayCount === 3 ? '800' : '600',
+                    color: baseMealsCount === 3 ? theme.primary : theme.textMuted,
+                    fontWeight: baseMealsCount === 3 ? '800' : '600',
                   },
                 ]}
               >
                 3 Mese
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Quick Extras Toggle Pills */}
+          <View style={styles.extrasPillsRow}>
+            <TouchableOpacity
+              onPress={() => toggleExtraSlot('snack')}
+              style={[
+                styles.extraPill,
+                preferences.mealSlots?.includes('snack')
+                  ? {
+                      backgroundColor: isDark ? 'rgba(249, 115, 22, 0.2)' : '#ffedd5',
+                      borderColor: '#f97316',
+                    }
+                  : { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.extraPillIcon}>🍿</Text>
+              <Text
+                style={[
+                  styles.extraPillText,
+                  {
+                    color: preferences.mealSlots?.includes('snack') ? '#f97316' : theme.textMuted,
+                    fontWeight: preferences.mealSlots?.includes('snack') ? '800' : '600',
+                  },
+                ]}
+              >
+                Ronțăială (Film/Meci) {preferences.mealSlots?.includes('snack') ? '✓' : '+'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => toggleExtraSlot('dessert')}
+              style={[
+                styles.extraPill,
+                preferences.mealSlots?.includes('dessert')
+                  ? {
+                      backgroundColor: isDark ? 'rgba(236, 72, 153, 0.2)' : '#fce7f3',
+                      borderColor: '#ec4899',
+                    }
+                  : { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.extraPillIcon}>🍰</Text>
+              <Text
+                style={[
+                  styles.extraPillText,
+                  {
+                    color: preferences.mealSlots?.includes('dessert') ? '#ec4899' : theme.textMuted,
+                    fontWeight: preferences.mealSlots?.includes('dessert') ? '800' : '600',
+                  },
+                ]}
+              >
+                Desert de Casă {preferences.mealSlots?.includes('dessert') ? '✓' : '+'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -182,7 +244,12 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
             if (hasMultipleMeals) {
               return (
                 <View key={day.dayOfWeek} style={styles.dayGroupContainer}>
-                  <View style={[styles.dayGroupHeader, { backgroundColor: theme.dayHeaderBg, borderColor: theme.border }]}>
+                  <View
+                    style={[
+                      styles.dayGroupHeader,
+                      { backgroundColor: theme.dayHeaderBg, borderColor: theme.border },
+                    ]}
+                  >
                     <Text style={[styles.dayGroupTitle, { color: theme.text }]}>
                       📅 {DAY_LABELS[day.dayOfWeek].toUpperCase()}
                     </Text>
@@ -199,9 +266,47 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                       slotLabel={meal.slotLabelRo}
                       onPressRecipe={() => handleOpenDetail(meal.recipe, meal.servings)}
                       onSwapMeal={() => handleOpenSwap(day.dayOfWeek, meal.slot)}
+                      onRemoveMeal={
+                        day.meals.length > 1 && (meal.slot === 'snack' || meal.slot === 'dessert')
+                          ? () => removeMealFromDay(day.dayOfWeek, meal.id)
+                          : undefined
+                      }
                       isDark={isDark}
                     />
                   ))}
+
+                  {/* Add Extra Meal for this day */}
+                  <View style={styles.addDayExtraRow}>
+                    {!day.meals.some((m) => m.slot === 'snack') && (
+                      <TouchableOpacity
+                        onPress={() => addExtraMealToDay(day.dayOfWeek, 'snack')}
+                        style={[
+                          styles.addDayExtraBtn,
+                          { backgroundColor: theme.btnBg, borderColor: theme.border },
+                        ]}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.addDayExtraText, { color: '#f97316' }]}>
+                          + 🍿 Ronțăială Film/Meci
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {!day.meals.some((m) => m.slot === 'dessert') && (
+                      <TouchableOpacity
+                        onPress={() => addExtraMealToDay(day.dayOfWeek, 'dessert')}
+                        style={[
+                          styles.addDayExtraBtn,
+                          { backgroundColor: theme.btnBg, borderColor: theme.border },
+                        ]}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.addDayExtraText, { color: '#ec4899' }]}>
+                          + 🍰 Desert
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
               );
             }
@@ -209,15 +314,45 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
             // 1 meal per day
             const singleMeal = day.meals?.[0];
             return (
-              <MealCard
-                key={day.dayOfWeek}
-                day={day}
-                meal={singleMeal}
-                slotLabel={singleMeal?.slotLabelRo || 'Cină'}
-                onPressRecipe={() => handleOpenDetail(day.recipe, day.servings)}
-                onSwapMeal={() => handleOpenSwap(day.dayOfWeek, singleMeal?.slot)}
-                isDark={isDark}
-              />
+              <View key={day.dayOfWeek} style={styles.dayGroupContainer}>
+                <MealCard
+                  day={day}
+                  meal={singleMeal}
+                  slotLabel={singleMeal?.slotLabelRo || 'Cină'}
+                  onPressRecipe={() => handleOpenDetail(day.recipe, day.servings)}
+                  onSwapMeal={() => handleOpenSwap(day.dayOfWeek, singleMeal?.slot)}
+                  isDark={isDark}
+                />
+
+                {/* Add Extra Meal for this single-meal day */}
+                <View style={[styles.addDayExtraRow, { marginTop: -6, marginBottom: 12 }]}>
+                  <TouchableOpacity
+                    onPress={() => addExtraMealToDay(day.dayOfWeek, 'snack')}
+                    style={[
+                      styles.addDayExtraBtn,
+                      { backgroundColor: theme.btnBg, borderColor: theme.border },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.addDayExtraText, { color: '#f97316' }]}>
+                      + 🍿 Ronțăială Film/Meci
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => addExtraMealToDay(day.dayOfWeek, 'dessert')}
+                    style={[
+                      styles.addDayExtraBtn,
+                      { backgroundColor: theme.btnBg, borderColor: theme.border },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.addDayExtraText, { color: '#ec4899' }]}>
+                      + 🍰 Desert
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             );
           })}
         </View>
@@ -324,6 +459,47 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     fontSize: 12,
+  },
+  extrasPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  extraPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    gap: 5,
+  },
+  extraPillIcon: {
+    fontSize: 13,
+  },
+  extraPillText: {
+    fontSize: 11,
+  },
+  addDayExtraRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+    marginBottom: 14,
+  },
+  addDayExtraBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addDayExtraText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   feed: {
     width: '100%',

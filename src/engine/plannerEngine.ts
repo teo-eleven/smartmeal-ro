@@ -20,6 +20,10 @@ export function getSlotLabelRo(slot: MealSlot): string {
       return 'Prânz';
     case 'dinner':
       return 'Cină';
+    case 'snack':
+      return 'Ronțăială (Film & Meci)';
+    case 'dessert':
+      return 'Desert de Casă';
   }
 }
 
@@ -62,28 +66,27 @@ export function getEligibleRecipes(preferences: UserPreferences): Recipe[] {
   );
 }
 
-const BREAKFAST_IDS = new Set([
-  'omleta_taraneasca_telemea',
-  'toast_ou_avocado',
-  'shakshuka_oua_rosii',
-  'mamaliga_branza_smantana',
-  'paste_cremoase_spanac',
-]);
-
-const LUNCH_IDS = new Set([
-  'salata_greceasca_telemea',
-  'quesadilla_pui_cascaval',
-  'wrap_ton_avocado',
-  'supa_crema_legume_crutoane',
-  'ciorba_radauteana_rapida',
-  'salata_calda_pui_crutoane',
-  'paste_ton_rosii',
-  'dovlecei_pane_cuptor',
-]);
+/**
+ * Returns alternative recipes suitable for a specific meal slot.
+ */
+export function getAlternativeRecipes(
+  currentRecipe: Recipe,
+  preferences: UserPreferences,
+  slot?: MealSlot
+): Recipe[] {
+  const eligible = getEligibleRecipes(preferences);
+  return eligible.filter((r) => {
+    if (r.id === currentRecipe.id) return false;
+    if (slot && r.suitableSlots && r.suitableSlots.length > 0) {
+      return r.suitableSlots.includes(slot);
+    }
+    return true;
+  });
+}
 
 /**
  * Generates an optimized weekly meal plan strictly respecting constraints, target budget,
- * and desired meals per day (1, 2, or 3 meals: Mic Dejun, Prânz, Cină).
+ * meal slot compatibility (e.g. no burgers at breakfast), and ingredient synergies.
  */
 export function generateMealPlan(preferences: UserPreferences): MealPlan {
   // Input Validations
@@ -139,30 +142,40 @@ export function generateMealPlan(preferences: UserPreferences): MealPlan {
     };
   });
 
-  scoredRecipes.sort((a, b) => b.score - a.score || a.portionCost - b.portionCost);
-
   const usedRecipeIds = new Set<string>();
+  const usedIngredientsInPlan = new Set<string>();
 
   function pickBestRecipeForSlot(slot: MealSlot): Recipe {
-    let candidates = scoredRecipes;
-    if (slot === 'breakfast') {
-      const breakfastCandidates = scoredRecipes.filter((s) => BREAKFAST_IDS.has(s.recipe.id));
-      if (breakfastCandidates.length > 0) candidates = breakfastCandidates;
-    } else if (slot === 'lunch') {
-      const lunchCandidates = scoredRecipes.filter((s) => LUNCH_IDS.has(s.recipe.id));
-      if (lunchCandidates.length > 0) candidates = lunchCandidates;
-    }
+    // Strictly filter recipes suitable for this meal moment (never a burger at breakfast!)
+    let candidates = scoredRecipes.filter((s) =>
+      s.recipe.suitableSlots ? s.recipe.suitableSlots.includes(slot) : true
+    );
+    if (candidates.length === 0) candidates = scoredRecipes;
 
-    // Prefer unused first
-    const unused = candidates.find((c) => !usedRecipeIds.has(c.recipe.id));
-    if (unused) {
-      usedRecipeIds.add(unused.recipe.id);
-      return unused.recipe;
-    }
+    // Sort candidates using mood score, ingredient synergy bonus, and portion cost
+    const sorted = [...candidates].sort((a, b) => {
+      // Synergy bonus: recipes sharing purchased ingredients with existing meals
+      const aShared = a.recipe.ingredients.filter((ing) =>
+        usedIngredientsInPlan.has(ing.ingredientId)
+      ).length;
+      const bShared = b.recipe.ingredients.filter((ing) =>
+        usedIngredientsInPlan.has(ing.ingredientId)
+      ).length;
 
-    // Fallback to least recently used candidate
-    const fallback = candidates[0].recipe;
-    return fallback;
+      const aTotalScore = a.score + aShared * 8 - a.portionCost * 0.2;
+      const bTotalScore = b.score + bShared * 8 - b.portionCost * 0.2;
+
+      return bTotalScore - aTotalScore;
+    });
+
+    // Prefer unused first to provide variety
+    const unused = sorted.find((c) => !usedRecipeIds.has(c.recipe.id));
+    const chosen = unused ? unused.recipe : sorted[0].recipe;
+
+    usedRecipeIds.add(chosen.id);
+    chosen.ingredients.forEach((ing) => usedIngredientsInPlan.add(ing.ingredientId));
+
+    return chosen;
   }
 
   // Construct MealPlanDay entries
@@ -194,39 +207,38 @@ export function generateMealPlan(preferences: UserPreferences): MealPlan {
       meals: dayMeals,
       recipe: primaryMeal.recipe,
       servings: preferences.peopleCount,
-      estimatedCostRon: Math.round(dayCostSum * 10) / 10,
+      estimatedCostRon: Math.round(dayCostSum * 100) / 100,
     };
   });
 
-  // Collect all meals for grocery list aggregation
+  // Calculate master grocery list
   const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
-  days.forEach((d) => {
-    d.meals.forEach((m) => {
+  days.forEach((day) => {
+    day.meals.forEach((m) => {
       allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
     });
   });
 
-  const aggregated = aggregateGroceryList(
+  const groceryList = aggregateGroceryList(
     allMealsToAggregate,
     preferences.supermarketId,
     preferences.excludePantryStaples
   );
 
   return {
-    id: `plan_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: `plan-${Date.now()}`,
     createdAt: new Date().toISOString(),
     supermarketId: preferences.supermarketId,
     peopleCount: preferences.peopleCount,
     totalBudgetRon: preferences.budgetRon,
-    totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
-    totalCartCostRon: aggregated.totalCartCostRon,
+    totalRecipeCostRon: groceryList.totalRecipePortionCostRon,
+    totalCartCostRon: groceryList.totalCartCostRon,
     days,
   };
 }
 
 /**
- * Intelligently swaps a meal in an existing plan for a compatible alternative.
- * Supports swapping specific slots (breakfast, lunch, dinner) when multiple meals per day exist.
+ * Swaps a specific meal or slot in an existing plan with a valid alternative suitable for that slot.
  */
 export function swapMealInPlan(
   currentPlan: MealPlan,
@@ -255,22 +267,22 @@ export function swapMealInPlan(
 
   const eligible = getEligibleRecipes(preferences);
 
-  // Filter candidates matching slot preference if possible
-  let slotFiltered = eligible;
-  if (slotToSwap === 'breakfast') {
-    const bf = eligible.filter((r) => BREAKFAST_IDS.has(r.id));
-    if (bf.length > 0) slotFiltered = bf;
-  } else if (slotToSwap === 'lunch') {
-    const ln = eligible.filter((r) => LUNCH_IDS.has(r.id));
-    if (ln.length > 0) slotFiltered = ln;
-  }
+  // Filter candidates strictly matching slot compatibility
+  let slotFiltered = eligible.filter((r) =>
+    r.suitableSlots ? r.suitableSlots.includes(slotToSwap) : true
+  );
+  if (slotFiltered.length === 0) slotFiltered = eligible;
 
   // Candidates not already in this week's plan
   let availableCandidates = slotFiltered.filter((r) => !existingRecipeIds.has(r.id));
 
-  // Fallback to any eligible recipe except the current one if all recipes are used
+  // Fallback to any slot-compatible recipe except the current one if all recipes are used
   const currentMealObj = targetDay.meals?.find((m) => m.slot === slotToSwap);
   const currentRecipeId = currentMealObj ? currentMealObj.recipe.id : targetDay.recipe.id;
+
+  if (availableCandidates.length === 0) {
+    availableCandidates = slotFiltered.filter((r) => r.id !== currentRecipeId);
+  }
 
   if (availableCandidates.length === 0) {
     availableCandidates = eligible.filter((r) => r.id !== currentRecipeId);
@@ -317,7 +329,7 @@ export function swapMealInPlan(
     ...targetDay,
     meals: updatedMeals,
     recipe: primaryMeal.recipe,
-    estimatedCostRon: Math.round(dayCostSum * 10) / 10,
+    estimatedCostRon: Math.round(dayCostSum * 100) / 100,
   };
 
   // Re-aggregate full grocery list

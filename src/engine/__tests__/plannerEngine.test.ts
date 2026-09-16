@@ -156,6 +156,29 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
 
       expect(newBreakfastId).not.toBe(originalBreakfastId);
     });
+
+    it('strictly enforces meal slot timing appropriateness (no burgers or heavy beans for breakfast)', () => {
+      const allSlotsPrefs: UserPreferences = {
+        ...defaultPrefs,
+        mealSlots: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert'],
+        cookingDays: ['monday'],
+      };
+
+      const plan = generateMealPlan(allSlotsPrefs);
+      const day = plan.days[0];
+
+      const breakfast = day.meals.find((m) => m.slot === 'breakfast');
+      const snack = day.meals.find((m) => m.slot === 'snack');
+      const dessert = day.meals.find((m) => m.slot === 'dessert');
+
+      expect(breakfast?.recipe.suitableSlots).toContain('breakfast');
+      // Verify breakfast is not burger or heavy bean stew
+      expect(breakfast?.recipe.id).not.toBe('burger_vita_airfryer');
+      expect(breakfast?.recipe.id).not.toBe('iahnie_fasole_afumata');
+
+      expect(snack?.recipe.suitableSlots).toContain('snack');
+      expect(dessert?.recipe.suitableSlots).toContain('dessert');
+    });
   });
 
   // EDGE CASES

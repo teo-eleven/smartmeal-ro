@@ -55,8 +55,13 @@ export function calculateMinimumViableBudget(
 
   const safeMealsPerDay = Math.max(1, Math.min(3, mealsPerDay));
 
-  // Calculate costs of all recipes for 1 meal and take the median of the 5 most economical recipes
-  const economicalCosts = RECIPES.map((r) =>
+  // Calculate costs of main meal recipes (lunch/dinner) to establish a realistic food baseline
+  const candidateRecipes = RECIPES.filter((r) =>
+    !r.suitableSlots || r.suitableSlots.includes('lunch') || r.suitableSlots.includes('dinner')
+  );
+  const recipesToEvaluate = candidateRecipes.length >= 5 ? candidateRecipes : RECIPES;
+
+  const economicalCosts = recipesToEvaluate.map((r) =>
     calculateRecipePortionCost(r, peopleCount, supermarketId, excludePantryStaples)
   )
     .sort((a, b) => a - b)

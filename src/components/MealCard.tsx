@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { DayOfWeek, MealPlanDay, PlannedMeal } from '../types';
+import { DayOfWeek, MealPlanDay, MealSlot, PlannedMeal } from '../types';
 
 interface MealCardProps {
   day: MealPlanDay;
@@ -16,7 +16,25 @@ interface MealCardProps {
   slotLabel?: string;
   onPressRecipe: () => void;
   onSwapMeal: () => void;
+  onRemoveMeal?: () => void;
   isDark: boolean;
+}
+
+function getSlotColor(slot?: MealSlot): string {
+  switch (slot) {
+    case 'breakfast':
+      return '#f59e0b';
+    case 'lunch':
+      return '#06b6d4';
+    case 'dinner':
+      return '#10b981';
+    case 'snack':
+      return '#f97316';
+    case 'dessert':
+      return '#ec4899';
+    default:
+      return '#10b981';
+  }
 }
 
 const DAY_LABELS: Record<DayOfWeek, string> = {
@@ -45,6 +63,7 @@ export const MealCard: React.FC<MealCardProps> = ({
   slotLabel,
   onPressRecipe,
   onSwapMeal,
+  onRemoveMeal,
   isDark,
 }) => {
   const recipe = meal ? meal.recipe : day.recipe;
@@ -121,7 +140,7 @@ export const MealCard: React.FC<MealCardProps> = ({
 
           {/* Floating Day Badge (Top-Left) */}
           <View style={[styles.floatingBadge, styles.dayBadge, { backgroundColor: theme.glassBg }]}>
-            <Text style={[styles.dayBadgeText, { color: theme.primary }]}>
+            <Text style={[styles.dayBadgeText, { color: getSlotColor(meal?.slot) }]}>
               {DAY_LABELS[day.dayOfWeek].toUpperCase()}
               {effectiveSlotLabel ? ` • ${effectiveSlotLabel.toUpperCase()}` : ''}
             </Text>
@@ -197,6 +216,19 @@ export const MealCard: React.FC<MealCardProps> = ({
             </View>
 
             <View style={styles.actionButtons}>
+              {onRemoveMeal && (
+                <TouchableOpacity
+                  onPress={onRemoveMeal}
+                  style={[
+                    styles.removeBtn,
+                    { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2' },
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.removeBtnText, { color: '#ef4444' }]}>✕</Text>
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity
                 onPress={onSwapMeal}
                 style={[styles.swapBtn, { backgroundColor: theme.accentBg, borderColor: theme.border }]}
@@ -368,6 +400,17 @@ const styles = StyleSheet.create({
   swapBtnText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  removeBtn: {
+    paddingHorizontal: 9,
+    paddingVertical: 8,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
   viewBtn: {
     paddingHorizontal: 14,

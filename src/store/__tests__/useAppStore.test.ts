@@ -136,6 +136,29 @@ describe('Zustand App Store & Onboarding Flow (Phase 4)', () => {
       expect(useAppStore.getState().preferences.mealSlots).toEqual(['breakfast', 'lunch', 'dinner']);
       expect(useAppStore.getState().currentPlan?.days[0].meals.length).toBe(3);
     });
+
+    it('manages extra slots (snack and dessert) and per-day dynamic additions/removals', () => {
+      const store = useAppStore.getState();
+      store.generatePlan();
+
+      // Toggle snack slot globally
+      store.toggleExtraSlot('snack');
+      expect(useAppStore.getState().preferences.mealSlots).toContain('snack');
+      expect(useAppStore.getState().currentPlan?.days[0].meals.some((m) => m.slot === 'snack')).toBe(true);
+
+      // Add dessert specifically to monday
+      const mondayMealsBefore = useAppStore.getState().currentPlan?.days.find((d) => d.dayOfWeek === 'monday')?.meals || [];
+      store.addExtraMealToDay('monday', 'dessert');
+      const mondayMealsAfter = useAppStore.getState().currentPlan?.days.find((d) => d.dayOfWeek === 'monday')?.meals || [];
+      expect(mondayMealsAfter.length).toBe(mondayMealsBefore.length + 1);
+      expect(mondayMealsAfter.some((m) => m.slot === 'dessert')).toBe(true);
+
+      // Remove a meal from monday
+      const dessertMeal = mondayMealsAfter.find((m) => m.slot === 'dessert')!;
+      store.removeMealFromDay('monday', dessertMeal.id);
+      const mondayMealsFinal = useAppStore.getState().currentPlan?.days.find((d) => d.dayOfWeek === 'monday')?.meals || [];
+      expect(mondayMealsFinal.some((m) => m.id === dessertMeal.id)).toBe(false);
+    });
   });
 
   // ERROR & RECOVERY CASES
