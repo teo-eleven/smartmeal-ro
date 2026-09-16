@@ -75,12 +75,19 @@ export function getAlternativeRecipes(
   slot?: MealSlot
 ): Recipe[] {
   const eligible = getEligibleRecipes(preferences);
-  return eligible.filter((r) => {
+  const filtered = eligible.filter((r) => {
     if (r.id === currentRecipe.id) return false;
     if (slot && r.suitableSlots && r.suitableSlots.length > 0) {
       return r.suitableSlots.includes(slot);
     }
     return true;
+  });
+
+  const effectiveTier = preferences.foodTier || 'medium';
+  return filtered.sort((a, b) => {
+    const aMatch = a.tier === effectiveTier ? 1 : 0;
+    const bMatch = b.tier === effectiveTier ? 1 : 0;
+    return bMatch - aMatch;
   });
 }
 
@@ -116,7 +123,9 @@ export function generateMealPlan(preferences: UserPreferences): MealPlan {
       ? preferences.mealSlots
       : ['dinner'];
 
-  // Score each recipe based on mood tags and portion cost
+  const effectiveTier = preferences.foodTier || 'medium';
+
+  // Score each recipe based on mood tags, food tier preference, and portion cost
   const scoredRecipes = eligibleRecipes.map((recipe) => {
     let score = 0;
 
@@ -126,6 +135,20 @@ export function generateMealPlan(preferences: UserPreferences): MealPlan {
           score += 15;
         }
       });
+    }
+
+    // Food Tier preference scoring
+    if (recipe.tier === effectiveTier) {
+      score += 35;
+    } else if (effectiveTier === 'basic') {
+      if (recipe.tier === 'medium') score -= 10;
+      if (recipe.tier === 'premium') score -= 50;
+    } else if (effectiveTier === 'medium') {
+      if (recipe.tier === 'basic') score += 5;
+      if (recipe.tier === 'premium') score -= 15;
+    } else if (effectiveTier === 'premium') {
+      if (recipe.tier === 'basic') score -= 30;
+      if (recipe.tier === 'medium') score += 5;
     }
 
     const portionCost = calculateRecipePortionCost(
@@ -152,8 +175,12 @@ export function generateMealPlan(preferences: UserPreferences): MealPlan {
     );
     if (candidates.length === 0) candidates = scoredRecipes;
 
+    // Prioritize candidates that match the selected food tier
+    const tierMatches = candidates.filter((s) => s.recipe.tier === effectiveTier);
+    const candidatePool = tierMatches.length >= 2 ? tierMatches : candidates;
+
     // Sort candidates using mood score, ingredient synergy bonus, and portion cost
-    const sorted = [...candidates].sort((a, b) => {
+    const sorted = [...candidatePool].sort((a, b) => {
       // Synergy bonus: recipes sharing purchased ingredients with existing meals
       const aShared = a.recipe.ingredients.filter((ing) =>
         usedIngredientsInPlan.has(ing.ingredientId)
@@ -292,11 +319,14 @@ export function swapMealInPlan(
     throw new Error('[PlannerEngine] Nu există alte rețete compatibile pentru swap.');
   }
 
-  // Pick the best replacement matching mood preferences
+  // Pick the best replacement matching foodTier and mood preferences
+  const effectiveTier = preferences.foodTier || 'medium';
   availableCandidates.sort((a, b) => {
+    const aTier = a.tier === effectiveTier ? 20 : 0;
+    const bTier = b.tier === effectiveTier ? 20 : 0;
     const aMatches = a.moodTags.filter((t) => preferences.moodTags.includes(t)).length;
     const bMatches = b.moodTags.filter((t) => preferences.moodTags.includes(t)).length;
-    return bMatches - aMatches;
+    return bTier + bMatches - (aTier + aMatches);
   });
 
   const replacementRecipe = availableCandidates[0];

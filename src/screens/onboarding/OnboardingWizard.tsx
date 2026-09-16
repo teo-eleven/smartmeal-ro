@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useAppStore } from '../../store/useAppStore';
 import { SUPERMARKET_LIST } from '../../data/supermarkets';
-import { DayOfWeek, DietType, MealSlot, MoodTag, SupermarketId } from '../../types';
+import { DayOfWeek, DietType, FoodTier, MealSlot, MoodTag, SupermarketId } from '../../types';
 import { BudgetSlider } from '../../components/BudgetSlider';
 import { ApplianceSelector } from '../../components/ApplianceSelector';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -73,6 +73,30 @@ const EXTRA_SLOT_OPTIONS: { slot: 'snack' | 'dessert'; title: string; subtitle: 
   },
 ];
 
+const FOOD_TIER_OPTIONS: { id: FoodTier; label: string; icon: string; priceEst: string; desc: string }[] = [
+  {
+    id: 'basic',
+    label: 'Basic (Economic & Buget)',
+    icon: '🥉',
+    priceEst: '~8-12 lei / porție',
+    desc: 'Ingrediente de bază accesibile: pui, ouă, orez, cartofi, legume de sezon, paste, mămăligă.',
+  },
+  {
+    id: 'medium',
+    label: 'Medium (Echilibrat & Familie)',
+    icon: '🥈',
+    priceEst: '~13-18 lei / porție',
+    desc: 'Calitate superioară: piept de pui dezosat, sos bolognese, ciorbe bogate, telemea superioară, iaurt grecesc.',
+  },
+  {
+    id: 'premium',
+    label: 'Premium (Gourmet & Răsfăț)',
+    icon: '🥇',
+    priceEst: '~20-35+ lei / porție',
+    desc: 'Ingrediente fine: steak din antricot Black Angus, somon proaspăt, creveți aromați, budinci de chia, lava cake.',
+  },
+];
+
 const MOOD_OPTIONS: { id: MoodTag; label: string; icon: string }[] = [
   { id: 'speedy', label: 'Mese Rapide', icon: '⚡' },
   { id: 'low_calorie', label: 'Low Calorie', icon: '🥗' },
@@ -100,6 +124,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
     toggleCookingDay,
     setMealsPerDayCount,
     setMealSlots,
+    setFoodTier,
     toggleExtraSlot,
     setBudget,
     toggleMoodTag,
@@ -477,6 +502,64 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                   );
                 })}
               </View>
+
+              <Text style={[styles.customizeSlotsHeading, { color: theme.textMuted, marginTop: 22 }]}>
+                Nivelul ingredientelor & rețetelor:
+              </Text>
+
+              <View style={styles.tierCardsGrid}>
+                {FOOD_TIER_OPTIONS.map((tierOpt) => {
+                  const isSelected = (preferences.foodTier || 'medium') === tierOpt.id;
+                  return (
+                    <TouchableOpacity
+                      key={tierOpt.id}
+                      onPress={() => setFoodTier(tierOpt.id)}
+                      activeOpacity={0.7}
+                      style={[
+                        styles.tierCard,
+                        {
+                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                          borderColor: isSelected ? theme.primary : theme.border,
+                        },
+                      ]}
+                    >
+                      <View style={styles.tierCardHeader}>
+                        <Text style={styles.tierCardIcon}>{tierOpt.icon}</Text>
+                        <View style={styles.tierCardTextContainer}>
+                          <Text
+                            style={[
+                              styles.tierCardTitle,
+                              {
+                                color: isSelected ? theme.primary : theme.text,
+                                fontWeight: isSelected ? '800' : '700',
+                              },
+                            ]}
+                          >
+                            {tierOpt.label}
+                          </Text>
+                          <Text style={[styles.tierCardPrice, { color: isSelected ? theme.primary : theme.textMuted }]}>
+                            {tierOpt.priceEst}
+                          </Text>
+                        </View>
+                        <View
+                          style={[
+                            styles.extraCheckbox,
+                            {
+                              backgroundColor: isSelected ? theme.primary : 'transparent',
+                              borderColor: isSelected ? theme.primary : theme.border,
+                            },
+                          ]}
+                        >
+                          {isSelected && <Text style={styles.extraCheckmark}>✓</Text>}
+                        </View>
+                      </View>
+                      <Text style={[styles.tierCardDesc, { color: theme.textMuted }]}>
+                        {tierOpt.desc}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
           )}
 
@@ -496,6 +579,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 daysCount={preferences.cookingDays.length}
                 mealsPerDay={preferences.mealSlots.length}
                 supermarketId={preferences.supermarketId}
+                foodTier={preferences.foodTier}
                 onChangeBudget={setBudget}
                 isDark={isDark}
               />
@@ -917,6 +1001,40 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
+  },
+  tierCardsGrid: {
+    gap: 10,
+    marginTop: 8,
+  },
+  tierCard: {
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+  },
+  tierCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 6,
+  },
+  tierCardIcon: {
+    fontSize: 22,
+  },
+  tierCardTextContainer: {
+    flex: 1,
+  },
+  tierCardTitle: {
+    fontSize: 14,
+  },
+  tierCardPrice: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  tierCardDesc: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginLeft: 32,
   },
   moodGrid: {
     flexDirection: 'row',

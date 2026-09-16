@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { calculateMinimumViableBudget } from '../engine/budgetCalculator';
-import { SupermarketId } from '../types';
+import { FoodTier, SupermarketId } from '../types';
 
 interface BudgetSliderProps {
   budget: number;
@@ -11,6 +11,7 @@ interface BudgetSliderProps {
   onChangeBudget: (newBudget: number) => void;
   isDark: boolean;
   mealsPerDay?: number;
+  foodTier?: FoodTier;
 }
 
 export const BudgetSlider: React.FC<BudgetSliderProps> = ({
@@ -21,8 +22,9 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
   onChangeBudget,
   isDark,
   mealsPerDay = 1,
+  foodTier = 'medium',
 }) => {
-  const minFloor = calculateMinimumViableBudget(peopleCount, daysCount, supermarketId, true, mealsPerDay);
+  const minFloor = calculateMinimumViableBudget(peopleCount, daysCount, supermarketId, true, mealsPerDay, foodTier);
   const isBelowFloor = budget < minFloor;
 
   const presets = [

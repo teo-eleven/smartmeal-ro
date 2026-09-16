@@ -5,7 +5,7 @@ import { PlanHeader } from '../components/PlanHeader';
 import { MealCard } from '../components/MealCard';
 import { RecipeDetailModal } from './RecipeDetailModal';
 import { MealSwapModal } from './MealSwapModal';
-import { DayOfWeek, MealSlot, Recipe } from '../types';
+import { DayOfWeek, FoodTier, MealSlot, Recipe, SupermarketId } from '../types';
 
 interface MealBoardScreenProps {
   isDark: boolean;
@@ -29,10 +29,25 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     resetOnboarding,
     replaceMealWithRecipe,
     setMealsPerDayCount,
+    setFoodTier,
+    setSupermarket,
     toggleExtraSlot,
     addExtraMealToDay,
     removeMealFromDay,
   } = useAppStore();
+
+  const getTierColor = (tier?: FoodTier): string => {
+    switch (tier) {
+      case 'basic':
+        return '#10b981';
+      case 'medium':
+        return '#3b82f6';
+      case 'premium':
+        return '#eab308';
+      default:
+        return '#3b82f6';
+    }
+  };
 
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [detailServings, setDetailServings] = useState<number>(currentPlan?.peopleCount ?? 2);
@@ -233,6 +248,109 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                 Desert de Casă {preferences.mealSlots?.includes('dessert') ? '✓' : '+'}
               </Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Nivel Meniu (Food Tier): Basic, Medium, Premium */}
+          <View style={[styles.tierSectionContainer, { borderTopColor: theme.border }]}>
+            <View style={styles.mealsPerDayHeader}>
+              <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>
+                Nivelul ingredientelor & rețetelor:
+              </Text>
+              <Text style={[styles.mealsPerDaySubtitle, { color: getTierColor(preferences.foodTier) }]}>
+                {preferences.foodTier === 'basic' && '🥉 Basic (~8-12 lei / porție)'}
+                {preferences.foodTier === 'medium' && '🥈 Medium (~13-18 lei / porție)'}
+                {preferences.foodTier === 'premium' && '🥇 Premium (~20-35+ lei / porție)'}
+              </Text>
+            </View>
+
+            <View style={[styles.segmentedControl, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              {(['basic', 'medium', 'premium'] as FoodTier[]).map((tier) => {
+                const isActive = (preferences.foodTier || 'medium') === tier;
+                const label = tier === 'basic' ? '🥉 Basic' : tier === 'medium' ? '🥈 Medium' : '🥇 Premium';
+                return (
+                  <TouchableOpacity
+                    key={tier}
+                    onPress={() => setFoodTier(tier)}
+                    style={[
+                      styles.segmentBtn,
+                      isActive && [
+                        styles.segmentBtnActive,
+                        {
+                          backgroundColor:
+                            tier === 'basic'
+                              ? isDark ? 'rgba(16, 185, 129, 0.2)' : '#ecfdf5'
+                              : tier === 'medium'
+                              ? isDark ? 'rgba(59, 130, 246, 0.2)' : '#eff6ff'
+                              : isDark ? 'rgba(234, 179, 8, 0.2)' : '#fefce8',
+                          borderColor:
+                            tier === 'basic' ? '#10b981' : tier === 'medium' ? '#3b82f6' : '#eab308',
+                        },
+                      ],
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.segmentText,
+                        {
+                          color: isActive
+                            ? tier === 'basic' ? '#10b981' : tier === 'medium' ? '#3b82f6' : '#eab308'
+                            : theme.textMuted,
+                          fontWeight: isActive ? '800' : '600',
+                        },
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Supermarket Switcher with Official Catalog Prices */}
+          <View style={[styles.tierSectionContainer, { borderTopColor: theme.border }]}>
+            <View style={styles.mealsPerDayHeader}>
+              <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>
+                Prețuri reale magazine:
+              </Text>
+              <Text style={[styles.mealsPerDaySubtitle, { color: theme.primary }]}>
+                {preferences.supermarketId.toUpperCase()} (Cataloage Oficiale)
+              </Text>
+            </View>
+
+            <View style={styles.supermarketPillsRow}>
+              {[
+                { id: 'lidl', name: 'Lidl', color: '#0050aa' },
+                { id: 'kaufland', name: 'Kaufland', color: '#e2001a' },
+                { id: 'carrefour', name: 'Carrefour', color: '#004e9a' },
+                { id: 'mega_image', name: 'Mega Image', color: '#d3122a' },
+              ].map((market) => {
+                const isActive = preferences.supermarketId === market.id;
+                return (
+                  <TouchableOpacity
+                    key={market.id}
+                    onPress={() => setSupermarket(market.id as SupermarketId)}
+                    style={[
+                      styles.marketPill,
+                      isActive
+                        ? { backgroundColor: market.color, borderColor: market.color }
+                        : { backgroundColor: theme.card, borderColor: theme.border },
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.marketPillText,
+                        { color: isActive ? '#ffffff' : theme.text, fontWeight: isActive ? '800' : '600' },
+                      ]}
+                    >
+                      {market.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
         </View>
 
@@ -537,5 +655,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  tierSectionContainer: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+  },
+  supermarketPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  marketPill: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  marketPillText: {
+    fontSize: 11,
   },
 });

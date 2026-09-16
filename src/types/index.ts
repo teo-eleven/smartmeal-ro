@@ -87,9 +87,11 @@ export interface Recipe {
   steps: RecipeStep[];
   imageUrl?: string;
   suitableSlots?: MealSlot[];
+  tier?: FoodTier;
 }
 
 export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert';
+export type FoodTier = 'basic' | 'medium' | 'premium';
 
 export interface PlannedMeal {
   id: string;
@@ -110,6 +112,7 @@ export interface UserPreferences {
   appliances: Appliance[];
   excludePantryStaples: boolean;
   mealSlots: MealSlot[];
+  foodTier?: FoodTier;
 }
 
 export interface MealPlanDay {

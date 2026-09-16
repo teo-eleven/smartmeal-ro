@@ -3,6 +3,7 @@ import {
   Appliance,
   DayOfWeek,
   DietType,
+  FoodTier,
   GroceryListItem,
   MealPlan,
   MealPlanDay,
@@ -52,6 +53,7 @@ export interface AppState {
   setExcludePantryStaples: (exclude: boolean) => void;
   setMealSlots: (slots: MealSlot[]) => void;
   setMealsPerDayCount: (count: 1 | 2 | 3) => void;
+  setFoodTier: (tier: FoodTier) => void;
   toggleExtraSlot: (slot: 'snack' | 'dessert') => void;
   addExtraMealToDay: (dayOfWeek: DayOfWeek, slot: 'snack' | 'dessert') => void;
   removeMealFromDay: (dayOfWeek: DayOfWeek, mealId: string) => void;
@@ -85,6 +87,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   appliances: ['hob', 'oven', 'air_fryer'],
   excludePantryStaples: true,
   mealSlots: ['dinner'],
+  foodTier: 'medium',
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -142,6 +145,60 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => {
       const nextPrefs = { ...state.preferences, supermarketId: id };
       void storageService.savePreferences(nextPrefs);
+
+      if (state.currentPlan) {
+        const updatedDays = state.currentPlan.days.map((day) => {
+          const updatedMeals = day.meals.map((m) => {
+            const cost = calculateRecipePortionCost(
+              m.recipe,
+              nextPrefs.peopleCount,
+              id,
+              nextPrefs.excludePantryStaples
+            );
+            return {
+              ...m,
+              estimatedCostRon: cost,
+            };
+          });
+
+          const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
+          return {
+            ...day,
+            meals: updatedMeals,
+            estimatedCostRon: Math.round(dayCostSum * 100) / 100,
+          };
+        });
+
+        const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
+        updatedDays.forEach((d) => {
+          d.meals.forEach((m) =>
+            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
+          );
+        });
+
+        const aggregated = aggregateGroceryList(
+          allMealsToAggregate,
+          id,
+          nextPrefs.excludePantryStaples
+        );
+
+        const updatedPlan: MealPlan = {
+          ...state.currentPlan,
+          supermarketId: id,
+          totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+          totalCartCostRon: aggregated.totalCartCostRon,
+          days: updatedDays,
+        };
+
+        void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);
+
+        return {
+          preferences: nextPrefs,
+          currentPlan: updatedPlan,
+          groceryItems: aggregated.items,
+        };
+      }
+
       return { preferences: nextPrefs };
     });
   },
@@ -271,6 +328,36 @@ export const useAppStore = create<AppState>((set, get) => ({
       const combinedSlots: MealSlot[] = [...baseSlots, ...activeExtras];
 
       const nextPrefs = { ...state.preferences, mealSlots: combinedSlots };
+      void storageService.savePreferences(nextPrefs);
+
+      if (state.currentPlan) {
+        const plan = generateMealPlan(nextPrefs);
+        const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
+        plan.days.forEach((d) => {
+          d.meals.forEach((m) =>
+            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
+          );
+        });
+        const aggregated = aggregateGroceryList(
+          allMealsToAggregate,
+          nextPrefs.supermarketId,
+          nextPrefs.excludePantryStaples
+        );
+        void storageService.savePlanAndGrocery(plan, aggregated.items);
+        return {
+          preferences: nextPrefs,
+          currentPlan: plan,
+          groceryItems: aggregated.items,
+        };
+      }
+
+      return { preferences: nextPrefs };
+    });
+  },
+
+  setFoodTier: (tier: FoodTier) => {
+    set((state) => {
+      const nextPrefs = { ...state.preferences, foodTier: tier };
       void storageService.savePreferences(nextPrefs);
 
       if (state.currentPlan) {

@@ -179,6 +179,50 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
       expect(snack?.recipe.suitableSlots).toContain('snack');
       expect(dessert?.recipe.suitableSlots).toContain('dessert');
     });
+
+    it('adapts recipe selection strictly based on selected foodTier (basic vs premium)', () => {
+      // Basic plan: economical recipes, zero expensive premium cuts
+      const basicPrefs: UserPreferences = {
+        ...defaultPrefs,
+        foodTier: 'basic',
+        budgetRon: 120,
+        cookingDays: ['monday', 'tuesday', 'wednesday'],
+        mealSlots: ['dinner'],
+      };
+      const basicPlan = generateMealPlan(basicPrefs);
+      expect(basicPlan.days.length).toBe(3);
+      basicPlan.days.forEach((day) => {
+        expect(day.recipe.tier).toBe('basic');
+        // Must not contain luxury ingredients / expensive meals
+        expect(day.recipe.id).not.toBe('antricot_vita_airfryer_ierburi');
+        expect(day.recipe.id).not.toBe('somon_legume_airfryer');
+        expect(day.recipe.id).not.toBe('tagliatelle_creveti_usturoi');
+      });
+
+      // Premium plan: gourmet recipes prioritized
+      const premiumPrefs: UserPreferences = {
+        ...defaultPrefs,
+        foodTier: 'premium',
+        budgetRon: 350,
+        cookingDays: ['monday', 'tuesday', 'wednesday'],
+        mealSlots: ['dinner'],
+      };
+      const premiumPlan = generateMealPlan(premiumPrefs);
+      expect(premiumPlan.days.length).toBe(3);
+      const premiumTiers = premiumPlan.days.map((d) => d.recipe.tier);
+      expect(premiumTiers).toContain('premium');
+      // Total cost of premium recipes should exceed basic plan recipes
+      expect(premiumPlan.totalRecipeCostRon).toBeGreaterThan(basicPlan.totalRecipeCostRon);
+    });
+
+    it('adjusts minimum viable budget floor based on food tier', () => {
+      const basicFloor = calculateMinimumViableBudget(2, 5, 'lidl', true, 1, 'basic');
+      const mediumFloor = calculateMinimumViableBudget(2, 5, 'lidl', true, 1, 'medium');
+      const premiumFloor = calculateMinimumViableBudget(2, 5, 'lidl', true, 1, 'premium');
+
+      expect(basicFloor).toBeLessThan(mediumFloor);
+      expect(mediumFloor).toBeLessThan(premiumFloor);
+    });
   });
 
   // EDGE CASES

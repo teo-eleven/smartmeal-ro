@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { DayOfWeek, MealPlanDay, MealSlot, PlannedMeal } from '../types';
+import { DayOfWeek, FoodTier, MealPlanDay, MealSlot, PlannedMeal } from '../types';
 import { LOCAL_RECIPE_IMAGES } from '../../assets/recipes';
 
 interface MealCardProps {
@@ -36,6 +36,32 @@ function getSlotColor(slot?: MealSlot): string {
       return '#ec4899';
     default:
       return '#10b981';
+  }
+}
+
+function getTierLabel(tier?: FoodTier): string {
+  switch (tier) {
+    case 'basic':
+      return '🥉 Basic';
+    case 'medium':
+      return '🥈 Medium';
+    case 'premium':
+      return '🥇 Premium';
+    default:
+      return '';
+  }
+}
+
+function getTierBadgeBg(tier?: FoodTier): string {
+  switch (tier) {
+    case 'basic':
+      return 'rgba(16, 185, 129, 0.85)';
+    case 'medium':
+      return 'rgba(59, 130, 246, 0.85)';
+    case 'premium':
+      return 'rgba(217, 119, 6, 0.9)';
+    default:
+      return 'rgba(0, 0, 0, 0.6)';
   }
 }
 
@@ -159,6 +185,11 @@ export const MealCard: React.FC<MealCardProps> = ({
 
           {/* Bottom Info Floating on Image */}
           <View style={styles.imageBottomRow}>
+            {recipe.tier && (
+              <View style={[styles.pillBadge, { backgroundColor: getTierBadgeBg(recipe.tier) }]}>
+                <Text style={styles.pillText}>{getTierLabel(recipe.tier)}</Text>
+              </View>
+            )}
             {Boolean(localAsset) && (
               <View style={[styles.pillBadge, { backgroundColor: 'rgba(99, 102, 241, 0.85)' }]}>
                 <Text style={styles.pillText}>✨ AI Studio</Text>

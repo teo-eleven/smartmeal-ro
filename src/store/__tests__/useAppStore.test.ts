@@ -65,6 +65,60 @@ describe('Zustand App Store & Onboarding Flow (Phase 4)', () => {
       store.toggleGroceryItem(item.ingredientId);
       expect(useAppStore.getState().groceryItems[0].isPurchased).toBe(false);
     });
+
+    it('adapts meal plan when switching foodTier (basic, medium, premium)', () => {
+      const store = useAppStore.getState();
+      store.generatePlan();
+      expect(useAppStore.getState().preferences.foodTier).toBe('medium');
+
+      // Switch to basic tier
+      store.setFoodTier('basic');
+      expect(useAppStore.getState().preferences.foodTier).toBe('basic');
+      const basicPlan = useAppStore.getState().currentPlan;
+      expect(basicPlan).not.toBeNull();
+      basicPlan?.days.forEach((day) => {
+        expect(day.recipe.tier).toBe('basic');
+      });
+
+      // Switch to premium tier
+      store.setFoodTier('premium');
+      expect(useAppStore.getState().preferences.foodTier).toBe('premium');
+      const premiumPlan = useAppStore.getState().currentPlan;
+      expect(premiumPlan).not.toBeNull();
+      const tiers = premiumPlan?.days.map((d) => d.recipe.tier);
+      expect(tiers).toContain('premium');
+    });
+
+    it('dynamically recalculates meal costs and grocery list prices when changing supermarket', () => {
+      const store = useAppStore.getState();
+      // Set to lidl first and generate plan
+      store.setSupermarket('lidl');
+      store.generatePlan();
+
+      const lidlCartCost = useAppStore.getState().currentPlan?.totalCartCostRon || 0;
+      const lidlRecipeCost = useAppStore.getState().currentPlan?.totalRecipeCostRon || 0;
+      expect(lidlCartCost).toBeGreaterThan(0);
+      expect(lidlRecipeCost).toBeGreaterThan(0);
+
+      // Switch to mega_image (consistently higher prices across grocery catalog)
+      store.setSupermarket('mega_image');
+      expect(useAppStore.getState().preferences.supermarketId).toBe('mega_image');
+
+      const megaCartCost = useAppStore.getState().currentPlan?.totalCartCostRon || 0;
+      const megaRecipeCost = useAppStore.getState().currentPlan?.totalRecipeCostRon || 0;
+
+      // Ensure costs are dynamically recalculated and reflect Mega Image catalog rates
+      expect(megaCartCost).toBeGreaterThan(lidlCartCost);
+      expect(megaRecipeCost).toBeGreaterThan(lidlRecipeCost);
+
+      // Verify grocery items have updated catalog prices and correct supermarket
+      expect(useAppStore.getState().currentPlan?.supermarketId).toBe('mega_image');
+      const groceryItems = useAppStore.getState().groceryItems;
+      expect(groceryItems.length).toBeGreaterThan(0);
+      groceryItems.forEach((item) => {
+        expect(item.estimatedPriceRon).toBeGreaterThan(0);
+      });
+    });
   });
 
   // EDGE CASES

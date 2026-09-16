@@ -1,4 +1,4 @@
-import { Recipe, SupermarketId } from '../types';
+import { FoodTier, Recipe, SupermarketId } from '../types';
 import { INGREDIENTS } from '../data/ingredients';
 import { RECIPES } from '../data/recipes';
 
@@ -44,7 +44,8 @@ export function calculateMinimumViableBudget(
   daysCount: number,
   supermarketId: SupermarketId = 'lidl',
   excludePantryStaples: boolean = true,
-  mealsPerDay: number = 1
+  mealsPerDay: number = 1,
+  foodTier: FoodTier = 'medium'
 ): number {
   if (peopleCount <= 0) {
     throw new Error(`[BudgetCalculator] Invalid peopleCount: ${peopleCount}. Must be >= 1.`);
@@ -55,11 +56,20 @@ export function calculateMinimumViableBudget(
 
   const safeMealsPerDay = Math.max(1, Math.min(3, mealsPerDay));
 
-  // Calculate costs of main meal recipes (lunch/dinner) to establish a realistic food baseline
-  const candidateRecipes = RECIPES.filter((r) =>
+  // Calculate costs of main meal recipes (lunch/dinner) filtered by food tier
+  const mainRecipes = RECIPES.filter((r) =>
     !r.suitableSlots || r.suitableSlots.includes('lunch') || r.suitableSlots.includes('dinner')
   );
-  const recipesToEvaluate = candidateRecipes.length >= 5 ? candidateRecipes : RECIPES;
+
+  let tierFiltered = mainRecipes;
+  if (foodTier === 'basic') {
+    tierFiltered = mainRecipes.filter((r) => r.tier === 'basic');
+  } else if (foodTier === 'medium') {
+    tierFiltered = mainRecipes.filter((r) => r.tier === 'medium');
+  } else if (foodTier === 'premium') {
+    tierFiltered = mainRecipes.filter((r) => r.tier === 'premium');
+  }
+  const recipesToEvaluate = tierFiltered.length >= 3 ? tierFiltered : mainRecipes;
 
   const economicalCosts = recipesToEvaluate.map((r) =>
     calculateRecipePortionCost(r, peopleCount, supermarketId, excludePantryStaples)

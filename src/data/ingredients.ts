@@ -65,6 +65,15 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     unit: 'g',
     typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.49 },
   },
+  rosii_cherry: {
+    id: 'rosii_cherry',
+    name: 'Roșii cherry dulci',
+    category: 'produce',
+    isPantryStaple: false,
+    standardPackSize: 250,
+    unit: 'g',
+    typicalPriceRon: { lidl: 5.99, kaufland: 5.49, carrefour: 6.49, mega_image: 7.29 },
+  },
   castraveti: {
     id: 'castraveti',
     name: 'Castraveți Fabio / cornișon',
@@ -210,6 +219,24 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     standardPackSize: 160,
     unit: 'g',
     typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.29 },
+  },
+  antricot_vita_angus: {
+    id: 'antricot_vita_angus',
+    name: 'Antricot de vită Black Angus maturat',
+    category: 'meat_fish',
+    isPantryStaple: false,
+    standardPackSize: 300,
+    unit: 'g',
+    typicalPriceRon: { lidl: 34.99, kaufland: 33.99, carrefour: 36.99, mega_image: 41.99 },
+  },
+  creveti_decorticati: {
+    id: 'creveti_decorticati',
+    name: 'Creveți decorticați congelați',
+    category: 'meat_fish',
+    isPantryStaple: false,
+    standardPackSize: 300,
+    unit: 'g',
+    typicalPriceRon: { lidl: 23.99, kaufland: 22.99, carrefour: 25.99, mega_image: 28.99 },
   },
 
   // LACTATE & OUĂ
