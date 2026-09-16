@@ -187,6 +187,7 @@ const styles = StyleSheet.create({
   },
   topBar: {
     width: '100%',
+    maxWidth: 480,
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: 1,
@@ -229,6 +230,7 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     width: '100%',
+    maxWidth: 480,
     flexDirection: 'row',
     borderBottomWidth: 1,
   },
