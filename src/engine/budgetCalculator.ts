@@ -1,0 +1,70 @@
+import { Recipe, SupermarketId } from '../types';
+import { INGREDIENTS } from '../data/ingredients';
+import { RECIPES } from '../data/recipes';
+
+/**
+ * Calculates the exact theoretical ingredient cost consumed by a recipe for a given number of people.
+ */
+export function calculateRecipePortionCost(
+  recipe: Recipe,
+  peopleCount: number,
+  supermarketId: SupermarketId,
+  excludePantryStaples: boolean = true
+): number {
+  if (peopleCount <= 0) {
+    throw new Error(`[BudgetCalculator] Invalid peopleCount: ${peopleCount}. Must be >= 1.`);
+  }
+
+  let totalCost = 0;
+
+  for (const item of recipe.ingredients) {
+    const ingredient = INGREDIENTS[item.ingredientId];
+    if (!ingredient) continue;
+    if (excludePantryStaples && ingredient.isPantryStaple) continue;
+
+    const packPrice = ingredient.typicalPriceRon[supermarketId];
+    if (!packPrice || packPrice <= 0) continue;
+
+    // Grams or units needed for the whole meal
+    const totalNeeded = item.amountPerServing * peopleCount;
+    // Fractional cost of ingredient consumed
+    const portionFraction = totalNeeded / ingredient.standardPackSize;
+    totalCost += portionFraction * packPrice;
+  }
+
+  return Math.round(totalCost * 100) / 100;
+}
+
+/**
+ * Calculates dynamic minimum viable budget for the onboarding slider.
+ * Gives user realistic feedback so they don't enter an impossible figure.
+ */
+export function calculateMinimumViableBudget(
+  peopleCount: number,
+  daysCount: number,
+  supermarketId: SupermarketId = 'lidl',
+  excludePantryStaples: boolean = true
+): number {
+  if (peopleCount <= 0) {
+    throw new Error(`[BudgetCalculator] Invalid peopleCount: ${peopleCount}. Must be >= 1.`);
+  }
+  if (daysCount <= 0 || daysCount > 7) {
+    throw new Error(`[BudgetCalculator] Invalid daysCount: ${daysCount}. Must be between 1 and 7.`);
+  }
+
+  // Calculate costs of all recipes for 1 meal and take the median of the 5 most economical recipes
+  const economicalCosts = RECIPES.map((r) =>
+    calculateRecipePortionCost(r, peopleCount, supermarketId, excludePantryStaples)
+  )
+    .sort((a, b) => a - b)
+    .slice(0, 5);
+
+  const avgEconomicalMealCost =
+    economicalCosts.reduce((sum, cost) => sum + cost, 0) / economicalCosts.length;
+
+  // Add a 20% packaging buffer to account for whole supermarket packages
+  const baseline = avgEconomicalMealCost * daysCount * 1.2;
+
+  // Round up to nearest 5 RON for clean UI slider display
+  return Math.max(25, Math.ceil(baseline / 5) * 5);
+}
