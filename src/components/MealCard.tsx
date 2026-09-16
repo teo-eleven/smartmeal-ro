@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import {
   Animated,
   Image,
+  ImageSourcePropType,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -9,6 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { DayOfWeek, MealPlanDay, MealSlot, PlannedMeal } from '../types';
+import { LOCAL_RECIPE_IMAGES } from '../../assets/recipes';
 
 interface MealCardProps {
   day: MealPlanDay;
@@ -108,7 +110,10 @@ export const MealCard: React.FC<MealCardProps> = ({
   };
 
   const totalCookingTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
-  const imageSource = recipe.imageUrl
+  const localAsset = LOCAL_RECIPE_IMAGES[recipe.id];
+  const imageSource: ImageSourcePropType = localAsset
+    ? localAsset
+    : recipe.imageUrl
     ? { uri: recipe.imageUrl }
     : { uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80' };
 
@@ -154,6 +159,11 @@ export const MealCard: React.FC<MealCardProps> = ({
 
           {/* Bottom Info Floating on Image */}
           <View style={styles.imageBottomRow}>
+            {Boolean(localAsset) && (
+              <View style={[styles.pillBadge, { backgroundColor: 'rgba(99, 102, 241, 0.85)' }]}>
+                <Text style={styles.pillText}>✨ AI Studio</Text>
+              </View>
+            )}
             <View style={[styles.pillBadge, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
               <Text style={styles.pillText}>{primaryMood}</Text>
             </View>
