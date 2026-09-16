@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   SafeAreaView,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import { useAppStore } from './src/store/useAppStore';
 import { OnboardingWizard } from './src/screens/onboarding/OnboardingWizard';
 import { GeneratingPlanModal } from './src/screens/onboarding/GeneratingPlanModal';
 import { MealBoardScreen } from './src/screens/MealBoardScreen';
+import { GroceryScreen } from './src/screens/GroceryScreen';
 import { SUPERMARKETS } from './src/data/supermarkets';
 
 export default function App() {
@@ -25,7 +25,6 @@ export default function App() {
     groceryItems,
     setActiveView,
     resetOnboarding,
-    toggleGroceryItem,
   } = useAppStore();
 
   const theme = {
@@ -125,79 +124,7 @@ export default function App() {
 
         {/* VIEW BODY */}
         {activeView === 'meals' && <MealBoardScreen isDark={isDark} />}
-
-        {/* GROCERY CHECKLIST VIEW */}
-        {activeView === 'grocery' && (
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <View style={styles.groceryFeed}>
-              <View style={styles.groceryHeaderRow}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>Lista pe ambalaje</Text>
-                <Text style={[styles.itemsProgressText, { color: theme.primary }]}>
-                  {purchasedCount} din {groceryItems.length} bifate
-                </Text>
-              </View>
-
-              {groceryItems.map((item) => (
-                <TouchableOpacity
-                  key={item.ingredientId}
-                  onPress={() => toggleGroceryItem(item.ingredientId)}
-                  activeOpacity={0.7}
-                  style={[
-                    styles.groceryRow,
-                    {
-                      backgroundColor: theme.card,
-                      borderColor: theme.border,
-                      opacity: item.isPurchased ? 0.6 : 1,
-                    },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.groceryCheck,
-                      {
-                        backgroundColor: item.isPurchased ? theme.primary : 'transparent',
-                        borderColor: item.isPurchased ? theme.primary : theme.border,
-                      },
-                    ]}
-                  >
-                    {item.isPurchased && <Text style={styles.checkTick}>✓</Text>}
-                  </View>
-
-                  <View style={styles.itemDetails}>
-                    <Text
-                      style={[
-                        styles.itemName,
-                        {
-                          color: theme.text,
-                          textDecorationLine: item.isPurchased ? 'line-through' : 'none',
-                        },
-                      ]}
-                    >
-                      {item.name}
-                    </Text>
-                    <Text style={[styles.itemSub, { color: theme.textMuted }]}>
-                      Necesar: {item.neededAmount}
-                      {item.unit} • Cumperi: {item.packsToBuy} × pachet {item.packSize}
-                      {item.unit}
-                    </Text>
-                  </View>
-
-                  <Text
-                    style={[
-                      styles.itemPrice,
-                      {
-                        color: item.isPurchased ? theme.textMuted : theme.primary,
-                        textDecorationLine: item.isPurchased ? 'line-through' : 'none',
-                      },
-                    ]}
-                  >
-                    {item.estimatedPriceRon} lei
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        )}
+        {activeView === 'grocery' && <GroceryScreen isDark={isDark} />}
       </View>
     </SafeAreaView>
   );
@@ -210,6 +137,7 @@ const styles = StyleSheet.create({
   dashboardContainer: {
     flex: 1,
     alignItems: 'center',
+    width: '100%',
   },
   topBar: {
     width: '100%',
@@ -249,174 +177,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  scrollContent: {
-    alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    width: '100%',
-  },
-  budgetSummaryCard: {
-    width: '100%',
-    maxWidth: 480,
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 18,
-    marginBottom: 16,
-  },
-  budgetRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  budgetLbl: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  budgetTotal: {
-    fontSize: 28,
-    fontWeight: '900',
-  },
-  budgetTargetBox: {
-    alignItems: 'flex-end',
-  },
-  budgetCap: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  budgetStatusBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    borderRadius: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-  },
-  budgetStatusText: {
-    color: '#059669',
-    fontSize: 12,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  mealsFeed: {
-    width: '100%',
-    maxWidth: 480,
-    gap: 14,
-  },
-  mealCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 18,
-  },
-  dayCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  dayBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  dayBadgeText: {
-    color: '#059669',
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  dayCost: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  recipeCardTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    marginBottom: 6,
-  },
-  recipeCardDesc: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  nutritionRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 14,
-  },
-  nutritionPill: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  cardActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  swapButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  swapButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  groceryFeed: {
-    width: '100%',
-    maxWidth: 480,
-    gap: 10,
-  },
-  groceryHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  itemsProgressText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  groceryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 12,
-  },
-  groceryCheck: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkTick: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  itemDetails: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  itemSub: {
-    fontSize: 11,
-  },
-  itemPrice: {
     fontSize: 13,
     fontWeight: '700',
   },
