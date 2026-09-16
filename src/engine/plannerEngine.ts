@@ -3,12 +3,25 @@ import {
   DietType,
   MealPlan,
   MealPlanDay,
+  MealSlot,
+  PlannedMeal,
   Recipe,
   UserPreferences,
 } from '../types';
 import { RECIPES } from '../data/recipes';
 import { calculateRecipePortionCost } from './budgetCalculator';
 import { aggregateGroceryList } from './groceryAggregator';
+
+export function getSlotLabelRo(slot: MealSlot): string {
+  switch (slot) {
+    case 'breakfast':
+      return 'Mic Dejun';
+    case 'lunch':
+      return 'Prânz';
+    case 'dinner':
+      return 'Cină';
+  }
+}
 
 /**
  * Checks if a recipe's diet type is compatible with user's diet restrictions.
@@ -49,8 +62,28 @@ export function getEligibleRecipes(preferences: UserPreferences): Recipe[] {
   );
 }
 
+const BREAKFAST_IDS = new Set([
+  'omleta_taraneasca_telemea',
+  'toast_ou_avocado',
+  'shakshuka_oua_rosii',
+  'mamaliga_branza_smantana',
+  'paste_cremoase_spanac',
+]);
+
+const LUNCH_IDS = new Set([
+  'salata_greceasca_telemea',
+  'quesadilla_pui_cascaval',
+  'wrap_ton_avocado',
+  'supa_crema_legume_crutoane',
+  'ciorba_radauteana_rapida',
+  'salata_calda_pui_crutoane',
+  'paste_ton_rosii',
+  'dovlecei_pane_cuptor',
+]);
+
 /**
- * Generates an optimized weekly meal plan strictly respecting constraints and target budget.
+ * Generates an optimized weekly meal plan strictly respecting constraints, target budget,
+ * and desired meals per day (1, 2, or 3 meals: Mic Dejun, Prânz, Cină).
  */
 export function generateMealPlan(preferences: UserPreferences): MealPlan {
   // Input Validations
@@ -75,11 +108,15 @@ export function generateMealPlan(preferences: UserPreferences): MealPlan {
     );
   }
 
-  // Calculate score for each recipe
+  const slots: MealSlot[] =
+    preferences.mealSlots && preferences.mealSlots.length > 0
+      ? preferences.mealSlots
+      : ['dinner'];
+
+  // Score each recipe based on mood tags and portion cost
   const scoredRecipes = eligibleRecipes.map((recipe) => {
     let score = 0;
 
-    // Mood match bonus
     if (preferences.moodTags && preferences.moodTags.length > 0) {
       recipe.moodTags.forEach((tag) => {
         if (preferences.moodTags.includes(tag)) {
@@ -102,69 +139,78 @@ export function generateMealPlan(preferences: UserPreferences): MealPlan {
     };
   });
 
-  // Sort by score descending, then by portion cost ascending
   scoredRecipes.sort((a, b) => b.score - a.score || a.portionCost - b.portionCost);
 
-  const neededDaysCount = preferences.cookingDays.length;
-  const selectedRecipes: Recipe[] = [];
+  const usedRecipeIds = new Set<string>();
 
-  // Pick unique recipes matching needed days count
-  for (let i = 0; i < neededDaysCount; i++) {
-    if (i < scoredRecipes.length) {
-      selectedRecipes.push(scoredRecipes[i].recipe);
-    } else {
-      // If fewer recipes than days, repeat with lowest repetition
-      selectedRecipes.push(scoredRecipes[i % scoredRecipes.length].recipe);
+  function pickBestRecipeForSlot(slot: MealSlot): Recipe {
+    let candidates = scoredRecipes;
+    if (slot === 'breakfast') {
+      const breakfastCandidates = scoredRecipes.filter((s) => BREAKFAST_IDS.has(s.recipe.id));
+      if (breakfastCandidates.length > 0) candidates = breakfastCandidates;
+    } else if (slot === 'lunch') {
+      const lunchCandidates = scoredRecipes.filter((s) => LUNCH_IDS.has(s.recipe.id));
+      if (lunchCandidates.length > 0) candidates = lunchCandidates;
     }
-  }
 
-  // Optimize for budget if needed
-  let aggregated = aggregateGroceryList(
-    selectedRecipes.map((r) => ({ recipe: r, servings: preferences.peopleCount })),
-    preferences.supermarketId,
-    preferences.excludePantryStaples
-  );
-
-  // If over budget and alternative cheaper recipes exist, greedily replace most expensive recipes
-  if (aggregated.totalCartCostRon > preferences.budgetRon && scoredRecipes.length > neededDaysCount) {
-    const economicalPool = [...scoredRecipes].sort((a, b) => a.portionCost - b.portionCost);
-
-    for (let i = 0; i < selectedRecipes.length; i++) {
-      if (aggregated.totalCartCostRon <= preferences.budgetRon) break;
-
-      // Find a cheaper candidate not yet in the plan
-      const candidate = economicalPool.find(
-        (c) => !selectedRecipes.some((sr) => sr.id === c.recipe.id)
-      );
-
-      if (candidate) {
-        selectedRecipes[i] = candidate.recipe;
-        aggregated = aggregateGroceryList(
-          selectedRecipes.map((r) => ({ recipe: r, servings: preferences.peopleCount })),
-          preferences.supermarketId,
-          preferences.excludePantryStaples
-        );
-      }
+    // Prefer unused first
+    const unused = candidates.find((c) => !usedRecipeIds.has(c.recipe.id));
+    if (unused) {
+      usedRecipeIds.add(unused.recipe.id);
+      return unused.recipe;
     }
+
+    // Fallback to least recently used candidate
+    const fallback = candidates[0].recipe;
+    return fallback;
   }
 
   // Construct MealPlanDay entries
-  const days: MealPlanDay[] = preferences.cookingDays.map((dayOfWeek, idx) => {
-    const recipe = selectedRecipes[idx];
-    const cost = calculateRecipePortionCost(
-      recipe,
-      preferences.peopleCount,
-      preferences.supermarketId,
-      preferences.excludePantryStaples
-    );
+  const days: MealPlanDay[] = preferences.cookingDays.map((dayOfWeek) => {
+    const dayMeals: PlannedMeal[] = slots.map((slot) => {
+      const recipe = pickBestRecipeForSlot(slot);
+      const cost = calculateRecipePortionCost(
+        recipe,
+        preferences.peopleCount,
+        preferences.supermarketId,
+        preferences.excludePantryStaples
+      );
+
+      return {
+        id: `${dayOfWeek}-${slot}`,
+        slot,
+        slotLabelRo: getSlotLabelRo(slot),
+        recipe,
+        servings: preferences.peopleCount,
+        estimatedCostRon: cost,
+      };
+    });
+
+    const primaryMeal = dayMeals.find((m) => m.slot === 'dinner') || dayMeals[0];
+    const dayCostSum = dayMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
 
     return {
       dayOfWeek,
-      recipe,
+      meals: dayMeals,
+      recipe: primaryMeal.recipe,
       servings: preferences.peopleCount,
-      estimatedCostRon: cost,
+      estimatedCostRon: Math.round(dayCostSum * 10) / 10,
     };
   });
+
+  // Collect all meals for grocery list aggregation
+  const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
+  days.forEach((d) => {
+    d.meals.forEach((m) => {
+      allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+    });
+  });
+
+  const aggregated = aggregateGroceryList(
+    allMealsToAggregate,
+    preferences.supermarketId,
+    preferences.excludePantryStaples
+  );
 
   return {
     id: `plan_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -179,29 +225,55 @@ export function generateMealPlan(preferences: UserPreferences): MealPlan {
 }
 
 /**
- * Intelligently swaps a single recipe in an existing plan for a compatible alternative.
+ * Intelligently swaps a meal in an existing plan for a compatible alternative.
+ * Supports swapping specific slots (breakfast, lunch, dinner) when multiple meals per day exist.
  */
 export function swapMealInPlan(
   currentPlan: MealPlan,
   dayToSwap: DayOfWeek,
-  preferences: UserPreferences
+  preferences: UserPreferences,
+  targetSlot?: MealSlot
 ): MealPlan {
   const dayIndex = currentPlan.days.findIndex((d) => d.dayOfWeek === dayToSwap);
   if (dayIndex === -1) {
     throw new Error(`[PlannerEngine] Ziua "${dayToSwap}" nu se găsește în planul curent.`);
   }
 
-  const existingRecipeIds = new Set(currentPlan.days.map((d) => d.recipe.id));
+  const targetDay = currentPlan.days[dayIndex];
+  const slotToSwap: MealSlot =
+    targetSlot || (targetDay.meals && targetDay.meals.length > 0 ? targetDay.meals[0].slot : 'dinner');
+
+  // Collect existing recipe IDs in the plan
+  const existingRecipeIds = new Set<string>();
+  currentPlan.days.forEach((d) => {
+    if (d.meals && d.meals.length > 0) {
+      d.meals.forEach((m) => existingRecipeIds.add(m.recipe.id));
+    } else {
+      existingRecipeIds.add(d.recipe.id);
+    }
+  });
+
   const eligible = getEligibleRecipes(preferences);
 
+  // Filter candidates matching slot preference if possible
+  let slotFiltered = eligible;
+  if (slotToSwap === 'breakfast') {
+    const bf = eligible.filter((r) => BREAKFAST_IDS.has(r.id));
+    if (bf.length > 0) slotFiltered = bf;
+  } else if (slotToSwap === 'lunch') {
+    const ln = eligible.filter((r) => LUNCH_IDS.has(r.id));
+    if (ln.length > 0) slotFiltered = ln;
+  }
+
   // Candidates not already in this week's plan
-  let availableCandidates = eligible.filter((r) => !existingRecipeIds.has(r.id));
+  let availableCandidates = slotFiltered.filter((r) => !existingRecipeIds.has(r.id));
 
   // Fallback to any eligible recipe except the current one if all recipes are used
+  const currentMealObj = targetDay.meals?.find((m) => m.slot === slotToSwap);
+  const currentRecipeId = currentMealObj ? currentMealObj.recipe.id : targetDay.recipe.id;
+
   if (availableCandidates.length === 0) {
-    availableCandidates = eligible.filter(
-      (r) => r.id !== currentPlan.days[dayIndex].recipe.id
-    );
+    availableCandidates = eligible.filter((r) => r.id !== currentRecipeId);
   }
 
   if (availableCandidates.length === 0) {
@@ -224,14 +296,40 @@ export function swapMealInPlan(
   );
 
   const updatedDays = [...currentPlan.days];
-  updatedDays[dayIndex] = {
-    ...updatedDays[dayIndex],
+  const updatedMeals = (targetDay.meals || []).map((m) => {
+    if (m.slot === slotToSwap) {
+      return {
+        ...m,
+        recipe: replacementRecipe,
+        estimatedCostRon: newCost,
+      };
+    }
+    return m;
+  });
+
+  const primaryMeal = updatedMeals.find((m) => m.slot === 'dinner') || updatedMeals[0] || {
     recipe: replacementRecipe,
     estimatedCostRon: newCost,
   };
+  const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
+
+  updatedDays[dayIndex] = {
+    ...targetDay,
+    meals: updatedMeals,
+    recipe: primaryMeal.recipe,
+    estimatedCostRon: Math.round(dayCostSum * 10) / 10,
+  };
+
+  // Re-aggregate full grocery list
+  const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
+  updatedDays.forEach((d) => {
+    d.meals.forEach((m) => {
+      allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+    });
+  });
 
   const reaggregated = aggregateGroceryList(
-    updatedDays.map((d) => ({ recipe: d.recipe, servings: d.servings })),
+    allMealsToAggregate,
     preferences.supermarketId,
     preferences.excludePantryStaples
   );

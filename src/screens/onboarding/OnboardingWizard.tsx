@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useAppStore } from '../../store/useAppStore';
 import { SUPERMARKET_LIST } from '../../data/supermarkets';
-import { DayOfWeek, DietType, MoodTag, SupermarketId } from '../../types';
+import { DayOfWeek, DietType, MealSlot, MoodTag, SupermarketId } from '../../types';
 import { BudgetSlider } from '../../components/BudgetSlider';
 import { ApplianceSelector } from '../../components/ApplianceSelector';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +27,36 @@ const DAY_LABELS: Record<DayOfWeek, string> = {
   saturday: 'Sâmbătă',
   sunday: 'Duminică',
 };
+
+const MEAL_COUNT_OPTIONS: { count: 1 | 2 | 3; title: string; subtitle: string; icon: string; slots: MealSlot[] }[] = [
+  {
+    count: 1,
+    title: '1 Masă pe zi (Doar Cină)',
+    subtitle: 'Rețete sățioase pregătite seara după program.',
+    icon: '🍽️',
+    slots: ['dinner'],
+  },
+  {
+    count: 2,
+    title: '2 Mese pe zi (Prânz + Cină)',
+    subtitle: 'Prânz la caserolă și o cină caldă savuroasă.',
+    icon: '🍲',
+    slots: ['lunch', 'dinner'],
+  },
+  {
+    count: 3,
+    title: '3 Mese pe zi (Meniu Complet)',
+    subtitle: 'Mic Dejun energizant, Prânz și Cină completă.',
+    icon: '🍳',
+    slots: ['breakfast', 'lunch', 'dinner'],
+  },
+];
+
+const MEAL_SLOT_OPTIONS: { slot: MealSlot; label: string; icon: string }[] = [
+  { slot: 'breakfast', label: 'Mic Dejun', icon: '🍳' },
+  { slot: 'lunch', label: 'Prânz', icon: '🍲' },
+  { slot: 'dinner', label: 'Cină', icon: '🍽️' },
+];
 
 const MOOD_OPTIONS: { id: MoodTag; label: string; icon: string }[] = [
   { id: 'speedy', label: 'Mese Rapide', icon: '⚡' },
@@ -53,6 +83,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
     setSupermarket,
     setPeopleCount,
     toggleCookingDay,
+    setMealsPerDayCount,
+    setMealSlots,
     setBudget,
     toggleMoodTag,
     setDietType,
@@ -263,20 +295,133 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             </View>
           )}
 
-          {/* STEP 4: BUDGET SLIDER */}
+          {/* STEP 4: MEALS PER DAY */}
           {currentStep === 4 && (
+            <View style={styles.stepSection}>
+              <Text style={[styles.questionTitle, { color: theme.text }]}>
+                Câte mese pe zi dorești?
+              </Text>
+              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
+                Alege structura meniului zilnic: 1, 2 sau 3 mese complete pe zi.
+              </Text>
+
+              <View style={styles.mealCountGrid}>
+                {MEAL_COUNT_OPTIONS.map((option) => {
+                  const isSelected =
+                    preferences.mealSlots.length === option.count &&
+                    option.slots.every((s) => preferences.mealSlots.includes(s));
+                  return (
+                    <TouchableOpacity
+                      key={option.count}
+                      onPress={() => setMealsPerDayCount(option.count)}
+                      activeOpacity={0.7}
+                      style={[
+                        styles.mealCountCard,
+                        {
+                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                          borderColor: isSelected ? theme.primary : theme.border,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.mealCountIcon}>{option.icon}</Text>
+                      <View style={styles.mealCountInfo}>
+                        <Text
+                          style={[
+                            styles.mealCountTitle,
+                            {
+                              color: isSelected ? theme.primary : theme.text,
+                              fontWeight: isSelected ? '800' : '700',
+                            },
+                          ]}
+                        >
+                          {option.title}
+                        </Text>
+                        <Text style={[styles.mealCountSubtitle, { color: theme.textMuted }]}>
+                          {option.subtitle}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.radioCircle,
+                          {
+                            borderColor: isSelected ? theme.primary : theme.border,
+                            backgroundColor: isSelected ? theme.primary : 'transparent',
+                          },
+                        ]}
+                      >
+                        {isSelected && <View style={styles.radioDot} />}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={[styles.customizeSlotsHeading, { color: theme.textMuted }]}>
+                Sau personalizează mesele individuale:
+              </Text>
+
+              <View style={styles.slotPillsRow}>
+                {MEAL_SLOT_OPTIONS.map((slotOpt) => {
+                  const isSlotActive = preferences.mealSlots.includes(slotOpt.slot);
+                  return (
+                    <TouchableOpacity
+                      key={slotOpt.slot}
+                      onPress={() => {
+                        let updated: MealSlot[];
+                        if (isSlotActive) {
+                          if (preferences.mealSlots.length > 1) {
+                            updated = preferences.mealSlots.filter((s) => s !== slotOpt.slot);
+                          } else {
+                            return; // păstrează cel puțin o masă
+                          }
+                        } else {
+                          updated = [...preferences.mealSlots, slotOpt.slot];
+                        }
+                        setMealSlots(updated);
+                      }}
+                      activeOpacity={0.7}
+                      style={[
+                        styles.slotPill,
+                        {
+                          backgroundColor: isSlotActive ? theme.primaryLight : theme.accentBg,
+                          borderColor: isSlotActive ? theme.primary : theme.border,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.slotPillIcon}>{slotOpt.icon}</Text>
+                      <Text
+                        style={[
+                          styles.slotPillText,
+                          {
+                            color: isSlotActive ? theme.primary : theme.text,
+                            fontWeight: isSlotActive ? '700' : '500',
+                          },
+                        ]}
+                      >
+                        {slotOpt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* STEP 5: BUDGET SLIDER */}
+          {currentStep === 5 && (
             <View style={styles.stepSection}>
               <Text style={[styles.questionTitle, { color: theme.text }]}>
                 Care este bugetul tău?
               </Text>
               <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Suma totală pe care dorești să o cheltui la magazin pentru cinele din aceste zile.
+                Suma totală pe care dorești să o cheltui la magazin pentru mesele din aceste zile.
               </Text>
 
               <BudgetSlider
                 budget={preferences.budgetRon}
                 peopleCount={preferences.peopleCount}
                 daysCount={preferences.cookingDays.length}
+                mealsPerDay={preferences.mealSlots.length}
                 supermarketId={preferences.supermarketId}
                 onChangeBudget={setBudget}
                 isDark={isDark}
@@ -284,8 +429,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             </View>
           )}
 
-          {/* STEP 5: MOOD & STYLES */}
-          {currentStep === 5 && (
+          {/* STEP 6: MOOD & STYLES */}
+          {currentStep === 6 && (
             <View style={styles.stepSection}>
               <Text style={[styles.questionTitle, { color: theme.text }]}>
                 Ce pofte ai săptămâna asta?
@@ -326,8 +471,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             </View>
           )}
 
-          {/* STEP 6: DIETARY RESTRICTIONS */}
-          {currentStep === 6 && (
+          {/* STEP 7: DIETARY RESTRICTIONS */}
+          {currentStep === 7 && (
             <View style={styles.stepSection}>
               <Text style={[styles.questionTitle, { color: theme.text }]}>
                 Ai preferințe dietetice?
@@ -378,8 +523,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             </View>
           )}
 
-          {/* STEP 7: KITCHEN APPLIANCES */}
-          {currentStep === 7 && (
+          {/* STEP 8: KITCHEN APPLIANCES */}
+          {currentStep === 8 && (
             <View style={styles.stepSection}>
               <Text style={[styles.questionTitle, { color: theme.text }]}>
                 Ce aparate ai în bucătărie?
@@ -595,6 +740,71 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
+  },
+  mealCountGrid: {
+    gap: 12,
+    marginBottom: 20,
+  },
+  mealCountCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+    gap: 14,
+  },
+  mealCountIcon: {
+    fontSize: 28,
+  },
+  mealCountInfo: {
+    flex: 1,
+  },
+  mealCountTitle: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  mealCountSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  radioCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10b981',
+  },
+  customizeSlotsHeading: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  slotPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  slotPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    gap: 6,
+  },
+  slotPillIcon: {
+    fontSize: 16,
+  },
+  slotPillText: {
+    fontSize: 13,
   },
   moodGrid: {
     flexDirection: 'row',

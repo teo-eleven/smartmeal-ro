@@ -13,10 +13,12 @@ import { DayOfWeek, MealPlan, Recipe, UserPreferences } from '../types';
 import { getEligibleRecipes } from '../engine/plannerEngine';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { aiProxyService, SmartSwapResult } from '../services/aiProxy';
+import { MealSlot } from '../types';
 
 interface MealSwapModalProps {
   visible: boolean;
   dayOfWeek: DayOfWeek | null;
+  slot?: MealSlot | null;
   currentPlan: MealPlan | null;
   preferences: UserPreferences;
   onClose: () => void;
@@ -37,6 +39,7 @@ const DAY_LABELS: Record<DayOfWeek, string> = {
 export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   visible,
   dayOfWeek,
+  slot,
   currentPlan,
   preferences,
   onClose,
@@ -49,8 +52,10 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   if (!visible || !dayOfWeek || !currentPlan) return null;
 
   const currentMealDay = currentPlan.days.find((d) => d.dayOfWeek === dayOfWeek);
-  const currentRecipe = currentMealDay?.recipe;
+  const targetMeal = slot ? currentMealDay?.meals?.find((m) => m.slot === slot) : null;
+  const currentRecipe = targetMeal ? targetMeal.recipe : currentMealDay?.recipe;
   const currentRecipeId = currentRecipe?.id;
+  const slotTitle = targetMeal ? ` ${targetMeal.slotLabelRo}` : '';
 
   // Find all eligible recipes that are not the current recipe
   const eligible = getEligibleRecipes(preferences);
@@ -100,7 +105,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
             <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>
-            Schimbă masa de {DAY_LABELS[dayOfWeek]}
+            Schimbă{slotTitle ? ` ${slotTitle}` : ''} de {DAY_LABELS[dayOfWeek]}
           </Text>
           <View style={{ width: 60 }} />
         </View>

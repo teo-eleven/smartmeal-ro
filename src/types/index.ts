@@ -88,6 +88,17 @@ export interface Recipe {
   imageUrl?: string;
 }
 
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner';
+
+export interface PlannedMeal {
+  id: string;
+  slot: MealSlot;
+  slotLabelRo: string;
+  recipe: Recipe;
+  servings: number;
+  estimatedCostRon: number;
+}
+
 export interface UserPreferences {
   supermarketId: SupermarketId;
   peopleCount: number;
@@ -97,10 +108,12 @@ export interface UserPreferences {
   dietType: DietType;
   appliances: Appliance[];
   excludePantryStaples: boolean;
+  mealSlots: MealSlot[];
 }
 
 export interface MealPlanDay {
   dayOfWeek: DayOfWeek;
+  meals: PlannedMeal[];
   recipe: Recipe;
   servings: number;
   estimatedCostRon: number;

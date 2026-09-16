@@ -10,6 +10,7 @@ interface BudgetSliderProps {
   supermarketId: SupermarketId;
   onChangeBudget: (newBudget: number) => void;
   isDark: boolean;
+  mealsPerDay?: number;
 }
 
 export const BudgetSlider: React.FC<BudgetSliderProps> = ({
@@ -19,8 +20,9 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
   supermarketId,
   onChangeBudget,
   isDark,
+  mealsPerDay = 1,
 }) => {
-  const minFloor = calculateMinimumViableBudget(peopleCount, daysCount, supermarketId, true);
+  const minFloor = calculateMinimumViableBudget(peopleCount, daysCount, supermarketId, true, mealsPerDay);
   const isBelowFloor = budget < minFloor;
 
   const presets = [

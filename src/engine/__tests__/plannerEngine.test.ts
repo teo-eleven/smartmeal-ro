@@ -17,6 +17,7 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
     supermarketId: 'lidl',
     peopleCount: 2,
     cookingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+    mealSlots: ['dinner'],
     budgetRon: 200,
     moodTags: ['speedy', 'family_fav', 'high_protein'],
     dietType: 'omnivore',
@@ -100,6 +101,60 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
 
       expect(newWednesdayRecipeId).not.toBe(originalWednesdayRecipeId);
       expect(updatedPlan.totalCartCostRon).toBeGreaterThan(0);
+    });
+
+    it('generates multi-meal plans with 2 meals per day (lunch + dinner)', () => {
+      const twoMealsPrefs: UserPreferences = {
+        ...defaultPrefs,
+        mealSlots: ['lunch', 'dinner'],
+        cookingDays: ['monday', 'tuesday'],
+      };
+
+      const plan = generateMealPlan(twoMealsPrefs);
+      expect(plan.days.length).toBe(2);
+      plan.days.forEach((day) => {
+        expect(day.meals.length).toBe(2);
+        expect(day.meals.map((m) => m.slot)).toEqual(['lunch', 'dinner']);
+        expect(day.estimatedCostRon).toBeCloseTo(
+          day.meals.reduce((sum, m) => sum + m.estimatedCostRon, 0),
+          1
+        );
+      });
+    });
+
+    it('generates full 3 meals per day plans (breakfast + lunch + dinner)', () => {
+      const threeMealsPrefs: UserPreferences = {
+        ...defaultPrefs,
+        mealSlots: ['breakfast', 'lunch', 'dinner'],
+        cookingDays: ['monday', 'tuesday', 'wednesday'],
+      };
+
+      const plan = generateMealPlan(threeMealsPrefs);
+      expect(plan.days.length).toBe(3);
+      plan.days.forEach((day) => {
+        expect(day.meals.length).toBe(3);
+        expect(day.meals.map((m) => m.slot)).toEqual(['breakfast', 'lunch', 'dinner']);
+        // Verify breakfast slot gets breakfast-appropriate recipe
+        const breakfastMeal = day.meals.find((m) => m.slot === 'breakfast');
+        expect(breakfastMeal).toBeDefined();
+        expect(breakfastMeal?.recipe).toBeDefined();
+      });
+    });
+
+    it('swaps a specific meal slot within a day', () => {
+      const threeMealsPrefs: UserPreferences = {
+        ...defaultPrefs,
+        mealSlots: ['breakfast', 'lunch', 'dinner'],
+        cookingDays: ['monday'],
+      };
+
+      const initialPlan = generateMealPlan(threeMealsPrefs);
+      const originalBreakfastId = initialPlan.days[0].meals.find((m) => m.slot === 'breakfast')?.recipe.id;
+
+      const swappedPlan = swapMealInPlan(initialPlan, 'monday', threeMealsPrefs, 'breakfast');
+      const newBreakfastId = swappedPlan.days[0].meals.find((m) => m.slot === 'breakfast')?.recipe.id;
+
+      expect(newBreakfastId).not.toBe(originalBreakfastId);
     });
   });
 

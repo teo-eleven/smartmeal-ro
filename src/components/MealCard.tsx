@@ -8,10 +8,12 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { DayOfWeek, MealPlanDay } from '../types';
+import { DayOfWeek, MealPlanDay, PlannedMeal } from '../types';
 
 interface MealCardProps {
   day: MealPlanDay;
+  meal?: PlannedMeal;
+  slotLabel?: string;
   onPressRecipe: () => void;
   onSwapMeal: () => void;
   isDark: boolean;
@@ -39,11 +41,17 @@ const MOOD_LABELS: Record<string, string> = {
 
 export const MealCard: React.FC<MealCardProps> = ({
   day,
+  meal,
+  slotLabel,
   onPressRecipe,
   onSwapMeal,
   isDark,
 }) => {
-  const { recipe } = day;
+  const recipe = meal ? meal.recipe : day.recipe;
+  const costRon = meal ? meal.estimatedCostRon : day.estimatedCostRon;
+  const servings = meal ? meal.servings : day.servings;
+  const effectiveSlotLabel = slotLabel || meal?.slotLabelRo;
+
   const primaryMood = recipe.moodTags[0]
     ? MOOD_LABELS[recipe.moodTags[0]] ?? recipe.moodTags[0]
     : 'Delicios';
@@ -115,12 +123,13 @@ export const MealCard: React.FC<MealCardProps> = ({
           <View style={[styles.floatingBadge, styles.dayBadge, { backgroundColor: theme.glassBg }]}>
             <Text style={[styles.dayBadgeText, { color: theme.primary }]}>
               {DAY_LABELS[day.dayOfWeek].toUpperCase()}
+              {effectiveSlotLabel ? ` • ${effectiveSlotLabel.toUpperCase()}` : ''}
             </Text>
           </View>
 
           {/* Floating Price Badge (Top-Right) */}
           <View style={[styles.floatingBadge, styles.priceBadge, { backgroundColor: theme.glassBg }]}>
-            <Text style={styles.priceBadgeText}>~{day.estimatedCostRon} lei</Text>
+            <Text style={styles.priceBadgeText}>~{costRon} lei</Text>
             <Text style={[styles.priceSubText, { color: theme.textMuted }]}>/ porție</Text>
           </View>
 
@@ -183,7 +192,7 @@ export const MealCard: React.FC<MealCardProps> = ({
           <View style={styles.footerRow}>
             <View style={styles.servingsIndicator}>
               <Text style={[styles.servingsText, { color: theme.textMuted }]}>
-                👥 {day.servings} {day.servings === 1 ? 'porție' : 'porții'}
+                👥 {servings} {servings === 1 ? 'porție' : 'porții'}
               </Text>
             </View>
 

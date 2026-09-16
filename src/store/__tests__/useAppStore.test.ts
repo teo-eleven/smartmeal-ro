@@ -10,10 +10,11 @@ describe('Zustand App Store & Onboarding Flow (Phase 4)', () => {
     it('initializes with default values at step 1', () => {
       const state = useAppStore.getState();
       expect(state.currentStep).toBe(1);
-      expect(state.totalSteps).toBe(7);
+      expect(state.totalSteps).toBe(8);
       expect(state.activeView).toBe('onboarding');
       expect(state.preferences.peopleCount).toBe(2);
       expect(state.preferences.supermarketId).toBe('lidl');
+      expect(state.preferences.mealSlots).toEqual(['dinner']);
       expect(state.currentPlan).toBeNull();
     });
 
@@ -119,6 +120,22 @@ describe('Zustand App Store & Onboarding Flow (Phase 4)', () => {
       store.toggleAppliance('hob');
       expect(useAppStore.getState().preferences.appliances).toEqual(['hob']);
     });
+
+    it('switches meals per day count and updates plan dynamically', () => {
+      const store = useAppStore.getState();
+      store.generatePlan();
+      expect(useAppStore.getState().currentPlan?.days[0].meals.length).toBe(1);
+
+      // Switch to 2 meals per day
+      store.setMealsPerDayCount(2);
+      expect(useAppStore.getState().preferences.mealSlots).toEqual(['lunch', 'dinner']);
+      expect(useAppStore.getState().currentPlan?.days[0].meals.length).toBe(2);
+
+      // Switch to 3 meals per day
+      store.setMealsPerDayCount(3);
+      expect(useAppStore.getState().preferences.mealSlots).toEqual(['breakfast', 'lunch', 'dinner']);
+      expect(useAppStore.getState().currentPlan?.days[0].meals.length).toBe(3);
+    });
   });
 
   // ERROR & RECOVERY CASES
@@ -129,7 +146,7 @@ describe('Zustand App Store & Onboarding Flow (Phase 4)', () => {
       expect(useAppStore.getState().currentStep).toBe(1);
 
       store.goToStep(100);
-      expect(useAppStore.getState().currentStep).toBe(7);
+      expect(useAppStore.getState().currentStep).toBe(8);
     });
 
     it('cleanly resets all state back to step 1 upon resetOnboarding', () => {

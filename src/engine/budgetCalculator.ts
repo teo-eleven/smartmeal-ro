@@ -43,7 +43,8 @@ export function calculateMinimumViableBudget(
   peopleCount: number,
   daysCount: number,
   supermarketId: SupermarketId = 'lidl',
-  excludePantryStaples: boolean = true
+  excludePantryStaples: boolean = true,
+  mealsPerDay: number = 1
 ): number {
   if (peopleCount <= 0) {
     throw new Error(`[BudgetCalculator] Invalid peopleCount: ${peopleCount}. Must be >= 1.`);
@@ -51,6 +52,8 @@ export function calculateMinimumViableBudget(
   if (daysCount <= 0 || daysCount > 7) {
     throw new Error(`[BudgetCalculator] Invalid daysCount: ${daysCount}. Must be between 1 and 7.`);
   }
+
+  const safeMealsPerDay = Math.max(1, Math.min(3, mealsPerDay));
 
   // Calculate costs of all recipes for 1 meal and take the median of the 5 most economical recipes
   const economicalCosts = RECIPES.map((r) =>
@@ -63,8 +66,8 @@ export function calculateMinimumViableBudget(
     economicalCosts.reduce((sum, cost) => sum + cost, 0) / economicalCosts.length;
 
   // Add a 20% packaging buffer to account for whole supermarket packages
-  const baseline = avgEconomicalMealCost * daysCount * 1.2;
+  const baseline = avgEconomicalMealCost * daysCount * safeMealsPerDay * 1.2;
 
   // Round up to nearest 5 RON for clean UI slider display
-  return Math.max(25, Math.ceil(baseline / 5) * 5);
+  return Math.max(25 * safeMealsPerDay, Math.ceil(baseline / 5) * 5);
 }

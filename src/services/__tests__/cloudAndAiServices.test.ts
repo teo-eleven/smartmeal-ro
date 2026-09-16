@@ -17,6 +17,7 @@ describe('Phase 8: Offline Storage, Cloud Sync & AI Proxy Services', () => {
         supermarketId: 'kaufland',
         peopleCount: 4,
         cookingDays: ['tuesday', 'thursday', 'saturday'],
+        mealSlots: ['dinner'],
         budgetRon: 240,
         moodTags: ['high_protein', 'speedy'],
         dietType: 'omnivore',
@@ -38,6 +39,16 @@ describe('Phase 8: Offline Storage, Cloud Sync & AI Proxy Services', () => {
             recipe: RECIPES[0],
             servings: 4,
             estimatedCostRon: 45,
+            meals: [
+              {
+                id: 'tuesday-dinner',
+                slot: 'dinner',
+                slotLabelRo: 'Cină',
+                recipe: RECIPES[0],
+                servings: 4,
+                estimatedCostRon: 45,
+              },
+            ],
           },
         ],
       };

@@ -5,6 +5,7 @@ import {
   DietType,
   GroceryListItem,
   MealPlan,
+  MealSlot,
   MoodTag,
   SupermarketId,
   UserPreferences,
@@ -44,6 +45,8 @@ export interface AppState {
   setDietType: (diet: DietType) => void;
   toggleAppliance: (appliance: Appliance) => void;
   setExcludePantryStaples: (exclude: boolean) => void;
+  setMealSlots: (slots: MealSlot[]) => void;
+  setMealsPerDayCount: (count: 1 | 2 | 3) => void;
 
   // Wizard Navigation
   nextStep: () => void;
@@ -53,8 +56,8 @@ export interface AppState {
 
   // Plan Operations
   generatePlan: () => void;
-  swapMeal: (dayOfWeek: DayOfWeek) => void;
-  replaceMealWithRecipe: (dayOfWeek: DayOfWeek, newRecipe: Recipe) => void;
+  swapMeal: (dayOfWeek: DayOfWeek, slot?: MealSlot) => void;
+  replaceMealWithRecipe: (dayOfWeek: DayOfWeek, newRecipe: Recipe, slot?: MealSlot) => void;
   toggleGroceryItem: (ingredientId: string) => void;
   setActiveView: (view: 'onboarding' | 'generating' | 'meals' | 'grocery') => void;
 
@@ -73,11 +76,12 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   dietType: 'omnivore',
   appliances: ['hob', 'oven', 'air_fryer'],
   excludePantryStaples: true,
+  mealSlots: ['dinner'],
 };
 
 export const useAppStore = create<AppState>((set, get) => ({
   currentStep: 1,
-  totalSteps: 7,
+  totalSteps: 8,
   activeView: 'onboarding',
   isHydrated: false,
   userEmail: null,
@@ -94,7 +98,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       set((state) => ({
         isHydrated: true,
-        preferences: storedPrefs || state.preferences,
+        preferences: storedPrefs
+          ? { ...storedPrefs, mealSlots: storedPrefs.mealSlots || ['dinner'] }
+          : state.preferences,
         currentPlan: plan || state.currentPlan,
         groceryItems: items.length > 0 ? items : state.groceryItems,
         activeView: plan ? 'meals' : state.activeView,
@@ -234,14 +240,71 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
+  setMealSlots: (slots: MealSlot[]) => {
+    const safeSlots: MealSlot[] = slots.length > 0 ? slots : ['dinner'];
+    set((state) => {
+      const nextPrefs = { ...state.preferences, mealSlots: safeSlots };
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
+    });
+  },
+
+  setMealsPerDayCount: (count: 1 | 2 | 3) => {
+    let slots: MealSlot[] = ['dinner'];
+    if (count === 2) {
+      slots = ['lunch', 'dinner'];
+    } else if (count === 3) {
+      slots = ['breakfast', 'lunch', 'dinner'];
+    }
+
+    set((state) => {
+      const nextPrefs = { ...state.preferences, mealSlots: slots };
+      void storageService.savePreferences(nextPrefs);
+
+      if (state.currentPlan) {
+        const plan = generateMealPlan(nextPrefs);
+        const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
+        plan.days.forEach((d) => {
+          d.meals.forEach((m) =>
+            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
+          );
+        });
+        const aggregated = aggregateGroceryList(
+          allMealsToAggregate,
+          nextPrefs.supermarketId,
+          nextPrefs.excludePantryStaples
+        );
+        void storageService.savePlanAndGrocery(plan, aggregated.items);
+        return {
+          preferences: nextPrefs,
+          currentPlan: plan,
+          groceryItems: aggregated.items,
+        };
+      }
+
+      return { preferences: nextPrefs };
+    });
+  },
+
   setExcludePantryStaples: (exclude: boolean) => {
     set((state) => {
       const nextPrefs = { ...state.preferences, excludePantryStaples: exclude };
       void storageService.savePreferences(nextPrefs);
 
       if (state.currentPlan) {
+        const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
+        state.currentPlan.days.forEach((d) => {
+          if (d.meals && d.meals.length > 0) {
+            d.meals.forEach((m) =>
+              allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
+            );
+          } else {
+            allMealsToAggregate.push({ recipe: d.recipe, servings: d.servings });
+          }
+        });
+
         const aggregated = aggregateGroceryList(
-          state.currentPlan.days.map((d) => ({ recipe: d.recipe, servings: d.servings })),
+          allMealsToAggregate,
           nextPrefs.supermarketId,
           exclude
         );
@@ -296,8 +359,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { preferences } = get();
     const plan = generateMealPlan(preferences);
 
+    const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
+    plan.days.forEach((d) => {
+      d.meals.forEach((m) =>
+        allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
+      );
+    });
+
     const aggregated = aggregateGroceryList(
-      plan.days.map((d) => ({ recipe: d.recipe, servings: d.servings })),
+      allMealsToAggregate,
       preferences.supermarketId,
       preferences.excludePantryStaples
     );
@@ -311,13 +381,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     }));
   },
 
-  swapMeal: (dayOfWeek: DayOfWeek) => {
+  swapMeal: (dayOfWeek: DayOfWeek, slot?: MealSlot) => {
     const { currentPlan, preferences } = get();
     if (!currentPlan) return;
 
-    const updatedPlan = swapMealInPlan(currentPlan, dayOfWeek, preferences);
+    const updatedPlan = swapMealInPlan(currentPlan, dayOfWeek, preferences, slot);
+    const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
+    updatedPlan.days.forEach((d) => {
+      d.meals.forEach((m) =>
+        allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
+      );
+    });
+
     const aggregated = aggregateGroceryList(
-      updatedPlan.days.map((d) => ({ recipe: d.recipe, servings: d.servings })),
+      allMealsToAggregate,
       preferences.supermarketId,
       preferences.excludePantryStaples
     );
@@ -330,12 +407,16 @@ export const useAppStore = create<AppState>((set, get) => ({
     }));
   },
 
-  replaceMealWithRecipe: (dayOfWeek: DayOfWeek, newRecipe: Recipe) => {
+  replaceMealWithRecipe: (dayOfWeek: DayOfWeek, newRecipe: Recipe, slot?: MealSlot) => {
     const { currentPlan, preferences } = get();
     if (!currentPlan) return;
 
     const dayIndex = currentPlan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
     if (dayIndex === -1) return;
+
+    const targetDay = currentPlan.days[dayIndex];
+    const targetSlot: MealSlot =
+      slot || (targetDay.meals && targetDay.meals.length > 0 ? targetDay.meals[0].slot : 'dinner');
 
     const newCost = calculateRecipePortionCost(
       newRecipe,
@@ -345,14 +426,40 @@ export const useAppStore = create<AppState>((set, get) => ({
     );
 
     const updatedDays = [...currentPlan.days];
+    const updatedMeals = (targetDay.meals || []).map((m) => {
+      if (m.slot === targetSlot) {
+        return {
+          ...m,
+          recipe: newRecipe,
+          estimatedCostRon: newCost,
+        };
+      }
+      return m;
+    });
+
+    const primaryMeal =
+      updatedMeals.find((m) => m.slot === 'dinner') || updatedMeals[0] || {
+        recipe: newRecipe,
+        estimatedCostRon: newCost,
+      };
+    const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
+
     updatedDays[dayIndex] = {
-      ...updatedDays[dayIndex],
-      recipe: newRecipe,
-      estimatedCostRon: newCost,
+      ...targetDay,
+      meals: updatedMeals,
+      recipe: primaryMeal.recipe,
+      estimatedCostRon: Math.round(dayCostSum * 10) / 10,
     };
 
+    const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
+    updatedDays.forEach((d) => {
+      d.meals.forEach((m) =>
+        allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
+      );
+    });
+
     const aggregated = aggregateGroceryList(
-      updatedDays.map((d) => ({ recipe: d.recipe, servings: d.servings })),
+      allMealsToAggregate,
       preferences.supermarketId,
       preferences.excludePantryStaples
     );
