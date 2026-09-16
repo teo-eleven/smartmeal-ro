@@ -11,6 +11,8 @@ import {
 } from '../types';
 import { generateMealPlan, swapMealInPlan } from '../engine/plannerEngine';
 import { aggregateGroceryList } from '../engine/groceryAggregator';
+import { calculateRecipePortionCost } from '../engine/budgetCalculator';
+import { Recipe } from '../types';
 
 export interface AppState {
   // Navigation & View State
@@ -44,6 +46,7 @@ export interface AppState {
   // Plan Operations
   generatePlan: () => void;
   swapMeal: (dayOfWeek: DayOfWeek) => void;
+  replaceMealWithRecipe: (dayOfWeek: DayOfWeek, newRecipe: Recipe) => void;
   toggleGroceryItem: (ingredientId: string) => void;
   setActiveView: (view: 'onboarding' | 'generating' | 'meals' | 'grocery') => void;
 }
@@ -247,6 +250,44 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     set(() => ({
       currentPlan: updatedPlan,
+      groceryItems: aggregated.items,
+    }));
+  },
+
+  replaceMealWithRecipe: (dayOfWeek: DayOfWeek, newRecipe: Recipe) => {
+    const { currentPlan, preferences } = get();
+    if (!currentPlan) return;
+
+    const dayIndex = currentPlan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
+    if (dayIndex === -1) return;
+
+    const newCost = calculateRecipePortionCost(
+      newRecipe,
+      currentPlan.peopleCount,
+      preferences.supermarketId,
+      preferences.excludePantryStaples
+    );
+
+    const updatedDays = [...currentPlan.days];
+    updatedDays[dayIndex] = {
+      ...updatedDays[dayIndex],
+      recipe: newRecipe,
+      estimatedCostRon: newCost,
+    };
+
+    const aggregated = aggregateGroceryList(
+      updatedDays.map((d) => ({ recipe: d.recipe, servings: d.servings })),
+      preferences.supermarketId,
+      preferences.excludePantryStaples
+    );
+
+    set(() => ({
+      currentPlan: {
+        ...currentPlan,
+        totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+        totalCartCostRon: aggregated.totalCartCostRon,
+        days: updatedDays,
+      },
       groceryItems: aggregated.items,
     }));
   },

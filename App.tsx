@@ -12,17 +12,8 @@ import {
 import { useAppStore } from './src/store/useAppStore';
 import { OnboardingWizard } from './src/screens/onboarding/OnboardingWizard';
 import { GeneratingPlanModal } from './src/screens/onboarding/GeneratingPlanModal';
+import { MealBoardScreen } from './src/screens/MealBoardScreen';
 import { SUPERMARKETS } from './src/data/supermarkets';
-
-const DAY_LABELS: Record<string, string> = {
-  monday: 'Luni',
-  tuesday: 'Marți',
-  wednesday: 'Miercuri',
-  thursday: 'Joi',
-  friday: 'Vineri',
-  saturday: 'Sâmbătă',
-  sunday: 'Duminică',
-};
 
 export default function App() {
   const colorScheme = useColorScheme();
@@ -34,7 +25,6 @@ export default function App() {
     groceryItems,
     setActiveView,
     resetOnboarding,
-    swapMeal,
     toggleGroceryItem,
   } = useAppStore();
 
@@ -133,87 +123,12 @@ export default function App() {
           </TouchableOpacity>
         </View>
 
-        {/* Scrollable Body */}
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {/* Summary Financial Banner */}
-          {currentPlan && (
-            <View style={[styles.budgetSummaryCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <View style={styles.budgetRow}>
-                <View>
-                  <Text style={[styles.budgetLbl, { color: theme.textMuted }]}>Cost estimat coș:</Text>
-                  <Text style={[styles.budgetTotal, { color: theme.text }]}>
-                    {currentPlan.totalCartCostRon} lei
-                  </Text>
-                </View>
-                <View style={styles.budgetTargetBox}>
-                  <Text style={[styles.budgetLbl, { color: theme.textMuted }]}>Buget setat:</Text>
-                  <Text style={[styles.budgetCap, { color: theme.primary }]}>
-                    {currentPlan.totalBudgetRon} lei
-                  </Text>
-                </View>
-              </View>
+        {/* VIEW BODY */}
+        {activeView === 'meals' && <MealBoardScreen isDark={isDark} />}
 
-              <View style={styles.budgetStatusBadge}>
-                <Text style={styles.budgetStatusText}>
-                  ✓ Economie de{' '}
-                  {Math.max(0, Math.round((currentPlan.totalBudgetRon - currentPlan.totalCartCostRon) * 10) / 10)}{' '}
-                  lei față de limita setată
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* MEALS VIEW */}
-          {activeView === 'meals' && currentPlan && (
-            <View style={styles.mealsFeed}>
-              {currentPlan.days.map((day) => (
-                <View
-                  key={day.dayOfWeek}
-                  style={[styles.mealCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                  {/* Day Header */}
-                  <View style={styles.dayCardHeader}>
-                    <View style={styles.dayBadge}>
-                      <Text style={styles.dayBadgeText}>{DAY_LABELS[day.dayOfWeek]}</Text>
-                    </View>
-                    <Text style={[styles.dayCost, { color: theme.primary }]}>
-                      ~{day.estimatedCostRon} lei / porție
-                    </Text>
-                  </View>
-
-                  <Text style={[styles.recipeCardTitle, { color: theme.text }]}>{day.recipe.title}</Text>
-                  <Text style={[styles.recipeCardDesc, { color: theme.textMuted }]}>
-                    {day.recipe.description}
-                  </Text>
-
-                  {/* Nutrition pills */}
-                  <View style={styles.nutritionRow}>
-                    <Text style={[styles.nutritionPill, { color: theme.textMuted }]}>
-                      ⏱️ {day.recipe.cookTimeMinutes} min
-                    </Text>
-                    <Text style={[styles.nutritionPill, { color: theme.textMuted }]}>
-                      🔥 {day.recipe.nutritionPerServing.calories} kcal
-                    </Text>
-                    <Text style={[styles.nutritionPill, { color: theme.textMuted }]}>
-                      💪 {day.recipe.nutritionPerServing.proteinGrams}g proteine
-                    </Text>
-                  </View>
-
-                  {/* Action row */}
-                  <View style={styles.cardActions}>
-                    <TouchableOpacity
-                      onPress={() => swapMeal(day.dayOfWeek)}
-                      style={[styles.swapButton, { borderColor: theme.border }]}
-                    >
-                      <Text style={[styles.swapButtonText, { color: theme.text }]}>🔄 Schimbă rețeta</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* GROCERY CHECKLIST VIEW */}
-          {activeView === 'grocery' && (
+        {/* GROCERY CHECKLIST VIEW */}
+        {activeView === 'grocery' && (
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <View style={styles.groceryFeed}>
               <View style={styles.groceryHeaderRow}>
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Lista pe ambalaje</Text>
@@ -281,8 +196,8 @@ export default function App() {
                 </TouchableOpacity>
               ))}
             </View>
-          )}
-        </ScrollView>
+          </ScrollView>
+        )}
       </View>
     </SafeAreaView>
   );
