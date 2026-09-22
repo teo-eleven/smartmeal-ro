@@ -9,8 +9,12 @@ describe('Application Environment Configuration', () => {
     expect(env.appEnv).toBe('development');
   });
 
+  it('exposes no model provider key to the client bundle', () => {
+    expect(env).not.toHaveProperty('geminiApiKey');
+  });
+
   it('correctly reports AI and cloud sync status when keys are omitted', () => {
-    expect(typeof env.isAiConfigured).toBe('boolean');
+    expect(typeof env.isAiProxyConfigured).toBe('boolean');
     expect(typeof env.isCloudSyncConfigured).toBe('boolean');
   });
 });

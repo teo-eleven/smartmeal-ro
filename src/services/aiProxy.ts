@@ -7,9 +7,42 @@ export interface SmartSwapResult {
   isAiGenerated: boolean;
 }
 
+const PROXY_FUNCTION_PATH = '/functions/v1/proxy-gemini-plan';
+const PROXY_TIMEOUT_MS = 8000;
+
+interface ProxyResponse {
+  selectedRecipeId?: unknown;
+  reasonRo?: unknown;
+}
+
+/**
+ * Picks the deterministic replacement used whenever the model is unavailable, disagrees
+ * with the catalog, or answers with something unusable.
+ */
+function pickDeterministicFallback(
+  candidates: Recipe[],
+  preferences: UserPreferences
+): SmartSwapResult {
+  const moodMatched = candidates.filter((recipe) =>
+    recipe.moodTags.some((tag) => preferences.moodTags.includes(tag))
+  );
+  const chosen = moodMatched[0] || candidates[0];
+
+  return {
+    recipe: chosen,
+    reason: `Compatibilă cu preferințele tale (${chosen.prepTimeMinutes} min).`,
+    isAiGenerated: false,
+  };
+}
+
 export const aiProxyService = {
+  /**
+   * AI runs behind the Supabase edge function, which holds the provider key server-side.
+   * There is deliberately no client-side key path: an EXPO_PUBLIC_ variable is inlined
+   * into the shipped bundle, so anyone could read it out of the app.
+   */
   isAiAvailable(): boolean {
-    return env.isAiConfigured;
+    return env.isAiProxyConfigured;
   },
 
   async suggestSmartSwap(
@@ -28,74 +61,67 @@ export const aiProxyService = {
       };
     }
 
-    // Direct Gemini API call if client-side API key is set in development/staging
-    if (env.geminiApiKey) {
-      try {
-        const candidateSummaries = validCandidates.map((r) => ({
-          id: r.id,
-          title: r.title,
-          prepTimeMinutes: r.prepTimeMinutes,
-          dietType: r.dietType,
-          moodTags: r.moodTags,
-        }));
-
-        const promptText = `
-Ești asistentul culinar inteligent SmartMeal RO.
-Utilizatorul dorește să înlocuiască rețeta "${currentRecipe.title}" (moods: ${currentRecipe.moodTags.join(', ')}).
-${userPrompt ? `Cerință specială utilizator: "${userPrompt}"` : 'Căutăm o alternativă echilibrată și gustoasă.'}
-
-Rețete disponibile pentru înlocuire:
-${JSON.stringify(candidateSummaries, null, 2)}
-
-Alege cel mai potrivit ID de rețetă și explică de ce este o alegere excelentă în limba română (sub 15 cuvinte).
-Răspunde DOAR cu JSON:
-{"selectedId": "id_ales", "reasonRo": "explicatie scurta"}`;
-
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.geminiApiKey}`;
-
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }],
-            generationConfig: {
-              temperature: 0.3,
-              responseMimeType: 'application/json',
-            },
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (rawText) {
-            const parsed = JSON.parse(rawText);
-            const found = validCandidates.find((r) => r.id === parsed.selectedId);
-            if (found) {
-              return {
-                recipe: found,
-                reason: parsed.reasonRo || 'Alternativă inteligentă recomandată de AI.',
-                isAiGenerated: true,
-              };
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('[AIProxy] Gemini call failed, gracefully falling back to deterministic selection:', err);
-      }
+    if (!env.isAiProxyConfigured || !env.supabaseUrl) {
+      return pickDeterministicFallback(validCandidates, preferences);
     }
 
-    // Deterministic offline fallback: Match by user's mood tags and quick prep time
-    const moodMatched = validCandidates.filter((r) =>
-      r.moodTags.some((tag) => preferences.moodTags.includes(tag))
-    );
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
 
-    const chosen = moodMatched.length > 0 ? moodMatched[0] : validCandidates[0];
+      const response = await fetch(`${env.supabaseUrl}${PROXY_FUNCTION_PATH}`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(env.supabaseAnonKey ? { Authorization: `Bearer ${env.supabaseAnonKey}` } : {}),
+        },
+        body: JSON.stringify({
+          action: 'suggest_swap',
+          peopleCount: preferences.peopleCount,
+          budgetRon: preferences.budgetRon,
+          supermarketId: preferences.supermarketId,
+          dietType: preferences.dietType,
+          appliances: preferences.appliances,
+          moodTags: preferences.moodTags,
+          candidateRecipeIds: validCandidates.map((r) => r.id),
+          currentMealId: currentRecipe.id,
+          userPrompt,
+        }),
+      }).finally(() => clearTimeout(timeout));
 
-    return {
-      recipe: chosen,
-      reason: `Compatibilă cu preferințele tale (${chosen.prepTimeMinutes} min).`,
-      isAiGenerated: false,
-    };
+      if (!response.ok) {
+        return pickDeterministicFallback(validCandidates, preferences);
+      }
+
+      const data: unknown = await response.json();
+
+      // Model output is untrusted: the returned id only counts if it is one we offered.
+      if (typeof data !== 'object' || data === null) {
+        return pickDeterministicFallback(validCandidates, preferences);
+      }
+
+      const { selectedRecipeId, reasonRo } = data as ProxyResponse;
+      const matched =
+        typeof selectedRecipeId === 'string'
+          ? validCandidates.find((r) => r.id === selectedRecipeId)
+          : undefined;
+
+      if (!matched) {
+        return pickDeterministicFallback(validCandidates, preferences);
+      }
+
+      return {
+        recipe: matched,
+        reason:
+          typeof reasonRo === 'string' && reasonRo.trim().length > 0
+            ? reasonRo.trim().slice(0, 160)
+            : 'Alternativă inteligentă recomandată de AI.',
+        isAiGenerated: true,
+      };
+    } catch (err) {
+      console.warn('[AIProxy] Proxy call failed, using deterministic selection:', err);
+      return pickDeterministicFallback(validCandidates, preferences);
+    }
   },
 };
