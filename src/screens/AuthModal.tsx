@@ -254,7 +254,12 @@ export function AuthModal({
             )}
 
             {/* Close Button */}
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={userEmail ? 'Închide' : 'Continuă fără cont'}
+              style={styles.closeBtn}
+              onPress={onClose}
+            >
               <Text style={[styles.closeBtnText, { color: theme.textMuted }]}>
                 {userEmail ? 'Închide' : 'Continuă fără cont (Mod Oaspete)'}
               </Text>
