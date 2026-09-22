@@ -9,8 +9,12 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { DayOfWeek, FoodTier, MealPlanDay, MealSlot, PlannedMeal } from '../types';
+import { DayOfWeek, FoodTier, MealPlanDay, MealSlot, PlannedMeal, SupermarketId } from '../types';
 import { LOCAL_RECIPE_IMAGES } from '../../assets/recipes';
+import { recipeVisualAgent } from '../services/recipeVisualAgent';
+
+import { getAppTheme } from '../styles/theme';
+import { glass } from '../styles/glass';
 
 interface MealCardProps {
   day: MealPlanDay;
@@ -19,23 +23,47 @@ interface MealCardProps {
   onPressRecipe: () => void;
   onSwapMeal: () => void;
   onRemoveMeal?: () => void;
+  onChangeServings?: (servings: number) => void;
   isDark: boolean;
 }
 
-function getSlotColor(slot?: MealSlot): string {
+function getSlotColor(slot?: MealSlot, isDark: boolean = true): string {
   switch (slot) {
     case 'breakfast':
       return '#f59e0b';
     case 'lunch':
-      return '#06b6d4';
+      return '#0a84ff';
     case 'dinner':
-      return '#10b981';
+      return isDark ? '#ffffff' : '#000000';
     case 'snack':
-      return '#f97316';
+      return '#ff9f0a';
     case 'dessert':
-      return '#ec4899';
+      return '#ff375f';
     default:
-      return '#10b981';
+      return isDark ? '#ffffff' : '#000000';
+  }
+}
+
+function getStoreBadgeBg(store?: SupermarketId): string {
+  switch (store) {
+    case 'carrefour':
+      return 'rgba(2, 132, 199, 0.9)';
+    case 'kaufland':
+      return 'rgba(220, 38, 38, 0.9)';
+    case 'mega_image':
+      return 'rgba(147, 51, 234, 0.9)';
+    case 'lidl':
+      return 'rgba(217, 119, 6, 0.9)';
+    case 'auchan':
+      return 'rgba(225, 29, 72, 0.9)';
+    case 'penny':
+      return 'rgba(185, 28, 28, 0.9)';
+    case 'profi':
+      return 'rgba(234, 88, 12, 0.9)';
+    case 'sezamo':
+      return 'rgba(21, 128, 61, 0.9)';
+    default:
+      return 'rgba(255, 255, 255, 0.2)';
   }
 }
 
@@ -55,9 +83,9 @@ function getTierLabel(tier?: FoodTier): string {
 function getTierBadgeBg(tier?: FoodTier): string {
   switch (tier) {
     case 'basic':
-      return 'rgba(16, 185, 129, 0.85)';
+      return 'rgba(255, 255, 255, 0.2)';
     case 'medium':
-      return 'rgba(59, 130, 246, 0.85)';
+      return 'rgba(10, 132, 255, 0.85)';
     case 'premium':
       return 'rgba(217, 119, 6, 0.9)';
     default:
@@ -83,6 +111,13 @@ const MOOD_LABELS: Record<string, string> = {
   fakeaway: '🍟 Fakeaway',
   high_protein: '💪 Proteic',
   romanian_classic: '🇷🇴 Tradițional',
+  soups_stews: '🍲 Ciorbe & Supe',
+  pasta_italian: '🍝 Paste Italiene',
+  grill_meat: '🥩 Grătar & Fripturi',
+  spicy_fiesta: '🌶️ Spicy & Aromat',
+  light_dinner: '🌙 Cină Ușoară',
+  fresh_salad: '🥗 Salate Fresh',
+  sweet_treat: '🍰 Deserturi',
 };
 
 export const MealCard: React.FC<MealCardProps> = ({
@@ -92,6 +127,7 @@ export const MealCard: React.FC<MealCardProps> = ({
   onPressRecipe,
   onSwapMeal,
   onRemoveMeal,
+  onChangeServings,
   isDark,
 }) => {
   const recipe = meal ? meal.recipe : day.recipe;
@@ -123,39 +159,35 @@ export const MealCard: React.FC<MealCardProps> = ({
     }).start();
   };
 
-  const theme = {
-    card: isDark ? '#131d31' : '#ffffff',
-    text: isDark ? '#f8fafc' : '#0f172a',
-    textMuted: isDark ? '#94a3b8' : '#64748b',
-    border: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-    primary: '#10b981',
-    primaryLight: isDark ? 'rgba(16, 185, 129, 0.18)' : '#ecfdf5',
-    glassBg: isDark ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.85)',
-    accentBg: isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc',
-    shadowColor: isDark ? '#000000' : '#0f172a',
-  };
+  const theme = getAppTheme(isDark);
 
   const totalCookingTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
+  const visual = recipeVisualAgent.resolveRecipeVisual(recipe);
   const localAsset = LOCAL_RECIPE_IMAGES[recipe.id];
   const imageSource: ImageSourcePropType = localAsset
     ? localAsset
-    : recipe.imageUrl
-    ? { uri: recipe.imageUrl }
-    : { uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80' };
+    : { uri: visual.uri };
+
+  const isDessert = meal?.slot === 'dessert';
 
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%' }}>
+    <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%', flex: 1, height: '100%' }}>
       <TouchableOpacity
+        accessibilityRole="button"
         activeOpacity={0.92}
         onPress={onPressRecipe}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        {...glass('card')}
         style={[
           styles.card,
           {
             backgroundColor: theme.card,
-            borderColor: theme.border,
-            shadowColor: theme.shadowColor,
+            borderColor: isDessert ? (isDark ? 'rgba(236, 72, 153, 0.45)' : '#fbcfe8') : theme.border,
+            shadowColor: '#000000',
+            flex: 1,
+            height: '100%',
+            marginBottom: 0,
           },
         ]}
       >
@@ -165,34 +197,38 @@ export const MealCard: React.FC<MealCardProps> = ({
 
           {/* Smooth Bottom Gradient for Contrast */}
           <LinearGradient
-            colors={['transparent', isDark ? 'rgba(19, 29, 49, 0.95)' : 'rgba(0, 0, 0, 0.6)']}
+            colors={['transparent', isDark ? 'rgba(0, 0, 0, 0.88)' : 'rgba(0, 0, 0, 0.6)']}
             style={styles.gradientOverlay}
           />
 
           {/* Floating Day Badge (Top-Left) */}
-          <View style={[styles.floatingBadge, styles.dayBadge, { backgroundColor: theme.glassBg }]}>
-            <Text style={[styles.dayBadgeText, { color: getSlotColor(meal?.slot) }]}>
-              {DAY_LABELS[day.dayOfWeek].toUpperCase()}
-              {effectiveSlotLabel ? ` • ${effectiveSlotLabel.toUpperCase()}` : ''}
+          <View style={[styles.floatingBadge, styles.dayBadge, { backgroundColor: isDark ? 'rgba(28, 28, 30, 0.90)' : 'rgba(255, 255, 255, 0.92)' }]}>
+            <Text style={[styles.dayBadgeText, { color: getSlotColor(meal?.slot, isDark) }]}>
+              {isDessert
+                ? '🍰 DESERT DE CASĂ'
+                : `${DAY_LABELS[day.dayOfWeek].toUpperCase()}${effectiveSlotLabel ? ` • ${effectiveSlotLabel.toUpperCase()}` : ''}`}
             </Text>
           </View>
 
           {/* Floating Price Badge (Top-Right) */}
-          <View style={[styles.floatingBadge, styles.priceBadge, { backgroundColor: theme.glassBg }]}>
-            <Text style={styles.priceBadgeText}>~{costRon} lei</Text>
+          <View style={[styles.floatingBadge, styles.priceBadge, { backgroundColor: isDark ? 'rgba(28, 28, 30, 0.90)' : 'rgba(255, 255, 255, 0.92)' }]}>
+            <Text style={[styles.priceBadgeText, { color: theme.primary }]}>~{costRon} lei</Text>
             <Text style={[styles.priceSubText, { color: theme.textMuted }]}>/ porție</Text>
           </View>
 
           {/* Bottom Info Floating on Image */}
           <View style={styles.imageBottomRow}>
+            <View style={[styles.pillBadge, { backgroundColor: 'rgba(255, 255, 255, 0.16)', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
+              <Text style={styles.pillText}>{visual.sourceLabel}</Text>
+            </View>
             {recipe.tier && (
               <View style={[styles.pillBadge, { backgroundColor: getTierBadgeBg(recipe.tier) }]}>
                 <Text style={styles.pillText}>{getTierLabel(recipe.tier)}</Text>
               </View>
             )}
-            {Boolean(localAsset) && (
-              <View style={[styles.pillBadge, { backgroundColor: 'rgba(99, 102, 241, 0.85)' }]}>
-                <Text style={styles.pillText}>✨ AI Studio</Text>
+            {recipe.storeBadgeLabel && (
+              <View style={[styles.pillBadge, { backgroundColor: getStoreBadgeBg(recipe.storeSignature) }]}>
+                <Text style={styles.pillText}>{recipe.storeBadgeLabel}</Text>
               </View>
             )}
             <View style={[styles.pillBadge, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
@@ -249,28 +285,71 @@ export const MealCard: React.FC<MealCardProps> = ({
           </View>
 
           {/* Footer Action Bar */}
-          <View style={styles.footerRow}>
-            <View style={styles.servingsIndicator}>
-              <Text style={[styles.servingsText, { color: theme.textMuted }]}>
-                👥 {servings} {servings === 1 ? 'porție' : 'porții'}
-              </Text>
-            </View>
+          <View style={styles.footerContainer}>
+            {/* Servings Meta Row & Optional Remove Button */}
+            <View style={styles.footerMetaRow}>
+              {onChangeServings ? (
+                <View style={[styles.servingsStepper, { borderColor: theme.border }]}>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Scade o porție"
+                    onPress={() => onChangeServings(servings - 1)}
+                    disabled={servings <= 1}
+                    style={styles.servingsStepBtn}
+                    activeOpacity={0.6}
+                  >
+                    <Text style={[styles.servingsStepText, { color: servings <= 1 ? theme.border : theme.text }]}>
+                      −
+                    </Text>
+                  </TouchableOpacity>
 
-            <View style={styles.actionButtons}>
+                  <Text
+                    accessibilityLabel={`${servings} ${servings === 1 ? 'porție' : 'porții'}`}
+                    style={[styles.servingsText, { color: theme.textMuted }]}
+                  >
+                    👥 {servings}
+                  </Text>
+
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Adaugă o porție"
+                    onPress={() => onChangeServings(servings + 1)}
+                    disabled={servings >= 12}
+                    style={styles.servingsStepBtn}
+                    activeOpacity={0.6}
+                  >
+                    <Text style={[styles.servingsStepText, { color: servings >= 12 ? theme.border : theme.text }]}>
+                      +
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.servingsIndicator}>
+                  <Text style={[styles.servingsText, { color: theme.textMuted }]}>
+                    👥 {servings} {servings === 1 ? 'porție' : 'porții'}
+                  </Text>
+                </View>
+              )}
+
               {onRemoveMeal && (
                 <TouchableOpacity
+                  accessibilityRole="button"
                   onPress={onRemoveMeal}
                   style={[
                     styles.removeBtn,
-                    { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2' },
+                    { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.18)' : '#fee2e2' },
                   ]}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.removeBtnText, { color: '#ef4444' }]}>✕</Text>
+                  <Text style={[styles.removeBtnText, { color: '#ef4444' }]}>✕ Șterge desert</Text>
                 </TouchableOpacity>
               )}
+            </View>
 
+            {/* Main Action Buttons: Perfectly sized, zero cutoff */}
+            <View style={styles.actionButtonsRow}>
               <TouchableOpacity
+                accessibilityRole="button"
                 onPress={onSwapMeal}
                 style={[styles.swapBtn, { backgroundColor: theme.accentBg, borderColor: theme.border }]}
                 activeOpacity={0.7}
@@ -279,11 +358,12 @@ export const MealCard: React.FC<MealCardProps> = ({
               </TouchableOpacity>
 
               <TouchableOpacity
+                accessibilityRole="button"
                 onPress={onPressRecipe}
                 style={[styles.viewBtn, { backgroundColor: theme.primary }]}
                 activeOpacity={0.7}
               >
-                <Text style={styles.viewBtnText}>Vezi Rețeta →</Text>
+                <Text style={[styles.viewBtnText, { color: theme.primaryText }]}>Vezi Rețeta →</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -344,7 +424,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   priceBadgeText: {
-    color: '#10b981',
     fontSize: 14,
     fontWeight: '900',
   },
@@ -373,7 +452,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   contentBody: {
-    padding: 18,
+    padding: 16,
+    flex: 1,
+    justifyContent: 'space-between',
   },
   title: {
     fontSize: 18,
@@ -414,10 +495,32 @@ const styles = StyleSheet.create({
     height: 18,
     backgroundColor: 'rgba(148, 163, 184, 0.2)',
   },
-  footerRow: {
+  footerContainer: {
+    gap: 8,
+    marginTop: 8,
+  },
+  footerMetaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: 24,
+  },
+  servingsStepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 4,
+  },
+  servingsStepBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  servingsStepText: {
+    fontSize: 16,
+    fontWeight: '800',
+    lineHeight: 20,
   },
   servingsIndicator: {
     flexDirection: 'row',
@@ -427,36 +530,43 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  actionButtons: {
+  actionButtonsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    width: '100%',
   },
   swapBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    flex: 1,
+    paddingVertical: 9,
+    paddingHorizontal: 8,
     borderRadius: 12,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   swapBtnText: {
     fontSize: 12,
     fontWeight: '700',
   },
   removeBtn: {
-    paddingHorizontal: 9,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   removeBtnText: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '800',
   },
   viewBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    flex: 1.3,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
     borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   viewBtnText: {
     color: '#ffffff',
