@@ -2,7 +2,35 @@ import { RECIPES, RECIPES_MAP } from '../recipes';
 import { INGREDIENTS, INGREDIENTS_LIST } from '../ingredients';
 import { SUPERMARKETS, SUPERMARKET_LIST } from '../supermarkets';
 import { isPantryStaple, PANTRY_STAPLE_IDS } from '../pantryStaples';
-import { SupermarketId } from '../../types';
+import { Appliance, MoodTag, SupermarketId } from '../../types';
+
+/**
+ * Exhaustive by construction: adding a MoodTag without listing it here stops this file
+ * compiling, so the catalog check can never silently fall behind the type again.
+ */
+const VALID_MOOD_TAGS: Record<MoodTag, true> = {
+  speedy: true,
+  low_calorie: true,
+  family_fav: true,
+  healthy_comfort: true,
+  fakeaway: true,
+  high_protein: true,
+  romanian_classic: true,
+  soups_stews: true,
+  pasta_italian: true,
+  grill_meat: true,
+  spicy_fiesta: true,
+  light_dinner: true,
+  fresh_salad: true,
+  sweet_treat: true,
+};
+
+const VALID_APPLIANCES: Record<Appliance, true> = {
+  hob: true,
+  oven: true,
+  air_fryer: true,
+  microwave: true,
+};
 
 describe('Data Catalog Integrity Tests (Phase 2)', () => {
   // HAPPY PATHS
@@ -12,9 +40,18 @@ describe('Data Catalog Integrity Tests (Phase 2)', () => {
       expect(Object.keys(RECIPES_MAP).length).toBe(RECIPES.length);
     });
 
-    it('contains exactly 4 major Romanian supermarkets', () => {
-      const validSupermarketIds: SupermarketId[] = ['lidl', 'kaufland', 'carrefour', 'mega_image'];
-      expect(SUPERMARKET_LIST.length).toBe(4);
+    it('contains exactly 8 major Romanian supermarkets', () => {
+      const validSupermarketIds: SupermarketId[] = [
+        'lidl',
+        'kaufland',
+        'carrefour',
+        'mega_image',
+        'auchan',
+        'penny',
+        'profi',
+        'sezamo',
+      ];
+      expect(SUPERMARKET_LIST.length).toBe(8);
       validSupermarketIds.forEach((id) => {
         expect(SUPERMARKETS[id]).toBeDefined();
         expect(SUPERMARKETS[id].name.length).toBeGreaterThan(0);
@@ -22,7 +59,7 @@ describe('Data Catalog Integrity Tests (Phase 2)', () => {
       });
     });
 
-    it('all ingredients have positive standard pack sizes and realistic prices across all 4 supermarkets', () => {
+    it('all ingredients have positive standard pack sizes and realistic prices across all 8 supermarkets', () => {
       expect(INGREDIENTS_LIST.length).toBeGreaterThanOrEqual(40);
       INGREDIENTS_LIST.forEach((ing) => {
         expect(ing.id).toBeTruthy();
@@ -30,8 +67,17 @@ describe('Data Catalog Integrity Tests (Phase 2)', () => {
         expect(ing.standardPackSize).toBeGreaterThan(0);
         expect(['g', 'ml', 'buc', 'legatura']).toContain(ing.unit);
 
-        // Price checks across all 4 supermarkets
-        const markets: SupermarketId[] = ['lidl', 'kaufland', 'carrefour', 'mega_image'];
+        // Price checks across all 8 supermarkets
+        const markets: SupermarketId[] = [
+          'lidl',
+          'kaufland',
+          'carrefour',
+          'mega_image',
+          'auchan',
+          'penny',
+          'profi',
+          'sezamo',
+        ];
         markets.forEach((m) => {
           expect(ing.typicalPriceRon[m]).toBeDefined();
           expect(ing.typicalPriceRon[m]).toBeGreaterThan(0);
@@ -48,7 +94,12 @@ describe('Data Catalog Integrity Tests (Phase 2)', () => {
         expect(recipe.prepTimeMinutes).toBeGreaterThanOrEqual(0);
         expect(recipe.cookTimeMinutes).toBeGreaterThanOrEqual(0);
         expect(recipe.nutritionPerServing.calories).toBeGreaterThan(200);
-        expect(recipe.nutritionPerServing.proteinGrams).toBeGreaterThan(5);
+        // Desserts and snacks are legitimately low in protein (baked apples with walnuts
+        // are about 3g); only main meals are expected to be substantial.
+        const isMainMeal = (recipe.suitableSlots ?? []).some((slot) =>
+          ['breakfast', 'lunch', 'dinner'].includes(slot)
+        );
+        expect(recipe.nutritionPerServing.proteinGrams).toBeGreaterThan(isMainMeal ? 5 : 0);
         expect(recipe.nutritionPerServing.carbsGrams).toBeGreaterThanOrEqual(0);
         expect(recipe.nutritionPerServing.fatGrams).toBeGreaterThan(0);
 
@@ -76,26 +127,20 @@ describe('Data Catalog Integrity Tests (Phase 2)', () => {
     });
 
     it('every recipe has at least one valid appliance and at least one valid mood tag', () => {
-      const validAppliances = ['hob', 'oven', 'air_fryer', 'microwave'];
-      const validMoods = [
-        'speedy',
-        'low_calorie',
-        'family_fav',
-        'healthy_comfort',
-        'fakeaway',
-        'high_protein',
-        'romanian_classic',
-      ];
-
       RECIPES.forEach((recipe) => {
-        expect(recipe.appliances.length).toBeGreaterThanOrEqual(1);
+        // An empty list means "needs no appliance at all" (avocado toast, overnight oats).
+        // Declaring a hob for a dish that is never cooked would hide it from users whose
+        // kitchen lacks one, which is exactly the constraint bug this catalog must avoid.
+        if (recipe.cookTimeMinutes > 0) {
+          expect(recipe.appliances.length).toBeGreaterThanOrEqual(1);
+        }
         recipe.appliances.forEach((app) => {
-          expect(validAppliances).toContain(app);
+          expect(VALID_APPLIANCES[app]).toBe(true);
         });
 
         expect(recipe.moodTags.length).toBeGreaterThanOrEqual(1);
         recipe.moodTags.forEach((mood) => {
-          expect(validMoods).toContain(mood);
+          expect(VALID_MOOD_TAGS[mood]).toBe(true);
         });
       });
     });
