@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { getAppTheme } from '../../styles/theme';
 
 interface GeneratingPlanModalProps {
   onComplete: () => void;
@@ -29,13 +30,14 @@ export const GeneratingPlanModal: React.FC<GeneratingPlanModalProps> = ({
     };
   }, [onComplete]);
 
+  const appTheme = getAppTheme(isDark);
   const theme = {
-    background: isDark ? '#0f172a' : '#ffffff',
-    text: isDark ? '#f8fafc' : '#0f172a',
-    textMuted: isDark ? '#94a3b8' : '#64748b',
-    primary: '#10b981',
-    card: isDark ? '#1e293b' : '#f8fafc',
-    border: isDark ? '#334155' : '#e2e8f0',
+    background: appTheme.background,
+    text: appTheme.text,
+    textMuted: appTheme.textMuted,
+    primary: appTheme.primary,
+    card: appTheme.card,
+    border: appTheme.border,
   };
 
   return (
@@ -44,7 +46,7 @@ export const GeneratingPlanModal: React.FC<GeneratingPlanModalProps> = ({
         {/* Animated Food Circle */}
         <View style={styles.iconCircle}>
           <Text style={styles.circleEmoji}>🥑 🍗 🍅</Text>
-          <Text style={styles.centerLogo}>SmartMeal</Text>
+          <Text style={[styles.centerLogo, { color: theme.primary }]}>SmartMeal</Text>
           <Text style={styles.circleEmoji}>🍋 🥦 🧄</Text>
         </View>
 
@@ -121,7 +123,7 @@ const styles = StyleSheet.create({
   centerLogo: {
     fontSize: 28,
     fontWeight: '900',
-    color: '#10b981',
+    color: '#ffffff',
     letterSpacing: -0.5,
   },
   title: {

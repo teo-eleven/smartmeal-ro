@@ -1,5 +1,6 @@
 import { AisleCategory, GroceryListItem, Recipe, SupermarketId } from '../types';
 import { INGREDIENTS } from '../data/ingredients';
+import { RETAIL_PRODUCTS_MAP } from '../data/retailProducts';
 
 export interface AggregatedGroceryResult {
   items: GroceryListItem[];
@@ -12,7 +13,9 @@ export interface AggregatedGroceryResult {
 export function aggregateGroceryList(
   meals: { recipe: Recipe; servings: number }[],
   supermarketId: SupermarketId,
-  excludePantryStaples: boolean = false
+  excludePantryStaples: boolean = false,
+  extraProductIds: string[] = [],
+  pantryInventory: string[] = []
 ): AggregatedGroceryResult {
   const ingredientMap: Record<
     string,
@@ -62,6 +65,9 @@ export function aggregateGroceryList(
     'canned_sauces',
     'bakery',
     'frozen',
+    'snacks',
+    'beverages',
+    'alcohol',
   ];
 
   const itemsByCategory: Record<AisleCategory, GroceryListItem[]> = {
@@ -72,6 +78,9 @@ export function aggregateGroceryList(
     canned_sauces: [],
     bakery: [],
     frozen: [],
+    snacks: [],
+    beverages: [],
+    alcohol: [],
   };
 
   for (const [ingredientId, { neededAmount, isStaple }] of Object.entries(ingredientMap)) {
@@ -80,10 +89,11 @@ export function aggregateGroceryList(
 
     const packSize = dbIngredient.standardPackSize;
     const packPrice = dbIngredient.typicalPriceRon[supermarketId] ?? 0;
+    const isFromPantry = pantryInventory.includes(ingredientId);
 
     // Minimum whole packs to purchase at the supermarket
-    const packsToBuy = Math.ceil(neededAmount / packSize);
-    const itemCost = Math.round(packsToBuy * packPrice * 100) / 100;
+    const packsToBuy = isFromPantry ? 0 : Math.ceil(neededAmount / packSize);
+    const itemCost = isFromPantry ? 0 : Math.round(packsToBuy * packPrice * 100) / 100;
 
     totalCartCostRon += itemCost;
 
@@ -97,12 +107,49 @@ export function aggregateGroceryList(
       packsToBuy,
       packSize,
       estimatedPriceRon: itemCost,
-      isPurchased: false,
+      isPurchased: isFromPantry,
+      isFromPantry,
     };
 
     items.push(item);
     if (itemsByCategory[item.category]) {
       itemsByCategory[item.category].push(item);
+    }
+  }
+
+  // 3. Add extra retail products (snacks, sweets, soft & alcoholic drinks)
+  if (extraProductIds && extraProductIds.length > 0) {
+    for (const prodId of extraProductIds) {
+      const product = RETAIL_PRODUCTS_MAP[prodId];
+      if (!product) continue;
+
+      const prodPrice = product.typicalPriceRon[supermarketId] ?? 0;
+      totalCartCostRon += prodPrice;
+
+      let cat: AisleCategory = 'snacks';
+      if (product.category === 'drink_soft') {
+        cat = 'beverages';
+      } else if (product.category === 'drink_alcoholic') {
+        cat = 'alcohol';
+      }
+
+      const retailItem: GroceryListItem = {
+        ingredientId: product.id,
+        name: `${product.icon} ${product.name} (${product.brand}, ${product.packageSize})`,
+        category: cat,
+        isPantryStaple: false,
+        neededAmount: 1,
+        unit: 'buc',
+        packsToBuy: 1,
+        packSize: 1,
+        estimatedPriceRon: prodPrice,
+        isPurchased: false,
+      };
+
+      items.push(retailItem);
+      if (itemsByCategory[cat]) {
+        itemsByCategory[cat].push(retailItem);
+      }
     }
   }
 

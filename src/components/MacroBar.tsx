@@ -11,10 +11,11 @@ export const MacroBar: React.FC<MacroBarProps> = ({ nutrition, isDark }) => {
   const theme = {
     cardBg: isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc',
     border: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-    label: isDark ? '#94a3b8' : '#64748b',
-    text: isDark ? '#f8fafc' : '#0f172a',
-    calories: '#10b981',
-    caloriesBg: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5',
+    label: isDark ? '#8e8e93' : '#64748b',
+    text: isDark ? '#ffffff' : '#000000',
+    calories: isDark ? '#ffffff' : '#000000',
+    caloriesBg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
+    caloriesBorder: isDark ? 'rgba(255, 255, 255, 0.16)' : '#e5e5ea',
     protein: '#38bdf8',
     carbs: '#fbbf24',
     fat: '#f87171',
@@ -28,7 +29,7 @@ export const MacroBar: React.FC<MacroBarProps> = ({ nutrition, isDark }) => {
           styles.macroCard,
           {
             backgroundColor: theme.caloriesBg,
-            borderColor: isDark ? 'rgba(16, 185, 129, 0.3)' : '#a7f3d0',
+            borderColor: theme.caloriesBorder,
           },
         ]}
       >
