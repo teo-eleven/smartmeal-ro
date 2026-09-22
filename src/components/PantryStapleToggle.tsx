@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getAppTheme } from '../styles/theme';
 
 interface PantryStapleToggleProps {
   excludeStaples: boolean;
@@ -12,17 +13,21 @@ export const PantryStapleToggle: React.FC<PantryStapleToggleProps> = ({
   onToggle,
   isDark,
 }) => {
+  const appTheme = getAppTheme(isDark);
   const theme = {
-    card: isDark ? '#1e293b' : '#ffffff',
-    text: isDark ? '#f8fafc' : '#0f172a',
-    textMuted: isDark ? '#94a3b8' : '#64748b',
-    border: isDark ? '#334155' : '#e2e8f0',
-    primary: '#10b981',
-    activeBg: isDark ? 'rgba(16, 185, 129, 0.12)' : '#ecfdf5',
+    card: appTheme.card,
+    text: appTheme.text,
+    textMuted: appTheme.textMuted,
+    border: appTheme.border,
+    primary: appTheme.primary,
+    activeBg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
   };
 
   return (
     <TouchableOpacity
+      accessibilityRole="switch"
+      accessibilityState={{ checked: excludeStaples }}
+      accessibilityLabel="Exclude ingredientele de bază din cămară"
       activeOpacity={0.8}
       onPress={() => onToggle(!excludeStaples)}
       style={[
@@ -51,7 +56,7 @@ export const PantryStapleToggle: React.FC<PantryStapleToggleProps> = ({
         style={[
           styles.switchTrack,
           {
-            backgroundColor: excludeStaples ? theme.primary : theme.border,
+            backgroundColor: excludeStaples ? theme.primary : (isDark ? '#3a3a3c' : '#e5e5ea'),
           },
         ]}
       >
@@ -59,6 +64,7 @@ export const PantryStapleToggle: React.FC<PantryStapleToggleProps> = ({
           style={[
             styles.switchThumb,
             excludeStaples ? styles.switchThumbActive : styles.switchThumbInactive,
+            { backgroundColor: excludeStaples ? (isDark ? '#000000' : '#ffffff') : '#ffffff' },
           ]}
         />
       </View>
@@ -69,7 +75,6 @@ export const PantryStapleToggle: React.FC<PantryStapleToggleProps> = ({
 const styles = StyleSheet.create({
   card: {
     width: '100%',
-    maxWidth: 480,
     borderRadius: 16,
     borderWidth: 1.5,
     padding: 14,

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { cloudSyncService } from '../services/supabase';
+import { getAppTheme } from '../styles/theme';
 
 interface AuthModalProps {
   visible: boolean;
@@ -39,14 +40,16 @@ export function AuthModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  const appTheme = getAppTheme(isDark);
   const theme = {
-    card: isDark ? '#1e293b' : '#ffffff',
-    text: isDark ? '#f8fafc' : '#0f172a',
-    textMuted: isDark ? '#94a3b8' : '#64748b',
-    border: isDark ? '#334155' : '#e2e8f0',
-    primary: '#10b981',
-    inputBg: isDark ? '#0f172a' : '#f8fafc',
-    overlayBg: 'rgba(0,0,0,0.6)',
+    card: appTheme.card,
+    text: appTheme.text,
+    textMuted: appTheme.textMuted,
+    border: appTheme.border,
+    primary: appTheme.primary,
+    primaryText: appTheme.primaryText,
+    inputBg: isDark ? '#1c1c1e' : '#f2f2f7',
+    overlayBg: isDark ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.45)',
   };
 
   const handleAuth = async () => {
@@ -140,19 +143,21 @@ export function AuthModal({
 
                 {onSyncTriggered && (
                   <TouchableOpacity
+                    accessibilityRole="button"
                     style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
                     onPress={onSyncTriggered}
                     disabled={isSyncing}
                   >
                     {isSyncing ? (
-                      <ActivityIndicator color="#ffffff" size="small" />
+                      <ActivityIndicator color={theme.primaryText} size="small" />
                     ) : (
-                      <Text style={styles.primaryBtnText}>Sincronizează acum</Text>
+                      <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>Sincronizează acum</Text>
                     )}
                   </TouchableOpacity>
                 )}
 
                 <TouchableOpacity
+                  accessibilityRole="button"
                   style={[styles.secondaryBtn, { borderColor: theme.border }]}
                   onPress={handleSignOut}
                   disabled={loading}
@@ -165,7 +170,11 @@ export function AuthModal({
               <View style={styles.formSection}>
                 <View style={styles.tabSwitch}>
                   <TouchableOpacity
-                    style={[styles.tabItem, mode === 'signin' && styles.tabItemActive]}
+                    accessibilityRole="button"
+                    style={[
+                      styles.tabItem,
+                      mode === 'signin' && [styles.tabItemActive, { borderBottomColor: theme.primary }],
+                    ]}
                     onPress={() => setMode('signin')}
                   >
                     <Text
@@ -178,7 +187,11 @@ export function AuthModal({
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.tabItem, mode === 'signup' && styles.tabItemActive]}
+                    accessibilityRole="button"
+                    style={[
+                      styles.tabItem,
+                      mode === 'signup' && [styles.tabItemActive, { borderBottomColor: theme.primary }],
+                    ]}
                     onPress={() => setMode('signup')}
                   >
                     <Text
@@ -224,14 +237,15 @@ export function AuthModal({
                 </View>
 
                 <TouchableOpacity
+                  accessibilityRole="button"
                   style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
                   onPress={handleAuth}
                   disabled={loading}
                 >
                   {loading ? (
-                    <ActivityIndicator color="#ffffff" size="small" />
+                    <ActivityIndicator color={theme.primaryText} size="small" />
                   ) : (
-                    <Text style={styles.primaryBtnText}>
+                    <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>
                       {mode === 'signin' ? 'Conectare' : 'Înregistrare'}
                     </Text>
                   )}
@@ -297,13 +311,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   successBox: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    backgroundColor: 'rgba(48, 209, 88, 0.15)',
     padding: 10,
     borderRadius: 8,
     marginBottom: 14,
   },
   successText: {
-    color: '#10b981',
+    color: '#30d158',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -346,7 +360,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabItemActive: {
-    borderBottomColor: '#10b981',
+    borderBottomColor: '#ffffff',
   },
   tabText: {
     fontSize: 14,

@@ -3,6 +3,8 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AisleCategory, GroceryListItem } from '../types';
 import { GroceryItemRow } from './GroceryItemRow';
 
+import { getAppTheme } from '../styles/theme';
+
 interface GroceryAisleSectionProps {
   category: AisleCategory;
   items: GroceryListItem[];
@@ -10,17 +12,20 @@ interface GroceryAisleSectionProps {
   isDark: boolean;
 }
 
-const AISLE_METADATA: Record<
+export const AISLE_METADATA: Record<
   AisleCategory,
   { name: string; icon: string; color: string }
 > = {
-  produce: { name: 'Legume & Fructe Proaspete', icon: '🥦', color: '#10b981' },
-  meat_fish: { name: 'Carne & Pește', icon: '🥩', color: '#ef4444' },
-  dairy: { name: 'Lactate & Ouă', icon: '🧀', color: '#f59e0b' },
-  pantry: { name: 'Cămară & Condimente', icon: '🌾', color: '#8b5cf6' },
-  canned_sauces: { name: 'Conserve & Sosuri', icon: '🥫', color: '#ec4899' },
+  produce: { name: 'Legume & Fructe Proaspete', icon: '🥦', color: '#30d158' },
+  meat_fish: { name: 'Carne & Pește', icon: '🥩', color: '#ff453a' },
+  dairy: { name: 'Lactate & Ouă', icon: '🧀', color: '#ff9f0a' },
+  pantry: { name: 'Cămară & Condimente', icon: '🌾', color: '#bf5af2' },
+  canned_sauces: { name: 'Conserve & Sosuri', icon: '🥫', color: '#ff375f' },
   bakery: { name: 'Panificație & Pâine', icon: '🥖', color: '#d97706' },
-  frozen: { name: 'Produse Congelate', icon: '❄️', color: '#06b6d4' },
+  frozen: { name: 'Produse Congelate', icon: '❄️', color: '#64d2ff' },
+  snacks: { name: 'Ronțăieli & Dulciuri de Magazin', icon: '🍿', color: '#ff9f0a' },
+  beverages: { name: 'Băuturi Răcoritoare & Apă', icon: '🥤', color: '#0a84ff' },
+  alcohol: { name: 'Băuturi Alcoolice (18+)', icon: '🍺', color: '#af52de' },
 };
 
 export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
@@ -36,23 +41,25 @@ export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
   const meta = AISLE_METADATA[category] ?? {
     name: 'Alte produse',
     icon: '🛒',
-    color: '#64748b',
+    color: '#8e8e93',
   };
 
   const purchasedCount = items.filter((i) => i.isPurchased).length;
   const isAllPurchased = purchasedCount === items.length;
 
+  const appTheme = getAppTheme(isDark);
   const theme = {
-    text: isDark ? '#f8fafc' : '#0f172a',
-    textMuted: isDark ? '#94a3b8' : '#64748b',
-    border: isDark ? '#334155' : '#e2e8f0',
-    headerBg: isDark ? '#1e293b' : '#f8fafc',
+    text: appTheme.text,
+    textMuted: appTheme.textMuted,
+    border: appTheme.border,
+    headerBg: appTheme.card,
   };
 
   return (
     <View style={styles.sectionContainer}>
       {/* Aisle Header */}
       <TouchableOpacity
+        accessibilityRole="button"
         activeOpacity={0.7}
         onPress={() => setCollapsed(!collapsed)}
         style={[styles.header, { backgroundColor: theme.headerBg, borderColor: theme.border }]}
@@ -66,7 +73,7 @@ export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
           <Text
             style={[
               styles.countBadge,
-              { color: isAllPurchased ? '#10b981' : theme.textMuted },
+              { color: isAllPurchased ? (isDark ? '#ffffff' : '#000000') : theme.textMuted },
             ]}
           >
             {purchasedCount}/{items.length} {isAllPurchased ? '✓' : ''}
@@ -97,7 +104,6 @@ export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
 const styles = StyleSheet.create({
   sectionContainer: {
     width: '100%',
-    maxWidth: 480,
     marginBottom: 16,
   },
   header: {

@@ -1,7 +1,8 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { calculateMinimumViableBudget } from '../engine/budgetCalculator';
 import { FoodTier, SupermarketId } from '../types';
+import { getAppTheme } from '../styles/theme';
 
 interface BudgetSliderProps {
   budget: number;
@@ -27,105 +28,150 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
   const minFloor = calculateMinimumViableBudget(peopleCount, daysCount, supermarketId, true, mealsPerDay, foodTier);
   const isBelowFloor = budget < minFloor;
 
-  const presets = [
-    Math.max(50, minFloor - 20),
-    minFloor,
-    minFloor + 30,
-    minFloor + 60,
-    minFloor + 100,
-  ];
+  const [customText, setCustomText] = useState(String(budget));
+
+  useEffect(() => {
+    setCustomText(String(budget));
+  }, [budget]);
+
+  const handleCustomChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, '');
+    setCustomText(cleaned);
+    const num = parseInt(cleaned, 10);
+    if (!isNaN(num) && num > 0) {
+      onChangeBudget(num);
+    }
+  };
+
+  const handleBlur = () => {
+    const num = parseInt(customText, 10);
+    if (isNaN(num) || num < 20) {
+      const fallback = Math.max(30, minFloor);
+      setCustomText(String(fallback));
+      onChangeBudget(fallback);
+    } else {
+      const clamped = Math.min(2500, num);
+      setCustomText(String(clamped));
+      onChangeBudget(clamped);
+    }
+  };
 
   const adjustBudget = (delta: number) => {
-    const next = Math.max(30, Math.min(600, budget + delta));
+    const next = Math.max(30, Math.min(2500, budget + delta));
     onChangeBudget(next);
   };
 
+  const appTheme = getAppTheme(isDark);
   const theme = {
-    text: isDark ? '#f8fafc' : '#0f172a',
-    textMuted: isDark ? '#94a3b8' : '#64748b',
-    primary: '#10b981',
-    primaryBg: isDark ? 'rgba(16, 185, 129, 0.15)' : '#d1fae5',
-    cardBg: isDark ? '#1e293b' : '#f8fafc',
-    border: isDark ? '#334155' : '#e2e8f0',
+    text: appTheme.text,
+    textMuted: appTheme.textMuted,
+    primary: appTheme.primary,
+    primaryText: appTheme.primaryText,
+    primaryLight: appTheme.primaryLight,
+    surfaceSecondary: appTheme.surfaceSecondary,
+    cardBg: appTheme.card,
+    border: appTheme.border,
     warningBg: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7',
     warningText: isDark ? '#fbbf24' : '#b45309',
   };
 
   return (
     <View style={styles.container}>
-      {/* Big Budget Counter */}
-      <View style={styles.counterRow}>
+      {/* Tight Integrated Stepper & Center Edit Row */}
+      <View style={styles.tightStepperRow}>
         <TouchableOpacity
+          accessibilityRole="button"
           onPress={() => adjustBudget(-10)}
-          style={[styles.stepBtn, { backgroundColor: theme.cardBg, borderColor: theme.border }]}
+          style={[styles.tightStepBtn, { backgroundColor: theme.cardBg, borderColor: theme.border }]}
           activeOpacity={0.7}
         >
-          <Text style={[styles.stepBtnText, { color: theme.text }]}>−</Text>
+          <Text style={[styles.tightStepBtnText, { color: theme.text }]}>−</Text>
         </TouchableOpacity>
 
-        <View style={styles.valueDisplay}>
-          <Text style={[styles.currencySymbol, { color: theme.primary }]}>RON</Text>
-          <Text style={[styles.budgetValue, { color: theme.text }]}>{budget}</Text>
-          <Text style={[styles.periodLabel, { color: theme.textMuted }]}>săptămâna aceasta</Text>
+        <View style={[styles.tightCenterInputBox, { backgroundColor: theme.cardBg, borderColor: theme.border }]}>
+          <TextInput
+            value={customText}
+            onChangeText={handleCustomChange}
+            onBlur={handleBlur}
+            keyboardType="numeric"
+            style={[styles.tightInputField, { color: theme.text }]}
+            selectTextOnFocus
+            maxLength={5}
+          />
+          <Text style={[styles.tightCurrencyLabel, { color: theme.primary }]}>LEI</Text>
         </View>
 
         <TouchableOpacity
+          accessibilityRole="button"
           onPress={() => adjustBudget(10)}
-          style={[styles.stepBtn, { backgroundColor: theme.cardBg, borderColor: theme.border }]}
+          style={[styles.tightStepBtn, { backgroundColor: theme.cardBg, borderColor: theme.border }]}
           activeOpacity={0.7}
         >
-          <Text style={[styles.stepBtnText, { color: theme.text }]}>+</Text>
+          <Text style={[styles.tightStepBtnText, { color: theme.text }]}>+</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Dynamic Recommendation Banner */}
-      <View
+      <Text style={[styles.hintText, { color: theme.textMuted }]}>
+        Apasă pe sumă pentru editare directă sau pe + / − pentru ajustare rapidă (±10 lei)
+      </Text>
+
+      {/* Single Suggested Budget Card based on prior selections */}
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={`Folosește bugetul sugerat de ${minFloor} lei`}
+        onPress={() => onChangeBudget(minFloor)}
+        activeOpacity={0.8}
         style={[
-          styles.floorBadge,
+          styles.suggestedCard,
           {
-            backgroundColor: isBelowFloor ? theme.warningBg : theme.primaryBg,
-            borderColor: isBelowFloor ? theme.warningText : theme.primary,
+            backgroundColor: budget === minFloor ? theme.primaryLight : theme.cardBg,
+            borderColor: budget === minFloor ? theme.primary : (isBelowFloor ? theme.warningText : theme.border),
           },
         ]}
       >
-        <Text
+        <View style={styles.suggestedLeft}>
+          <Text style={styles.suggestedIcon}>💡</Text>
+          <View style={styles.suggestedInfo}>
+            <Text style={[styles.suggestedTitle, { color: theme.text }]}>
+              Buget sugerat:{' '}
+              <Text style={{ fontWeight: '900', color: theme.text }}>
+                {minFloor} LEI
+              </Text>
+            </Text>
+            <Text style={[styles.suggestedSubtitle, { color: theme.textMuted }]}>
+              Calculat pentru {peopleCount} {peopleCount === 1 ? 'persoană' : 'persoane'}, {daysCount} {daysCount === 1 ? 'zi' : 'zile'}, {mealsPerDay} {mealsPerDay === 1 ? 'masă' : 'mese'}/zi.
+            </Text>
+          </View>
+        </View>
+
+        <View
           style={[
-            styles.floorText,
-            { color: isBelowFloor ? theme.warningText : '#065f46' },
+            styles.suggestedActionBtn,
+            {
+              backgroundColor: budget === minFloor ? (isDark ? '#ffffff' : '#000000') : theme.surfaceSecondary,
+              borderColor: theme.border,
+            },
           ]}
         >
-          {isBelowFloor
-            ? `⚠️ Sub pragul recomandat de ~${minFloor} lei. Vom alege ingrediente de bază super-economice.`
-            : `✓ Buget optim pentru ${peopleCount} ${peopleCount === 1 ? 'persoană' : 'persoane'}, ${daysCount} ${daysCount === 1 ? 'zi' : 'zile'}.`}
-        </Text>
-      </View>
-
-      {/* Quick Presets */}
-      <Text style={[styles.presetsTitle, { color: theme.textMuted }]}>Alegere rapidă:</Text>
-      <View style={styles.presetsRow}>
-        {presets.map((val) => (
-          <TouchableOpacity
-            key={val}
-            onPress={() => onChangeBudget(val)}
+          <Text
             style={[
-              styles.presetBtn,
-              {
-                backgroundColor: budget === val ? theme.primary : theme.cardBg,
-                borderColor: budget === val ? theme.primary : theme.border,
-              },
+              styles.suggestedActionText,
+              { color: budget === minFloor ? (isDark ? '#000000' : '#ffffff') : theme.text },
             ]}
           >
-            <Text
-              style={[
-                styles.presetBtnText,
-                { color: budget === val ? '#ffffff' : theme.text },
-              ]}
-            >
-              {val} lei
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            {budget === minFloor ? '✓ Aplicat' : 'Aplică'}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* Warning indicator if below minimum floor */}
+      {isBelowFloor && (
+        <View style={[styles.floorWarningBadge, { backgroundColor: theme.warningBg, borderColor: theme.warningText }]}>
+          <Text style={[styles.floorWarningText, { color: theme.warningText }]}>
+            ⚠️ Bugetul tău ({budget} lei) este sub pragul minim estimat de ~{minFloor} lei. Vom include rețete ultra-economice din ingrediente de bază.
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -133,79 +179,113 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
-  counterRow: {
+  tightStepperRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: 10,
+    marginBottom: 10,
   },
-  stepBtn: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+  tightStepBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepBtnText: {
-    fontSize: 26,
+  tightStepBtnText: {
+    fontSize: 28,
     fontWeight: '700',
-    lineHeight: 28,
+    lineHeight: 30,
   },
-  valueDisplay: {
-    alignItems: 'center',
-  },
-  currencySymbol: {
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginBottom: -4,
-  },
-  budgetValue: {
-    fontSize: 48,
-    fontWeight: '900',
-    letterSpacing: -1,
-  },
-  periodLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginTop: -2,
-  },
-  floorBadge: {
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    marginBottom: 20,
-  },
-  floorText: {
-    fontSize: 12,
-    fontWeight: '600',
-    lineHeight: 18,
-    textAlign: 'center',
-  },
-  presetsTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  presetsRow: {
+  tightCenterInputBox: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    height: 56,
+    minWidth: 160,
+    maxWidth: 220,
+    borderRadius: 16,
+    borderWidth: 1.5,
     gap: 8,
   },
-  presetBtn: {
+  tightInputField: {
+    fontSize: 30,
+    fontWeight: '900',
+    textAlign: 'center',
+    paddingVertical: 0,
+    marginVertical: 0,
+    minWidth: 70,
+  },
+  tightCurrencyLabel: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  hintText: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  suggestedCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    marginBottom: 14,
+    gap: 12,
+  },
+  suggestedLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  suggestedIcon: {
+    fontSize: 24,
+  },
+  suggestedInfo: {
+    flex: 1,
+  },
+  suggestedTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  suggestedSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  suggestedActionBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
   },
-  presetBtnText: {
+  suggestedActionText: {
     fontSize: 13,
     fontWeight: '700',
+  },
+  floorWarningBadge: {
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  floorWarningText: {
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 18,
+    textAlign: 'center',
   },
 });
