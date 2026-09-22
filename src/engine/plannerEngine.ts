@@ -521,18 +521,26 @@ export function generateMealPlan(
       }
     }
 
-    // STRICT REPETITION RULE: Max 2 repetitions per week!
-    // Priority:
-    // 1. Matching tier recipes that have been used < 2 times
-    // 2. Any tier recipe for this slot that has been used < 2 times
-    // 3. Matching tier recipes with lowest usage
-    // 4. Any candidate for this slot
+    // Repetition rules, strongest first:
+    // 1. Never repeat a dish while an unused one is still available for this slot. Tier is a
+    //    preference; eating the same thing twice when the catalog has more to offer is not
+    //    something a user asked for, so freshness outranks it here.
+    // 2. Otherwise prefer the matching tier, then anything, capped at MAX_RECIPE_REPEATS.
+    const unused = candidates.filter((c) => !recipeUsageCount.has(c.recipe.id));
     const tierMatches = candidates.filter((s) => s.recipe.tier === effectiveTier);
-    const tierUnderLimit = tierMatches.filter((c) => (recipeUsageCount.get(c.recipe.id) || 0) < 2);
-    const anyUnderLimit = candidates.filter((c) => (recipeUsageCount.get(c.recipe.id) || 0) < 2);
+    const tierUnderLimit = tierMatches.filter(
+      (c) => (recipeUsageCount.get(c.recipe.id) || 0) < MAX_RECIPE_REPEATS
+    );
+    const anyUnderLimit = candidates.filter(
+      (c) => (recipeUsageCount.get(c.recipe.id) || 0) < MAX_RECIPE_REPEATS
+    );
 
     let candidatePool: typeof candidates;
-    if (tierUnderLimit.length > 0) {
+    if (unused.length > 0) {
+      // Within the untouched dishes the tier preference still applies, when it can.
+      const unusedMatchingTier = unused.filter((c) => c.recipe.tier === effectiveTier);
+      candidatePool = unusedMatchingTier.length > 0 ? unusedMatchingTier : unused;
+    } else if (tierUnderLimit.length > 0) {
       candidatePool = tierUnderLimit;
     } else if (anyUnderLimit.length > 0) {
       candidatePool = anyUnderLimit;
