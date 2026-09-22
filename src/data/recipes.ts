@@ -363,7 +363,7 @@ const BASE_RECIPES: Recipe[] = [
     prepTimeMinutes: 10,
     cookTimeMinutes: 0,
     dietType: 'vegetarian',
-    appliances: ['hob'], // no appliance strictly required, hob used as neutral
+    appliances: [], // no appliance strictly required, hob used as neutral
     moodTags: ['speedy', 'low_calorie', 'healthy_comfort'],
     nutritionPerServing: {
       calories: 340,
@@ -780,7 +780,7 @@ const BASE_RECIPES: Recipe[] = [
     prepTimeMinutes: 8,
     cookTimeMinutes: 0,
     dietType: 'pescatarian',
-    appliances: ['hob'],
+    appliances: [],
     moodTags: ['speedy', 'low_calorie', 'high_protein'],
     nutritionPerServing: {
       calories: 450,
@@ -1238,7 +1238,7 @@ const NEW_RECIPES: Recipe[] = [
     prepTimeMinutes: 3,
     cookTimeMinutes: 0,
     dietType: 'vegetarian',
-    appliances: ['hob'],
+    appliances: [],
     moodTags: ['speedy', 'healthy_comfort', 'high_protein'],
     nutritionPerServing: {
       calories: 310,
@@ -1331,7 +1331,7 @@ const NEW_RECIPES: Recipe[] = [
     prepTimeMinutes: 5,
     cookTimeMinutes: 0,
     dietType: 'vegan',
-    appliances: ['hob'],
+    appliances: [],
     moodTags: ['speedy', 'healthy_comfort', 'low_calorie'],
     nutritionPerServing: {
       calories: 280,
@@ -1425,7 +1425,7 @@ const NEW_RECIPES: Recipe[] = [
     prepTimeMinutes: 8,
     cookTimeMinutes: 0,
     dietType: 'vegan',
-    appliances: ['hob'],
+    appliances: [],
     moodTags: ['speedy', 'healthy_comfort', 'fakeaway'],
     nutritionPerServing: {
       calories: 340,
@@ -1457,7 +1457,7 @@ const NEW_RECIPES: Recipe[] = [
     prepTimeMinutes: 10,
     cookTimeMinutes: 0,
     dietType: 'vegan',
-    appliances: ['hob'],
+    appliances: [],
     moodTags: ['speedy', 'healthy_comfort', 'low_calorie'],
     nutritionPerServing: {
       calories: 290,
