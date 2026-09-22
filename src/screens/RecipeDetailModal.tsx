@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Image,
-  ImageSourcePropType,
   Modal,
   SafeAreaView,
   ScrollView,
@@ -18,7 +16,7 @@ import { MacroBar } from '../components/MacroBar';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAppStore } from '../store/useAppStore';
 import { LOCAL_RECIPE_IMAGES } from '../../assets/recipes';
-import { recipeVisualAgent } from '../services/recipeVisualAgent';
+import { RecipeVisual } from '../components/RecipeVisual';
 
 import { getAppTheme } from '../styles/theme';
 import { getRecipeAllergens } from '../utils/allergenFilter';
@@ -144,11 +142,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   };
 
   const totalTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
-  const visual = recipeVisualAgent.resolveRecipeVisual(recipe);
-  const localAsset = LOCAL_RECIPE_IMAGES[recipe.id];
-  const imageSource: ImageSourcePropType = localAsset
-    ? localAsset
-    : { uri: visual.uri };
+  const hasPhoto = Boolean(LOCAL_RECIPE_IMAGES[recipe.id]);
 
   const toggleStep = (stepNumber: number) => {
     setCompletedSteps((prev) => ({
@@ -228,7 +222,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               
               {/* Hero Image Card */}
               <View style={[styles.heroCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                <Image source={imageSource} style={styles.heroImage} resizeMode="cover" />
+                <RecipeVisual recipe={recipe} isDark={isDark} style={styles.heroImage} />
                 <LinearGradient
                   colors={['transparent', isDark ? 'rgba(11, 17, 32, 0.95)' : 'rgba(0, 0, 0, 0.65)']}
                   style={styles.heroGradient}
@@ -253,9 +247,11 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       <Text style={styles.heroPillText}>{recipe.storeBadgeLabel}</Text>
                     </View>
                   )}
-                  <View style={[styles.heroPill, { backgroundColor: 'rgba(255, 255, 255, 0.18)', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
-                    <Text style={styles.heroPillText}>{visual.sourceLabel}</Text>
-                  </View>
+                  {hasPhoto && (
+                    <View style={[styles.heroPill, { backgroundColor: 'rgba(255, 255, 255, 0.18)', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
+                      <Text style={styles.heroPillText}>📸 Foto rețetă</Text>
+                    </View>
+                  )}
                 </View>
               </View>
 
@@ -263,32 +259,6 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               <View style={[styles.detailsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <Text style={[styles.title, { color: theme.text }]}>{recipe.title}</Text>
                 <Text style={[styles.description, { color: theme.textMuted }]}>{recipe.description}</Text>
-
-                {/* AI Visual Agent Card */}
-                <View style={[styles.aiVisualCard, { backgroundColor: theme.primaryLight, borderColor: theme.border }]}>
-                  <View style={styles.aiVisualHeader}>
-                    <View style={[styles.aiIconBadge, { backgroundColor: theme.primaryLight }]}>
-                      <Text style={{ fontSize: 13 }}>✨</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.aiVisualTitle, { color: theme.text }]}>
-                        AI Visual Studio • Generat din Ingrediente
-                      </Text>
-                      <Text style={[styles.aiVisualSubtitle, { color: theme.primary }]}>
-                        Fotografie unică adaptivă sincronizată cu ingredientele rețetei
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.aiVisualPrompt, { color: theme.textMuted }]}>
-                    „{visual.prompt}”
-                  </Text>
-                  <View style={styles.aiIngredientsRow}>
-                    <Text style={[styles.aiIngredientsLabel, { color: theme.primary }]}>Ingrediente vizualizate:</Text>
-                    <Text style={[styles.aiIngredientsList, { color: theme.text }]}>
-                      {visual.keyIngredients.join(' • ')}
-                    </Text>
-                  </View>
-                </View>
 
                 {/* Price transparent indicator */}
                 <View style={[styles.priceBox, { backgroundColor: theme.primaryLight, borderColor: theme.primary }]}>

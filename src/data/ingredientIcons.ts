@@ -1,0 +1,128 @@
+/**
+ * A pictogram per ingredient, used to build a recipe's visual when no photograph of the
+ * actual dish exists. Derived from the recipe's own ingredients, so it can never show
+ * something the dish does not contain.
+ */
+export const INGREDIENT_ICONS: Record<string, string> = {
+  // Produce
+  ceapa_galbena: '🧅',
+  ceapa_rosie: '🧅',
+  usturoi: '🧄',
+  cartofi_albi: '🥔',
+  morcovi: '🥕',
+  mere_romanesti: '🍎',
+  ardei_gras_rosu: '🫑',
+  rosii_proaspete: '🍅',
+  rosii_cherry: '🍅',
+  castraveti: '🥒',
+  dovlecei: '🥒',
+  patrunjel_verde: '🌿',
+  marar_verde: '🌿',
+  lamaie: '🍋',
+  ciuperci_champignon: '🍄',
+  ciuperci_hribi: '🍄',
+  spanac_baby: '🥬',
+  salata_verde: '🥬',
+  varza_alba: '🥬',
+  avocado: '🥑',
+  banane: '🍌',
+
+  // Meat & fish
+  piept_pui_file: '🍗',
+  pulpe_pui_dezosate: '🍗',
+  carne_tocata_amestec: '🥩',
+  muschiulet_porc: '🥩',
+  antricot_vita_angus: '🥩',
+  file_somon_proaspat: '🐟',
+  somon_afumat: '🐟',
+  ton_conserva: '🐟',
+  dorada_proaspata: '🐟',
+  creveti_decorticati: '🦐',
+  sunca_praga: '🥓',
+  bacon_afumat: '🥓',
+  carnaciori_oltenesti: '🌭',
+
+  // Dairy & eggs
+  oua_m: '🥚',
+  branza_vaci_proaspata: '🧀',
+  telemea_vaca: '🧀',
+  mozzarella_rasa: '🧀',
+  cascaval_clasic: '🧀',
+  parmezan_ras: '🧀',
+  crema_branza: '🧀',
+  branza_feta: '🧀',
+  smantana_20: '🥛',
+  smantana_gatit: '🥛',
+  iaurt_grecesc: '🥛',
+  iaurt_grecesc_10: '🥛',
+  lapte_3_5: '🥛',
+  lapte_vegetal_ovaz: '🥛',
+  lapte_cocos: '🥥',
+  unt_82: '🧈',
+
+  // Pantry
+  orez_basmati: '🍚',
+  orez_bob_rotund: '🍚',
+  orez_arborio: '🍚',
+  paste_penne: '🍝',
+  paste_spaghete: '🍝',
+  malai_superior: '🌽',
+  porumb_dulce: '🌽',
+  porumb_popcorn: '🍿',
+  faina_alba: '🌾',
+  faina_grau: '🌾',
+  pesmet_auriu: '🌾',
+  fulgi_ovaz: '🌾',
+  seminte_chia: '🌾',
+  nuci_miez: '🌰',
+  unt_arahide: '🥜',
+  miere_poliflora: '🍯',
+  zahar_tos: '🍬',
+  ciocolata_menaj: '🍫',
+  cacao_pudra: '🍫',
+  biscuiti_populari: '🍪',
+  gem_fructe: '🍓',
+  fructe_padure_congelate: '🫐',
+  scortisoara_macinata: '🌰',
+  naut_conserva: '🫘',
+  fasole_rosie_conserva: '🫘',
+  fasole_boabe_conserva: '🫘',
+  mazare_congelata: '🫛',
+  tortilla_chips_nachos: '🌮',
+  lipii_tortilla: '🫓',
+  chifle_burger: '🍔',
+  paine_toast: '🍞',
+  bors_proaspat: '🍲',
+
+  // Sauces & seasoning
+  rosii_pasate: '🥫',
+  rosii_cuburi: '🥫',
+  pasta_tomate: '🥫',
+  sos_soia: '🍶',
+  mustar_clasic: '🌭',
+  ulei_masline: '🫒',
+  ulei_floarea_soarelui: '🌻',
+  boia_dulce: '🌶️',
+  oregano_uscat: '🌿',
+  busuioc_uscat: '🌿',
+  piper_negru: '🧂',
+  sare_fina: '🧂',
+};
+
+/** Ingredients too generic to say anything about a dish, so never shown as its icons. */
+export const BACKGROUND_INGREDIENT_IDS = new Set<string>([
+  'sare_fina',
+  'piper_negru',
+  'ulei_floarea_soarelui',
+  'ulei_masline',
+  'faina_alba',
+  'faina_grau',
+  'zahar_tos',
+  'oregano_uscat',
+  'busuioc_uscat',
+  'boia_dulce',
+]);
+
+export function getIngredientIcon(ingredientId: string): string {
+  return INGREDIENT_ICONS[ingredientId] ?? '🍽️';
+}

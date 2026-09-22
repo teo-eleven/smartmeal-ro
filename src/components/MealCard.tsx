@@ -1,8 +1,6 @@
 import React, { useRef } from 'react';
 import {
   Animated,
-  Image,
-  ImageSourcePropType,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,7 +9,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { DayOfWeek, FoodTier, MealPlanDay, MealSlot, PlannedMeal, SupermarketId } from '../types';
 import { LOCAL_RECIPE_IMAGES } from '../../assets/recipes';
-import { recipeVisualAgent } from '../services/recipeVisualAgent';
+import { RecipeVisual } from './RecipeVisual';
 
 import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
@@ -162,11 +160,7 @@ export const MealCard: React.FC<MealCardProps> = ({
   const theme = getAppTheme(isDark);
 
   const totalCookingTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
-  const visual = recipeVisualAgent.resolveRecipeVisual(recipe);
-  const localAsset = LOCAL_RECIPE_IMAGES[recipe.id];
-  const imageSource: ImageSourcePropType = localAsset
-    ? localAsset
-    : { uri: visual.uri };
+  const hasPhoto = Boolean(LOCAL_RECIPE_IMAGES[recipe.id]);
 
   const isDessert = meal?.slot === 'dessert';
 
@@ -193,7 +187,7 @@ export const MealCard: React.FC<MealCardProps> = ({
       >
         {/* Visual Hero Image Container */}
         <View style={styles.imageContainer}>
-          <Image source={imageSource} style={styles.image} resizeMode="cover" />
+          <RecipeVisual recipe={recipe} isDark={isDark} style={styles.image} />
 
           {/* Smooth Bottom Gradient for Contrast */}
           <LinearGradient
@@ -218,9 +212,11 @@ export const MealCard: React.FC<MealCardProps> = ({
 
           {/* Bottom Info Floating on Image */}
           <View style={styles.imageBottomRow}>
-            <View style={[styles.pillBadge, { backgroundColor: 'rgba(255, 255, 255, 0.16)', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
-              <Text style={styles.pillText}>{visual.sourceLabel}</Text>
-            </View>
+            {hasPhoto && (
+              <View style={[styles.pillBadge, { backgroundColor: 'rgba(255, 255, 255, 0.16)', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
+                <Text style={styles.pillText}>📸 Foto rețetă</Text>
+              </View>
+            )}
             {recipe.tier && (
               <View style={[styles.pillBadge, { backgroundColor: getTierBadgeBg(recipe.tier) }]}>
                 <Text style={styles.pillText}>{getTierLabel(recipe.tier)}</Text>

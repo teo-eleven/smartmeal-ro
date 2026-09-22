@@ -103,6 +103,10 @@ export interface Recipe {
   nutritionPerServing: RecipeNutrition;
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
+  /**
+   * Only ever a photograph of THIS dish. Left unset for recipes without one: the card then
+   * renders from the recipe's own ingredients rather than a stock photo of something else.
+   */
   imageUrl?: string;
   suitableSlots?: MealSlot[];
   tier?: FoodTier;

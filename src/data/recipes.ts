@@ -4,7 +4,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'pui_airfryer_cartofi',
     title: 'Pui crocant la Air Fryer cu cartofi wedges',
-    imageUrl: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80',
     description: 'Bucăți fragede de piept de pui marinate cu boia și usturoi, alături de cartofi wedges rumeniți fără exces de ulei.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 20,
@@ -36,7 +35,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'mamaliga_branza_smantana',
     title: 'Mămăliguță caldă cu telemea și smântână',
-    imageUrl: 'https://images.unsplash.com/photo-1541832676-9b763b0239ab?auto=format&fit=crop&w=800&q=80',
     description: 'Clasicul confort românesc: mămăligă aburindă servită cu telemea sfărâmată, smântână grasă și unt topit.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 15,
@@ -66,7 +64,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'paste_carbonara_rapide',
     title: 'Spaghete cremoase rapide cu ou și parmezan',
-    imageUrl: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?auto=format&fit=crop&w=800&q=80',
     description: 'Paste italienești preparate în mai puțin de 20 de minute, legate fin cu ou proaspăt și parmezan aromat.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 15,
@@ -97,7 +94,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'somon_la_tigaie_orez',
     title: 'File de somon la tigaie cu orez basmati și lămâie',
-    imageUrl: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80',
     description: 'Somon cu crustă aurie și interior fraged, acompaniat de orez basmati aromat și zeamă proaspătă de lămâie.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 18,
@@ -129,7 +125,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'quesadilla_pui_cascaval',
     title: 'Quesadilla crocantă cu pui și cașcaval topit',
-    imageUrl: 'https://images.unsplash.com/photo-1599974579688-8dbdd335c77f?auto=format&fit=crop&w=800&q=80',
     description: 'Lipii tortilla umplute cu fâșii suculente de pui la tigaie, ardei gras roșu și un strat generos de mozzarella topită.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 10,
@@ -161,7 +156,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'tocanita_ciuperci_mamaliga',
     title: 'Tocăniță de ciuperci cu sos de roșii și mămăligă',
-    imageUrl: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80',
     description: 'Mâncare de post tradițională din ciuperci champignon călite cu ceapă, usturoi, passata dulce și mărar verde.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 20,
@@ -194,7 +188,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'paste_bolognese_clasice',
     title: 'Penne Bolognese cu carne tocată și sos aromat',
-    imageUrl: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281699?auto=format&fit=crop&w=800&q=80',
     description: 'Sos bogat de carne tocată rumenită cu ceapă, morcov, pastă de tomate și busuioc/oregano peste penne al dente.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 25,
@@ -227,7 +220,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'snitele_pui_cuptor',
     title: 'Șnițele fragede de pui la cuptor cu salată de varză',
-    imageUrl: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=800&q=80',
     description: 'Piept de pui în crustă aurie de pesmet copt la cuptor, fără prăjeală grea, servit cu salată crocantă de varză albă.',
     prepTimeMinutes: 15,
     cookTimeMinutes: 20,
@@ -259,7 +251,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'shakshuka_oua_rosii',
     title: 'Shakshuka aromată cu roșii, ardei și telemea',
-    imageUrl: 'https://images.unsplash.com/photo-1590412200988-a436970781fa?auto=format&fit=crop&w=800&q=80',
     description: 'Ouă gătite direct într-un sos dens de roșii cuburi, ardei kapia și ceapă călită, presărate cu telemea sfărâmată.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 15,
@@ -292,7 +283,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'orez_pui_legume_wok',
     title: 'Orez prăjit la tigaie cu pui și legume proaspete',
-    imageUrl: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80',
     description: 'Stil wok rapid acasă: orez basmati sărat cu cubulețe de pui, mazăre, morcovi și sos aromat de soia.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 15,
@@ -324,7 +314,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'chiftelute_marinate_sos',
     title: 'Chifteluțe marinate în sos de roșii cu piure de cartofi',
-    imageUrl: 'https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&w=800&q=80',
     description: 'Chifteluțe rumenite din carne tocată cu mărar și usturoi, scăzute în sos bogat de roșii cu garnitură de piure cremos.',
     prepTimeMinutes: 15,
     cookTimeMinutes: 25,
@@ -358,7 +347,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'salata_greceasca_telemea',
     title: 'Salată grecească răcoroasă cu telemea de vacă',
-    imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80',
     description: 'Salată proaspătă și rapidă cu roșii dulci, castraveți crocanți, ardei gras, oregano și cuburi de telemea românească.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 0,
@@ -391,7 +379,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'muschiulet_porc_cuptor',
     title: 'Mușchiuleț de porc fraged la cuptor cu cartofi rumeni',
-    imageUrl: 'https://images.unsplash.com/photo-1432139555190-58524dae6a55?auto=format&fit=crop&w=800&q=80',
     description: 'Carne fragedă de porc rumenită la cuptor cu usturoi și boia, însoțită de cartofi rumeniți cu crustă crocantă.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 30,
@@ -422,7 +409,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'paste_ton_rosii',
     title: 'Penne rapide cu ton și sos aromat de roșii',
-    imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=800&q=80',
     description: 'Cină gata în 15 minute: paste penne cu bucăți de ton fraged, sos de roșii cuburi, usturoi și pătrunjel proaspăt.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 12,
@@ -454,7 +440,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'burger_pui_crocant',
     title: 'Burger de pui crocant la Air Fryer cu salată',
-    imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80',
     description: 'Chifla pufoasă rumenită, piept de pui crocant gătit fără ulei greu, salată verde și sos cremos de iaurt cu muștar.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 12,
@@ -487,7 +472,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'ciorba_radauteana_rapida',
     title: 'Ciorbă rădăuțeană rapidă de pui cu smântână și mujdei',
-    imageUrl: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80',
     description: 'Gust autentic românesc pregătit rapid: fâșii de pui în supă bogată de legume, legată cu gălbenuș, smântână și oțet/lămâie.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 25,
@@ -521,7 +505,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'dovlecei_pane_cuptor',
     title: 'Dovlecei aromați la cuptor cu sos de usturoi și iaurt',
-    imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80',
     description: 'Rondele de dovlecei trecute prin pesmet auriu și coapte rumen la cuptor, acompaniate de sos proaspăt de iaurt.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 20,
@@ -554,7 +537,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'aripioare_pui_airfryer',
     title: 'Pulpe de pui rumenite la Air Fryer cu cartofi aromați',
-    imageUrl: 'https://images.unsplash.com/photo-1527477378731-01f114a8726b?auto=format&fit=crop&w=800&q=80',
     description: 'Pulpe dezosate crocante la exterior și suculente la interior, pregătite rapid cu mirodenii tradiționale.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 20,
@@ -585,7 +567,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'curry_pui_lapte_cocos',
     title: 'Curry cremos de pui cu lapte de cocos și orez',
-    imageUrl: 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?auto=format&fit=crop&w=800&q=80',
     description: 'Bucățele de pui fierte molcom într-un sos mătăsos de lapte de cocos, legume și orez basmati la abur.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 18,
@@ -617,7 +598,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'omleta_taraneasca_telemea',
     title: 'Omletă țărănească bogată cu telemea și ardei',
-    imageUrl: 'https://images.unsplash.com/photo-1510693206972-df098062cb71?auto=format&fit=crop&w=800&q=80',
     description: 'Omletă pufoasă pregătită rapid cu ouă proaspete, cubulețe de telemea, ceapă călită și ardei kapia.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 8,
@@ -649,7 +629,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'cartofi_la_cuptor_telemea',
     title: 'Cartofi gratinați la cuptor cu smântână și telemea',
-    imageUrl: 'https://images.unsplash.com/photo-1518013034458-30b0ee243591?auto=format&fit=crop&w=800&q=80',
     description: 'Feliuțe subțiri de cartofi scăldate în smântână aromată și acoperite cu un strat generos de telemea gratinată.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 35,
@@ -680,7 +659,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'fasole_scazuta_afumatura',
     title: 'Mâncărică de fasole scăzută cu ceapă și mărar',
-    imageUrl: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=800&q=80',
     description: 'Rețetă consistentă și economică din boabe de fasole roșie gătite cu sos concentrat de roșii, ceapă călită și cimbru/mărar.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 15,
@@ -712,7 +690,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'pulpe_pui_cuptor_usturoi',
     title: 'Pulpe de pui la cuptor cu mujdei și mămăligă',
-    imageUrl: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=800&q=80',
     description: 'Pulpe crocante la tavă cu piele rumenită, servite alături de mămăligă fierbinte și mujdei aromat de usturoi.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 35,
@@ -743,7 +720,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'paste_cremoase_spanac',
     title: 'Penne cremoase cu baby spanac și parmezan',
-    imageUrl: 'https://images.unsplash.com/photo-1608897013039-887f21d8c804?auto=format&fit=crop&w=800&q=80',
     description: 'Paste rapide legate într-un sos mătăsos de smântână, frunze proaspete de baby spanac și parmezan răzuit.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 12,
@@ -775,7 +751,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'wrap_ton_avocado',
     title: 'Wrap răcoros în lipie cu ton, avocado și porumb',
-    imageUrl: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=800&q=80',
     description: 'Cină proaspătă și lejeră: lipie din grâu unsă cu iaurt, umplută cu ton mărunțit, cuburi de avocado și porumb dulce.',
     prepTimeMinutes: 8,
     cookTimeMinutes: 0,
@@ -807,7 +782,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'pilaf_pui_ciuperci',
     title: 'Pilaf sârbesc de orez cu pui și ciuperci',
-    imageUrl: 'https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?auto=format&fit=crop&w=800&q=80',
     description: 'Orez bob cu bob gătit molcom cu ceapă, morcov dulce, felii de ciuperci și bucăți aromate de piept de pui.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 25,
@@ -840,7 +814,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'ciuperci_umplute_cuptor',
     title: 'Pălării de ciuperci umplute cu mozzarella la cuptor',
-    imageUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
     description: 'Aperitiv cald sau cină lejeră: ciuperci mari champignon umplute cu codițele lor călite cu usturoi și mozzarella rumenită.',
     prepTimeMinutes: 8,
     cookTimeMinutes: 15,
@@ -871,7 +844,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'chiftele_legume_airfryer',
     title: 'Pârjoale fragede de dovlecei și morcovi la Air Fryer',
-    imageUrl: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80',
     description: 'Chifteluțe vegetariene rumenite și aromate din dovlecei rași, morcov dulce, ou, telemea și mărar, fără baie de ulei.',
     prepTimeMinutes: 12,
     cookTimeMinutes: 15,
@@ -903,7 +875,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'somon_cuptor_legume',
     title: 'Somon fraged la cuptor cu dovlecei și ardei copți',
-    imageUrl: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80',
     description: 'O cină lejeră și plină de acizi grași omega-3: file de somon rumenit la tavă alături de fâșii dulci de legume de sezon.',
     prepTimeMinutes: 8,
     cookTimeMinutes: 18,
@@ -934,7 +905,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'salata_calda_pui_crutoane',
     title: 'Salată caldă cu pui rumenit, crutoane și iaurt',
-    imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80',
     description: 'Mix proaspăt de salată verde cu piept de pui cald fript la tigaie, crutoane crocante de pâine toast și dressing de iaurt.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 10,
@@ -966,7 +936,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'ghiveci_legume_cuptor',
     title: 'Ghiveci călugăresc de legume la cuptor',
-    imageUrl: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=800&q=80',
     description: 'Rețetă plină de arome din cartofi, dovlecei, morcovi, ceapă și ardei, coapte înăbușit în sos dulce de roșii pasate.',
     prepTimeMinutes: 15,
     cookTimeMinutes: 35,
@@ -1000,7 +969,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'pui_kiev_airfryer',
     title: 'Rulouri de pui cu unt aromat la Air Fryer',
-    imageUrl: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=800&q=80',
     description: 'Piept de pui fraged rulat cu unt și mărar, trecut prin pesmet crocant și copt la perfecție în aer cald.',
     prepTimeMinutes: 12,
     cookTimeMinutes: 16,
@@ -1031,7 +999,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'chili_con_carne_rapid',
     title: 'Chili con carne rapid cu fasole roșie și porumb',
-    imageUrl: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?auto=format&fit=crop&w=800&q=80',
     description: 'Preparat consistent și picant-aromat din carne tocată, boabe de fasole roșie, porumb dulce și sos de roșii.',
     prepTimeMinutes: 8,
     cookTimeMinutes: 20,
@@ -1064,7 +1031,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'orez_lapte_cocos_legume',
     title: 'Orez cremos cu lapte de cocos, mazăre și morcovi',
-    imageUrl: 'https://images.unsplash.com/photo-1516714435131-44d6b64dc6a2?auto=format&fit=crop&w=800&q=80',
     description: 'Orez fin și parfumat fiert în lapte de cocos cu mazăre dulce și morcovi cubulețe, complet vegan și hrănitor.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 18,
@@ -1096,7 +1062,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'toast_ou_avocado',
     title: 'Toast crocant cu ou ochi, avocado și telemea',
-    imageUrl: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800&q=80',
     description: 'Micul dejun la cină: felii crocante de pâine toast unse cu pastă de avocado, acoperite cu ou ochi moale și telemea sărată.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 5,
@@ -1127,7 +1092,6 @@ const BASE_RECIPES: Recipe[] = [
   {
     id: 'supa_crema_legume_crutoane',
     title: 'Supă cremă catifelată de legume cu crutoane',
-    imageUrl: 'https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?auto=format&fit=crop&w=800&q=80',
     description: 'Supă cremă fină din cartofi, morcovi, dovlecei și ceapă, servită cu smântână și crutoane crocante de pâine toast.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 20,
@@ -1202,7 +1166,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'terci_ovaz_fructe_miere',
     title: 'Terci cremos de ovăz cu fructe de pădure și miere',
-    imageUrl: 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?auto=format&fit=crop&w=800&q=80',
     description: 'Mic dejun energizant din fulgi fini de ovăz fierți în lapte călduț, îmbogățiți cu fructe de pădure parfumate și miere polifloră.',
     prepTimeMinutes: 3,
     cookTimeMinutes: 7,
@@ -1233,7 +1196,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'iaurt_grecesc_nuci_miere',
     title: 'Bol de iaurt grecesc cu nuci crocante, miere și scorțișoară',
-    imageUrl: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80',
     description: 'Iaurt grecesc 10% dens și catifelat, combinat cu miez de nucă rumenit, miere aurie și aromă discretă de scorțișoară.',
     prepTimeMinutes: 3,
     cookTimeMinutes: 0,
@@ -1263,7 +1225,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'clatite_pufoase_americane',
     title: 'Pancakes pufoase americane cu miere și fructe',
-    imageUrl: 'https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&w=800&q=80',
     description: 'Clătite americane groase, aurii și extrem de pufoase, preparate rapid la tigaie și servite cu miere și fructe.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 10,
@@ -1295,7 +1256,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'sandvis_cald_cascaval_sunca',
     title: 'Sandviș cald crocant cu cașcaval topit și șuncă',
-    imageUrl: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=800&q=80',
     description: 'Pâine toast rumenită la tigaie cu unt, umplută cu șuncă de Praga fragedă și cașcaval topit abundent.',
     prepTimeMinutes: 3,
     cookTimeMinutes: 6,
@@ -1326,7 +1286,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'budinca_chia_fructe_padure',
     title: 'Budincă de chia cu lapte de cocos și piure de fructe',
-    imageUrl: 'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=800&q=80',
     description: '100% vegetal. Mic dejun sau gustare reconfortantă din semințe de chia hidratate în lapte de cocos, servite cu fructe de pădure.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 0,
@@ -1356,7 +1315,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'omleta_cremoasa_spanac_branza',
     title: 'Omletă pufoasă cu spanac proaspăt și telemea',
-    imageUrl: 'https://images.unsplash.com/photo-1587486913049-53fc88980cfc?auto=format&fit=crop&w=800&q=80',
     description: 'Ouă proaspete bătute spumă cu frunze tinere de spanac trase în unt și telemea sărată de vacă.',
     prepTimeMinutes: 3,
     cookTimeMinutes: 5,
@@ -1389,7 +1347,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'popcorn_aromat_parmezan_boia',
     title: 'Popcorn proaspăt de casă cu parmezan și boia afumată',
-    imageUrl: 'https://images.unsplash.com/photo-1585647347483-22b66260dfff?auto=format&fit=crop&w=800&q=80',
     description: 'Floricele de porumb proaspete pocnite în oală, pudrate cu parmezan fin, boia dulce și sare. Gustarea supremă de film sau meci.',
     prepTimeMinutes: 2,
     cookTimeMinutes: 5,
@@ -1420,7 +1377,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'guacamole_chips_nachos',
     title: 'Guacamole proaspăt cu tortilla chips crocante',
-    imageUrl: 'https://images.unsplash.com/photo-1541288097308-7b8e3f58c4c6?auto=format&fit=crop&w=800&q=80',
     description: 'Avocado copt și cremos zdrobit cu roșii dulci, lămâie proaspătă, ceapă roșie fină și tortilla chips sărate.',
     prepTimeMinutes: 8,
     cookTimeMinutes: 0,
@@ -1452,7 +1408,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'hummus_cremos_legume_crocante',
     title: 'Hummus cremos de casă cu bastonașe crocante de legume',
-    imageUrl: 'https://images.unsplash.com/photo-1577805947697-89e18249d767?auto=format&fit=crop&w=800&q=80',
     description: 'Năut boabe pasat fin cu ulei de măsline extravirgin, usturoi și zeamă de lămâie, servit cu bastonașe proaspete de morcov și castravete.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 0,
@@ -1485,7 +1440,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'bruschete_rosii_usturoi_busuioc',
     title: 'Bruschete crocante cu roșii dulci, usturoi și ulei de măsline',
-    imageUrl: 'https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?auto=format&fit=crop&w=800&q=80',
     description: 'Pâine toast rumenită și frecată cu usturoi aromat, acoperită cu roșii cuburi, oregano și ulei de măsline extravirgin.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 5,
@@ -1517,7 +1471,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'chipsuri_cartofi_airfryer',
     title: 'Chipsuri aurii de cartofi la airfryer cu boia și sare',
-    imageUrl: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?auto=format&fit=crop&w=800&q=80',
     description: 'Feliuțe subțiri de cartofi rumenite crocant la airfryer fără exces de grăsime, condimentate cu boia dulce și sare.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 12,
@@ -1547,7 +1500,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'mix_nuci_seminte_miere',
     title: 'Mix energizant de nuci rumenite și semințe cu miere',
-    imageUrl: 'https://images.unsplash.com/photo-1599599810769-bcde5a160d32?auto=format&fit=crop&w=800&q=80',
     description: 'Miez de nucă românească și semințe crocante de chia rumenite la tigaie cu miere și parfum de scorțișoară.',
     prepTimeMinutes: 2,
     cookTimeMinutes: 4,
@@ -1579,7 +1531,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'clatite_subtiri_gem_capsuni',
     title: 'Clătite subțiri tradiționale cu gem de căpșuni',
-    imageUrl: 'https://images.unsplash.com/photo-1506084868230-bb9d95c24759?auto=format&fit=crop&w=800&q=80',
     description: 'Clătite românești fine, dantelate și parfumate, umplute generos cu gem delicios de fructe.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 10,
@@ -1610,7 +1561,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'orez_cu_lapte_scortisoara',
     title: 'Orez cremos cu lapte, vanilie și scorțișoară',
-    imageUrl: 'https://images.unsplash.com/photo-1541658016709-82535e94bc69?auto=format&fit=crop&w=800&q=80',
     description: 'Desertul nostalgic al copilăriei românești: orez fiert lent în lapte dulce până devine catifelat, presărat cu scorțișoară.',
     prepTimeMinutes: 2,
     cookTimeMinutes: 18,
@@ -1640,7 +1590,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'salam_de_biscuiti_clasic',
     title: 'Salam de biscuiți clasic de casă cu cacao și nuci',
-    imageUrl: 'https://images.unsplash.com/photo-1548848221-0c2e497ed557?auto=format&fit=crop&w=800&q=80',
     description: 'Desertul emblematic românesc din biscuiți mărunțiți, sirop cald de cacao, unt și miez crocant de nucă.',
     prepTimeMinutes: 12,
     cookTimeMinutes: 3,
@@ -1672,7 +1621,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'lava_cake_ciocolata_airfryer',
     title: 'Lava Cake cu ciocolată caldă la Airfryer',
-    imageUrl: 'https://images.unsplash.com/photo-1624353365286-3f8d62daad51?auto=format&fit=crop&w=800&q=80',
     description: 'Miez fierbinte lichid de ciocolată amăruie învelit într-un blat pufos, copt în doar 8 minute la airfryer sau cuptor.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 8,
@@ -1704,7 +1652,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'papanasi_prajiti_smantana_dulceata',
     title: 'Papanași pufoși tradiționali cu smântână și dulceață',
-    imageUrl: 'https://images.unsplash.com/photo-1577906096429-f73c2c312435?auto=format&fit=crop&w=800&q=80',
     description: 'Desertul emblematic românesc: papanași aurii din brânză proaspătă de vaci, serviți fierbinți cu smântână grasă și dulceață aromată.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 10,
@@ -1737,7 +1684,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'mere_coapte_nuca_miere',
     title: 'Mere parfumate la cuptor cu miez de nucă, miere și scorțișoară',
-    imageUrl: 'https://images.unsplash.com/photo-1568571780765-9276ac8b75a2?auto=format&fit=crop&w=800&q=80',
     description: 'Desert cald, ușor și reconfortant: mere coapte rumenite, umplute cu miez crocant de nucă, miere aurie și scorțișoară măcinată.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 20,
@@ -1769,7 +1715,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'negresa_de_casa_glazura_ciocolata',
     title: 'Negresă pufoasă de casă cu cacao și glazură de ciocolată',
-    imageUrl: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80',
     description: 'Prăjitură clasică de familie cu aromă intensă de ciocolată, blat umed și moale, acoperită cu o glazură catifelată.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 22,
@@ -1802,7 +1747,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'antricot_vita_airfryer_ierburi',
     title: 'Steak din antricot Black Angus la Air Fryer cu unt și ierburi',
-    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
     description: 'Antricot de vită Black Angus maturat, gătit suculent la airfryer și finisat cu unt topit, rozmarin și usturoi.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 12,
@@ -1836,7 +1780,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'tagliatelle_creveti_usturoi',
     title: 'Tagliatelle cremoase cu creveți trași în unt și roșii cherry',
-    imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80',
     description: 'Paste al dente aromate cu creveți suculenți, roșii cherry dulci, usturoi rumenit și pătrunjel verde proaspăt.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 10,
@@ -1871,7 +1814,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'mic_dejun_englezesc_romanesc',
     title: 'Mic dejun la tigaie cu cârnăciori oltenești și ouă ochiuri',
-    imageUrl: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=800&q=80',
     description: 'Mic dejun energizant și sățios: cârnăciori rumeniți, ouă ochiuri moi, fasole boabe caldă și pâine prăjită crocantă.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 10,
@@ -1904,7 +1846,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'toast_crema_branza_somon_afumat',
     title: 'Toast crocant cu cremă fină de brânză și somon afumat',
-    imageUrl: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=800&q=80',
     description: 'Pâine toast caldă unsă cu cremă de brânză proaspătă, feliuțe generoase de somon afumat și zeamă de lămâie.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 3,
@@ -1935,7 +1876,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'friganela_dulce_scortisoara',
     title: 'Frigănele aurii la tigaie cu lapte și scorțișoară',
-    imageUrl: 'https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=800&q=80',
     description: 'Frigănele pufoase din copilărie, îmbibate în amestec de ou și lapte dulce, rumenite în unt cu scorțișoară.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 6,
@@ -1967,7 +1907,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'ciorba_fasole_afumatura_ceapa',
     title: 'Ciorbă ardelenească de fasole cu afumătură și ceapă roșie',
-    imageUrl: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=800&q=80',
     description: 'Ciorbă deasă și aromată din fasole boabe, costiță afumată rumenită, morcovi, sos dulce de roșii și leuștean/pătrunjel.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 25,
@@ -2001,7 +1940,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'bulz_ciobanesc_cuptor',
     title: 'Bulz ciobănesc rumenit la cuptor cu telemea și ou',
-    imageUrl: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80',
     description: 'Mămăligă caldă umplută cu straturi generoase de brânză telemea, unt proaspăt și un ou rumenit auriu la cuptor.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 15,
@@ -2034,7 +1972,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'spaghete_pomodoro_busuioc',
     title: 'Spaghete al dente cu sos dulce de roșii și busuioc',
-    imageUrl: 'https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?auto=format&fit=crop&w=800&q=80',
     description: 'Rețetă italiană rapidă și economică: spaghete fierte al dente, îmbrăcate în sos de passata dulce, usturoi rumenit și busuioc.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 12,
@@ -2067,7 +2004,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'tocanita_cartofi_carnaciori',
     title: 'Mâncare rustică de cartofi cu rondele de cârnăciori afumați',
-    imageUrl: 'https://images.unsplash.com/photo-1594998893017-36147cbcae05?auto=format&fit=crop&w=800&q=80',
     description: 'Mâncare tradițională de casă: cartofi fierți în sos dulceag de ceapă călită cu boia dulce și rondele de cârnăciori oltenești rumeniți.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 25,
@@ -2101,7 +2037,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'orez_sarbesc_legume',
     title: 'Orez sârbesc la cuptor cu legume dulci și sos de roșii',
-    imageUrl: 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?auto=format&fit=crop&w=800&q=80',
     description: 'Garnitură sau fel principal vegan: orez bob rotund copt cu ceapă, ardei roșu, morcov ras și sos dulce de tomate.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 25,
@@ -2135,7 +2070,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'ostropel_pui_piure_cartofi',
     title: 'Ostropel fraged de pui în sos usturoiat cu piure de cartofi',
-    imageUrl: 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=800&q=80',
     description: 'Pulpă de pui fragedă scăzută în sos bogat de tomate cu mult usturoi zdrobit, servită alături de un piure pufos de cartofi cu unt.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 25,
@@ -2170,7 +2104,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'snitel_crocant_pui_salata',
     title: 'Șnițel din piept de pui în crustă aurie cu salată de varză',
-    imageUrl: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=800&q=80',
     description: 'Șnițel fraged de pui trecut prin făină și ou, prăjit crocant, acompaniat de o salată răcoritoare de varză albă frecată cu lămâie.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 12,
@@ -2204,7 +2137,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'musaca_cartofi_carne_tocata',
     title: 'Musaca tradițională de cartofi cu carne tocată la cuptor',
-    imageUrl: 'https://images.unsplash.com/photo-1574484284002-952d92456975?auto=format&fit=crop&w=800&q=80',
     description: 'Straturi alternante de felii de cartofi și carne tocată aromată cu ceapă călită, acoperite cu smântână și ou rumenit.',
     prepTimeMinutes: 15,
     cookTimeMinutes: 35,
@@ -2239,7 +2171,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'ciorba_perisoare_acrita_bors',
     title: 'Ciorbă de perișoare pufoase acrită cu borș de tărâțe',
-    imageUrl: 'https://images.unsplash.com/photo-1604152135912-04a022e23696?auto=format&fit=crop&w=800&q=80',
     description: 'Ciorbă clasică românească cu perișoare fragede din carne tocată cu orez, legume rădăcinoase și borș proaspăt.',
     prepTimeMinutes: 15,
     cookTimeMinutes: 30,
@@ -2274,7 +2205,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'curcan_stirfry_legume_soia',
     title: 'Stir-fry crocant de pui cu legume colorate și sos de soia',
-    imageUrl: 'https://images.unsplash.com/photo-1543353071-873f17a7a088?auto=format&fit=crop&w=800&q=80',
     description: 'Fâșii subțiri de carne de pui trase la foc iute cu ardei kapia, morcov și ciuperci în sos de soia, peste orez basmati.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 12,
@@ -2308,7 +2238,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'muschiulet_porc_sos_piper_verde',
     title: 'Medalioane din mușchiuleț de porc cu sos cremos de piper',
-    imageUrl: 'https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=800&q=80',
     description: 'Mușchiuleț de porc fraged rumenit la tigaie, scăzut în sos catifelat de smântână cu boabe de piper, alături de cartofi rumeniți.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 15,
@@ -2341,7 +2270,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'dorada_cuptor_lamaie_ierburi',
     title: 'Doradă proaspătă la cuptor cu lămâie, usturoi și ierburi',
-    imageUrl: 'https://images.unsplash.com/photo-1534939561126-855b8675edd7?auto=format&fit=crop&w=800&q=80',
     description: 'Pește nobil copt întreg pe pat de felii de lămâie și usturoi aromat, servit cu cartofi aurii și ulei de măsline.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 20,
@@ -2374,7 +2302,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'risotto_cremos_hribi_parmezan',
     title: 'Risotto cremos cu hribi de pădure, unt și parmezan',
-    imageUrl: 'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?auto=format&fit=crop&w=800&q=80',
     description: 'Orez Arborio gătit lent în stil clasic italian, cu hribi aromați sotați în unt, finisat cu parmezan din belșug.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 20,
@@ -2409,7 +2336,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'creveti_saganaki_feta_rosii',
     title: 'Creveți Saganaki trași la tigaie cu sos dulce de roșii și feta',
-    imageUrl: 'https://images.unsplash.com/photo-1559742811-82286364ceaf?auto=format&fit=crop&w=800&q=80',
     description: 'Specialitate grecească: creveți suculenți în sos bogat de roșii cu usturoi și oregano, acoperiți cu bucăți de brânză feta topită.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 10,
@@ -2443,7 +2369,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'terci_ovaz_vegan_banane',
     title: 'Terci de ovăz cu băutură de ovăz, banane și nucă',
-    imageUrl: 'https://images.unsplash.com/photo-1495214783159-3503fd1b572d?auto=format&fit=crop&w=800&q=80',
     description: '100% vegetal. Fulgi de ovăz fierți cremos în băutură de ovăz, cu banane caramelizate natural și miez de nucă.',
     prepTimeMinutes: 3,
     cookTimeMinutes: 7,
@@ -2470,7 +2395,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'tartine_avocado_rosii_cherry',
     title: 'Tartine cu avocado cremos, roșii cherry și lămâie',
-    imageUrl: 'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?auto=format&fit=crop&w=800&q=80',
     description: '100% vegetal. Pâine prăjită acoperită cu avocado pasat, roșii cherry dulci și un strop de lămâie proaspătă.',
     prepTimeMinutes: 7,
     cookTimeMinutes: 0,
@@ -2498,7 +2422,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'clatite_vegane_banane_ovaz',
     title: 'Clătite vegane pufoase cu banane și ovăz',
-    imageUrl: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=800&q=80',
     description: '100% vegetal. Clătite legate natural cu banană pasată, fără ou și fără lactate, rumenite auriu în tigaie.',
     prepTimeMinutes: 8,
     cookTimeMinutes: 10,
@@ -2526,7 +2449,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'ovaz_peste_noapte_mar_nuci',
     title: 'Ovăz peste noapte cu măr ras, nuci și scorțișoară',
-    imageUrl: 'https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?auto=format&fit=crop&w=800&q=80',
     description: '100% vegetal. Se pregătește seara în 5 minute și te așteaptă rece dimineața, cremos și sățios.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 0,
@@ -2554,7 +2476,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'tartine_unt_arahide_banane',
     title: 'Tartine cu unt de arahide, banane și scorțișoară',
-    imageUrl: 'https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=800&q=80',
     description: '100% vegetal. Mic dejun bogat în proteine, gata în 5 minute, cu unt de arahide natural și banane felii.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 0,
@@ -2580,7 +2501,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'mousse_ciocolata_cocos',
     title: 'Mousse de ciocolată amăruie cu lapte de cocos',
-    imageUrl: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=800&q=80',
     description: '100% vegetal. Desert dens și catifelat din ciocolată amăruie topită în lapte de cocos cremos.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 5,
@@ -2606,7 +2526,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'mere_coapte_nuci_scortisoara',
     title: 'Mere coapte la cuptor cu nuci și scorțișoară',
-    imageUrl: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=800&q=80',
     description: '100% vegetal. Desert cald de toamnă: mere românești coapte până devin moi, umplute cu nucă și scorțișoară.',
     prepTimeMinutes: 8,
     cookTimeMinutes: 25,
@@ -2632,7 +2551,6 @@ const NEW_RECIPES: Recipe[] = [
   {
     id: 'crema_cacao_avocado_banane',
     title: 'Cremă rapidă de cacao cu avocado și banane',
-    imageUrl: 'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=800&q=80',
     description: '100% vegetal. Desert fără gătit, cremos ca o budincă, din avocado copt, banane și cacao pudră.',
     prepTimeMinutes: 8,
     cookTimeMinutes: 0,

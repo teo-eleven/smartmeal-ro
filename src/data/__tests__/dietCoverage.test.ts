@@ -67,9 +67,8 @@ describe('newly added recipes keep the catalog sound', () => {
     expect(gaps).toEqual([]);
   });
 
-  test('every recipe has an image, a tier, slots, steps and nutrition', () => {
+  test('every recipe has a tier, slots, steps and nutrition', () => {
     RECIPES.forEach((recipe) => {
-      expect(recipe.imageUrl).toBeTruthy();
       expect(recipe.tier).toBeTruthy();
       expect(recipe.suitableSlots?.length).toBeGreaterThan(0);
       expect(recipe.steps.length).toBeGreaterThan(0);
