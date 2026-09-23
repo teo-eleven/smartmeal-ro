@@ -115,6 +115,48 @@ describe('AuthModal', () => {
     expect(screen.getByText(/12:30:00/)).toBeTruthy();
   });
 
+  test('conectat, oferă ambele direcții de sincronizare', () => {
+    const onSyncTriggered = jest.fn().mockResolvedValue(undefined);
+    const onDownloadTriggered = jest.fn().mockResolvedValue(undefined);
+    render(
+      <AuthModal
+        {...baseProps}
+        userEmail="a@b.ro"
+        onSyncTriggered={onSyncTriggered}
+        onDownloadTriggered={onDownloadTriggered}
+      />
+    );
+
+    fireEvent.press(screen.getByLabelText('Urcă planul în cloud'));
+    fireEvent.press(screen.getByLabelText('Adu planul din cloud'));
+
+    expect(onSyncTriggered).toHaveBeenCalled();
+    expect(onDownloadTriggered).toHaveBeenCalled();
+  });
+
+  test('în timpul unei sincronizări nu se poate porni a doua', () => {
+    const onDownloadTriggered = jest.fn().mockResolvedValue(undefined);
+    render(
+      <AuthModal
+        {...baseProps}
+        userEmail="a@b.ro"
+        onDownloadTriggered={onDownloadTriggered}
+        isSyncing
+      />
+    );
+
+    fireEvent.press(screen.getByLabelText('Adu planul din cloud'));
+
+    expect(onDownloadTriggered).not.toHaveBeenCalled();
+  });
+
+  test('neconectat, nu apare niciun buton de sincronizare', () => {
+    render(<AuthModal {...baseProps} onDownloadTriggered={jest.fn()} onSyncTriggered={jest.fn()} />);
+
+    expect(screen.queryByLabelText('Adu planul din cloud')).toBeNull();
+    expect(screen.queryByLabelText('Urcă planul în cloud')).toBeNull();
+  });
+
   test('nu cere parola de două ori: parola este mascată', () => {
     render(<AuthModal {...baseProps} />);
 

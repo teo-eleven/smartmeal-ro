@@ -8,7 +8,8 @@
 Code review pe **toată** aplicația, nu doar pe diferența sesiunii: eu întâi, apoi doi agenți
 (`code-reviewer` și `security-reviewer`) în paralel, iar la final am verificat empiric fiecare
 afirmație a lor înainte s-o accept. Au ieșit 9 defecte reale. **Toate sunt reparate**, fiecare
-cu testul care l-ar fi prins. Teste: 434 → 496.
+cu testul care l-ar fi prins. Apoi a fost cablată sincronizarea descendentă din cloud (ADR-11).
+Teste: 434 → 518.
 
 ## Următorul pas exact
 
@@ -48,12 +49,13 @@ Le-am verificat și nu stau în picioare. Sunt aici ca să nu fie reinvestigate:
 
 ## Ce e blocat / incomplet
 
-- **Sincronizarea în cloud e doar în sus.** `cloudSyncService.loadMealPlan` este scrisă și
-  testată, dar **nu o apelează nimic din aplicație**. Un al doilea dispozitiv nu primește
-  niciodată planul. Nu am cablat-o: descărcarea peste un plan local cere o decizie de
-  rezolvare a conflictelor (cine câștigă, ce se întâmplă cu alergiile divergente), care e
-  proiectare de produs, nu reparație de bug. Când o faci, trece planul descărcat prin
-  `makePlanSafeForPreferences`, ca la hidratare.
+- **Sincronizarea merge acum în ambele sensuri** (ADR-11). Din ecranul de cont: „⬆ Urcă
+  planul de aici" și „⬇ Adu planul de pe alt dispozitiv". Ce trebuie știut despre regula de
+  conflict: nimic local nu se suprascrie fără confirmare, planul înlocuit rămâne recuperabil
+  cu Anulează, alergiile sunt **uniunea** celor două dispozitive, iar planul descărcat trece
+  prin `makePlanSafeForPreferences` cu coșul recalculat local.
+  **Ce a rămas nefăcut:** nu se declanșează automat la pornire sau la autentificare. E o
+  alegere, nu o scăpare — vezi ADR-11 pentru de ce comparația automată de timp ar minți.
 - **Deploy funcție edge Supabase** — cere CLI-ul, proiect legat și credențialele tale.
   Pașii: `supabase/README.md`, acum cu `ALLOWED_ORIGINS` inclus.
 - **Migrația `supabase/migrations/0001_user_meal_plans.sql`** — scrisă, **nerulată**.
@@ -68,9 +70,13 @@ Le-am verificat și nu stau în picioare. Sunt aici ca să nu fie reinvestigate:
 
 ## Capcane
 
-- **Alergiile și dieta sunt restricții dure pe patru uși**: generare, restaurare, **hidratare**
-  și `replaceMealWithRecipe`. Dacă adaugi a cincea cale prin care o masă ajunge la utilizator,
-  trece-o prin `makePlanSafeForPreferences` sau `describeUnsafeRecipe`.
+- **Alergiile și dieta sunt restricții dure pe cinci uși**: generare, restaurare, hidratare,
+  `replaceMealWithRecipe` și **descărcarea din cloud**. Dacă adaugi a șasea cale prin care o
+  masă ajunge la utilizator, trece-o prin `makePlanSafeForPreferences` sau
+  `describeUnsafeRecipe`.
+- **Datele din cloud sunt la fel de neîncrezute ca storage-ul local** — același
+  `isWellFormedPlan`. Un rând scris de o versiune mai veche a aplicației nu trebuie să poată
+  strica dispozitivul ăsta.
 - **Nu reintroduce o a doua listă de ingrediente pentru gluten.** Vezi ADR-10. Sursa unică e
   `INGREDIENT_ALLERGENS` din `src/data/allergens.ts`.
 - **Orice agregare a coșului ia 5 argumente**, nu 3: magazin, excludePantryStaples, **extra**
@@ -96,13 +102,13 @@ Le-am verificat și nu stau în picioare. Sunt aici ca să nu fie reinvestigate:
   afirmațiile lor erau false.** Verifică fiecare afirmație empiric înainte s-o accepți.
 - **Verificarea imaginilor cere ochi, nu cod de status.** Am raportat o dată „HTTP 200, totul
   bine" pentru poze care arătau căști audio la mâncare de fasole.
-- `npm run test:coverage` — praguri în `jest.config.js`. Acum: 85,21 instrucțiuni / 64,18
-  ramuri / 84,03 funcții / 85,87 linii. **Funcțiile sunt la 0,03% peste prag**, deci prima
-  funcție netestată pe care o adaugi face poarta roșie. Când se întâmplă, adaugă teste — nu
-  coborî pragul. Ecranele cu cea mai slabă acoperire, deci cele mai profitabile de atacat:
-  `PantryInventoryModal` (22%), `GroceryScreen` (29%), `SnacksAndDrinksModal` (45%).
+- `npm run test:coverage` — praguri în `jest.config.js`. Acum: 86,84 instrucțiuni / 65,05
+  ramuri / 85,46 funcții / 87,53 linii, deci ~1,5% spațiu peste praguri. Când pică, adaugă
+  teste — nu coborî pragul. Ecranele cu cea mai slabă acoperire, deci cele mai profitabile
+  de atacat: `PantryInventoryModal` (22%), `GroceryScreen` (29%), `SnacksAndDrinksModal` (45%).
 
 ## Întrebări pentru tine
 
-Niciuna deschisă din review. Singura decizie care te așteaptă e **sincronizarea descendentă**:
-o vrei cablată, și cu ce regulă de conflict?
+Niciuna deschisă. Sincronizarea descendentă e cablată cu regula din ADR-11; dacă vrei să se
+declanșeze automat la autentificare, în loc de un buton, adaugă întâi un `updatedAt` real pe
+`MealPlan` — fără el, orice comparație automată de timp alege greșit.
