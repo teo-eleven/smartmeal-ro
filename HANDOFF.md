@@ -83,7 +83,8 @@ Le-am verificat și nu stau în picioare. Sunt aici ca să nu fie reinvestigate:
 - **`appliances: []` înseamnă „nu necesită niciun aparat"**, nu „lipsă date". Vezi ADR-08.
 - Testele rulează în **două proiecte Jest**. Un test care importă `react-native` trebuie numit
   `*.component.test.tsx`, altfel cade în proiectul Node și nu găsește resolverul RN.
-- `PLAN.md` pașii 1-11 sunt istorici. Starea reală: Step 12 și acest fișier.
+- `PLAN.md` și `SPEC.md` au fost șterse pe 2026-09-23 (erau istorice). Starea reală a
+  proiectului e în acest fișier; motivele deciziilor, în `DECISIONS.md`.
 
 ## Unelte utile pe proiectul ăsta
 
@@ -95,8 +96,11 @@ Le-am verificat și nu stau în picioare. Sunt aici ca să nu fie reinvestigate:
   afirmațiile lor erau false.** Verifică fiecare afirmație empiric înainte s-o accepți.
 - **Verificarea imaginilor cere ochi, nu cod de status.** Am raportat o dată „HTTP 200, totul
   bine" pentru poze care arătau căști audio la mâncare de fasole.
-- `npm run test:coverage` — praguri în `jest.config.js`. Acum: 85,29 instrucțiuni / 64,18
-  ramuri / 84,08 funcții / 85,98 linii. Dacă pică, adaugă teste; nu coborî pragul.
+- `npm run test:coverage` — praguri în `jest.config.js`. Acum: 85,21 instrucțiuni / 64,18
+  ramuri / 84,03 funcții / 85,87 linii. **Funcțiile sunt la 0,03% peste prag**, deci prima
+  funcție netestată pe care o adaugi face poarta roșie. Când se întâmplă, adaugă teste — nu
+  coborî pragul. Ecranele cu cea mai slabă acoperire, deci cele mai profitabile de atacat:
+  `PantryInventoryModal` (22%), `GroceryScreen` (29%), `SnacksAndDrinksModal` (45%).
 
 ## Întrebări pentru tine
 

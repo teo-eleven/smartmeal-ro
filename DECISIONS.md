@@ -1,5 +1,11 @@
 # DECISIONS.md — Architecture & Technical Decision Records
 
+> **Notă, 2026-09-23.** `SPEC.md`, `PLAN.md` și agentul de prompturi pentru fotografii
+> (`scripts/recipeImageAgent.ts`, `src/services/recipeVisualAgent.ts`) au fost șterse din repo.
+> ADR-urile de mai jos sunt păstrate neatinse, ca înregistrare a ceea ce era adevărat când au
+> fost luate deciziile — deci referirile lor la acele fișiere sunt istorice, nu legături vii.
+> Starea curentă a proiectului este în `HANDOFF.md`.
+
 This document records the foundational architectural decisions for Mise Romania. Each record details the context, evaluated alternatives, selected solution, rationale, accepted trade-offs, and falsification conditions.
 
 ---
