@@ -208,3 +208,49 @@ Spikes are executed first to retire core technical risks, followed by sequential
 - **How it's tested:** Complete manual walk-through from clean browser cache: Onboarding $\rightarrow$ Plan generation $\rightarrow$ Recipe inspection $\rightarrow$ Swap $\rightarrow$ Grocery shopping checklist completion.
 - **Tool / Subagent:** Parent agent (`self`).
 - **Can run in parallel:** NO.
+
+---
+
+## Step 12: Audit Pass — Correctness, Safety and Trust (unplanned, 2026-09-22)
+
+Not part of the original roadmap. Phases 1–8 were already implemented when this pass
+started; it audited them end to end and fixed what it found. Phase 9 (Step 11) is still
+outstanding.
+
+### Done — implemented, tested and committed
+- [x] **Budget is a real constraint.** `optimizeDaysForBudget` in `src/engine/plannerEngine.ts`.
+      Measured before: identical 275.61 lei cart at any budget. See ADR-06.
+- [x] **Diet, appliance and allergen constraints hold on every path.** The relaxation ladder in
+      `pickBestRecipeForSlot` used to drop the appliance filter: 252 violations across 72
+      generated plans, now 0 across 126 combinations (`hardConstraints.test.ts`).
+- [x] **The app can no longer be locked out.** Preferences are persisted only after a
+      successful rebuild; `checkPlanFeasibility` answers without throwing; `hydrateStorage`
+      repairs a stored state that cannot produce a plan.
+- [x] **Cart and pantry stay consistent.** `pantryInventory` was passed in 1 of 14 aggregation
+      calls; plan totals excluded chosen snacks (6.99 lei gap); `extraProducts` was never set.
+- [x] **Allergens** as a hard constraint (`src/utils/allergenFilter.ts`, `src/data/allergens.ts`),
+      plus gluten detection gaps closed (`faina_grau`, `pesmet`, `biscuiti`, `chifle`, `lipii`).
+- [x] **Vegan catalog is usable.** The one recipe tagged for vegan breakfast/dessert contained
+      honey. Fixed, plus 8 new vegan recipes and 3 plant-based staples.
+- [x] **Recipe imagery no longer shows the wrong dish.** See ADR-07.
+- [x] **Supermarket basket comparison** (`src/engine/storeComparator.ts`).
+- [x] **Per-meal servings, saved-plan library, undo on reset, quick start, live feasibility meter.**
+- [x] **AI no longer needs a client-side provider key.** Requests go through the Supabase edge
+      function; model output is validated against the offered candidates.
+- [x] **Accessibility**: 0 → 91 annotated controls, with real roles for checkboxes and switches.
+- [x] **Component test project** added; coverage 80.9% statements / 81.3% lines, enforced in
+      `jest.config.js`.
+
+### Outstanding after this pass
+- [ ] **Step 11 / Phase 9 — End-to-end verification.** Never run. No human has clicked through
+      the app since these changes; all verification so far is automated.
+- [ ] **Supabase schema has no migration.** `src/services/supabase.ts` expects a table
+      `user_meal_plans` (`user_id`, `plan_data`, `grocery_items`, `updated_at`, unique on
+      `user_id`) that exists nowhere in the repo. Pre-existing gap, see HANDOFF.md.
+- [ ] **Edge function not deployed.** Needs the Supabase CLI and account credentials; steps are
+      in `supabase/README.md`.
+- [ ] **PLAN.md architecture drift.** Steps 3–11 above describe `app/` Expo Router screens,
+      NativeWind/Tailwind and `spikes/`, none of which exist. The app uses `src/screens/` with
+      StyleSheet and a `glass` theme. The step descriptions were never updated to match.
+- [ ] **23 npm audit findings**, all transitive through Expo/Metro build tooling, all requiring
+      Expo SDK 52 → 57. Not runtime code. Deliberately not attempted.

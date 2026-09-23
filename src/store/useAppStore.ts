@@ -21,6 +21,7 @@ import {
   checkPlanFeasibility,
   generateMealPlan,
   getAlternativeRecipes,
+  getEligibleRecipes,
   getSlotLabelRo,
   isSupermarketCompatible,
   selectOptimalDessertForDay,
@@ -29,6 +30,8 @@ import {
 import { aggregateGroceryList } from '../engine/groceryAggregator';
 import { calculateMinimumViableBudget, calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { RETAIL_PRODUCTS_MAP } from '../data/retailProducts';
+import { ALLERGEN_CATALOG } from '../data/allergens';
+import { getRecipeAllergens } from '../utils/allergenFilter';
 import { storageService } from '../services/storage';
 import { cloudSyncService } from '../services/supabase';
 import { areDietsCompatible } from '../utils/dietCompatibility';
@@ -191,6 +194,108 @@ function getActiveExtraProducts(prefs: UserPreferences): RetailProduct[] {
     .filter((product): product is RetailProduct => Boolean(product));
 }
 
+const KNOWN_ALLERGENS = new Set<string>(ALLERGEN_CATALOG.map((a) => a.id));
+
+/**
+ * Allergen lists only ever grow when they meet. Restoring an older plan, or reading a list
+ * back from storage, must never be a way to end up protected against less than before.
+ */
+function mergeAllergens(a?: Allergen[], b?: Allergen[]): Allergen[] {
+  return Array.from(new Set([...(a ?? []), ...(b ?? [])]));
+}
+
+/** Storage is untrusted: anything that is not a known allergen id is dropped. */
+export function sanitizeAllergens(value: unknown): { allergens: Allergen[]; wasRepaired: boolean } {
+  if (!Array.isArray(value)) {
+    return { allergens: [], wasRepaired: value !== undefined };
+  }
+  const allergens = value.filter(
+    (item): item is Allergen => typeof item === 'string' && KNOWN_ALLERGENS.has(item)
+  );
+  return { allergens, wasRepaired: allergens.length !== value.length };
+}
+
+/**
+ * Re-checks every meal of a restored plan against the preferences in force now, replacing
+ * any that would break diet, allergen or appliance rules. Generation already guarantees
+ * this; restoring an archived plan is the second door into the user's week.
+ */
+function makePlanSafeForPreferences(
+  days: MealPlanDay[],
+  preferences: UserPreferences
+): { days: MealPlanDay[]; replacedCount: number; offendingAllergens: Allergen[] } {
+  const eligible = getEligibleRecipes(preferences);
+  const avoided = preferences.avoidedAllergens ?? [];
+  let replacedCount = 0;
+  const offending = new Set<Allergen>();
+
+  const usage = new Map<string, number>();
+  days.forEach((day) =>
+    day.meals.forEach((meal) => usage.set(meal.recipe.id, (usage.get(meal.recipe.id) || 0) + 1))
+  );
+
+  const safeDays = days.map((day) => {
+    const meals = day.meals.map((meal) => {
+      const isSafe = eligible.some((recipe) => recipe.id === meal.recipe.id);
+      if (isSafe) return meal;
+
+      getRecipeAllergens(meal.recipe)
+        .filter((allergen) => avoided.includes(allergen))
+        .forEach((allergen) => offending.add(allergen));
+
+      const replacement =
+        eligible.find(
+          (recipe) =>
+            (recipe.suitableSlots ? recipe.suitableSlots.includes(meal.slot) : true) &&
+            (usage.get(recipe.id) || 0) < 2
+        ) ??
+        eligible.find((recipe) =>
+          recipe.suitableSlots ? recipe.suitableSlots.includes(meal.slot) : true
+        ) ??
+        eligible[0];
+
+      replacedCount += 1;
+      if (!replacement) return null;
+
+      usage.set(replacement.id, (usage.get(replacement.id) || 0) + 1);
+      return {
+        ...meal,
+        recipe: replacement,
+        estimatedCostRon: calculateRecipePortionCost(
+          replacement,
+          meal.servings,
+          preferences.supermarketId,
+          preferences.excludePantryStaples
+        ),
+      };
+    });
+
+    const keptMeals = meals.filter((meal): meal is PlannedMeal => meal !== null);
+    const primary = keptMeals.find((meal) => meal.slot === 'dinner') || keptMeals[0];
+    const sum = keptMeals.reduce((total, meal) => total + meal.estimatedCostRon, 0);
+
+    return {
+      ...day,
+      meals: keptMeals,
+      recipe: primary ? primary.recipe : day.recipe,
+      estimatedCostRon: Math.round(sum * 100) / 100,
+    };
+  });
+
+  return { days: safeDays, replacedCount, offendingAllergens: Array.from(offending) };
+}
+
+function buildRestoreNotice(replacedCount: number, offendingAllergens: Allergen[]): string {
+  const meals = `${replacedCount} ${replacedCount === 1 ? 'masă' : 'mese'}`;
+  if (offendingAllergens.length === 0) {
+    return `Am înlocuit ${meals} care nu se potriveau cu dieta sau cu aparatele tale actuale.`;
+  }
+  const labels = offendingAllergens
+    .map((id) => ALLERGEN_CATALOG.find((a) => a.id === id)?.label.toLowerCase() ?? id)
+    .join(', ');
+  return `Am înlocuit ${meals} care conțineau ${labels}. Alergiile tale rămân active.`;
+}
+
 function buildInfeasibleNotice(reason: string): SystemNotice {
   return {
     id: Date.now().toString(),
@@ -198,6 +303,14 @@ function buildInfeasibleNotice(reason: string): SystemNotice {
     message: reason,
     type: 'warning',
   };
+}
+
+function collectMealsFromDays(days: MealPlanDay[]): { recipe: Recipe; servings: number }[] {
+  const meals: { recipe: Recipe; servings: number }[] = [];
+  days.forEach((day) =>
+    day.meals.forEach((meal) => meals.push({ recipe: meal.recipe, servings: meal.servings }))
+  );
+  return meals;
 }
 
 function collectPlanMeals(plan: MealPlan): { recipe: Recipe; servings: number }[] {
@@ -358,29 +471,58 @@ export const useAppStore = create<AppState>((set, get) => ({
       // the app unable to start at all. Repair such a state instead of inheriting it.
       let storedPrefs = rawStoredPrefs;
       let repairedPrefsNotice: SystemNotice | null = null;
-      if (storedPrefs && !checkPlanFeasibility(storedPrefs).isFeasible) {
-        storedPrefs = {
-          ...storedPrefs,
-          appliances: DEFAULT_PREFERENCES.appliances,
-          cookingDays:
-            storedPrefs.cookingDays && storedPrefs.cookingDays.length > 0
-              ? storedPrefs.cookingDays
-              : DEFAULT_PREFERENCES.cookingDays,
-          peopleCount:
-            storedPrefs.peopleCount >= 1
-              ? storedPrefs.peopleCount
-              : DEFAULT_PREFERENCES.peopleCount,
-          budgetRon:
-            storedPrefs.budgetRon > 0 ? storedPrefs.budgetRon : DEFAULT_PREFERENCES.budgetRon,
-        };
-        void storageService.savePreferences(storedPrefs);
-        repairedPrefsNotice = {
-          id: Date.now().toString(),
-          title: 'Setări restaurate',
-          message:
-            'Setările salvate nu permiteau generarea niciunui plan, așa că am restaurat aparatele de bucătărie implicite. Le poți schimba oricând din Filtre.',
-          type: 'info',
-        };
+
+      if (storedPrefs) {
+        const repairs: string[] = [];
+
+        // Storage is untrusted. An unreadable allergen list must not cost the user the rest
+        // of their settings, and must never be silently treated as "no allergies".
+        const { allergens, wasRepaired } = sanitizeAllergens(storedPrefs.avoidedAllergens);
+        if (wasRepaired) {
+          repairs.push('lista de alergii');
+        }
+        storedPrefs = { ...storedPrefs, avoidedAllergens: allergens };
+
+        if (!checkPlanFeasibility(storedPrefs).isFeasible) {
+          storedPrefs = {
+            ...storedPrefs,
+            cookingDays:
+              storedPrefs.cookingDays && storedPrefs.cookingDays.length > 0
+                ? storedPrefs.cookingDays
+                : DEFAULT_PREFERENCES.cookingDays,
+            peopleCount:
+              storedPrefs.peopleCount >= 1
+                ? storedPrefs.peopleCount
+                : DEFAULT_PREFERENCES.peopleCount,
+            budgetRon:
+              storedPrefs.budgetRon > 0 ? storedPrefs.budgetRon : DEFAULT_PREFERENCES.budgetRon,
+          };
+
+          // Appliances are reset only if they are what actually blocks the catalog, and the
+          // check is repeated afterwards so the notice cannot claim a repair that did not work.
+          if (!checkPlanFeasibility(storedPrefs).isFeasible) {
+            storedPrefs = { ...storedPrefs, appliances: DEFAULT_PREFERENCES.appliances };
+            repairs.push('aparatele de bucătărie');
+          }
+
+          if (!checkPlanFeasibility(storedPrefs).isFeasible) {
+            storedPrefs = { ...storedPrefs, supermarketId: DEFAULT_PREFERENCES.supermarketId };
+            repairs.push('magazinul');
+          }
+        }
+
+        if (repairs.length > 0) {
+          void storageService.savePreferences(storedPrefs);
+          const stillBroken = !checkPlanFeasibility(storedPrefs).isFeasible;
+          repairedPrefsNotice = {
+            id: Date.now().toString(),
+            title: stillBroken ? 'Setări incomplete' : 'Setări restaurate',
+            message: stillBroken
+              ? `Am restaurat ${repairs.join(' și ')}, dar combinația de dietă și alergii tot nu permite niciun plan. Verifică-le din Filtre.`
+              : `Setările salvate nu permiteau generarea niciunui plan, așa că am restaurat ${repairs.join(' și ')}. Le poți schimba oricând din Filtre.`,
+            type: stillBroken ? 'warning' : 'info',
+          };
+        }
       }
 
       let sanitizedPlan = plan;
@@ -1522,33 +1664,69 @@ export const useAppStore = create<AppState>((set, get) => ({
   restoreSavedPlan: (savedPlanId: string) => {
     set((state) => {
       const entry = state.savedPlans.find((p) => p.id === savedPlanId);
-      if (!entry) return state;
+      if (!entry || !entry.plan || !Array.isArray(entry.plan.days) || !entry.preferences) {
+        return {
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Plan deteriorat',
+            message: 'Planul salvat nu mai poate fi citit și nu a fost încărcat. Îl poți șterge din listă.',
+            type: 'error',
+          },
+        };
+      }
 
-      // Prices and pack sizes are recomputed rather than trusted from the archive: the
-      // catalog may have moved on since the plan was saved.
+      // The saved plan brings back its menu, not the user's protections. Allergies, diet and
+      // the kitchen are whatever they are TODAY: restoring an older week must never be a way
+      // around a restriction declared since, which for an allergy is a safety matter.
+      const effectivePrefs: UserPreferences = {
+        ...entry.preferences,
+        avoidedAllergens: mergeAllergens(
+          state.preferences.avoidedAllergens,
+          entry.preferences.avoidedAllergens
+        ),
+        dietType: state.preferences.dietType,
+        dietTypes: state.preferences.dietTypes,
+        appliances: state.preferences.appliances,
+      };
+
+      const { days: safeDays, replacedCount, offendingAllergens } = makePlanSafeForPreferences(
+        entry.plan.days,
+        effectivePrefs
+      );
+
       const aggregated = aggregateGroceryList(
-        collectPlanMeals(entry.plan),
-        entry.preferences.supermarketId,
-        entry.preferences.excludePantryStaples,
-        getActiveExtraProductIds(entry.preferences),
-        entry.preferences.pantryInventory || []
+        collectMealsFromDays(safeDays),
+        effectivePrefs.supermarketId,
+        effectivePrefs.excludePantryStaples,
+        getActiveExtraProductIds(effectivePrefs),
+        effectivePrefs.pantryInventory || []
       );
 
       const restoredPlan: MealPlan = {
         ...entry.plan,
+        days: safeDays,
         totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
         totalCartCostRon: aggregated.totalCartCostRon,
-        extraProducts: getActiveExtraProducts(entry.preferences),
+        extraProducts: getActiveExtraProducts(effectivePrefs),
       };
 
-      void storageService.savePreferences(entry.preferences);
+      void storageService.savePreferences(effectivePrefs);
       void storageService.savePlanAndGrocery(restoredPlan, aggregated.items);
 
       return {
-        preferences: entry.preferences,
+        preferences: effectivePrefs,
         currentPlan: restoredPlan,
         groceryItems: aggregated.items,
         activeView: 'meals',
+        activeNotice:
+          replacedCount > 0
+            ? {
+                id: Date.now().toString(),
+                title: 'Plan adaptat la setările tale',
+                message: buildRestoreNotice(replacedCount, offendingAllergens),
+                type: 'warning',
+              }
+            : state.activeNotice,
       };
     });
   },
