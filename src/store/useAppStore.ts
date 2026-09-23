@@ -41,7 +41,7 @@ import { areDietsCompatible, isRecipeMatchingDiets } from '../utils/dietCompatib
 export type ActiveView = 'onboarding' | 'generating' | 'meals' | 'grocery';
 
 /** Actions destructive enough to require an explicit yes before they run. */
-export type ConfirmActionId = 'reset_onboarding';
+export type ConfirmActionId = 'reset_onboarding' | 'apply_cloud_plan';
 
 /** Everything needed to put a reset week back exactly as it was. */
 export interface DiscardedPlan {
@@ -70,6 +70,8 @@ export interface AppState {
 
   // Pending confirmation for a destructive action
   confirmRequest: ConfirmActionId | null;
+  /** A plan fetched from the cloud, waiting for the user to accept replacing the local one. */
+  pendingCloudPlan: PendingCloudPlan | null;
   requestConfirm: (action: ConfirmActionId) => void;
   cancelConfirm: () => void;
   confirmPending: () => void;
@@ -146,6 +148,7 @@ export interface AppState {
   hydrateStorage: () => Promise<void>;
   setUserEmail: (email: string | null) => void;
   syncWithCloud: () => Promise<void>;
+  syncFromCloud: () => Promise<void>;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -483,6 +486,84 @@ function describeUnsafeRecipe(recipe: Recipe, preferences: UserPreferences): str
   return null;
 }
 
+/** A cloud row that has been read and checked, held while the user decides on it. */
+export interface PendingCloudPlan {
+  plan: MealPlan;
+  preferences: UserPreferences | null;
+  updatedAt: string | null;
+}
+
+/**
+ * Puts a plan fetched from the cloud in front of the user.
+ *
+ * The cloud is the fifth door a meal comes through, and the only one whose data crossed a
+ * network from a copy of the app that may be older than this one. So: the other device's
+ * preferences are adopted, because pulling them down is what the user asked for -- except
+ * the allergies, which only ever grow when two devices meet. The plan is then re-checked
+ * against the result, and the shopping list is recomputed rather than believed.
+ */
+function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Partial<AppState> {
+  const effectivePrefs: UserPreferences = {
+    ...(pending.preferences ?? state.preferences),
+    avoidedAllergens: mergeAllergens(
+      state.preferences.avoidedAllergens,
+      pending.preferences?.avoidedAllergens
+    ),
+  };
+
+  const { days: safeDays, replacedCount, offendingAllergens } = makePlanSafeForPreferences(
+    pending.plan.days,
+    effectivePrefs
+  );
+
+  const aggregated = aggregateGroceryList(
+    collectMealsFromDays(safeDays),
+    effectivePrefs.supermarketId,
+    effectivePrefs.excludePantryStaples,
+    getActiveExtraProductIds(effectivePrefs),
+    effectivePrefs.pantryInventory || []
+  );
+
+  const downloadedPlan: MealPlan = {
+    ...pending.plan,
+    days: safeDays,
+    supermarketId: effectivePrefs.supermarketId,
+    peopleCount: effectivePrefs.peopleCount,
+    totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+    totalCartCostRon: aggregated.totalCartCostRon,
+    extraProducts: getActiveExtraProducts(effectivePrefs),
+  };
+
+  void storageService.savePreferences(effectivePrefs);
+  void storageService.savePlanAndGrocery(downloadedPlan, aggregated.items);
+
+  return {
+    preferences: effectivePrefs,
+    currentPlan: downloadedPlan,
+    groceryItems: aggregated.items,
+    activeView: 'meals',
+    confirmRequest: null,
+    pendingCloudPlan: null,
+    // Whatever this replaced stays recoverable, the same way a reset does.
+    lastDiscardedPlan: state.currentPlan
+      ? {
+          plan: state.currentPlan,
+          groceryItems: state.groceryItems,
+          preferences: state.preferences,
+        }
+      : state.lastDiscardedPlan,
+    activeNotice: {
+      id: Date.now().toString(),
+      title: replacedCount > 0 ? 'Plan adaptat la setările tale' : 'Plan descărcat din cloud',
+      message:
+        replacedCount > 0
+          ? buildRestoreNotice(replacedCount, offendingAllergens)
+          : 'Am adus planul salvat pe celălalt dispozitiv. Îl poți anula imediat dacă nu era cel dorit.',
+      type: replacedCount > 0 ? 'warning' : 'info',
+    },
+  };
+}
+
 function applyPreferenceStep(state: AppState, nextPrefs: UserPreferences): Partial<AppState> {
   if (!state.currentPlan) {
     void storageService.savePreferences(nextPrefs);
@@ -508,14 +589,21 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // Pending confirmation for a destructive action
   confirmRequest: null,
+  pendingCloudPlan: null,
   requestConfirm: (action: ConfirmActionId) => set({ confirmRequest: action }),
-  cancelConfirm: () => set({ confirmRequest: null }),
+  cancelConfirm: () => set({ confirmRequest: null, pendingCloudPlan: null }),
   confirmPending: () => {
     const pending = get().confirmRequest;
     if (!pending) return;
     set({ confirmRequest: null });
     if (pending === 'reset_onboarding') {
       get().resetOnboarding();
+      return;
+    }
+    if (pending === 'apply_cloud_plan') {
+      set((state) =>
+        state.pendingCloudPlan ? applyCloudPlan(state, state.pendingCloudPlan) : { confirmRequest: null }
+      );
     }
   },
 
@@ -748,6 +836,96 @@ export const useAppStore = create<AppState>((set, get) => ({
           },
         });
       }
+    } catch (e: unknown) {
+      // A rejected call used to escape this action entirely, surfacing as an unhandled
+      // rejection with nothing shown to the user.
+      const message = e instanceof Error ? e.message : 'Eroare neașteptată la sincronizare.';
+      set({
+        activeNotice: {
+          id: Date.now().toString(),
+          title: 'Sincronizare eșuată',
+          message: `${message} Planul rămâne salvat local.`,
+          type: 'error',
+        },
+      });
+    } finally {
+      set({ isSyncing: false });
+    }
+  },
+
+  /**
+   * Brings down the plan another device saved. Nothing local is overwritten without the
+   * user saying so -- the fetched plan waits in `pendingCloudPlan` until they confirm.
+   */
+  syncFromCloud: async () => {
+    const { userEmail } = get();
+    if (!userEmail) return;
+
+    set({ isSyncing: true });
+    try {
+      const user = await cloudSyncService.getCurrentUser();
+      if (!user) {
+        set({
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Sesiune expirată',
+            message: 'Autentifică-te din nou pentru a aduce planul din cloud.',
+            type: 'warning',
+          },
+        });
+        return;
+      }
+
+      const result = await cloudSyncService.loadMealPlan(user.id);
+
+      if (result.error) {
+        set({
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Descărcare eșuată',
+            message: `${result.error} Planul tău local a rămas neatins.`,
+            type: 'error',
+          },
+        });
+        return;
+      }
+
+      if (!result.plan) {
+        set({
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Nimic salvat în cloud',
+            message:
+              'Nu există încă un plan salvat pe acest cont. Apasă „Sincronizează acum" ca să îl urci pe cel de aici.',
+            type: 'info',
+          },
+        });
+        return;
+      }
+
+      const pending: PendingCloudPlan = {
+        plan: result.plan,
+        preferences: result.preferences,
+        updatedAt: result.updatedAt,
+      };
+
+      // With nothing local to lose, there is nothing to ask about.
+      if (!get().currentPlan) {
+        set((state) => applyCloudPlan(state, pending));
+        return;
+      }
+
+      set({ pendingCloudPlan: pending, confirmRequest: 'apply_cloud_plan' });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Eroare neașteptată la descărcare.';
+      set({
+        activeNotice: {
+          id: Date.now().toString(),
+          title: 'Descărcare eșuată',
+          message: `${message} Planul tău local a rămas neatins.`,
+          type: 'error',
+        },
+      });
     } finally {
       set({ isSyncing: false });
     }

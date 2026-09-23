@@ -315,3 +315,52 @@ check that the diet still leaves enough recipes for a full week.
 *What would make this decision wrong:* if the diet and the allergy ever needed to disagree on
 purpose — say a "reduced gluten" tier that permits oats for the non-coeliac. That is a different
 product decision, and it would need its own field on the ingredient, not a second list.
+
+---
+
+## ADR-11: Downward cloud sync asks before it replaces, and allergies only ever grow
+
+**Status:** Accepted · 2026-09-23
+
+### Context
+`cloudSyncService.loadMealPlan` had been written and tested but no part of the app called it,
+so sync only ever went up: a second device never received the plan. Wiring it needed a
+conflict rule, which is why it was left out of the review that found it.
+
+Two things make this harder than a download. First, replacing a live plan destroys work the
+user may have done on this device. Second, the row crossed a network and was written by a
+copy of the app that may be older than this one — it is untrusted input, like storage.
+
+### Options
+1. **Newest wins, by timestamp**
+   - *Pros:* Automatic, no interruption.
+   - *Cons:* `MealPlan.createdAt` records when the plan was generated, not when it was last
+     touched. A user who swapped six meals this morning still carries this week's `createdAt`,
+     so the comparison would silently prefer the wrong side. The timestamp available is not
+     the timestamp the rule needs.
+2. **Ask whenever there is something local to lose** *(chosen)*
+   - *Pros:* Cannot destroy work silently. The cloud's write time is shown as information for
+     the user to judge, rather than used as a decider it cannot support.
+   - *Cons:* One extra tap. Not automatic on launch.
+3. **Merge the two plans day by day**
+   - *Cons:* There is no sound way to merge two different weeks of meals; the result would be
+     a week neither device chose, with a cart neither total matches.
+
+### Decision
+Option 2, with three rules that are not negotiable by the conflict resolution:
+
+- **Nothing is overwritten silently.** With no local plan the download applies directly, since
+  there is nothing to lose. With one, it waits in `pendingCloudPlan` behind a confirmation,
+  and the plan it replaces goes to `lastDiscardedPlan` so Undo brings it straight back.
+- **Allergies are the union of both devices**, via the same `mergeAllergens` a restored plan
+  uses. Every other preference is adopted from the cloud, because pulling that device's state
+  down is exactly what the user asked for — but an allergy declared anywhere stays declared.
+- **The downloaded plan is re-checked and the cart recomputed.** The plan goes through
+  `makePlanSafeForPreferences` against the merged preferences, and the shopping list is
+  rebuilt locally rather than believed; a row claiming a 9999-lei item is discarded.
+
+### Falsification Condition
+*What would make this decision wrong:* if the plan gained a real `updatedAt` that every
+mutation touched, option 1 would become defensible for the no-local-changes case and the
+confirmation could be narrowed to genuine conflicts. Adding that field is the prerequisite,
+not the timestamp comparison.
