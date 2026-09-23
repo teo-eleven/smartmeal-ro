@@ -1,0 +1,123 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { AuthModal } from '../AuthModal';
+import { cloudSyncService } from '../../services/supabase';
+
+jest.mock('../../services/supabase', () => ({
+  cloudSyncService: {
+    signInWithEmail: jest.fn(),
+    signUpWithEmail: jest.fn(),
+    signOut: jest.fn(),
+  },
+}));
+
+const baseProps = {
+  visible: true,
+  onClose: jest.fn(),
+  isDark: false,
+  userEmail: null,
+  onUserChanged: jest.fn(),
+};
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+/** The screen in front of every cloud sync: whatever it says is what the user believes. */
+describe('AuthModal', () => {
+  test('cere ambele câmpuri înainte să atingă serverul', async () => {
+    render(<AuthModal {...baseProps} />);
+
+    fireEvent.press(screen.getByText('Conectare'));
+
+    await waitFor(() => expect(screen.getByText(/completezi atât adresa/i)).toBeTruthy());
+    expect(cloudSyncService.signInWithEmail).not.toHaveBeenCalled();
+  });
+
+  test('arată eroarea venită de la server, nu una inventată', async () => {
+    (cloudSyncService.signInWithEmail as jest.Mock).mockResolvedValue({
+      user: null,
+      error: 'Parolă greșită',
+    });
+    render(<AuthModal {...baseProps} />);
+
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'a@b.ro');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'parola');
+    fireEvent.press(screen.getByText('Conectare'));
+
+    await waitFor(() => expect(screen.getByText('Parolă greșită')).toBeTruthy());
+    expect(baseProps.onUserChanged).not.toHaveBeenCalled();
+  });
+
+  test('anunță aplicația după o conectare reușită', async () => {
+    (cloudSyncService.signInWithEmail as jest.Mock).mockResolvedValue({
+      user: { email: 'a@b.ro' },
+      error: null,
+    });
+    render(<AuthModal {...baseProps} />);
+
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), ' a@b.ro ');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'parola');
+    fireEvent.press(screen.getByText('Conectare'));
+
+    await waitFor(() => expect(baseProps.onUserChanged).toHaveBeenCalledWith('a@b.ro'));
+    expect(cloudSyncService.signInWithEmail).toHaveBeenCalledWith('a@b.ro', 'parola');
+  });
+
+  test('înregistrarea folosește alt apel și spune să confirmi emailul', async () => {
+    (cloudSyncService.signUpWithEmail as jest.Mock).mockResolvedValue({
+      user: { email: 'nou@b.ro' },
+      error: null,
+    });
+    render(<AuthModal {...baseProps} />);
+
+    fireEvent.press(screen.getByText('Creează cont'));
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'parola');
+    fireEvent.press(screen.getByText('Înregistrare'));
+
+    await waitFor(() => expect(screen.getByText(/Verifică email-ul/i)).toBeTruthy());
+    expect(cloudSyncService.signUpWithEmail).toHaveBeenCalled();
+  });
+
+  test('o excepție de rețea devine un mesaj, nu un ecran alb', async () => {
+    (cloudSyncService.signInWithEmail as jest.Mock).mockRejectedValue(new Error('offline'));
+    render(<AuthModal {...baseProps} />);
+
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'a@b.ro');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'parola');
+    fireEvent.press(screen.getByText('Conectare'));
+
+    await waitFor(() => expect(screen.getByText(/problemă la comunicarea cu serverul/i)).toBeTruthy());
+  });
+
+  test('deconectarea anunță aplicația', async () => {
+    (cloudSyncService.signOut as jest.Mock).mockResolvedValue(undefined);
+    render(<AuthModal {...baseProps} userEmail="a@b.ro" />);
+
+    fireEvent.press(screen.getByText(/Deconectare/i));
+
+    await waitFor(() => expect(baseProps.onUserChanged).toHaveBeenCalledWith(null));
+  });
+
+  test('conectat, oferă sincronizarea și arată ultima oră de sincronizare', () => {
+    const onSyncTriggered = jest.fn().mockResolvedValue(undefined);
+    render(
+      <AuthModal
+        {...baseProps}
+        userEmail="a@b.ro"
+        onSyncTriggered={onSyncTriggered}
+        lastSyncedAt="12:30:00"
+      />
+    );
+
+    expect(screen.getByText('a@b.ro')).toBeTruthy();
+    expect(screen.getByText(/12:30:00/)).toBeTruthy();
+  });
+
+  test('nu cere parola de două ori: parola este mascată', () => {
+    render(<AuthModal {...baseProps} />);
+
+    expect(screen.getByPlaceholderText('••••••••').props.secureTextEntry).toBe(true);
+  });
+});
