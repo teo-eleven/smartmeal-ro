@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Appliance } from '../types';
+import { getAppTheme } from '../styles/theme';
 
 interface ApplianceSelectorProps {
   selectedAppliances: Appliance[];
@@ -47,13 +48,15 @@ export const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
   onToggleAppliance,
   isDark,
 }) => {
+  const appTheme = getAppTheme(isDark);
   const theme = {
-    text: isDark ? '#f8fafc' : '#0f172a',
-    textMuted: isDark ? '#94a3b8' : '#64748b',
-    primary: '#10b981',
-    cardBg: isDark ? '#1e293b' : '#ffffff',
-    border: isDark ? '#334155' : '#e2e8f0',
-    selectedBg: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5',
+    text: appTheme.text,
+    textMuted: appTheme.textMuted,
+    primary: appTheme.primary,
+    primaryText: appTheme.primaryText,
+    cardBg: appTheme.card,
+    border: appTheme.border,
+    selectedBg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
   };
 
   return (
@@ -63,6 +66,9 @@ export const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
 
         return (
           <TouchableOpacity
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: isSelected }}
+            accessibilityLabel={app.name}
             key={app.id}
             onPress={() => onToggleAppliance(app.id)}
             activeOpacity={0.7}
@@ -85,7 +91,7 @@ export const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
                   },
                 ]}
               >
-                {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                {isSelected && <Text style={[styles.checkmark, { color: theme.primaryText }]}>✓</Text>}
               </View>
             </View>
 
@@ -106,7 +112,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   card: {
-    width: '48%',
+    flex: 1,
+    minWidth: 180,
     padding: 14,
     borderRadius: 16,
     borderWidth: 2,

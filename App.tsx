@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
+  Platform,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -14,7 +16,13 @@ import { GeneratingPlanModal } from './src/screens/onboarding/GeneratingPlanModa
 import { MealBoardScreen } from './src/screens/MealBoardScreen';
 import { GroceryScreen } from './src/screens/GroceryScreen';
 import { AuthModal } from './src/screens/AuthModal';
+import { InformativeNoticeModal } from './src/components/InformativeNoticeModal';
+import { ConfirmDialog } from './src/components/ConfirmDialog';
 import { SUPERMARKETS } from './src/data/supermarkets';
+import { useResponsive } from './src/hooks/useResponsive';
+import { injectEmeraldGlassStyles, getAppTheme } from './src/styles/theme';
+import { glass } from './src/styles/glass';
+import { UndoBanner } from './src/components/UndoBanner';
 
 export default function App() {
   const colorScheme = useColorScheme();
@@ -28,35 +36,74 @@ export default function App() {
     userEmail,
     isSyncing,
     lastSyncedAt,
+    activeNotice,
+    clearNotice,
+    confirmRequest,
+    requestConfirm,
+    cancelConfirm,
+    confirmPending,
+    lastDiscardedPlan,
+    undoReset,
+    dismissUndo,
     setActiveView,
-    resetOnboarding,
     hydrateStorage,
     setUserEmail,
     syncWithCloud,
+    generatePlan,
   } = useAppStore();
+
+  const { isDesktop, contentMaxWidth } = useResponsive();
+
+  const viewFadeAnim = useRef(new Animated.Value(1)).current;
+  const viewSlideAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    injectEmeraldGlassStyles(isDark);
+  }, [isDark]);
 
   useEffect(() => {
     void hydrateStorage();
   }, [hydrateStorage]);
 
-  const theme = {
-    background: isDark ? '#0b1120' : '#f8fafc',
-    card: isDark ? '#131d31' : '#ffffff',
-    text: isDark ? '#f8fafc' : '#0f172a',
-    textMuted: isDark ? '#94a3b8' : '#64748b',
-    primary: '#10b981',
-    primaryLight: isDark ? 'rgba(16, 185, 129, 0.16)' : '#ecfdf5',
-    border: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-    accentBg: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
-    glassBg: isDark ? 'rgba(19, 29, 49, 0.85)' : 'rgba(255, 255, 255, 0.9)',
-  };
+  useEffect(() => {
+    viewFadeAnim.setValue(0.35);
+    viewSlideAnim.setValue(10);
+    Animated.parallel([
+      Animated.timing(viewFadeAnim, {
+        toValue: 1,
+        duration: 260,
+        useNativeDriver: true,
+      }),
+      Animated.spring(viewSlideAnim, {
+        toValue: 0,
+        friction: 8,
+        tension: 60,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [activeView, viewFadeAnim, viewSlideAnim]);
+
+  // Apple iOS Black & White Minimalist Theme Tokens
+  const theme = getAppTheme(isDark);
 
   // If in onboarding wizard
   if (activeView === 'onboarding') {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <SafeAreaView
+        style={[styles.safeArea, { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background }]}
+        {...glass('root')}
+      >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
         <OnboardingWizard isDark={isDark} onPlanGenerated={() => setActiveView('meals')} />
+        <UndoBanner
+          visible={Boolean(lastDiscardedPlan)}
+          message="Planul săptămânal a fost șters."
+          actionLabel="Anulează ștergerea"
+          onAction={undoReset}
+          onDismiss={dismissUndo}
+          isDark={isDark}
+        />
+        <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
       </SafeAreaView>
     );
   }
@@ -64,9 +111,21 @@ export default function App() {
   // If in generating animation
   if (activeView === 'generating') {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <SafeAreaView
+        style={[styles.safeArea, { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background }]}
+        {...glass('root')}
+      >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-        <GeneratingPlanModal isDark={isDark} onComplete={() => setActiveView('meals')} />
+        <GeneratingPlanModal
+          isDark={isDark}
+          onComplete={() => {
+            if (!useAppStore.getState().currentPlan) {
+              generatePlan();
+            }
+            setActiveView('meals');
+          }}
+        />
+        <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
       </SafeAreaView>
     );
   }
@@ -76,18 +135,31 @@ export default function App() {
   const purchasedCount = groceryItems.filter((i) => i.isPurchased).length;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background }]}
+      {...glass('root')}
+    >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Main Container */}
       <View style={styles.dashboardContainer}>
         {/* Top App Bar with VisionOS-inspired translucent card style */}
-        <View style={[styles.topBar, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <View>
+        <View
+          {...glass('card')}
+          style={[
+            styles.topBar,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              maxWidth: contentMaxWidth,
+            },
+          ]}
+        >
+          <View style={styles.brandContainer}>
             <View style={styles.brandRow}>
               <Text style={[styles.brandTitle, { color: theme.text }]}>SmartMeal</Text>
-              <View style={[styles.brandBadge, { backgroundColor: theme.primaryLight }]}>
-                <Text style={[styles.brandBadgeText, { color: theme.primary }]}>RO 🇷🇴</Text>
+              <View style={[styles.brandBadge, { backgroundColor: theme.surfaceTertiary, borderColor: theme.border, borderWidth: 1 }]}>
+                <Text style={[styles.brandBadgeText, { color: theme.text }]}>RO 🇷🇴</Text>
               </View>
             </View>
             <Text style={[styles.brandSubtitle, { color: theme.textMuted }]}>
@@ -95,13 +167,75 @@ export default function App() {
             </Text>
           </View>
 
+          {/* Desktop Navigation Tabs */}
+          {isDesktop && (
+            <View
+              {...glass('dock')}
+              style={[styles.desktopTabsDock, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
+            >
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => setActiveView('meals')}
+                activeOpacity={0.8}
+                {...glass(activeView === 'meals' ? 'pill-active' : 'pill')}
+                style={[
+                  styles.dockItem,
+                  activeView === 'meals' && [
+                    styles.dockItemActive,
+                    { backgroundColor: theme.primary, borderColor: theme.primary },
+                  ],
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.dockItemText,
+                    {
+                      color: activeView === 'meals' ? theme.primaryText : theme.textMuted,
+                      fontWeight: activeView === 'meals' ? '800' : '600',
+                    },
+                  ]}
+                >
+                  🍽️ Mese ({currentPlan?.days.length ?? 0} zile)
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => setActiveView('grocery')}
+                activeOpacity={0.8}
+                {...glass(activeView === 'grocery' ? 'pill-active' : 'pill')}
+                style={[
+                  styles.dockItem,
+                  activeView === 'grocery' && [
+                    styles.dockItemActive,
+                    { backgroundColor: theme.primary, borderColor: theme.primary },
+                  ],
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.dockItemText,
+                    {
+                      color: activeView === 'grocery' ? theme.primaryText : theme.textMuted,
+                      fontWeight: activeView === 'grocery' ? '800' : '600',
+                    },
+                  ]}
+                >
+                  🛒 Cumpărături ({purchasedCount}/{groceryItems.length})
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View style={styles.topBarActions}>
             <TouchableOpacity
+              accessibilityRole="button"
               onPress={() => setAuthModalVisible(true)}
+              {...glass('pill')}
               style={[
                 styles.syncBtn,
                 {
-                  backgroundColor: userEmail ? theme.primaryLight : theme.accentBg,
+                  backgroundColor: userEmail ? theme.surfaceTertiary : theme.accentBg,
                   borderColor: theme.border,
                 },
               ]}
@@ -110,7 +244,7 @@ export default function App() {
               <Text
                 style={[
                   styles.syncBtnText,
-                  { color: userEmail ? theme.primary : theme.textMuted },
+                  { color: userEmail ? theme.text : theme.textMuted },
                 ]}
               >
                 {userEmail ? '☁️ Sincron' : '☁️ Cloud'}
@@ -118,71 +252,92 @@ export default function App() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={resetOnboarding}
-              style={[styles.resetBtn, { backgroundColor: theme.primaryLight }]}
+              accessibilityRole="button"
+              onPress={() => requestConfirm('reset_onboarding')}
+              {...glass('btn-primary')}
+              style={[styles.resetBtn, { backgroundColor: theme.primary }]}
               activeOpacity={0.7}
             >
-              <Text style={[styles.resetBtnText, { color: theme.primary }]}>+ Plan Nou</Text>
+              <Text style={[styles.resetBtnText, { color: theme.primaryText }]}>+ Plan Nou</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Futuristic Floating Segmented Dock */}
-        <View style={styles.tabsDockContainer}>
-          <View style={[styles.tabsDock, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <TouchableOpacity
-              onPress={() => setActiveView('meals')}
-              activeOpacity={0.8}
-              style={[
-                styles.dockItem,
-                activeView === 'meals' && [
-                  styles.dockItemActive,
-                  { backgroundColor: theme.primaryLight, borderColor: theme.primary },
-                ],
-              ]}
+        {/* Mobile Floating Segmented Dock (Only on mobile screen) */}
+        {!isDesktop && (
+          <View style={styles.tabsDockContainer}>
+            <View
+              {...glass('dock')}
+              style={[styles.tabsDock, { backgroundColor: theme.card, borderColor: theme.border }]}
             >
-              <Text
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => setActiveView('meals')}
+                activeOpacity={0.8}
+                {...glass(activeView === 'meals' ? 'pill-active' : 'pill')}
                 style={[
-                  styles.dockItemText,
-                  {
-                    color: activeView === 'meals' ? theme.primary : theme.textMuted,
-                    fontWeight: activeView === 'meals' ? '800' : '600',
-                  },
+                  styles.dockItem,
+                  activeView === 'meals' && [
+                    styles.dockItemActive,
+                    { backgroundColor: theme.primary, borderColor: theme.primary },
+                  ],
                 ]}
               >
-                🍽️ Mese ({currentPlan?.days.length ?? 0})
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.dockItemText,
+                    {
+                      color: activeView === 'meals' ? theme.primaryText : theme.textMuted,
+                      fontWeight: activeView === 'meals' ? '800' : '600',
+                    },
+                  ]}
+                >
+                  🍽️ Mese ({currentPlan?.days.length ?? 0})
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => setActiveView('grocery')}
-              activeOpacity={0.8}
-              style={[
-                styles.dockItem,
-                activeView === 'grocery' && [
-                  styles.dockItemActive,
-                  { backgroundColor: theme.primaryLight, borderColor: theme.primary },
-                ],
-              ]}
-            >
-              <Text
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => setActiveView('grocery')}
+                activeOpacity={0.8}
+                {...glass(activeView === 'grocery' ? 'pill-active' : 'pill')}
                 style={[
-                  styles.dockItemText,
-                  {
-                    color: activeView === 'grocery' ? theme.primary : theme.textMuted,
-                    fontWeight: activeView === 'grocery' ? '800' : '600',
-                  },
+                  styles.dockItem,
+                  activeView === 'grocery' && [
+                    styles.dockItemActive,
+                    { backgroundColor: theme.primary, borderColor: theme.primary },
+                  ],
                 ]}
               >
-                🛒 Cumpărături ({purchasedCount}/{groceryItems.length})
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.dockItemText,
+                    {
+                      color: activeView === 'grocery' ? theme.primaryText : theme.textMuted,
+                      fontWeight: activeView === 'grocery' ? '800' : '600',
+                    },
+                  ]}
+                >
+                  🛒 Cumpărături ({purchasedCount}/{groceryItems.length})
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
 
-        {/* VIEW BODY */}
-        {activeView === 'meals' && <MealBoardScreen isDark={isDark} />}
-        {activeView === 'grocery' && <GroceryScreen isDark={isDark} />}
+        {/* VIEW BODY WITH SMOOTH TRANSITION ANIMATION */}
+        <Animated.View
+          style={[
+            styles.viewBodyAnimated,
+            {
+              opacity: viewFadeAnim,
+              transform: [{ translateY: viewSlideAnim }],
+            },
+          ]}
+        >
+          {activeView === 'meals' && <MealBoardScreen isDark={isDark} />}
+          {activeView === 'grocery' && <GroceryScreen isDark={isDark} />}
+        </Animated.View>
       </View>
 
       {/* Cloud & Auth Sync Modal */}
@@ -195,6 +350,31 @@ export default function App() {
         onSyncTriggered={syncWithCloud}
         isSyncing={isSyncing}
         lastSyncedAt={lastSyncedAt}
+      />
+
+      {/* Global Informative Notice Pop-up */}
+      <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
+
+        <UndoBanner
+          visible={Boolean(lastDiscardedPlan)}
+          message="Planul săptămânal a fost șters."
+          actionLabel="Anulează ștergerea"
+          onAction={undoReset}
+          onDismiss={dismissUndo}
+          isDark={isDark}
+        />
+
+      {/* Confirmation before anything is destroyed */}
+      <ConfirmDialog
+        visible={confirmRequest === 'reset_onboarding'}
+        title="Ștergi planul curent?"
+        message="Se șterg meniul săptămânal, lista de cumpărături și preferințele salvate. Acțiunea nu poate fi anulată."
+        confirmLabel="Șterge și începe din nou"
+        cancelLabel="Păstrează planul"
+        isDestructive
+        onConfirm={confirmPending}
+        onCancel={cancelConfirm}
+        isDark={isDark}
       />
     </SafeAreaView>
   );
@@ -209,15 +389,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
+  viewBodyAnimated: {
+    flex: 1,
+    width: '100%',
+  },
   topBar: {
     width: '100%',
-    maxWidth: 480,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 16,
+  },
+  brandContainer: {
+    minWidth: 140,
+  },
+  desktopTabsDock: {
+    flexDirection: 'row',
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 3,
+    minWidth: 380,
+    maxWidth: 520,
   },
   brandRow: {
     flexDirection: 'row',

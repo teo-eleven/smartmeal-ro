@@ -2,6 +2,8 @@ import React, { useRef } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GroceryListItem } from '../types';
 
+import { getAppTheme } from '../styles/theme';
+
 interface GroceryItemRowProps {
   item: GroceryListItem;
   onToggle: () => void;
@@ -29,28 +31,23 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({ item, onToggle, 
     onToggle();
   };
 
-  const theme = {
-    card: isDark ? '#131d31' : '#ffffff',
-    text: isDark ? '#f8fafc' : '#0f172a',
-    textMuted: isDark ? '#94a3b8' : '#64748b',
-    border: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-    primary: '#10b981',
-    stapleBg: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7',
-    stapleText: isDark ? '#fbbf24' : '#b45309',
-    checkedBg: isDark ? 'rgba(19, 29, 49, 0.4)' : '#f1f5f9',
-  };
+  const theme = getAppTheme(isDark);
 
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%' }}>
       <TouchableOpacity
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: item.isPurchased }}
+        accessibilityLabel={`${item.name}, ${item.packsToBuy} ${item.packsToBuy === 1 ? 'pachet' : 'pachete'}, ${item.estimatedPriceRon} lei`}
+        accessibilityHint="Bifează produsul ca fiind cumpărat"
         activeOpacity={0.8}
         onPress={handleToggleWithFeedback}
         style={[
           styles.row,
           {
-            backgroundColor: item.isPurchased ? theme.checkedBg : theme.card,
+            backgroundColor: item.isPurchased ? (isDark ? 'rgba(28, 28, 30, 0.45)' : '#f2f2f7') : theme.card,
             borderColor: item.isPurchased ? 'transparent' : theme.border,
-            opacity: item.isPurchased ? 0.65 : 1,
+            opacity: item.isPurchased ? 0.60 : 1,
           },
         ]}
       >
@@ -64,7 +61,7 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({ item, onToggle, 
             },
           ]}
         >
-          {item.isPurchased && <Text style={styles.checkmark}>✓</Text>}
+          {item.isPurchased && <Text style={[styles.checkmark, { color: theme.primaryText }]}>✓</Text>}
         </View>
 
         {/* Item info */}
@@ -82,18 +79,19 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({ item, onToggle, 
               {item.name}
             </Text>
 
-            {item.isPantryStaple && (
-              <View style={[styles.stapleBadge, { backgroundColor: theme.stapleBg }]}>
-                <Text style={[styles.stapleText, { color: theme.stapleText }]}>Cămară</Text>
+            {item.isFromPantry ? (
+              <View style={[styles.stapleBadge, { backgroundColor: theme.primaryLight }]}>
+                <Text style={[styles.stapleText, { color: theme.primary }]}>🏠 Ai acasă</Text>
               </View>
-            )}
+            ) : item.isPantryStaple ? (
+              <View style={[styles.stapleBadge, { backgroundColor: theme.accentBg }]}>
+                <Text style={[styles.stapleText, { color: theme.textMuted }]}>Cămară</Text>
+              </View>
+            ) : null}
           </View>
 
           <Text style={[styles.details, { color: theme.textMuted }]}>
-            Necesar: <Text style={{ fontWeight: '700' }}>{item.neededAmount}{item.unit}</Text> • Cumperi:{' '}
-            <Text style={{ fontWeight: '700', color: item.isPurchased ? theme.textMuted : theme.text }}>
-              {item.packsToBuy} × pachet {item.packSize}{item.unit}
-            </Text>
+            Necesar: <Text style={{ fontWeight: '700' }}>{item.neededAmount}{item.unit}</Text> • {item.isFromPantry ? 'Ai deja în cămară (0 lei la casă)' : `Cumperi: ${item.packsToBuy} × pachet ${item.packSize}${item.unit}`}
           </Text>
         </View>
 

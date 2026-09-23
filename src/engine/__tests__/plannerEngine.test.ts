@@ -8,9 +8,10 @@ import {
   swapMealInPlan,
   isDietCompatible,
   hasRequiredAppliances,
+  isSupermarketCompatible,
 } from '../plannerEngine';
 import { RECIPES } from '../../data/recipes';
-import { UserPreferences } from '../../types';
+import { UserPreferences, MealSlot } from '../../types';
 
 describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
   const defaultPrefs: UserPreferences = {
@@ -157,10 +158,10 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
       expect(newBreakfastId).not.toBe(originalBreakfastId);
     });
 
-    it('strictly enforces meal slot timing appropriateness (no burgers or heavy beans for breakfast)', () => {
+    it('strictly enforces meal slot timing appropriateness (no burgers or heavy beans for breakfast, only dessert for dessert slot)', () => {
       const allSlotsPrefs: UserPreferences = {
         ...defaultPrefs,
-        mealSlots: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert'],
+        mealSlots: ['breakfast', 'lunch', 'dinner', 'dessert'],
         cookingDays: ['monday'],
       };
 
@@ -168,7 +169,8 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
       const day = plan.days[0];
 
       const breakfast = day.meals.find((m) => m.slot === 'breakfast');
-      const snack = day.meals.find((m) => m.slot === 'snack');
+      const lunch = day.meals.find((m) => m.slot === 'lunch');
+      const dinner = day.meals.find((m) => m.slot === 'dinner');
       const dessert = day.meals.find((m) => m.slot === 'dessert');
 
       expect(breakfast?.recipe.suitableSlots).toContain('breakfast');
@@ -176,8 +178,11 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
       expect(breakfast?.recipe.id).not.toBe('burger_vita_airfryer');
       expect(breakfast?.recipe.id).not.toBe('iahnie_fasole_afumata');
 
-      expect(snack?.recipe.suitableSlots).toContain('snack');
+      expect(lunch?.recipe.suitableSlots).toContain('lunch');
+      expect(dinner?.recipe.suitableSlots).toContain('dinner');
       expect(dessert?.recipe.suitableSlots).toContain('dessert');
+      // Verify no snack appears in cooking meal slots
+      expect(day.meals.some((m) => m.slot === 'snack')).toBe(false);
     });
 
     it('adapts recipe selection strictly based on selected foodTier (basic vs premium)', () => {
@@ -222,6 +227,24 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
 
       expect(basicFloor).toBeLessThan(mediumFloor);
       expect(mediumFloor).toBeLessThan(premiumFloor);
+    });
+
+    it('strictly filters recipes by supermarket availability', () => {
+      const doradaRecipe = RECIPES.find((r) => r.id === 'dorada_cuptor_lamaie_ierburi')!;
+      expect(isSupermarketCompatible(doradaRecipe, 'carrefour')).toBe(true);
+      expect(isSupermarketCompatible(doradaRecipe, 'lidl')).toBe(false);
+
+      const lidlPrefs: UserPreferences = {
+        ...defaultPrefs,
+        supermarketId: 'lidl',
+        cookingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        mealSlots: ['dinner', 'lunch'],
+      };
+      const lidlPlan = generateMealPlan(lidlPrefs);
+      const lidlRecipeIds = lidlPlan.days.flatMap((d) => d.meals.map((m) => m.recipe.id));
+      expect(lidlRecipeIds).not.toContain('dorada_cuptor_lamaie_ierburi');
+      expect(lidlRecipeIds).not.toContain('antricot_vita_airfryer_ierburi');
+      expect(lidlRecipeIds).not.toContain('tagliatelle_creveti_usturoi');
     });
   });
 
@@ -284,6 +307,58 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
       expect(withStaplesIncluded.totalCartCostRon).toBeGreaterThan(
         withStaplesExcluded.totalCartCostRon
       );
+    });
+    it('enforces maximum 2 repetitions per recipe across a full 7-day, 3-meals-per-day plan', () => {
+      const fullWeekPrefs: UserPreferences = {
+        ...defaultPrefs,
+        cookingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+        mealSlots: ['breakfast', 'lunch', 'dinner'],
+        budgetRon: 900,
+      };
+
+      const plan = generateMealPlan(fullWeekPrefs);
+      expect(plan.days.length).toBe(7);
+
+      const usageMap: Record<string, number> = {};
+      plan.days.forEach((day) => {
+        day.meals.forEach((meal) => {
+          usageMap[meal.recipe.id] = (usageMap[meal.recipe.id] || 0) + 1;
+        });
+      });
+
+      Object.entries(usageMap).forEach(([_recipeId, count]) => {
+        expect(count).toBeLessThanOrEqual(2);
+      });
+    });
+
+    it('generates plans successfully for all combinations of meal slots (breakfast, lunch, dinner)', () => {
+      const slotCombinations: MealSlot[][] = [
+        ['breakfast'],
+        ['lunch'],
+        ['dinner'],
+        ['breakfast', 'lunch'],
+        ['breakfast', 'dinner'],
+        ['lunch', 'dinner'],
+        ['breakfast', 'lunch', 'dinner'],
+      ];
+
+      slotCombinations.forEach((slots) => {
+        const plan = generateMealPlan({
+          ...defaultPrefs,
+          cookingDays: ['monday', 'tuesday', 'wednesday'],
+          mealSlots: slots,
+        });
+
+        expect(plan.days.length).toBe(3);
+        plan.days.forEach((day) => {
+          expect(day.meals.length).toBe(slots.length);
+          day.meals.forEach((meal) => {
+            expect(meal.recipe).toBeDefined();
+            expect(meal.recipe.title).toBeTruthy();
+            expect(meal.estimatedCostRon).toBeGreaterThan(0);
+          });
+        });
+      });
     });
   });
 

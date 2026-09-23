@@ -9,7 +9,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 1000,
     unit: 'g',
-    typicalPriceRon: { lidl: 3.99, kaufland: 3.79, carrefour: 4.19, mega_image: 4.49 },
+    typicalPriceRon: { lidl: 3.99, kaufland: 3.79, carrefour: 4.19, mega_image: 4.49, auchan: 4.11, penny: 3.87, profi: 4.06, sezamo: 4.4 },
   },
   ceapa_rosie: {
     id: 'ceapa_rosie',
@@ -18,7 +18,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.49, mega_image: 4.99 },
+    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.49, mega_image: 4.99, auchan: 4.4, penny: 4.16, profi: 4.27, sezamo: 4.89 },
   },
   usturoi: {
     id: 'usturoi',
@@ -27,7 +27,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 250,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.49, kaufland: 4.29, carrefour: 4.99, mega_image: 5.49 },
+    typicalPriceRon: { lidl: 4.49, kaufland: 4.29, carrefour: 4.99, mega_image: 5.49, auchan: 4.89, penny: 4.36, profi: 4.59, sezamo: 5.38 },
   },
   cartofi_albi: {
     id: 'cartofi_albi',
@@ -36,7 +36,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 2000,
     unit: 'g',
-    typicalPriceRon: { lidl: 7.49, kaufland: 6.99, carrefour: 7.99, mega_image: 8.99 },
+    typicalPriceRon: { lidl: 7.49, kaufland: 6.99, carrefour: 7.99, mega_image: 8.99, auchan: 7.83, penny: 7.27, profi: 7.48, sezamo: 8.81 },
   },
   morcovi: {
     id: 'morcovi',
@@ -45,7 +45,16 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 1000,
     unit: 'g',
-    typicalPriceRon: { lidl: 3.49, kaufland: 3.29, carrefour: 3.79, mega_image: 4.19 },
+    typicalPriceRon: { lidl: 3.49, kaufland: 3.29, carrefour: 3.79, mega_image: 4.19, auchan: 3.71, penny: 3.39, profi: 3.52, sezamo: 4.11 },
+  },
+  mere_romanesti: {
+    id: 'mere_romanesti',
+    name: 'Mere românești de livadă (Ionatan / Idared)',
+    category: 'produce',
+    isPantryStaple: false,
+    standardPackSize: 1000,
+    unit: 'g',
+    typicalPriceRon: { lidl: 4.49, kaufland: 3.99, carrefour: 4.69, mega_image: 5.19, auchan: 4.6, penny: 4.36, profi: 4.27, sezamo: 5.09 },
   },
   ardei_gras_rosu: {
     id: 'ardei_gras_rosu',
@@ -54,7 +63,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 6.99, kaufland: 6.49, carrefour: 7.29, mega_image: 7.99 },
+    typicalPriceRon: { lidl: 6.99, kaufland: 6.49, carrefour: 7.29, mega_image: 7.99, auchan: 7.14, penny: 6.78, profi: 6.94, sezamo: 7.83 },
   },
   rosii_proaspete: {
     id: 'rosii_proaspete',
@@ -63,7 +72,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 1000,
     unit: 'g',
-    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.49 },
+    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.49, auchan: 8.32, penny: 7.75, profi: 8.01, sezamo: 9.3 },
   },
   rosii_cherry: {
     id: 'rosii_cherry',
@@ -72,7 +81,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 250,
     unit: 'g',
-    typicalPriceRon: { lidl: 5.99, kaufland: 5.49, carrefour: 6.49, mega_image: 7.29 },
+    typicalPriceRon: { lidl: 5.99, kaufland: 5.49, carrefour: 6.49, mega_image: 7.29, auchan: 6.36, penny: 5.81, profi: 5.87, sezamo: 7.14 },
   },
   castraveti: {
     id: 'castraveti',
@@ -81,7 +90,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.99, kaufland: 4.49, carrefour: 5.29, mega_image: 5.99 },
+    typicalPriceRon: { lidl: 4.99, kaufland: 4.49, carrefour: 5.29, mega_image: 5.99, auchan: 5.18, penny: 4.84, profi: 4.8, sezamo: 5.87 },
   },
   dovlecei: {
     id: 'dovlecei',
@@ -90,7 +99,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 1000,
     unit: 'g',
-    typicalPriceRon: { lidl: 5.99, kaufland: 5.49, carrefour: 6.49, mega_image: 6.99 },
+    typicalPriceRon: { lidl: 5.99, kaufland: 5.49, carrefour: 6.49, mega_image: 6.99, auchan: 6.36, penny: 5.81, profi: 5.87, sezamo: 6.85 },
   },
   patrunjel_verde: {
     id: 'patrunjel_verde',
@@ -99,7 +108,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 1,
     unit: 'legatura',
-    typicalPriceRon: { lidl: 1.49, kaufland: 1.39, carrefour: 1.69, mega_image: 1.99 },
+    typicalPriceRon: { lidl: 1.49, kaufland: 1.39, carrefour: 1.69, mega_image: 1.99, auchan: 1.66, penny: 1.45, profi: 1.49, sezamo: 1.95 },
   },
   marar_verde: {
     id: 'marar_verde',
@@ -108,7 +117,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 1,
     unit: 'legatura',
-    typicalPriceRon: { lidl: 1.49, kaufland: 1.39, carrefour: 1.69, mega_image: 1.99 },
+    typicalPriceRon: { lidl: 1.49, kaufland: 1.39, carrefour: 1.69, mega_image: 1.99, auchan: 1.66, penny: 1.45, profi: 1.49, sezamo: 1.95 },
   },
   lamaie: {
     id: 'lamaie',
@@ -117,7 +126,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.99, kaufland: 4.49, carrefour: 5.49, mega_image: 5.99 },
+    typicalPriceRon: { lidl: 4.99, kaufland: 4.49, carrefour: 5.49, mega_image: 5.99, auchan: 5.38, penny: 4.84, profi: 4.8, sezamo: 5.87 },
   },
   ciuperci_champignon: {
     id: 'ciuperci_champignon',
@@ -126,7 +135,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 6.99, kaufland: 6.49, carrefour: 7.49, mega_image: 8.29 },
+    typicalPriceRon: { lidl: 6.99, kaufland: 6.49, carrefour: 7.49, mega_image: 8.29, auchan: 7.34, penny: 6.78, profi: 6.94, sezamo: 8.12 },
   },
   spanac_baby: {
     id: 'spanac_baby',
@@ -135,7 +144,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 200,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.99, kaufland: 4.79, carrefour: 5.49, mega_image: 5.99 },
+    typicalPriceRon: { lidl: 4.99, kaufland: 4.79, carrefour: 5.49, mega_image: 5.99, auchan: 5.38, penny: 4.84, profi: 5.13, sezamo: 5.87 },
   },
   salata_verde: {
     id: 'salata_verde',
@@ -144,7 +153,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 1,
     unit: 'buc',
-    typicalPriceRon: { lidl: 2.99, kaufland: 2.79, carrefour: 3.29, mega_image: 3.99 },
+    typicalPriceRon: { lidl: 2.99, kaufland: 2.79, carrefour: 3.29, mega_image: 3.99, auchan: 3.22, penny: 2.9, profi: 2.99, sezamo: 3.91 },
   },
   varza_alba: {
     id: 'varza_alba',
@@ -153,7 +162,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 1500,
     unit: 'g',
-    typicalPriceRon: { lidl: 3.99, kaufland: 3.69, carrefour: 4.29, mega_image: 4.79 },
+    typicalPriceRon: { lidl: 3.99, kaufland: 3.69, carrefour: 4.29, mega_image: 4.79, auchan: 4.2, penny: 3.87, profi: 3.95, sezamo: 4.69 },
   },
   avocado: {
     id: 'avocado',
@@ -162,7 +171,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 2,
     unit: 'buc',
-    typicalPriceRon: { lidl: 8.99, kaufland: 8.49, carrefour: 9.49, mega_image: 10.99 },
+    typicalPriceRon: { lidl: 8.99, kaufland: 8.49, carrefour: 9.49, mega_image: 10.99, auchan: 9.3, penny: 8.72, profi: 9.08, sezamo: 10.77 },
   },
 
   // CARNE & PEȘTE
@@ -173,7 +182,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 700,
     unit: 'g',
-    typicalPriceRon: { lidl: 21.99, kaufland: 20.99, carrefour: 22.99, mega_image: 24.99 },
+    typicalPriceRon: { lidl: 21.99, kaufland: 20.99, carrefour: 22.99, mega_image: 24.99, auchan: 22.53, penny: 21.33, profi: 22.46, sezamo: 24.49 },
   },
   pulpe_pui_dezosate: {
     id: 'pulpe_pui_dezosate',
@@ -182,7 +191,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 650,
     unit: 'g',
-    typicalPriceRon: { lidl: 18.99, kaufland: 17.99, carrefour: 19.99, mega_image: 21.99 },
+    typicalPriceRon: { lidl: 18.99, kaufland: 17.99, carrefour: 19.99, mega_image: 21.99, auchan: 19.59, penny: 18.42, profi: 19.25, sezamo: 21.55 },
   },
   carne_tocata_amestec: {
     id: 'carne_tocata_amestec',
@@ -191,7 +200,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 13.99, kaufland: 12.99, carrefour: 14.99, mega_image: 16.49 },
+    typicalPriceRon: { lidl: 13.99, kaufland: 12.99, carrefour: 14.99, mega_image: 16.49, auchan: 14.69, penny: 13.57, profi: 13.9, sezamo: 16.16 },
   },
   muschiulet_porc: {
     id: 'muschiulet_porc',
@@ -200,7 +209,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 22.99, kaufland: 21.99, carrefour: 23.99, mega_image: 26.99 },
+    typicalPriceRon: { lidl: 22.99, kaufland: 21.99, carrefour: 23.99, mega_image: 26.99, auchan: 23.51, penny: 22.3, profi: 23.53, sezamo: 26.45 },
   },
   file_somon_proaspat: {
     id: 'file_somon_proaspat',
@@ -209,7 +218,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 300,
     unit: 'g',
-    typicalPriceRon: { lidl: 27.99, kaufland: 26.99, carrefour: 28.99, mega_image: 31.99 },
+    typicalPriceRon: { lidl: 27.99, kaufland: 26.99, carrefour: 28.99, mega_image: 31.99, auchan: 28.41, penny: 27.15, profi: 28.88, sezamo: 31.35 },
   },
   ton_conserva: {
     id: 'ton_conserva',
@@ -218,7 +227,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 160,
     unit: 'g',
-    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.29 },
+    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.29, auchan: 8.32, penny: 7.75, profi: 8.01, sezamo: 9.1 },
   },
   antricot_vita_angus: {
     id: 'antricot_vita_angus',
@@ -227,7 +236,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 300,
     unit: 'g',
-    typicalPriceRon: { lidl: 34.99, kaufland: 33.99, carrefour: 36.99, mega_image: 41.99 },
+    typicalPriceRon: { lidl: 34.99, kaufland: 33.99, carrefour: 36.99, mega_image: 41.99, auchan: 36.25, penny: 33.94, profi: 36.37, sezamo: 41.15 },
   },
   creveti_decorticati: {
     id: 'creveti_decorticati',
@@ -236,7 +245,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 300,
     unit: 'g',
-    typicalPriceRon: { lidl: 23.99, kaufland: 22.99, carrefour: 25.99, mega_image: 28.99 },
+    typicalPriceRon: { lidl: 23.99, kaufland: 22.99, carrefour: 25.99, mega_image: 28.99, auchan: 25.47, penny: 23.27, profi: 24.6, sezamo: 28.41 },
   },
 
   // LACTATE & OUĂ
@@ -247,7 +256,16 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 10,
     unit: 'buc',
-    typicalPriceRon: { lidl: 11.99, kaufland: 11.49, carrefour: 12.49, mega_image: 13.49 },
+    typicalPriceRon: { lidl: 11.99, kaufland: 11.49, carrefour: 12.49, mega_image: 13.49, auchan: 12.24, penny: 11.63, profi: 12.29, sezamo: 13.22 },
+  },
+  branza_vaci_proaspata: {
+    id: 'branza_vaci_proaspata',
+    name: 'Brânză proaspătă de vaci grasă',
+    category: 'dairy',
+    isPantryStaple: false,
+    standardPackSize: 250,
+    unit: 'g',
+    typicalPriceRon: { lidl: 6.99, kaufland: 6.49, carrefour: 7.29, mega_image: 7.99, auchan: 7.14, penny: 6.78, profi: 6.94, sezamo: 7.83 },
   },
   telemea_vaca: {
     id: 'telemea_vaca',
@@ -256,7 +274,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 350,
     unit: 'g',
-    typicalPriceRon: { lidl: 12.99, kaufland: 12.49, carrefour: 13.49, mega_image: 14.99 },
+    typicalPriceRon: { lidl: 12.99, kaufland: 12.49, carrefour: 13.49, mega_image: 14.99, auchan: 13.22, penny: 12.6, profi: 13.36, sezamo: 14.69 },
   },
   smantana_20: {
     id: 'smantana_20',
@@ -265,7 +283,16 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 400,
     unit: 'g',
-    typicalPriceRon: { lidl: 6.99, kaufland: 6.49, carrefour: 7.49, mega_image: 8.29 },
+    typicalPriceRon: { lidl: 6.99, kaufland: 6.49, carrefour: 7.49, mega_image: 8.29, auchan: 7.34, penny: 6.78, profi: 6.94, sezamo: 8.12 },
+  },
+  smantana_gatit: {
+    id: 'smantana_gatit',
+    name: 'Smântână dulce lichidă pentru gătit 20%',
+    category: 'dairy',
+    isPantryStaple: false,
+    standardPackSize: 200,
+    unit: 'ml',
+    typicalPriceRon: { lidl: 4.99, kaufland: 4.69, carrefour: 5.49, mega_image: 5.99, auchan: 5.38, penny: 4.84, profi: 5.02, sezamo: 5.87 },
   },
   iaurt_grecesc: {
     id: 'iaurt_grecesc',
@@ -274,7 +301,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 400,
     unit: 'g',
-    typicalPriceRon: { lidl: 5.99, kaufland: 5.49, carrefour: 6.49, mega_image: 6.99 },
+    typicalPriceRon: { lidl: 5.99, kaufland: 5.49, carrefour: 6.49, mega_image: 6.99, auchan: 6.36, penny: 5.81, profi: 5.87, sezamo: 6.85 },
   },
   unt_82: {
     id: 'unt_82',
@@ -283,7 +310,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 200,
     unit: 'g',
-    typicalPriceRon: { lidl: 10.99, kaufland: 10.49, carrefour: 11.49, mega_image: 12.49 },
+    typicalPriceRon: { lidl: 10.99, kaufland: 10.49, carrefour: 11.49, mega_image: 12.49, auchan: 11.26, penny: 10.66, profi: 11.22, sezamo: 12.24 },
   },
   mozzarella_rasa: {
     id: 'mozzarella_rasa',
@@ -292,7 +319,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 200,
     unit: 'g',
-    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.49 },
+    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.49, auchan: 8.32, penny: 7.75, profi: 8.01, sezamo: 9.3 },
   },
   cascaval_clasic: {
     id: 'cascaval_clasic',
@@ -301,7 +328,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 300,
     unit: 'g',
-    typicalPriceRon: { lidl: 11.99, kaufland: 11.49, carrefour: 12.99, mega_image: 14.29 },
+    typicalPriceRon: { lidl: 11.99, kaufland: 11.49, carrefour: 12.99, mega_image: 14.29, auchan: 12.73, penny: 11.63, profi: 12.29, sezamo: 14 },
   },
   parmezan_ras: {
     id: 'parmezan_ras',
@@ -310,7 +337,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 100,
     unit: 'g',
-    typicalPriceRon: { lidl: 8.99, kaufland: 8.49, carrefour: 9.49, mega_image: 10.49 },
+    typicalPriceRon: { lidl: 8.99, kaufland: 8.49, carrefour: 9.49, mega_image: 10.49, auchan: 9.3, penny: 8.72, profi: 9.08, sezamo: 10.28 },
   },
   lapte_3_5: {
     id: 'lapte_3_5',
@@ -319,7 +346,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 1000,
     unit: 'ml',
-    typicalPriceRon: { lidl: 6.49, kaufland: 5.99, carrefour: 6.99, mega_image: 7.49 },
+    typicalPriceRon: { lidl: 6.49, kaufland: 5.99, carrefour: 6.99, mega_image: 7.49, auchan: 6.85, penny: 6.3, profi: 6.41, sezamo: 7.34 },
   },
 
   // CĂMARĂ & GRAINS (Pantry)
@@ -330,7 +357,16 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 1000,
     unit: 'g',
-    typicalPriceRon: { lidl: 9.99, kaufland: 9.49, carrefour: 10.49, mega_image: 11.49 },
+    typicalPriceRon: { lidl: 9.99, kaufland: 9.49, carrefour: 10.49, mega_image: 11.49, auchan: 10.28, penny: 9.69, profi: 10.15, sezamo: 11.26 },
+  },
+  orez_bob_rotund: {
+    id: 'orez_bob_rotund',
+    name: 'Orez cu bob rotund calitatea I',
+    category: 'pantry',
+    isPantryStaple: false,
+    standardPackSize: 1000,
+    unit: 'g',
+    typicalPriceRon: { lidl: 6.99, kaufland: 6.49, carrefour: 7.29, mega_image: 7.99, auchan: 7.14, penny: 6.78, profi: 6.94, sezamo: 7.83 },
   },
   paste_penne: {
     id: 'paste_penne',
@@ -339,7 +375,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.49, kaufland: 3.99, carrefour: 4.99, mega_image: 5.49 },
+    typicalPriceRon: { lidl: 4.49, kaufland: 3.99, carrefour: 4.99, mega_image: 5.49, auchan: 4.89, penny: 4.36, profi: 4.27, sezamo: 5.38 },
   },
   paste_spaghete: {
     id: 'paste_spaghete',
@@ -348,7 +384,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.49, kaufland: 3.99, carrefour: 4.99, mega_image: 5.49 },
+    typicalPriceRon: { lidl: 4.49, kaufland: 3.99, carrefour: 4.99, mega_image: 5.49, auchan: 4.89, penny: 4.36, profi: 4.27, sezamo: 5.38 },
   },
   malai_superior: {
     id: 'malai_superior',
@@ -357,7 +393,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 1000,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.49, mega_image: 4.99 },
+    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.49, mega_image: 4.99, auchan: 4.4, penny: 4.16, profi: 4.27, sezamo: 4.89 },
   },
   faina_alba: {
     id: 'faina_alba',
@@ -366,7 +402,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 1000,
     unit: 'g',
-    typicalPriceRon: { lidl: 3.49, kaufland: 3.29, carrefour: 3.79, mega_image: 4.19 },
+    typicalPriceRon: { lidl: 3.49, kaufland: 3.29, carrefour: 3.79, mega_image: 4.19, auchan: 3.71, penny: 3.39, profi: 3.52, sezamo: 4.11 },
   },
   pesmet_auriu: {
     id: 'pesmet_auriu',
@@ -375,7 +411,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 400,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.49, kaufland: 4.19, carrefour: 4.99, mega_image: 5.49 },
+    typicalPriceRon: { lidl: 4.49, kaufland: 4.19, carrefour: 4.99, mega_image: 5.49, auchan: 4.89, penny: 4.36, profi: 4.48, sezamo: 5.38 },
   },
   ulei_floarea_soarelui: {
     id: 'ulei_floarea_soarelui',
@@ -384,7 +420,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 1000,
     unit: 'ml',
-    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 8.99 },
+    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 8.99, auchan: 8.32, penny: 7.75, profi: 8.01, sezamo: 8.81 },
   },
   ulei_masline: {
     id: 'ulei_masline',
@@ -393,7 +429,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 500,
     unit: 'ml',
-    typicalPriceRon: { lidl: 24.99, kaufland: 23.99, carrefour: 26.49, mega_image: 28.99 },
+    typicalPriceRon: { lidl: 24.99, kaufland: 23.99, carrefour: 26.49, mega_image: 28.99, auchan: 25.96, penny: 24.24, profi: 25.67, sezamo: 28.41 },
   },
   sare_fina: {
     id: 'sare_fina',
@@ -402,7 +438,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 1000,
     unit: 'g',
-    typicalPriceRon: { lidl: 2.49, kaufland: 2.29, carrefour: 2.69, mega_image: 2.99 },
+    typicalPriceRon: { lidl: 2.49, kaufland: 2.29, carrefour: 2.69, mega_image: 2.99, auchan: 2.64, penny: 2.42, profi: 2.45, sezamo: 2.93 },
   },
   piper_negru: {
     id: 'piper_negru',
@@ -411,7 +447,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 50,
     unit: 'g',
-    typicalPriceRon: { lidl: 3.49, kaufland: 3.29, carrefour: 3.79, mega_image: 4.19 },
+    typicalPriceRon: { lidl: 3.49, kaufland: 3.29, carrefour: 3.79, mega_image: 4.19, auchan: 3.71, penny: 3.39, profi: 3.52, sezamo: 4.11 },
   },
   boia_dulce: {
     id: 'boia_dulce',
@@ -420,7 +456,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 50,
     unit: 'g',
-    typicalPriceRon: { lidl: 2.99, kaufland: 2.79, carrefour: 3.29, mega_image: 3.79 },
+    typicalPriceRon: { lidl: 2.99, kaufland: 2.79, carrefour: 3.29, mega_image: 3.79, auchan: 3.22, penny: 2.9, profi: 2.99, sezamo: 3.71 },
   },
   oregano_uscat: {
     id: 'oregano_uscat',
@@ -429,7 +465,16 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 20,
     unit: 'g',
-    typicalPriceRon: { lidl: 2.49, kaufland: 2.29, carrefour: 2.79, mega_image: 3.19 },
+    typicalPriceRon: { lidl: 2.49, kaufland: 2.29, carrefour: 2.79, mega_image: 3.19, auchan: 2.73, penny: 2.42, profi: 2.45, sezamo: 3.13 },
+  },
+  busuioc_uscat: {
+    id: 'busuioc_uscat',
+    name: 'Busuioc uscat mărunțit',
+    category: 'pantry',
+    isPantryStaple: true,
+    standardPackSize: 20,
+    unit: 'g',
+    typicalPriceRon: { lidl: 2.49, kaufland: 2.29, carrefour: 2.79, mega_image: 3.19, auchan: 2.73, penny: 2.42, profi: 2.45, sezamo: 3.13 },
   },
   mustar_clasic: {
     id: 'mustar_clasic',
@@ -438,7 +483,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 300,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.69, mega_image: 4.99 },
+    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.69, mega_image: 4.99, auchan: 4.6, penny: 4.16, profi: 4.27, sezamo: 4.89 },
   },
 
   // CONSERVE & SOSURI
@@ -449,7 +494,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.49, kaufland: 3.99, carrefour: 4.99, mega_image: 5.49 },
+    typicalPriceRon: { lidl: 4.49, kaufland: 3.99, carrefour: 4.99, mega_image: 5.49, auchan: 4.89, penny: 4.36, profi: 4.27, sezamo: 5.38 },
   },
   rosii_cuburi: {
     id: 'rosii_cuburi',
@@ -458,7 +503,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 400,
     unit: 'g',
-    typicalPriceRon: { lidl: 3.99, kaufland: 3.69, carrefour: 4.49, mega_image: 4.99 },
+    typicalPriceRon: { lidl: 3.99, kaufland: 3.69, carrefour: 4.49, mega_image: 4.99, auchan: 4.4, penny: 3.87, profi: 3.95, sezamo: 4.89 },
   },
   pasta_tomate: {
     id: 'pasta_tomate',
@@ -467,7 +512,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 200,
     unit: 'g',
-    typicalPriceRon: { lidl: 3.79, kaufland: 3.49, carrefour: 4.19, mega_image: 4.59 },
+    typicalPriceRon: { lidl: 3.79, kaufland: 3.49, carrefour: 4.19, mega_image: 4.59, auchan: 4.11, penny: 3.68, profi: 3.73, sezamo: 4.5 },
   },
   sos_soia: {
     id: 'sos_soia',
@@ -476,7 +521,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 150,
     unit: 'ml',
-    typicalPriceRon: { lidl: 6.99, kaufland: 6.49, carrefour: 7.49, mega_image: 8.29 },
+    typicalPriceRon: { lidl: 6.99, kaufland: 6.49, carrefour: 7.49, mega_image: 8.29, auchan: 7.34, penny: 6.78, profi: 6.94, sezamo: 8.12 },
   },
   fasole_rosie_conserva: {
     id: 'fasole_rosie_conserva',
@@ -485,7 +530,16 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 400,
     unit: 'g',
-    typicalPriceRon: { lidl: 3.99, kaufland: 3.69, carrefour: 4.49, mega_image: 4.99 },
+    typicalPriceRon: { lidl: 3.99, kaufland: 3.69, carrefour: 4.49, mega_image: 4.99, auchan: 4.4, penny: 3.87, profi: 3.95, sezamo: 4.89 },
+  },
+  fasole_boabe_conserva: {
+    id: 'fasole_boabe_conserva',
+    name: 'Fasole albă boabe fiartă la conservă',
+    category: 'canned_sauces',
+    isPantryStaple: false,
+    standardPackSize: 400,
+    unit: 'g',
+    typicalPriceRon: { lidl: 3.69, kaufland: 3.49, carrefour: 4.19, mega_image: 4.79, auchan: 4.11, penny: 3.58, profi: 3.73, sezamo: 4.69 },
   },
   porumb_dulce: {
     id: 'porumb_dulce',
@@ -494,7 +548,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 340,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.69, mega_image: 5.19 },
+    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.69, mega_image: 5.19, auchan: 4.6, penny: 4.16, profi: 4.27, sezamo: 5.09 },
   },
   lapte_cocos: {
     id: 'lapte_cocos',
@@ -503,7 +557,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 400,
     unit: 'ml',
-    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.49 },
+    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.49, auchan: 8.32, penny: 7.75, profi: 8.01, sezamo: 9.3 },
   },
   mazare_congelata: {
     id: 'mazare_congelata',
@@ -512,7 +566,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 450,
     unit: 'g',
-    typicalPriceRon: { lidl: 5.49, kaufland: 4.99, carrefour: 5.99, mega_image: 6.49 },
+    typicalPriceRon: { lidl: 5.49, kaufland: 4.99, carrefour: 5.99, mega_image: 6.49, auchan: 5.87, penny: 5.33, profi: 5.34, sezamo: 6.36 },
   },
 
   // PANIFICAȚIE (Bakery)
@@ -523,7 +577,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 6,
     unit: 'buc',
-    typicalPriceRon: { lidl: 5.99, kaufland: 5.49, carrefour: 6.49, mega_image: 7.29 },
+    typicalPriceRon: { lidl: 5.99, kaufland: 5.49, carrefour: 6.49, mega_image: 7.29, auchan: 6.36, penny: 5.81, profi: 5.87, sezamo: 7.14 },
   },
   chifle_burger: {
     id: 'chifle_burger',
@@ -532,7 +586,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 4,
     unit: 'buc',
-    typicalPriceRon: { lidl: 5.49, kaufland: 4.99, carrefour: 5.99, mega_image: 6.49 },
+    typicalPriceRon: { lidl: 5.49, kaufland: 4.99, carrefour: 5.99, mega_image: 6.49, auchan: 5.87, penny: 5.33, profi: 5.34, sezamo: 6.36 },
   },
   paine_toast: {
     id: 'paine_toast',
@@ -541,7 +595,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.99, kaufland: 4.49, carrefour: 5.49, mega_image: 5.99 },
+    typicalPriceRon: { lidl: 4.99, kaufland: 4.49, carrefour: 5.49, mega_image: 5.99, auchan: 5.38, penny: 4.84, profi: 4.8, sezamo: 5.87 },
   },
 
   // MIC DEJUN, GUSTĂRI & DESERT
@@ -552,7 +606,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.69, mega_image: 4.99 },
+    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.69, mega_image: 4.99, auchan: 4.6, penny: 4.16, profi: 4.27, sezamo: 4.89 },
   },
   miere_poliflora: {
     id: 'miere_poliflora',
@@ -561,7 +615,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 400,
     unit: 'g',
-    typicalPriceRon: { lidl: 14.49, kaufland: 13.99, carrefour: 15.49, mega_image: 16.99 },
+    typicalPriceRon: { lidl: 14.49, kaufland: 13.99, carrefour: 15.49, mega_image: 16.99, auchan: 15.18, penny: 14.06, profi: 14.97, sezamo: 16.65 },
   },
   fructe_padure_congelate: {
     id: 'fructe_padure_congelate',
@@ -570,7 +624,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 400,
     unit: 'g',
-    typicalPriceRon: { lidl: 9.99, kaufland: 9.49, carrefour: 10.49, mega_image: 11.49 },
+    typicalPriceRon: { lidl: 9.99, kaufland: 9.49, carrefour: 10.49, mega_image: 11.49, auchan: 10.28, penny: 9.69, profi: 10.15, sezamo: 11.26 },
   },
   nuci_miez: {
     id: 'nuci_miez',
@@ -579,7 +633,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 200,
     unit: 'g',
-    typicalPriceRon: { lidl: 11.99, kaufland: 11.49, carrefour: 12.99, mega_image: 13.99 },
+    typicalPriceRon: { lidl: 11.99, kaufland: 11.49, carrefour: 12.99, mega_image: 13.99, auchan: 12.73, penny: 11.63, profi: 12.29, sezamo: 13.71 },
   },
   iaurt_grecesc_10: {
     id: 'iaurt_grecesc_10',
@@ -588,7 +642,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 400,
     unit: 'g',
-    typicalPriceRon: { lidl: 5.99, kaufland: 5.49, carrefour: 6.29, mega_image: 6.99 },
+    typicalPriceRon: { lidl: 5.99, kaufland: 5.49, carrefour: 6.29, mega_image: 6.99, auchan: 6.16, penny: 5.81, profi: 5.87, sezamo: 6.85 },
   },
   ciocolata_menaj: {
     id: 'ciocolata_menaj',
@@ -597,7 +651,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 100,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.49, kaufland: 4.19, carrefour: 4.99, mega_image: 5.49 },
+    typicalPriceRon: { lidl: 4.49, kaufland: 4.19, carrefour: 4.99, mega_image: 5.49, auchan: 4.89, penny: 4.36, profi: 4.48, sezamo: 5.38 },
   },
   zahar_tos: {
     id: 'zahar_tos',
@@ -606,7 +660,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 1000,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.49, mega_image: 4.79 },
+    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.49, mega_image: 4.79, auchan: 4.4, penny: 4.16, profi: 4.27, sezamo: 4.69 },
   },
   biscuiti_populari: {
     id: 'biscuiti_populari',
@@ -615,7 +669,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 300,
     unit: 'g',
-    typicalPriceRon: { lidl: 3.99, kaufland: 3.69, carrefour: 4.29, mega_image: 4.69 },
+    typicalPriceRon: { lidl: 3.99, kaufland: 3.69, carrefour: 4.29, mega_image: 4.69, auchan: 4.2, penny: 3.87, profi: 3.95, sezamo: 4.6 },
   },
   cacao_pudra: {
     id: 'cacao_pudra',
@@ -624,7 +678,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 100,
     unit: 'g',
-    typicalPriceRon: { lidl: 5.49, kaufland: 4.99, carrefour: 5.99, mega_image: 6.49 },
+    typicalPriceRon: { lidl: 5.49, kaufland: 4.99, carrefour: 5.99, mega_image: 6.49, auchan: 5.87, penny: 5.33, profi: 5.34, sezamo: 6.36 },
   },
   porumb_popcorn: {
     id: 'porumb_popcorn',
@@ -633,7 +687,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 500,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.69, mega_image: 4.99 },
+    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.69, mega_image: 4.99, auchan: 4.6, penny: 4.16, profi: 4.27, sezamo: 4.89 },
   },
   tortilla_chips_nachos: {
     id: 'tortilla_chips_nachos',
@@ -642,7 +696,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 200,
     unit: 'g',
-    typicalPriceRon: { lidl: 5.49, kaufland: 4.99, carrefour: 5.99, mega_image: 6.49 },
+    typicalPriceRon: { lidl: 5.49, kaufland: 4.99, carrefour: 5.99, mega_image: 6.49, auchan: 5.87, penny: 5.33, profi: 5.34, sezamo: 6.36 },
   },
   naut_conserva: {
     id: 'naut_conserva',
@@ -651,7 +705,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 400,
     unit: 'g',
-    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.69, mega_image: 4.99 },
+    typicalPriceRon: { lidl: 4.29, kaufland: 3.99, carrefour: 4.69, mega_image: 4.99, auchan: 4.6, penny: 4.16, profi: 4.27, sezamo: 4.89 },
   },
   seminte_chia: {
     id: 'seminte_chia',
@@ -660,7 +714,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 250,
     unit: 'g',
-    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.19 },
+    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.19, auchan: 8.32, penny: 7.75, profi: 8.01, sezamo: 9.01 },
   },
   gem_fructe: {
     id: 'gem_fructe',
@@ -669,7 +723,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 350,
     unit: 'g',
-    typicalPriceRon: { lidl: 6.49, kaufland: 5.99, carrefour: 6.99, mega_image: 7.69 },
+    typicalPriceRon: { lidl: 6.49, kaufland: 5.99, carrefour: 6.99, mega_image: 7.69, auchan: 6.85, penny: 6.3, profi: 6.41, sezamo: 7.54 },
   },
   scortisoara_macinata: {
     id: 'scortisoara_macinata',
@@ -678,7 +732,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: true,
     standardPackSize: 20,
     unit: 'g',
-    typicalPriceRon: { lidl: 2.79, kaufland: 2.49, carrefour: 2.99, mega_image: 3.29 },
+    typicalPriceRon: { lidl: 2.79, kaufland: 2.49, carrefour: 2.99, mega_image: 3.29, auchan: 2.93, penny: 2.71, profi: 2.66, sezamo: 3.22 },
   },
   sunca_praga: {
     id: 'sunca_praga',
@@ -687,7 +741,124 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     isPantryStaple: false,
     standardPackSize: 150,
     unit: 'g',
-    typicalPriceRon: { lidl: 6.49, kaufland: 5.99, carrefour: 6.99, mega_image: 7.49 },
+    typicalPriceRon: { lidl: 6.49, kaufland: 5.99, carrefour: 6.99, mega_image: 7.49, auchan: 6.85, penny: 6.3, profi: 6.41, sezamo: 7.34 },
+  },
+  dorada_proaspata: {
+    id: 'dorada_proaspata',
+    name: 'Doradă proaspătă eviscerată',
+    category: 'meat_fish',
+    isPantryStaple: false,
+    standardPackSize: 400,
+    unit: 'g',
+    typicalPriceRon: { lidl: 19.99, kaufland: 18.99, carrefour: 21.99, mega_image: 24.99, auchan: 21.55, penny: 19.39, profi: 20.32, sezamo: 24.49 },
+  },
+  carnaciori_oltenesti: {
+    id: 'carnaciori_oltenesti',
+    name: 'Cârnăciori oltenești afumați',
+    category: 'meat_fish',
+    isPantryStaple: false,
+    standardPackSize: 300,
+    unit: 'g',
+    typicalPriceRon: { lidl: 11.99, kaufland: 11.49, carrefour: 12.99, mega_image: 14.49, auchan: 12.73, penny: 11.63, profi: 12.29, sezamo: 14.2 },
+  },
+  bacon_afumat: {
+    id: 'bacon_afumat',
+    name: 'Bacon feliat afumat din piept de porc',
+    category: 'meat_fish',
+    isPantryStaple: false,
+    standardPackSize: 200,
+    unit: 'g',
+    typicalPriceRon: { lidl: 7.99, kaufland: 7.49, carrefour: 8.49, mega_image: 9.49, auchan: 8.32, penny: 7.75, profi: 8.01, sezamo: 9.3 },
+  },
+  somon_afumat: {
+    id: 'somon_afumat',
+    name: 'Somon afumat feliat premium',
+    category: 'meat_fish',
+    isPantryStaple: false,
+    standardPackSize: 100,
+    unit: 'g',
+    typicalPriceRon: { lidl: 13.99, kaufland: 13.49, carrefour: 14.99, mega_image: 16.99, auchan: 14.69, penny: 13.57, profi: 14.43, sezamo: 16.65 },
+  },
+  crema_branza: {
+    id: 'crema_branza',
+    name: 'Cremă de brânză fină natur',
+    category: 'dairy',
+    isPantryStaple: false,
+    standardPackSize: 200,
+    unit: 'g',
+    typicalPriceRon: { lidl: 6.49, kaufland: 5.99, carrefour: 6.99, mega_image: 7.99, auchan: 6.85, penny: 6.3, profi: 6.41, sezamo: 7.83 },
+  },
+  branza_feta: {
+    id: 'branza_feta',
+    name: 'Brânză Feta PDO din lapte de oaie',
+    category: 'dairy',
+    isPantryStaple: false,
+    standardPackSize: 200,
+    unit: 'g',
+    typicalPriceRon: { lidl: 11.99, kaufland: 11.49, carrefour: 12.99, mega_image: 14.99, auchan: 12.73, penny: 11.63, profi: 12.29, sezamo: 14.69 },
+  },
+  orez_arborio: {
+    id: 'orez_arborio',
+    name: 'Orez Arborio / Carnaroli pentru risotto',
+    category: 'pantry',
+    isPantryStaple: false,
+    standardPackSize: 500,
+    unit: 'g',
+    typicalPriceRon: { lidl: 8.49, kaufland: 7.99, carrefour: 9.29, mega_image: 10.49, auchan: 9.1, penny: 8.24, profi: 8.55, sezamo: 10.28 },
+  },
+  ciuperci_hribi: {
+    id: 'ciuperci_hribi',
+    name: 'Hribi congelați / Mix ciuperci de pădure',
+    category: 'frozen',
+    isPantryStaple: false,
+    standardPackSize: 300,
+    unit: 'g',
+    typicalPriceRon: { lidl: 14.99, kaufland: 13.99, carrefour: 15.99, mega_image: 17.99, auchan: 15.67, penny: 14.54, profi: 14.97, sezamo: 17.63 },
+  },
+  faina_grau: {
+    id: 'faina_grau',
+    name: 'Făină albă superioară tip 000',
+    category: 'pantry',
+    isPantryStaple: true,
+    standardPackSize: 1000,
+    unit: 'g',
+    typicalPriceRon: { lidl: 3.29, kaufland: 2.99, carrefour: 3.49, mega_image: 3.99, auchan: 3.42, penny: 3.19, profi: 3.2, sezamo: 3.91 },
+  },
+  bors_proaspat: {
+    id: 'bors_proaspat',
+    name: 'Borș proaspăt natural de tărâțe',
+    category: 'canned_sauces',
+    isPantryStaple: false,
+    standardPackSize: 1000,
+    unit: 'ml',
+    typicalPriceRon: { lidl: 3.49, kaufland: 3.29, carrefour: 3.79, mega_image: 4.19, auchan: 3.71, penny: 3.39, profi: 3.52, sezamo: 4.11 },
+  },
+  banane: {
+    id: 'banane',
+    name: 'Banane proaspete',
+    category: 'produce',
+    isPantryStaple: false,
+    standardPackSize: 1000,
+    unit: 'g',
+    typicalPriceRon: { lidl: 6.49, kaufland: 6.29, carrefour: 6.89, mega_image: 7.49, auchan: 6.62, penny: 6.23, profi: 7.01, sezamo: 7.27 },
+  },
+  lapte_vegetal_ovaz: {
+    id: 'lapte_vegetal_ovaz',
+    name: 'Băutură vegetală de ovăz',
+    category: 'pantry',
+    isPantryStaple: false,
+    standardPackSize: 1000,
+    unit: 'ml',
+    typicalPriceRon: { lidl: 7.49, kaufland: 7.29, carrefour: 7.99, mega_image: 8.69, auchan: 7.64, penny: 7.19, profi: 8.09, sezamo: 8.39 },
+  },
+  unt_arahide: {
+    id: 'unt_arahide',
+    name: 'Unt de arahide 100% natural',
+    category: 'pantry',
+    isPantryStaple: false,
+    standardPackSize: 350,
+    unit: 'g',
+    typicalPriceRon: { lidl: 13.99, kaufland: 13.49, carrefour: 14.99, mega_image: 16.09, auchan: 14.27, penny: 13.43, profi: 15.11, sezamo: 15.67 },
   },
 };
 

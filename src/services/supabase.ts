@@ -1,7 +1,7 @@
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { env } from '../../config/env';
-import { MealPlan, GroceryListItem } from '../types';
+import { MealPlan, GroceryListItem, UserPreferences } from '../types';
 
 let supabaseClientInstance: SupabaseClient | null = null;
 
@@ -95,7 +95,8 @@ export const cloudSyncService = {
   async saveMealPlan(
     userId: string,
     plan: MealPlan | null,
-    groceryItems: GroceryListItem[]
+    groceryItems: GroceryListItem[],
+    preferences?: UserPreferences
   ): Promise<{ success: boolean; error: string | null }> {
     const client = getSupabaseClient();
     if (!client) {
@@ -109,6 +110,9 @@ export const cloudSyncService = {
             user_id: userId,
             plan_data: plan,
             grocery_items: groceryItems,
+            // Diet and allergies travel with the plan; an allergy that lives on one device
+            // only is exactly the gap this closes.
+            ...(preferences ? { preferences } : {}),
             updated_at: new Date().toISOString(),
           },
           { onConflict: 'user_id' }
@@ -127,33 +131,35 @@ export const cloudSyncService = {
   async loadMealPlan(userId: string): Promise<{
     plan: MealPlan | null;
     groceryItems: GroceryListItem[];
+    preferences: UserPreferences | null;
     error: string | null;
   }> {
     const client = getSupabaseClient();
     if (!client) {
-      return { plan: null, groceryItems: [], error: 'Cloud neconfigurat.' };
+      return { plan: null, groceryItems: [], preferences: null, error: 'Cloud neconfigurat.' };
     }
     try {
       const { data, error } = await client
         .from('user_meal_plans')
-        .select('plan_data, grocery_items')
+        .select('plan_data, grocery_items, preferences')
         .eq('user_id', userId)
         .maybeSingle();
 
       if (error) {
-        return { plan: null, groceryItems: [], error: error.message };
+        return { plan: null, groceryItems: [], preferences: null, error: error.message };
       }
       if (!data) {
-        return { plan: null, groceryItems: [], error: null };
+        return { plan: null, groceryItems: [], preferences: null, error: null };
       }
       return {
         plan: data.plan_data as MealPlan,
         groceryItems: (data.grocery_items as GroceryListItem[]) || [],
+        preferences: (data.preferences as UserPreferences) ?? null,
         error: null,
       };
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Eroare la încărcarea din cloud.';
-      return { plan: null, groceryItems: [], error: message };
+      return { plan: null, groceryItems: [], preferences: null, error: message };
     }
   },
 };

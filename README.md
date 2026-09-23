@@ -71,8 +71,14 @@ Aplicația se va deschide pe: `http://localhost:8081`.
 
 ### 4. Rulare Teste Automate
 ```bash
-npm test
+npm test                 # toate testele (logică + componente)
+npm run test:components  # doar testele de componente
+npm run test:coverage    # cu raport de acoperire (prag: 80% instrucțiuni și linii)
 ```
+
+Testele rulează în două proiecte Jest: logica (motor, store, date) în Node, iar componentele
+cu preset-ul `react-native`, care are nevoie de resolverul propriu pentru modulele specifice
+platformei.
 
 ### 5. Verificare TypeScript și Linting
 ```bash

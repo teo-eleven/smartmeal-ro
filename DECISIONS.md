@@ -139,3 +139,132 @@ In Romania, major supermarkets (Lidl, Kaufland, Carrefour, Mega Image) do not pr
 
 ### Falsification Condition
 *What would make this decision wrong:* If a supermarket opened an official, free public API with real-time stock and checkout capabilities.
+
+---
+
+## ADR-06: Budget as a Hard Planning Constraint
+
+### Context
+`SPEC.md` requires that the total package cost stays at or below the user's budget, and acceptance criterion 128 assumes this holds. An audit on 2026-09-22 measured the opposite: the same preferences produced an identical 275.61 lei cart whether the budget was 80 lei or 900 lei. `budgetRon` was validated, stored, displayed and used to draw the gauge, but never entered recipe selection — it appeared only as a small `- portionCost * 0.2` tie-breaker in the scoring function.
+
+### Options Evaluated
+1. **Incremental replacement of the priciest meal [CHOSEN]**
+   - *Pros:* Touches only the meals that actually cause the overrun, so the week keeps its variety and character. Stops as soon as the cart fits. Predictable and easy to explain to the user ("am înlocuit 3 mese").
+   - *Cons:* Greedy, so not provably the cheapest possible basket. Recomputes the whole cart after each swap.
+2. **Automatic food-tier downgrade (premium → medium → basic)**
+   - *Pros:* Strong, fast effect; one regeneration.
+   - *Cons:* Changes the character of every meal at once, including those that were already affordable. The user explicitly chose a tier; silently overriding it is worse than replacing a few dishes.
+3. **Warn only, never change the plan**
+   - *Pros:* Least invasive, no risk of degrading a plan the user liked.
+   - *Cons:* Leaves the budget decorative, which is the defect being fixed.
+
+### Decision & Recommendation
+**Greedy incremental replacement**, in `optimizeDaysForBudget` (`src/engine/plannerEngine.ts`). While the cart exceeds the budget, replace the single priciest meal with the cheapest alternative that is still legal for its slot, recomputing the real cart cost each time. Diet, allergens, appliances and slot suitability are never relaxed to save money. Repetition stays capped at two per week so cost-cutting cannot collapse the week onto one cheap dish.
+
+When even the cheapest legal plan exceeds the budget, the plan is still returned, and `MealPlan.budgetStatus` reports the honest floor so the UI can state it rather than pretend.
+
+### Accepted Trade-off
+The result is a good plan within budget, not a provably optimal one. A true optimiser (knapsack / ILP) would cost far more complexity than the problem justifies at this catalog size.
+
+### Falsification Condition
+*What would make this decision wrong:* If the catalog grew large enough that greedy swapping regularly produced carts noticeably above what a solver would find, or if users reported that the swapped-in meals felt arbitrary.
+
+---
+
+## ADR-07: Recipe Imagery — Generated Cards Instead of Stock Photography
+
+### Context
+Recipe cards pulled photographs from `AUTHENTIC_RECIPE_VISUAL_REGISTRY`, 74 Unsplash ids that had never been visually checked, and labelled them "Rețetă Autentică". Downloading and inspecting all 82: 15 had a correct local photograph, 4 urls returned HTML rather than an image, and of the remainder roughly a third showed something else entirely — a photograph of headphones on "Mâncărică de fasole", a chocolate milkshake on hummus, a fried egg on vegan pancakes.
+
+The root problem is not the particular ids. Stock libraries have no photograph of mămăligă, bulz or ciorbă rădăuțeană, so any id chosen for those dishes is a guess, and guessing is what produced the headphones.
+
+### Options Evaluated
+1. **Generated card built from the recipe's own data [CHOSEN]**
+   - *Pros:* Cannot show something the dish does not contain, because it is derived from the ingredient list. Loads instantly, works offline, no external dependency, consistent look.
+   - *Cons:* Not photography. Less appetising than a good food photo would be.
+2. **One curated photo per dish archetype (soup, stew, pasta …)**
+   - *Pros:* Still looks like a food app; never absurd.
+   - *Cons:* Several dishes share one image, and it is still not a photo of *your* dinner. Honest labelling required.
+3. **Leave it, fix the worst ids**
+   - *Cons:* Unverifiable at the root; the next person adding a recipe repeats the mistake.
+
+### Decision & Recommendation
+**`src/components/RecipeVisual.tsx`**: a real photograph where one of that dish exists in `assets/recipes`, otherwise a card generated from the recipe — a gradient chosen by dish archetype, the pictograms of its characteristic ingredients, their names, and the cooking time. `SPEC.md` line 39 asks for "image/icon", so this satisfies the spec.
+
+The 74-entry registry, the 82 `imageUrl` values, and the "AI Dish Studio" / "Rețetă Autentică" badges were removed. A source badge now appears only where a real photograph exists. The prompt builder in `recipeVisualAgent` is kept, since that is what generates the local photographs.
+
+### Accepted Trade-off
+The app looks more illustrative and less photographic until more local photographs are produced. Deliberate: a wrong photograph is worse than an honest illustration, especially when it contradicts a dietary claim (an egg on a vegan recipe).
+
+### Falsification Condition
+*What would make this decision wrong:* If a verified photograph existed for every catalog dish, or if user testing showed the generated cards measurably hurt appetite appeal and trust more than a mismatched photo does.
+
+---
+
+## ADR-08: An Empty Appliance List Means "Needs No Appliance"
+
+### Context
+Six dishes that are never cooked (salads, wraps, yoghurt bowls, chia pudding, guacamole, hummus) declared `appliances: ['hob']` with `cookTimeMinutes: 0`. Because appliances are a hard constraint, that untrue declaration hid them from anyone without a hob, for no reason.
+
+### Decision & Recommendation
+`appliances: []` now means the dish needs no appliance, and `hasRequiredAppliances` already treated an empty list as satisfied. The catalog test asserts both directions: nothing uncooked may demand an appliance, and anything cooked must declare how.
+
+### Accepted Trade-off
+A kitchen with only a microwave is now a feasible setup rather than a blocked one, since such a user really can make avocado toast and overnight oats. The "combinație imposibilă" guard added earlier still exists but fires far more rarely — it is now a safety net rather than a common path.
+
+### Falsification Condition
+*What would make this decision wrong:* If users with minimal kitchens found a plan of four no-cook dishes worse than being told the combination does not work.
+
+---
+
+## ADR-09: Patching Build-Tooling Vulnerabilities Without an SDK Upgrade
+
+### Context
+`npm audit` reported 23 affected packages, 34 advisories, across `tar`, `@xmldom/xmldom`,
+`postcss`, `image-size` and `uuid`. `npm audit fix` refused all of them and `--force` proposed
+Expo SDK 52 → 57 and react-native 0.76 → 0.87, which would undo the version alignment this
+branch had just made and rewrite the app's foundation.
+
+This was first reported as "requires an SDK upgrade". That conclusion came from what
+`npm audit fix` printed, not from what was actually possible.
+
+### What the advisories actually reach
+None of the five packages appear in the shipped bundle. Grepping the 1.2 MB production export
+for each returns zero hits. They are build tooling: `tar` inside the Expo CLI and npm's cache,
+`@xmldom/xmldom` inside `@expo/plist` for generating an iOS plist during prebuild (this project
+has never ejected), `postcss` and `image-size` inside Metro, `uuid` inside Expo's telemetry.
+
+So the exposure is a developer's machine during a build, not a user's device.
+
+### Options Evaluated
+1. **npm `overrides` pinning patched versions [CHOSEN]**
+   - *Pros:* Fixes the advisories in place. Expo and react-native stay where they are. Reversible
+     by deleting four lines.
+   - *Cons:* Forces versions the parent packages were not tested against, so each one has to be
+     verified by actually building, not by trusting the resolver.
+2. **Expo SDK 52 → 57**
+   - *Pros:* Everything moves to supported versions at once.
+   - *Cons:* Five major SDK versions and a react-native major. A project of its own, with its own
+     testing, for a class of issue that never reaches users.
+3. **Accept and document**
+   - *Cons:* Leaves a permanently red `npm audit`, which trains people to ignore it.
+
+### Decision & Recommendation
+Override `tar` to 7.5.22, `@xmldom/xmldom` to 0.9.12, `postcss` to 8.5.28 and `uuid` to 11.1.1.
+Verified after installing: 428 tests, typecheck, lint, a successful production web export and a
+serving dev bundle.
+
+**`image-size` is deliberately not overridden.** Its v2 changes the export shape and breaks
+`metro/src/Assets.js` with `getImageSize is not a function`; the production build fails outright.
+Found by building, not by reading changelogs.
+
+### Accepted Trade-off
+Six advisories remain, all the same two `image-size` issues: denial of service through malformed
+ICNS, JXL or HEIF files. Exploiting them requires placing a crafted image into this repository's
+own assets, which is not a threat model that applies to a bundler processing our own photographs.
+They clear on their own when Metro eventually moves to image-size v2.
+
+### Falsification Condition
+*What would make this decision wrong:* if one of the overridden majors turned out to break
+something the build does not exercise — an EAS build, or a prebuild for the app stores, neither of
+which has been run here. Both should be tried before the first store submission.

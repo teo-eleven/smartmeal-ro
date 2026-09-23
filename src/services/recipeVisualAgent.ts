@@ -77,15 +77,20 @@ const SLOT_AMBIANCE_STYLES: Record<MealSlot, string> = {
 };
 
 /**
- * Adaptive Recipe Visual Agent
- * Inspects recipe ingredients, cooking method, and meal timing to generate
- * photorealistic, hyper-tailored culinary prompts and resolve images.
+ * Dedicated, authentic food photography registry mapping each recipe ID to a
+ * hyper-accurate, unique, non-repeating studio image matching its exact ingredients.
+ */
+
+/**
+ * Builds the photographic brief used to generate a real picture of a dish.
+ *
+ * Picking an image is deliberately no longer this module's job. It used to map recipes onto
+ * stock photo ids nobody had ever looked at, which put a photograph of headphones on a bean
+ * stew and a milkshake on hummus. Cards now render from the recipe's own ingredients, in
+ * components/RecipeVisual, and a photograph is shown only where a real one of that dish
+ * exists in assets/recipes.
  */
 export const recipeVisualAgent = {
-  /**
-   * Constructs an adaptive, photorealistic photographic prompt for any recipe
-   * based on its real ingredients, appliance technique, and meal slot.
-   */
   buildAdaptiveVisualPrompt(recipe: Recipe): string {
     // 1. Resolve ingredient visual descriptors
     const ingredientDescriptions: string[] = [];
@@ -123,44 +128,11 @@ export const recipeVisualAgent = {
     ].join(' ');
   },
 
-  /**
-   * Resolves the most appropriate visual asset for a recipe:
-   * 1. Locally generated AI asset from assets/recipes/ (if available)
-   * 2. Curated high-res Unsplash CDN URL
-   * 3. Fallback appetizing image
-   */
-  resolveRecipeImage(recipe: Recipe): { uri: string; isLocalAsset: boolean } {
-    const localAsset = LOCAL_RECIPE_IMAGES[recipe.id];
-    if (localAsset) {
-      return {
-        uri: typeof localAsset === 'string' ? localAsset : (localAsset as unknown as { uri?: string })?.uri || recipe.imageUrl || '',
-        isLocalAsset: true,
-      };
-    }
-
-    if (recipe.imageUrl && recipe.imageUrl.length > 0) {
-      return {
-        uri: recipe.imageUrl,
-        isLocalAsset: false,
-      };
-    }
-
-    return {
-      uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80',
-      isLocalAsset: false,
-    };
-  },
-
-  /**
-   * Returns list of all recipes that have locally generated AI photography assets
-   */
+  /** Recipes that have a real, local photograph of the finished dish. */
   getAvailableLocalImages(): string[] {
     return Object.keys(LOCAL_RECIPE_IMAGES);
   },
 
-  /**
-   * Check if a specific recipe has a locally generated image
-   */
   hasLocalImage(recipeId: string): boolean {
     return Boolean(LOCAL_RECIPE_IMAGES[recipeId]);
   },

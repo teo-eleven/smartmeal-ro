@@ -47,21 +47,11 @@ describe('Adaptive Recipe Visual Agent Service', () => {
     expect(localAvailable).toContain('pui_airfryer_cartofi');
     expect(localAvailable).toContain('omleta_cremoasa_spanac_branza');
 
-    const chickenRecipe = RECIPES.find((r) => r.id === 'pui_airfryer_cartofi')!;
-    const resolved = recipeVisualAgent.resolveRecipeImage(chickenRecipe);
-    expect(resolved.isLocalAsset).toBe(true);
-    expect(resolved.uri).toBeDefined();
+    expect(recipeVisualAgent.hasLocalImage('pui_airfryer_cartofi')).toBe(true);
   });
 
-  it('gracefully falls back to CDN URL or fallback placeholder when no local asset exists', () => {
-    const fakeRecipe = {
-      ...RECIPES[0],
-      id: 'reteta_fictiva_fara_imagine',
-      imageUrl: 'https://example.com/food.jpg',
-    };
-
-    const resolved = recipeVisualAgent.resolveRecipeImage(fakeRecipe);
-    expect(resolved.isLocalAsset).toBe(false);
-    expect(resolved.uri).toBe('https://example.com/food.jpg');
+  it('reports no local photograph for a recipe that has none', () => {
+    // Nothing is invented in its place: the card falls back to the generated visual.
+    expect(recipeVisualAgent.hasLocalImage('reteta_fictiva_fara_imagine')).toBe(false);
   });
 });

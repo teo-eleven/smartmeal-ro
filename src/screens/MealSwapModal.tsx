@@ -9,11 +9,26 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { DayOfWeek, MealPlan, Recipe, UserPreferences } from '../types';
+import { DayOfWeek, MealPlan, MealSlot, Recipe, SupermarketId, UserPreferences } from '../types';
 import { getEligibleRecipes } from '../engine/plannerEngine';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { aiProxyService, SmartSwapResult } from '../services/aiProxy';
-import { MealSlot } from '../types';
+import { getAppTheme } from '../styles/theme';
+
+function getStoreBadgeBg(store?: SupermarketId): string {
+  switch (store) {
+    case 'carrefour':
+      return 'rgba(2, 132, 199, 0.9)';
+    case 'kaufland':
+      return 'rgba(220, 38, 38, 0.9)';
+    case 'mega_image':
+      return 'rgba(147, 51, 234, 0.9)';
+    case 'lidl':
+      return 'rgba(217, 119, 6, 0.9)';
+    default:
+      return 'rgba(255, 255, 255, 0.2)';
+  }
+}
 
 interface MealSwapModalProps {
   visible: boolean;
@@ -83,17 +98,12 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   );
   const candidates = [...unusedCandidates, ...otherCandidates];
 
+  const appTheme = getAppTheme(isDark);
   const theme = {
-    background: isDark ? '#0f172a' : '#ffffff',
-    card: isDark ? '#1e293b' : '#f8fafc',
-    text: isDark ? '#f8fafc' : '#0f172a',
-    textMuted: isDark ? '#94a3b8' : '#64748b',
-    border: isDark ? '#334155' : '#e2e8f0',
-    primary: '#10b981',
-    primaryLight: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5',
-    aiBg: isDark ? 'rgba(99, 102, 241, 0.15)' : '#eef2ff',
-    aiBorder: isDark ? '#4f46e5' : '#818cf8',
-    aiText: isDark ? '#c7d2fe' : '#4338ca',
+    ...appTheme,
+    aiBg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
+    aiBorder: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.12)',
+    aiText: isDark ? '#ffffff' : '#000000',
   };
 
   const handleAskAi = async () => {
@@ -116,7 +126,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Închide" onPress={onClose} style={styles.closeBtn}>
             <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>
@@ -142,7 +152,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
             {/* AI Assistant Quick Trigger Banner */}
             <View style={[styles.aiBanner, { backgroundColor: theme.aiBg, borderColor: theme.aiBorder }]}>
               <View style={styles.aiBannerTextCol}>
-                <Text style={[styles.aiBannerTitle, { color: theme.aiText }]}>
+                <Text style={[styles.aiBannerTitle, { color: theme.text }]}>
                   ✨ Asistent Culinar Inteligent
                 </Text>
                 <Text style={[styles.aiBannerDesc, { color: theme.textMuted }]}>
@@ -151,23 +161,24 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
               </View>
 
               <TouchableOpacity
+                accessibilityRole="button"
                 onPress={handleAskAi}
                 disabled={isAiLoading}
-                style={[styles.aiTriggerBtn, { backgroundColor: theme.aiText }]}
+                style={[styles.aiTriggerBtn, { backgroundColor: theme.primary }]}
               >
                 {isAiLoading ? (
-                  <ActivityIndicator color="#ffffff" size="small" />
+                  <ActivityIndicator color={theme.primaryText} size="small" />
                 ) : (
-                  <Text style={styles.aiTriggerBtnText}>Întreabă AI</Text>
+                  <Text style={[styles.aiTriggerBtnText, { color: theme.primaryText }]}>Întreabă AI</Text>
                 )}
               </TouchableOpacity>
             </View>
 
             {/* AI Suggestion Highlight Card if triggered */}
             {aiResult && (
-              <View style={[styles.aiResultCard, { backgroundColor: theme.card, borderColor: '#10b981' }]}>
+              <View style={[styles.aiResultCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <View style={styles.aiResultHeader}>
-                  <Text style={styles.aiResultBadge}>
+                  <Text style={[styles.aiResultBadge, { color: theme.primary }]}>
                     {aiResult.isAiGenerated ? '🤖 Sugestie Gemini AI' : '🎯 Sugestie Optimă'}
                   </Text>
                   <Text style={[styles.aiResultReason, { color: theme.textMuted }]}>
@@ -180,11 +191,12 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                 </Text>
 
                 <TouchableOpacity
+                  accessibilityRole="button"
                   onPress={() => onSelectReplacement(aiResult.recipe)}
                   style={[styles.selectBtn, { backgroundColor: theme.primary, marginTop: 8 }]}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.selectBtnText}>Alege sugestia ({aiResult.recipe.prepTimeMinutes} min)</Text>
+                  <Text style={[styles.selectBtnText, { color: theme.primaryText }]}>Alege sugestia ({aiResult.recipe.prepTimeMinutes} min)</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -216,9 +228,16 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                       },
                     ]}
                   >
-                    <Text style={[styles.candidateTitle, { color: theme.text }]}>
-                      {candidate.title}
-                    </Text>
+                    <View style={styles.candidateHeaderRow}>
+                      <Text style={[styles.candidateTitle, { color: theme.text, flex: 1 }]}>
+                        {candidate.title}
+                      </Text>
+                      {candidate.storeBadgeLabel && (
+                        <View style={[styles.storeBadge, { backgroundColor: getStoreBadgeBg(candidate.storeSignature) }]}>
+                          <Text style={styles.storeBadgeText}>{candidate.storeBadgeLabel}</Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={[styles.candidateDesc, { color: theme.textMuted }]}>
                       {candidate.description}
                     </Text>
@@ -237,11 +256,12 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                     </View>
 
                     <TouchableOpacity
+                      accessibilityRole="button"
                       onPress={() => onSelectReplacement(candidate)}
                       style={[styles.selectBtn, { backgroundColor: theme.primary }]}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.selectBtnText}>Alege această rețetă</Text>
+                      <Text style={[styles.selectBtnText, { color: theme.primaryText }]}>Alege această rețetă</Text>
                     </TouchableOpacity>
                   </View>
                 );
@@ -349,7 +369,6 @@ const styles = StyleSheet.create({
   aiResultBadge: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#10b981',
     marginBottom: 2,
   },
   aiResultReason: {
@@ -403,5 +422,23 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '800',
+  },
+  candidateHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 4,
+  },
+  storeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  storeBadgeText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

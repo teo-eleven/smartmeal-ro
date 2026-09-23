@@ -3,6 +3,23 @@
 This document outlines the step-by-step vertical implementation plan for **Mise Romania**.
 Spikes are executed first to retire core technical risks, followed by sequential vertical slices where each step leaves the application in a runnable, verifiable state.
 
+
+> **Notă de actualitate (2026-09-23).** Pașii 1-11 de mai jos sunt planul original, scris
+> înainte de implementare. **Arhitectura descrisă în ei nu este cea construită.** Ce există
+> în realitate:
+>
+> | Planificat | Construit |
+> |---|---|
+> | Expo Router, `app/_layout.tsx`, `app/(tabs)/*` | Navigare prin stare în `App.tsx`, ecrane în `src/screens/` |
+> | NativeWind / Tailwind, `tailwind.config.js` | `StyleSheet` + tema „glass" din `src/styles/theme.ts` |
+> | `src/constants/theme.ts` | `src/styles/theme.ts` |
+> | `src/components/ApplianceGrid.tsx` | `src/components/ApplianceSelector.tsx` |
+> | `spikes/gemini_spike.ts` | Nu există; AI-ul a fost validat direct în `src/services/aiProxy.ts` |
+> | `src/components/DesktopWrapper.tsx` | `src/hooks/useResponsive.ts` |
+> | `metro.config.js` | Configurația implicită Expo |
+>
+> Pașii rămân aici ca istoric al intenției. **Pentru starea reală, vezi Step 12 și `HANDOFF.md`.**
+
 ---
 
 ## Overview of Implementation Phases
@@ -208,3 +225,52 @@ Spikes are executed first to retire core technical risks, followed by sequential
 - **How it's tested:** Complete manual walk-through from clean browser cache: Onboarding $\rightarrow$ Plan generation $\rightarrow$ Recipe inspection $\rightarrow$ Swap $\rightarrow$ Grocery shopping checklist completion.
 - **Tool / Subagent:** Parent agent (`self`).
 - **Can run in parallel:** NO.
+
+---
+
+## Step 12: Audit Pass — Correctness, Safety and Trust (unplanned, 2026-09-22)
+
+Not part of the original roadmap. Phases 1–8 were already implemented when this pass
+started; it audited them end to end and fixed what it found. Phase 9 (Step 11) is still
+outstanding.
+
+### Done — implemented, tested and committed
+- [x] **Budget is a real constraint.** `optimizeDaysForBudget` in `src/engine/plannerEngine.ts`.
+      Measured before: identical 275.61 lei cart at any budget. See ADR-06.
+- [x] **Diet, appliance and allergen constraints hold on every path.** The relaxation ladder in
+      `pickBestRecipeForSlot` used to drop the appliance filter: 252 violations across 72
+      generated plans, now 0 across 126 combinations (`hardConstraints.test.ts`).
+- [x] **The app can no longer be locked out.** Preferences are persisted only after a
+      successful rebuild; `checkPlanFeasibility` answers without throwing; `hydrateStorage`
+      repairs a stored state that cannot produce a plan.
+- [x] **Cart and pantry stay consistent.** `pantryInventory` was passed in 1 of 14 aggregation
+      calls; plan totals excluded chosen snacks (6.99 lei gap); `extraProducts` was never set.
+- [x] **Allergens** as a hard constraint (`src/utils/allergenFilter.ts`, `src/data/allergens.ts`),
+      plus gluten detection gaps closed (`faina_grau`, `pesmet`, `biscuiti`, `chifle`, `lipii`).
+- [x] **Vegan catalog is usable.** The one recipe tagged for vegan breakfast/dessert contained
+      honey. Fixed, plus 8 new vegan recipes and 3 plant-based staples.
+- [x] **Recipe imagery no longer shows the wrong dish.** See ADR-07.
+- [x] **Supermarket basket comparison** (`src/engine/storeComparator.ts`).
+- [x] **Per-meal servings, saved-plan library, undo on reset, quick start, live feasibility meter.**
+- [x] **AI no longer needs a client-side provider key.** Requests go through the Supabase edge
+      function; model output is validated against the offered candidates.
+- [x] **Accessibility**: 0 → 91 annotated controls, with real roles for checkboxes and switches.
+- [x] **Component test project** added; coverage 80.9% statements / 81.3% lines, enforced in
+      `jest.config.js`.
+
+### Închise după review-ul de închidere (2026-09-23)
+- [x] Restaurarea unui plan salvat nu mai coboară protecțiile (alergii, dietă, aparate).
+- [x] Schema Supabase scrisă ca migrație, cu RLS. Sincronizarea folosea emailul drept `user_id`.
+- [x] Funcția edge securizată: rate limiting, plafoane pe prompt, CORS configurabil.
+- [x] Restul constatărilor de review (validare storage, timer, imutabilitate, duplicări, teste).
+
+### Outstanding after this pass
+- [ ] **Step 11 / Phase 9 — End-to-end verification.** Never run. No human has clicked through
+      the app since these changes; all verification so far is automated.
+- [ ] **Migrația 0001 e scrisă dar nerulată** (`supabase/migrations/0001_user_meal_plans.sql`).
+      `supabase db push` înainte de orice deploy cu cloud.
+- [ ] **Edge function not deployed.** Needs the Supabase CLI and account credentials; steps are
+      in `supabase/README.md`.
+- [x] **PLAN.md architecture drift** — marcat ca intenție istorică, cu tabel comparativ la început.
+- [x] **Vulnerabilitățile npm** — rezolvate prin `overrides`, fără upgrade de SDK. 23 → 6;
+      cele 6 rămase sunt `image-size`, a cărui v2 rupe Metro. Vezi ADR-09.
