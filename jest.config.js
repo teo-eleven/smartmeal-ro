@@ -20,12 +20,12 @@ module.exports = {
   // fallbacks and theme permutations; statements and lines are the meaningful floor here.
   coverageThreshold: {
     global: {
-      statements: 80,
-      lines: 80,
+      statements: 83,
+      lines: 83,
       // Floors at the level actually reached. Much of the remaining branch and function
       // surface is defensive fallbacks and theme permutations rather than user behaviour.
-      functions: 78,
-      branches: 58,
+      functions: 84,
+      branches: 62,
     },
   },
   projects: [
