@@ -495,9 +495,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         // Storage is untrusted. An unreadable allergen list must not cost the user the rest
         // of their settings, and must never be silently treated as "no allergies".
         const { allergens, wasRepaired } = sanitizeAllergens(storedPrefs.avoidedAllergens);
-        if (wasRepaired) {
-          repairs.push('lista de alergii');
-        }
+        const allergensWereRepaired = wasRepaired;
         storedPrefs = { ...storedPrefs, avoidedAllergens: allergens };
 
         if (!checkPlanFeasibility(storedPrefs).isFeasible) {
@@ -528,16 +526,32 @@ export const useAppStore = create<AppState>((set, get) => ({
           }
         }
 
-        if (repairs.length > 0) {
+        if (repairs.length > 0 || allergensWereRepaired) {
           void storageService.savePreferences(storedPrefs);
           const stillBroken = !checkPlanFeasibility(storedPrefs).isFeasible;
+
+          // Two different failures, and they used to share one sentence: a list of allergies
+          // that could not be read has nothing to do with whether a plan was possible.
+          // Saying so is the point, because the app can no longer protect what it cannot read.
+          const allergenSentence = allergensWereRepaired
+            ? 'Lista ta de alergii nu a putut fi citită complet, așa că am păstrat doar ce am putut recunoaște. Verific-o din Filtre înainte să gătești.'
+            : '';
+          const feasibilitySentence =
+            repairs.length === 0
+              ? ''
+              : stillBroken
+                ? `Am restaurat ${repairs.join(' și ')}, dar combinația de dietă și alergii tot nu permite niciun plan. Verifică-le din Filtre.`
+                : `Setările salvate nu permiteau generarea niciunui plan, așa că am restaurat ${repairs.join(' și ')}. Le poți schimba oricând din Filtre.`;
+
           repairedPrefsNotice = {
             id: Date.now().toString(),
-            title: stillBroken ? 'Setări incomplete' : 'Setări restaurate',
-            message: stillBroken
-              ? `Am restaurat ${repairs.join(' și ')}, dar combinația de dietă și alergii tot nu permite niciun plan. Verifică-le din Filtre.`
-              : `Setările salvate nu permiteau generarea niciunui plan, așa că am restaurat ${repairs.join(' și ')}. Le poți schimba oricând din Filtre.`,
-            type: stillBroken ? 'warning' : 'info',
+            title: allergensWereRepaired
+              ? 'Verifică-ți alergiile'
+              : stillBroken
+                ? 'Setări incomplete'
+                : 'Setări restaurate',
+            message: [allergenSentence, feasibilitySentence].filter(Boolean).join(' '),
+            type: allergensWereRepaired || stillBroken ? 'warning' : 'info',
           };
         }
       }
