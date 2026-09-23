@@ -29,8 +29,9 @@ pornește. **Ce rămâne de verificat cu ochii: aspectul.** Dacă arată bine, d
   `supabase db push` sau din SQL editor. Include RLS; fără ea, cheia `anon` (publică prin design)
   ar putea citi planurile altora.
 - **Verificarea vizuală** — extensia Claude in Chrome nu e conectată în sesiune.
-- **Cele 23 de vulnerabilități npm** — toate tranzitive prin tooling-ul de build, niciuna în codul
-  livrat. Cer Expo SDK 52 → 57. Decizie conștientă: nu se atacă acum.
+- **Vulnerabilitățile npm — rezolvate** prin `overrides`, fără upgrade de SDK (ADR-09).
+  23 → 6, iar cele 6 rămase sunt aceleași două probleme `image-size` (DoS prin imagini
+  malformate, ar trebui să le pui tu în assets). `image-size` v2 rupe Metro, verificat.
 
 ## Din review — stare
 
@@ -56,6 +57,9 @@ pornește. **Ce rămâne de verificat cu ochii: aspectul.** Dacă arată bine, d
 ## Capcane
 
 - **Nu rula `npm audit fix --force`** — urcă la Expo SDK 57 și anulează alinierea RN 0.76.9.
+  Vulnerabilitățile sunt deja tratate prin `overrides` în `package.json`; nu le scoate.
+- **Nu urca `image-size` la v2** — rupe `metro/src/Assets.js` (`getImageSize is not a function`).
+  Build-ul de producție eșuează. Verificat.
 - **Rulează migrația 0001 înainte de orice deploy cu cloud.** Fără RLS, cheia `anon` vede tot.
 - **Setează `ALLOWED_ORIGINS`** în secretele Supabase la publicarea funcției edge; lăsat gol
   înseamnă CORS `*`, potrivit doar în dezvoltare.

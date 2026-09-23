@@ -272,5 +272,5 @@ outstanding.
 - [ ] **Edge function not deployed.** Needs the Supabase CLI and account credentials; steps are
       in `supabase/README.md`.
 - [x] **PLAN.md architecture drift** — marcat ca intenție istorică, cu tabel comparativ la început.
-- [ ] **23 npm audit findings**, all transitive through Expo/Metro build tooling, all requiring
-      Expo SDK 52 → 57. Not runtime code. Deliberately not attempted.
+- [x] **Vulnerabilitățile npm** — rezolvate prin `overrides`, fără upgrade de SDK. 23 → 6;
+      cele 6 rămase sunt `image-size`, a cărui v2 rupe Metro. Vezi ADR-09.

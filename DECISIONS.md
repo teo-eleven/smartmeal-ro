@@ -214,3 +214,57 @@ A kitchen with only a microwave is now a feasible setup rather than a blocked on
 
 ### Falsification Condition
 *What would make this decision wrong:* If users with minimal kitchens found a plan of four no-cook dishes worse than being told the combination does not work.
+
+---
+
+## ADR-09: Patching Build-Tooling Vulnerabilities Without an SDK Upgrade
+
+### Context
+`npm audit` reported 23 affected packages, 34 advisories, across `tar`, `@xmldom/xmldom`,
+`postcss`, `image-size` and `uuid`. `npm audit fix` refused all of them and `--force` proposed
+Expo SDK 52 → 57 and react-native 0.76 → 0.87, which would undo the version alignment this
+branch had just made and rewrite the app's foundation.
+
+This was first reported as "requires an SDK upgrade". That conclusion came from what
+`npm audit fix` printed, not from what was actually possible.
+
+### What the advisories actually reach
+None of the five packages appear in the shipped bundle. Grepping the 1.2 MB production export
+for each returns zero hits. They are build tooling: `tar` inside the Expo CLI and npm's cache,
+`@xmldom/xmldom` inside `@expo/plist` for generating an iOS plist during prebuild (this project
+has never ejected), `postcss` and `image-size` inside Metro, `uuid` inside Expo's telemetry.
+
+So the exposure is a developer's machine during a build, not a user's device.
+
+### Options Evaluated
+1. **npm `overrides` pinning patched versions [CHOSEN]**
+   - *Pros:* Fixes the advisories in place. Expo and react-native stay where they are. Reversible
+     by deleting four lines.
+   - *Cons:* Forces versions the parent packages were not tested against, so each one has to be
+     verified by actually building, not by trusting the resolver.
+2. **Expo SDK 52 → 57**
+   - *Pros:* Everything moves to supported versions at once.
+   - *Cons:* Five major SDK versions and a react-native major. A project of its own, with its own
+     testing, for a class of issue that never reaches users.
+3. **Accept and document**
+   - *Cons:* Leaves a permanently red `npm audit`, which trains people to ignore it.
+
+### Decision & Recommendation
+Override `tar` to 7.5.22, `@xmldom/xmldom` to 0.9.12, `postcss` to 8.5.28 and `uuid` to 11.1.1.
+Verified after installing: 428 tests, typecheck, lint, a successful production web export and a
+serving dev bundle.
+
+**`image-size` is deliberately not overridden.** Its v2 changes the export shape and breaks
+`metro/src/Assets.js` with `getImageSize is not a function`; the production build fails outright.
+Found by building, not by reading changelogs.
+
+### Accepted Trade-off
+Six advisories remain, all the same two `image-size` issues: denial of service through malformed
+ICNS, JXL or HEIF files. Exploiting them requires placing a crafted image into this repository's
+own assets, which is not a threat model that applies to a bundler processing our own photographs.
+They clear on their own when Metro eventually moves to image-size v2.
+
+### Falsification Condition
+*What would make this decision wrong:* if one of the overridden majors turned out to break
+something the build does not exercise — an EAS build, or a prebuild for the app stores, neither of
+which has been run here. Both should be tried before the first store submission.
