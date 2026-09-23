@@ -19,6 +19,7 @@ interface AuthModalProps {
   userEmail: string | null;
   onUserChanged: (email: string | null) => void;
   onSyncTriggered?: () => Promise<void>;
+  onDownloadTriggered?: () => Promise<void>;
   isSyncing?: boolean;
   lastSyncedAt?: string | null;
 }
@@ -30,6 +31,7 @@ export function AuthModal({
   userEmail,
   onUserChanged,
   onSyncTriggered,
+  onDownloadTriggered,
   isSyncing = false,
   lastSyncedAt = null,
 }: AuthModalProps) {
@@ -144,6 +146,7 @@ export function AuthModal({
                 {onSyncTriggered && (
                   <TouchableOpacity
                     accessibilityRole="button"
+                    accessibilityLabel="Urcă planul în cloud"
                     style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
                     onPress={onSyncTriggered}
                     disabled={isSyncing}
@@ -151,8 +154,22 @@ export function AuthModal({
                     {isSyncing ? (
                       <ActivityIndicator color={theme.primaryText} size="small" />
                     ) : (
-                      <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>Sincronizează acum</Text>
+                      <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>⬆ Urcă planul de aici</Text>
                     )}
+                  </TouchableOpacity>
+                )}
+
+                {onDownloadTriggered && (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Adu planul din cloud"
+                    style={[styles.secondaryBtn, { borderColor: theme.border }]}
+                    onPress={onDownloadTriggered}
+                    disabled={isSyncing}
+                  >
+                    <Text style={[styles.secondaryBtnText, { color: theme.text }]}>
+                      ⬇ Adu planul de pe alt dispozitiv
+                    </Text>
                   </TouchableOpacity>
                 )}
 

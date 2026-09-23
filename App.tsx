@@ -39,6 +39,7 @@ export default function App() {
     activeNotice,
     clearNotice,
     confirmRequest,
+    pendingCloudPlan,
     requestConfirm,
     cancelConfirm,
     confirmPending,
@@ -49,6 +50,7 @@ export default function App() {
     hydrateStorage,
     setUserEmail,
     syncWithCloud,
+    syncFromCloud,
     generatePlan,
   } = useAppStore();
 
@@ -348,6 +350,7 @@ export default function App() {
         userEmail={userEmail}
         onUserChanged={(email) => setUserEmail(email)}
         onSyncTriggered={syncWithCloud}
+        onDownloadTriggered={syncFromCloud}
         isSyncing={isSyncing}
         lastSyncedAt={lastSyncedAt}
       />
@@ -363,6 +366,22 @@ export default function App() {
           onDismiss={dismissUndo}
           isDark={isDark}
         />
+
+      {/* Replacing a live plan with the one another device saved */}
+      <ConfirmDialog
+        visible={confirmRequest === 'apply_cloud_plan'}
+        title="Înlocuiești planul de aici?"
+        message={
+          pendingCloudPlan?.updatedAt
+            ? `Planul din cloud a fost salvat pe ${new Date(pendingCloudPlan.updatedAt).toLocaleString('ro-RO')}. Îl aduci peste cel de aici? Poți reveni imediat cu „Anulează".`
+            : 'Aduci planul salvat pe celălalt dispozitiv peste cel de aici? Poți reveni imediat cu „Anulează".'
+        }
+        confirmLabel="Adu planul din cloud"
+        cancelLabel="Păstrează ce am aici"
+        onConfirm={confirmPending}
+        onCancel={cancelConfirm}
+        isDark={isDark}
+      />
 
       {/* Confirmation before anything is destroyed */}
       <ConfirmDialog

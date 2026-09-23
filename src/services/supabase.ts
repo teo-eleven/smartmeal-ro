@@ -2,6 +2,7 @@ import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { env } from '../../config/env';
 import { MealPlan, GroceryListItem, UserPreferences } from '../types';
+import { isWellFormedPlan } from './storage';
 
 let supabaseClientInstance: SupabaseClient | null = null;
 
@@ -28,6 +29,28 @@ export function getSupabaseClient(): SupabaseClient | null {
     console.warn('[Supabase] Failed to initialize Supabase client:', e);
     return null;
   }
+}
+
+/** What a cloud row turns into once it has been checked rather than merely cast. */
+export interface CloudPlanResult {
+  plan: MealPlan | null;
+  groceryItems: GroceryListItem[];
+  preferences: UserPreferences | null;
+  /** When the other device last wrote this row, shown to the user so they can judge it. */
+  updatedAt: string | null;
+  error: string | null;
+}
+
+const EMPTY_CLOUD_PLAN: CloudPlanResult = {
+  plan: null,
+  groceryItems: [],
+  preferences: null,
+  updatedAt: null,
+  error: null,
+};
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export const cloudSyncService = {
@@ -128,38 +151,45 @@ export const cloudSyncService = {
     }
   },
 
-  async loadMealPlan(userId: string): Promise<{
-    plan: MealPlan | null;
-    groceryItems: GroceryListItem[];
-    preferences: UserPreferences | null;
-    error: string | null;
-  }> {
+  async loadMealPlan(userId: string): Promise<CloudPlanResult> {
     const client = getSupabaseClient();
     if (!client) {
-      return { plan: null, groceryItems: [], preferences: null, error: 'Cloud neconfigurat.' };
+      return { ...EMPTY_CLOUD_PLAN, error: 'Cloud neconfigurat.' };
     }
     try {
       const { data, error } = await client
         .from('user_meal_plans')
-        .select('plan_data, grocery_items, preferences')
+        .select('plan_data, grocery_items, preferences, updated_at')
         .eq('user_id', userId)
         .maybeSingle();
 
       if (error) {
-        return { plan: null, groceryItems: [], preferences: null, error: error.message };
+        return { ...EMPTY_CLOUD_PLAN, error: error.message };
       }
       if (!data) {
-        return { plan: null, groceryItems: [], preferences: null, error: null };
+        return EMPTY_CLOUD_PLAN;
       }
+
+      // The row came back over the network and was written by another copy of this app,
+      // possibly an older one. It gets the same shape check as anything read from storage.
+      if (!isWellFormedPlan(data.plan_data)) {
+        return { ...EMPTY_CLOUD_PLAN, error: 'Planul din cloud nu poate fi citit.' };
+      }
+
       return {
-        plan: data.plan_data as MealPlan,
-        groceryItems: (data.grocery_items as GroceryListItem[]) || [],
-        preferences: (data.preferences as UserPreferences) ?? null,
+        plan: data.plan_data,
+        groceryItems: Array.isArray(data.grocery_items)
+          ? (data.grocery_items as GroceryListItem[])
+          : [],
+        preferences: isPlainObject(data.preferences)
+          ? (data.preferences as unknown as UserPreferences)
+          : null,
+        updatedAt: typeof data.updated_at === 'string' ? data.updated_at : null,
         error: null,
       };
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Eroare la încărcarea din cloud.';
-      return { plan: null, groceryItems: [], preferences: null, error: message };
+      return { ...EMPTY_CLOUD_PLAN, error: message };
     }
   },
 };
