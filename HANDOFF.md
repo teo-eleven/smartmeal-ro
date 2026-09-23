@@ -7,7 +7,7 @@
 
 Audit transversal peste Fazele 1-8, care erau deja implementate. 12 defecte găsite și reparate
 (3 critice), plus cele 10 puncte din lista „ce merită construit", plus **toate constatările din
-review-ul de închidere**. Testele au crescut de la 80 la 409. Nu a rămas nimic din listă nereparat.
+review-ul de închidere**. Testele au crescut de la 80 la 428. Nu a rămas nimic din listă nereparat.
 
 ## Următorul pas exact
 
@@ -73,7 +73,7 @@ pornește. **Ce rămâne de verificat cu ochii: aspectul.** Dacă arată bine, d
   închidere de sesiune.
 - **Verificarea imaginilor cere ochi, nu cod de status.** Am raportat o dată „HTTP 200, totul bine"
   pentru poze care arătau căști audio la mâncare de fasole. Pillow e instalat; planșe de contact.
-- `npm run test:coverage` — praguri în `jest.config.js`, pică dacă acoperirea scade sub 80%.
+- `npm run test:coverage` — praguri în `jest.config.js`, pică dacă acoperirea scade sub 83% (instrucțiuni și linii).
 
 ## Întrebări pentru tine
 
