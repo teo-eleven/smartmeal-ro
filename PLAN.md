@@ -258,16 +258,19 @@ outstanding.
 - [x] **Component test project** added; coverage 80.9% statements / 81.3% lines, enforced in
       `jest.config.js`.
 
+### Închise după review-ul de închidere (2026-09-23)
+- [x] Restaurarea unui plan salvat nu mai coboară protecțiile (alergii, dietă, aparate).
+- [x] Schema Supabase scrisă ca migrație, cu RLS. Sincronizarea folosea emailul drept `user_id`.
+- [x] Funcția edge securizată: rate limiting, plafoane pe prompt, CORS configurabil.
+- [x] Restul constatărilor de review (validare storage, timer, imutabilitate, duplicări, teste).
+
 ### Outstanding after this pass
 - [ ] **Step 11 / Phase 9 — End-to-end verification.** Never run. No human has clicked through
       the app since these changes; all verification so far is automated.
-- [ ] **Supabase schema has no migration.** `src/services/supabase.ts` expects a table
-      `user_meal_plans` (`user_id`, `plan_data`, `grocery_items`, `updated_at`, unique on
-      `user_id`) that exists nowhere in the repo. Pre-existing gap, see HANDOFF.md.
+- [ ] **Migrația 0001 e scrisă dar nerulată** (`supabase/migrations/0001_user_meal_plans.sql`).
+      `supabase db push` înainte de orice deploy cu cloud.
 - [ ] **Edge function not deployed.** Needs the Supabase CLI and account credentials; steps are
       in `supabase/README.md`.
-- [ ] **PLAN.md architecture drift.** Steps 3–11 above describe `app/` Expo Router screens,
-      NativeWind/Tailwind and `spikes/`, none of which exist. The app uses `src/screens/` with
-      StyleSheet and a `glass` theme. The step descriptions were never updated to match.
+- [x] **PLAN.md architecture drift** — marcat ca intenție istorică, cu tabel comparativ la început.
 - [ ] **23 npm audit findings**, all transitive through Expo/Metro build tooling, all requiring
       Expo SDK 52 → 57. Not runtime code. Deliberately not attempted.
