@@ -23,6 +23,7 @@ import {
   getAlternativeRecipes,
   getEligibleRecipes,
   getSlotLabelRo,
+  hasRequiredAppliances,
   isSupermarketCompatible,
   selectOptimalDessertForDay,
   swapMealInPlan,
@@ -35,7 +36,7 @@ import { ALLERGEN_CATALOG } from '../data/allergens';
 import { getRecipeAllergens } from '../utils/allergenFilter';
 import { storageService } from '../services/storage';
 import { cloudSyncService } from '../services/supabase';
-import { areDietsCompatible } from '../utils/dietCompatibility';
+import { areDietsCompatible, isRecipeMatchingDiets } from '../utils/dietCompatibility';
 
 export type ActiveView = 'onboarding' | 'generating' | 'meals' | 'grocery';
 
@@ -449,6 +450,39 @@ function rejectIfInfeasible(nextPrefs: UserPreferences): Partial<AppState> | nul
  * ?onboarding=1 -- and the board then has to follow the preferences rather than keep meals
  * they no longer allow. Diet and appliances are hard constraints, so this is a safety path.
  */
+/**
+ * Explains why a recipe may not be put in front of this user, or null when it may.
+ *
+ * Diet, allergens and appliances are the three hard constraints the planner never relaxes;
+ * this states them once so a caller cannot accidentally skip one.
+ */
+function describeUnsafeRecipe(recipe: Recipe, preferences: UserPreferences): string | null {
+  const diets =
+    preferences.dietTypes && preferences.dietTypes.length > 0
+      ? preferences.dietTypes
+      : [preferences.dietType];
+
+  const offendingAllergens = getRecipeAllergens(recipe).filter((allergen) =>
+    (preferences.avoidedAllergens ?? []).includes(allergen)
+  );
+  if (offendingAllergens.length > 0) {
+    const labels = offendingAllergens
+      .map((id) => ALLERGEN_CATALOG.find((a) => a.id === id)?.label.toLowerCase() ?? id)
+      .join(', ');
+    return `„${recipe.title}" conține ${labels}, iar tu ai declarat această alergie.`;
+  }
+
+  if (!isRecipeMatchingDiets(recipe, diets)) {
+    return `„${recipe.title}" nu se potrivește cu dieta pe care ai ales-o.`;
+  }
+
+  if (!hasRequiredAppliances(recipe.appliances, preferences.appliances)) {
+    return `„${recipe.title}" are nevoie de un aparat pe care nu l-ai bifat în bucătăria ta.`;
+  }
+
+  return null;
+}
+
 function applyPreferenceStep(state: AppState, nextPrefs: UserPreferences): Partial<AppState> {
   if (!state.currentPlan) {
     void storageService.savePreferences(nextPrefs);
@@ -2129,6 +2163,22 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const dayIndex = currentPlan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
     if (dayIndex === -1) return;
+
+    // Every other action that puts a meal on the board re-derives safety itself. This one
+    // trusted whoever called it, and its only caller filters correctly -- which makes this
+    // a trap for the next caller rather than a live hole. It now checks for itself.
+    const rejection = describeUnsafeRecipe(newRecipe, preferences);
+    if (rejection) {
+      set({
+        activeNotice: {
+          id: Date.now().toString(),
+          title: 'Rețeta nu ți se potrivește',
+          message: rejection,
+          type: 'warning',
+        },
+      });
+      return;
+    }
 
     const targetDay = currentPlan.days[dayIndex];
     const targetSlot: MealSlot =
