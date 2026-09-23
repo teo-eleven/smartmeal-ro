@@ -543,6 +543,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
 
       let sanitizedPlan = plan;
+      let hydratedItems = items;
+      let planSafetyNotice: SystemNotice | null = null;
+
       if (sanitizedPlan) {
         sanitizedPlan = {
           ...sanitizedPlan,
@@ -551,6 +554,43 @@ export const useAppStore = create<AppState>((set, get) => ({
             meals: d.meals.filter((m) => m.slot !== 'snack'),
           })),
         };
+
+        // Reopening the app is the first door a meal comes through, and the plan beside the
+        // preferences can be arbitrarily stale -- or, on web, edited by hand in localStorage.
+        // Restoring an archived plan was already re-checked here; this path was not.
+        const effectivePrefs = storedPrefs ?? DEFAULT_PREFERENCES;
+        const { days: safeDays, replacedCount, offendingAllergens } = makePlanSafeForPreferences(
+          sanitizedPlan.days,
+          effectivePrefs
+        );
+
+        if (replacedCount > 0) {
+          const aggregated = aggregateGroceryList(
+            collectMealsFromDays(safeDays),
+            effectivePrefs.supermarketId,
+            effectivePrefs.excludePantryStaples,
+            getActiveExtraProductIds(effectivePrefs),
+            effectivePrefs.pantryInventory || []
+          );
+
+          sanitizedPlan = {
+            ...sanitizedPlan,
+            days: safeDays,
+            totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+            totalCartCostRon: aggregated.totalCartCostRon,
+            extraProducts: getActiveExtraProducts(effectivePrefs),
+          };
+          hydratedItems = aggregated.items;
+
+          void storageService.savePlanAndGrocery(sanitizedPlan, aggregated.items);
+
+          planSafetyNotice = {
+            id: Date.now().toString(),
+            title: 'Plan adaptat la setările tale',
+            message: buildRestoreNotice(replacedCount, offendingAllergens),
+            type: 'warning',
+          };
+        }
       }
 
       const urlParams =
@@ -579,7 +619,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             }
           : state.preferences,
         currentPlan: sanitizedPlan || state.currentPlan,
-        groceryItems: items.length > 0 ? items : state.groceryItems,
+        groceryItems: hydratedItems.length > 0 ? hydratedItems : state.groceryItems,
         activeView:
           targetView ||
           (forceOnboarding ? 'onboarding' : sanitizedPlan ? 'meals' : state.activeView),
@@ -588,7 +628,11 @@ export const useAppStore = create<AppState>((set, get) => ({
           forceOnboarding && !isNaN(targetStep)
             ? Math.max(state.maxVisitedStep, targetStep)
             : state.maxVisitedStep,
-        activeNotice: repairedPrefsNotice ?? state.activeNotice,
+        activeNotice:
+          (repairedPrefsNotice?.type === 'warning' ? repairedPrefsNotice : null) ??
+          planSafetyNotice ??
+          repairedPrefsNotice ??
+          state.activeNotice,
         savedPlans,
       }));
     } catch (e) {
