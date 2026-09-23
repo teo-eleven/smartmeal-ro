@@ -1,6 +1,7 @@
 # HANDOFF.md
 
-**Sesiune:** 2026-09-22 → 23 · ramura `audit/smartmeal-fixes` (21 commit-uri, **nimic pushed**, `main` neatins)
+**Sesiune:** 2026-09-22 → 23 · ramura `audit/smartmeal-fixes` (22 commit-uri, pushed)
+**PR:** https://github.com/teo-eleven/smartmeal-ro/pull/1 · `main` neatins
 
 ## Unde am rămas
 
@@ -10,10 +11,14 @@ review-ul de închidere**. Testele au crescut de la 80 la 409. Nu a rămas nimic
 
 ## Următorul pas exact
 
-**Faza 9 / Step 11 — verificare end-to-end manuală.** `npm run web`, apoi din cache gol:
-onboarding → generare plan → detaliu rețetă → swap → listă cumpărături → planuri salvate.
-**Niciun om n-a dat click prin aplicație** după schimbările acestei sesiuni; toată verificarea
-de până acum e automată. Începe cu `src/screens/onboarding/OnboardingWizard.tsx`, pasul 1.
+**Faza 9 — privește aplicația.** `npm run web`, din cache gol: onboarding → plan → rețetă →
+swap → cumpărături → planuri salvate.
+
+Partea mecanică e acum acoperită de `src/__tests__/appJourney.component.test.tsx`, care
+montează componenta reală și parcurge toate ecranele — deci nu vei găsi un ecran care nu
+pornește. **Ce rămâne de verificat cu ochii: aspectul.** Dacă arată bine, dacă textele intră
+în spațiu, dacă efectele „glass" sunt intacte după cele 36 de locuri atinse la refactorizare,
+și dacă noile carduri de rețete arată apetisant.
 
 ## Ce e blocat
 
@@ -72,6 +77,5 @@ de până acum e automată. Începe cu `src/screens/onboarding/OnboardingWizard.
 
 ## Întrebări pentru tine
 
-1. **Fișiere de lucru în scratchpad** (18, inclusiv backup la `.env` și `package-lock.json`) —
-   le șterg? `.env` nu e în git, deci backup-ul e singura copie.
-2. **Ramura** — o las locală, fac PR, sau merge în `main`?
+Niciuna deschisă. Scratchpad-ul e curățat, ramura e pushed, PR-ul e deschis (#1).
+Următoarea decizie e a ta, după ce te uiți prin aplicație: merge sau mai lucrăm la ea.
