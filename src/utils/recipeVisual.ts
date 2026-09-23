@@ -147,12 +147,15 @@ export function getArchetypePalette(archetype: DishArchetype): ArchetypePalette 
  * The pictograms shown on a recipe card: the ingredients that actually characterise the
  * dish, with salt, oil and flour left out because they describe nothing.
  */
-export function getRecipeIcons(recipe: Recipe, max: number = 3): string[] {
+function getCharacterfulIngredientIds(recipe: Recipe): string[] {
   const meaningful = recipe.ingredients
     .map((item) => item.ingredientId)
     .filter((id) => !BACKGROUND_INGREDIENT_IDS.has(id));
+  return meaningful.length > 0 ? meaningful : recipe.ingredients.map((i) => i.ingredientId);
+}
 
-  const source = meaningful.length > 0 ? meaningful : recipe.ingredients.map((i) => i.ingredientId);
+export function getRecipeIcons(recipe: Recipe, max: number = 3): string[] {
+  const source = getCharacterfulIngredientIds(recipe);
 
   const icons: string[] = [];
   for (const id of source) {
@@ -263,11 +266,7 @@ export function shortenIngredientName(fullName: string): string {
  * The ingredient names printed under the pictograms, matching them one for one.
  */
 export function getRecipeHighlights(recipe: Recipe, max: number = 3): string[] {
-  const meaningful = recipe.ingredients
-    .map((item) => item.ingredientId)
-    .filter((id) => !BACKGROUND_INGREDIENT_IDS.has(id));
-
-  const source = meaningful.length > 0 ? meaningful : recipe.ingredients.map((i) => i.ingredientId);
+  const source = getCharacterfulIngredientIds(recipe);
 
   const seenIcons: string[] = [];
   const names: string[] = [];

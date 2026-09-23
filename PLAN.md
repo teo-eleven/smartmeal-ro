@@ -3,6 +3,23 @@
 This document outlines the step-by-step vertical implementation plan for **Mise Romania**.
 Spikes are executed first to retire core technical risks, followed by sequential vertical slices where each step leaves the application in a runnable, verifiable state.
 
+
+> **Notă de actualitate (2026-09-23).** Pașii 1-11 de mai jos sunt planul original, scris
+> înainte de implementare. **Arhitectura descrisă în ei nu este cea construită.** Ce există
+> în realitate:
+>
+> | Planificat | Construit |
+> |---|---|
+> | Expo Router, `app/_layout.tsx`, `app/(tabs)/*` | Navigare prin stare în `App.tsx`, ecrane în `src/screens/` |
+> | NativeWind / Tailwind, `tailwind.config.js` | `StyleSheet` + tema „glass" din `src/styles/theme.ts` |
+> | `src/constants/theme.ts` | `src/styles/theme.ts` |
+> | `src/components/ApplianceGrid.tsx` | `src/components/ApplianceSelector.tsx` |
+> | `spikes/gemini_spike.ts` | Nu există; AI-ul a fost validat direct în `src/services/aiProxy.ts` |
+> | `src/components/DesktopWrapper.tsx` | `src/hooks/useResponsive.ts` |
+> | `metro.config.js` | Configurația implicită Expo |
+>
+> Pașii rămân aici ca istoric al intenției. **Pentru starea reală, vezi Step 12 și `HANDOFF.md`.**
+
 ---
 
 ## Overview of Implementation Phases

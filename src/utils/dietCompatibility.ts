@@ -55,20 +55,17 @@ export const DIET_OPTIONS_CATALOG: DietOptionInfo[] = [
 
 /**
  * Compatibility matrix for combining up to 2 dietary preferences.
+ *
+ * Listed once per pair. Both lookups below compare in either direction, so adding the mirror
+ * image adds nothing and risks a future entry being added in only one of the two places.
  */
 const INCOMPATIBLE_PAIRS: [DietType, DietType][] = [
   ['omnivore', 'vegetarian'],
   ['omnivore', 'vegan'],
   ['omnivore', 'pescatarian'],
-  ['vegan', 'omnivore'],
   ['vegan', 'vegetarian'],
   ['vegan', 'pescatarian'],
   ['vegan', 'keto'],
-  ['vegetarian', 'omnivore'],
-  ['vegetarian', 'vegan'],
-  ['pescatarian', 'omnivore'],
-  ['pescatarian', 'vegan'],
-  ['keto', 'vegan'],
 ];
 
 export function areDietsCompatible(dietA: DietType, dietB: DietType): boolean {

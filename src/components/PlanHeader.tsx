@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MealPlan } from '../types';
@@ -6,6 +6,9 @@ import { SUPERMARKETS } from '../data/supermarkets';
 import { getAppTheme } from '../styles/theme';
 import { buildBudgetMessageRo, summarizeBudget } from '../utils/budgetMessaging';
 import { glass } from '../styles/glass';
+
+/** How long the "amestecat" confirmation stays on the button. */
+const FEEDBACK_MS = 2400;
 
 interface PlanHeaderProps {
   plan: MealPlan;
@@ -26,6 +29,16 @@ export const PlanHeader: React.FC<PlanHeaderProps> = ({
 }) => {
   const spinAnim = useRef(new Animated.Value(0)).current;
   const [shuffledFeedback, setShuffledFeedback] = useState(false);
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // The confirmation fades after a moment; without this the timer outlives the screen and
+  // fires setState on an unmounted component if the user navigates away first.
+  useEffect(
+    () => () => {
+      if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    },
+    []
+  );
 
   const handleRebuild = () => {
     Animated.sequence([
@@ -43,7 +56,8 @@ export const PlanHeader: React.FC<PlanHeaderProps> = ({
 
     onRebuildPlan();
     setShuffledFeedback(true);
-    setTimeout(() => setShuffledFeedback(false), 2400);
+    if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    feedbackTimer.current = setTimeout(() => setShuffledFeedback(false), FEEDBACK_MS);
   };
 
   const market = SUPERMARKETS[plan.supermarketId];

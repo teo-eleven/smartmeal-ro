@@ -30,6 +30,7 @@ import {
 import { aggregateGroceryList } from '../engine/groceryAggregator';
 import { calculateMinimumViableBudget, calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { RETAIL_PRODUCTS_MAP } from '../data/retailProducts';
+import { SUPERMARKETS } from '../data/supermarkets';
 import { ALLERGEN_CATALOG } from '../data/allergens';
 import { getRecipeAllergens } from '../utils/allergenFilter';
 import { storageService } from '../services/storage';
@@ -294,6 +295,22 @@ function buildRestoreNotice(replacedCount: number, offendingAllergens: Allergen[
     .map((id) => ALLERGEN_CATALOG.find((a) => a.id === id)?.label.toLowerCase() ?? id)
     .join(', ');
   return `Am înlocuit ${meals} care conțineau ${labels}. Alergiile tale rămân active.`;
+}
+
+/**
+ * Picks a replacement for a dish the newly chosen store does not carry, preferring one not
+ * already used this week, then this day, then anything legal. Returns null when the catalog
+ * genuinely offers nothing — the caller must then tell the user rather than quietly leaving
+ * a dish the store does not stock.
+ */
+export function pickStoreCompatibleReplacement(
+  alternatives: Recipe[],
+  usedThisDay: Set<string>,
+  usedThisWeek: Set<string>
+): Recipe | null {
+  const notUsedThisDay = alternatives.filter((alt) => !usedThisDay.has(alt.id));
+  const notUsedThisWeek = notUsedThisDay.filter((alt) => !usedThisWeek.has(alt.id));
+  return notUsedThisWeek[0] ?? notUsedThisDay[0] ?? alternatives[0] ?? null;
 }
 
 function buildInfeasibleNotice(reason: string): SystemNotice {
@@ -585,14 +602,43 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   syncWithCloud: async () => {
-    const { userEmail, currentPlan, groceryItems } = get();
+    const { userEmail, currentPlan, groceryItems, preferences } = get();
     if (!userEmail) return;
 
     set({ isSyncing: true });
     try {
-      const res = await cloudSyncService.saveMealPlan(userEmail, currentPlan, groceryItems);
+      // The row is keyed by the authenticated user's id, not their email: user_id is a uuid
+      // referencing auth.users, and row-level security compares it against auth.uid().
+      const user = await cloudSyncService.getCurrentUser();
+      if (!user) {
+        set({
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Sesiune expirată',
+            message: 'Autentifică-te din nou pentru a sincroniza planul în cloud.',
+            type: 'warning',
+          },
+        });
+        return;
+      }
+
+      const res = await cloudSyncService.saveMealPlan(
+        user.id,
+        currentPlan,
+        groceryItems,
+        preferences
+      );
       if (res.success) {
         set({ lastSyncedAt: new Date().toLocaleTimeString('ro-RO') });
+      } else {
+        set({
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Sincronizare eșuată',
+            message: res.error || 'Planul nu a putut fi salvat în cloud. Rămâne salvat local.',
+            type: 'error',
+          },
+        });
       }
     } finally {
       set({ isSyncing: false });
@@ -607,6 +653,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (state.currentPlan) {
         // Track recipe IDs used across the updated plan to avoid excessive duplication
         const usedRecipeIdsInWeek = new Set<string>();
+        const strandedTitles: string[] = [];
 
         // Pre-populate with existing compatible meals
         state.currentPlan.days.forEach((day) => {
@@ -638,14 +685,17 @@ export const useAppStore = create<AppState>((set, get) => ({
 
               if (!isSupermarketCompatible(activeRecipe, id)) {
                 const alternatives = getAlternativeRecipes(m.recipe, nextPrefs, m.slot);
-                const notUsedThisDay = alternatives.filter((alt) => !dayRecipeIds.has(alt.id));
-                const notUsedThisWeek = notUsedThisDay.filter(
-                  (alt) => !usedRecipeIdsInWeek.has(alt.id)
+                const chosen = pickStoreCompatibleReplacement(
+                  alternatives,
+                  dayRecipeIds,
+                  usedRecipeIdsInWeek
                 );
-
-                const chosen = notUsedThisWeek[0] || notUsedThisDay[0] || alternatives[0];
                 if (chosen) {
                   activeRecipe = chosen;
+                } else if (!strandedTitles.includes(activeRecipe.title)) {
+                  // No legal substitute exists. Keep the dish rather than leave a gap, but
+                  // the user has to know it is not stocked where they now shop.
+                  strandedTitles.push(activeRecipe.title);
                 }
               }
             }
@@ -712,6 +762,15 @@ export const useAppStore = create<AppState>((set, get) => ({
           preferences: nextPrefs,
           currentPlan: updatedPlan,
           groceryItems: aggregated.items,
+          activeNotice:
+            strandedTitles.length > 0
+              ? {
+                  id: Date.now().toString(),
+                  title: 'Câteva rețete nu se găsesc aici',
+                  message: `${SUPERMARKETS[id]?.name ?? 'Magazinul ales'} nu are ingredientele pentru: ${strandedTitles.slice(0, 3).join(', ')}${strandedTitles.length > 3 ? ' și altele' : ''}. Nu am găsit înlocuitori compatibili, așa că le-am păstrat în plan — le poți schimba manual.`,
+                  type: 'warning',
+                }
+              : state.activeNotice,
         };
       }
 
@@ -1579,7 +1638,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   quickStart: () => {
     const { preferences } = get();
 
-    const quickPrefs: UserPreferences = {
+    const baseQuickPrefs: UserPreferences = {
       ...DEFAULT_PREFERENCES,
       supermarketId: preferences.supermarketId,
       peopleCount: preferences.peopleCount,
@@ -1590,17 +1649,20 @@ export const useAppStore = create<AppState>((set, get) => ({
       foodTier: 'medium',
     };
 
-    quickPrefs.budgetRon = Math.max(
-      quickPrefs.budgetRon,
-      calculateMinimumViableBudget(
-        quickPrefs.peopleCount,
-        quickPrefs.cookingDays.length,
-        quickPrefs.supermarketId,
-        quickPrefs.excludePantryStaples,
-        1,
-        quickPrefs.foodTier
-      ) * 2
-    );
+    const quickPrefs: UserPreferences = {
+      ...baseQuickPrefs,
+      budgetRon: Math.max(
+        baseQuickPrefs.budgetRon,
+        calculateMinimumViableBudget(
+          baseQuickPrefs.peopleCount,
+          baseQuickPrefs.cookingDays.length,
+          baseQuickPrefs.supermarketId,
+          baseQuickPrefs.excludePantryStaples,
+          1,
+          baseQuickPrefs.foodTier
+        ) * 2
+      ),
+    };
 
     const feasibility = checkPlanFeasibility(quickPrefs);
     if (!feasibility.isFeasible) {

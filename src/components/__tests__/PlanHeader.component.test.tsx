@@ -137,4 +137,24 @@ describe('PlanHeader budget messaging', () => {
     // Assert
     expect(onRebuildPlan).toHaveBeenCalledTimes(1);
   });
+
+  test('the confirmation timer does not outlive the screen', () => {
+    // Arrange
+    const warn = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const view = render(
+      <PlanHeader plan={buildPlan()} onRebuildPlan={jest.fn()} onResetOnboarding={noop} isDark={false} />
+    );
+
+    // Act: start the feedback, then leave before it fades
+    fireEvent.press(screen.getByText(/Amestecă/i));
+    view.unmount();
+    jest.advanceTimersByTime(5000);
+
+    // Assert: no "state update on an unmounted component" warning
+    const complaints = warn.mock.calls.filter(([first]) =>
+      String(first).includes('unmounted component')
+    );
+    expect(complaints).toHaveLength(0);
+    warn.mockRestore();
+  });
 });

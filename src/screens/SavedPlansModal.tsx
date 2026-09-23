@@ -12,6 +12,7 @@ import { SavedPlan } from '../types';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
+import { sheetStyles } from '../styles/sheet';
 
 interface SavedPlansModalProps {
   visible: boolean;
@@ -50,15 +51,15 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
+      <View style={sheetStyles.backdrop}>
         <View
           {...glass('modal')}
-          style={[styles.sheet, { backgroundColor: theme.card, borderColor: theme.border }]}
+          style={[sheetStyles.sheet, { backgroundColor: theme.card, borderColor: theme.border }]}
         >
-          <View style={styles.header}>
+          <View style={sheetStyles.header}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.title, { color: theme.text }]}>Planurile mele</Text>
-              <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+              <Text style={[sheetStyles.title, { color: theme.text }]}>Planurile mele</Text>
+              <Text style={[sheetStyles.subtitle, { color: theme.textMuted }]}>
                 Salvează o săptămână reușită și repet-o oricând
               </Text>
             </View>
@@ -66,10 +67,10 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Închide"
               onPress={onClose}
-              style={styles.closeBtn}
+              style={sheetStyles.closeBtn}
               activeOpacity={0.7}
             >
-              <Text style={[styles.closeBtnText, { color: theme.textMuted }]}>✕</Text>
+              <Text style={[sheetStyles.closeBtnText, { color: theme.textMuted }]}>✕</Text>
             </TouchableOpacity>
           </View>
 
@@ -194,21 +195,6 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  sheet: {
-    maxHeight: '86%',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderWidth: 1,
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 24,
-  },
-  header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14 },
-  title: { fontSize: 19, fontWeight: '900', letterSpacing: -0.4 },
-  subtitle: { fontSize: 12, fontWeight: '500', marginTop: 3 },
-  closeBtn: { paddingHorizontal: 8, paddingVertical: 4 },
-  closeBtnText: { fontSize: 18, fontWeight: '700' },
   saveRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   input: {
     flex: 1,

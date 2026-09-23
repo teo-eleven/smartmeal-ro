@@ -8,6 +8,22 @@ const STORAGE_KEYS = {
   SAVED_PLANS: '@smartmeal_saved_plans',
 };
 
+/** Shape check for a row read back from storage, before anything relies on it. */
+export function isWellFormedSavedPlan(value: unknown): value is SavedPlan {
+  if (typeof value !== 'object' || value === null) return false;
+  const entry = value as Record<string, unknown>;
+  const plan = entry.plan as { days?: unknown } | undefined;
+  return (
+    typeof entry.id === 'string' &&
+    typeof entry.name === 'string' &&
+    typeof plan === 'object' &&
+    plan !== null &&
+    Array.isArray(plan.days) &&
+    typeof entry.preferences === 'object' &&
+    entry.preferences !== null
+  );
+}
+
 export const storageService = {
   async savePreferences(preferences: UserPreferences): Promise<void> {
     try {
@@ -70,7 +86,10 @@ export const storageService = {
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEYS.SAVED_PLANS);
       const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
+      if (!Array.isArray(parsed)) return [];
+      // Storage is untrusted: an entry missing its plan would throw the moment someone
+      // tried to restore it, so malformed rows are dropped on the way in.
+      return parsed.filter(isWellFormedSavedPlan);
     } catch (e) {
       console.warn('[StorageService] Failed to load the plan library', e);
       return [];

@@ -4,6 +4,7 @@ import { MealPlan, SupermarketId, UserPreferences } from '../types';
 import { compareBasketAcrossStores } from '../engine/storeComparator';
 import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
+import { sheetStyles } from '../styles/sheet';
 
 interface StoreComparisonModalProps {
   visible: boolean;
@@ -33,15 +34,15 @@ export const StoreComparisonModal: React.FC<StoreComparisonModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
+      <View style={sheetStyles.backdrop}>
         <View
           {...glass('modal')}
-          style={[styles.sheet, { backgroundColor: theme.card, borderColor: theme.border }]}
+          style={[sheetStyles.sheet, { backgroundColor: theme.card, borderColor: theme.border }]}
         >
-          <View style={styles.header}>
+          <View style={sheetStyles.header}>
             <View style={styles.headerText}>
-              <Text style={[styles.title, { color: theme.text }]}>Același coș, alt magazin</Text>
-              <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+              <Text style={[sheetStyles.title, { color: theme.text }]}>Același coș, alt magazin</Text>
+              <Text style={[sheetStyles.subtitle, { color: theme.textMuted }]}>
                 Exact aceleași {plan.days.length} zile de mese, la fiecare lanț
               </Text>
             </View>
@@ -49,10 +50,10 @@ export const StoreComparisonModal: React.FC<StoreComparisonModalProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Închide"
               onPress={onClose}
-              style={styles.closeBtn}
+              style={sheetStyles.closeBtn}
               activeOpacity={0.7}
             >
-              <Text style={[styles.closeBtnText, { color: theme.textMuted }]}>✕</Text>
+              <Text style={[sheetStyles.closeBtnText, { color: theme.textMuted }]}>✕</Text>
             </TouchableOpacity>
           </View>
 
@@ -173,22 +174,7 @@ export const StoreComparisonModal: React.FC<StoreComparisonModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  sheet: {
-    maxHeight: '88%',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderWidth: 1,
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 24,
-  },
-  header: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14 },
   headerText: { flex: 1 },
-  title: { fontSize: 19, fontWeight: '900', letterSpacing: -0.4 },
-  subtitle: { fontSize: 12, fontWeight: '500', marginTop: 3 },
-  closeBtn: { paddingHorizontal: 8, paddingVertical: 4 },
-  closeBtnText: { fontSize: 18, fontWeight: '700' },
   verdict: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
   verdictText: { fontSize: 13, fontWeight: '800', lineHeight: 19 },
   list: { marginTop: 14 },
