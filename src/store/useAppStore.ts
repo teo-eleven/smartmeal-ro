@@ -441,6 +441,22 @@ function rejectIfInfeasible(nextPrefs: UserPreferences): Partial<AppState> | nul
   };
 }
 
+/**
+ * Applies one of the wizard's single-tap preference controls.
+ *
+ * Before a plan exists there is nothing to rebuild, which is the onboarding case. Once one
+ * exists these controls are reachable again -- the wizard opens over a live plan with
+ * ?onboarding=1 -- and the board then has to follow the preferences rather than keep meals
+ * they no longer allow. Diet and appliances are hard constraints, so this is a safety path.
+ */
+function applyPreferenceStep(state: AppState, nextPrefs: UserPreferences): Partial<AppState> {
+  if (!state.currentPlan) {
+    void storageService.savePreferences(nextPrefs);
+    return { preferences: nextPrefs };
+  }
+  return applyPreferencesWithRebuild(state, nextPrefs);
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   currentStep: 1,
   maxVisitedStep: 1,
@@ -840,10 +856,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => {
       if (count < 1) {
         const nextPrefs = { ...state.preferences, peopleCount: 1 };
-        void storageService.savePreferences(nextPrefs);
         return {
-          ...state,
-          preferences: nextPrefs,
+          ...applyPreferenceStep(state, nextPrefs),
           activeNotice: {
             id: Date.now().toString(),
             title: 'Număr minim de persoane',
@@ -855,10 +869,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
       if (count > 10) {
         const nextPrefs = { ...state.preferences, peopleCount: 10 };
-        void storageService.savePreferences(nextPrefs);
         return {
-          ...state,
-          preferences: nextPrefs,
+          ...applyPreferenceStep(state, nextPrefs),
           activeNotice: {
             id: Date.now().toString(),
             title: 'Număr maxim de persoane',
@@ -871,8 +883,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         ...state.preferences,
         peopleCount: count,
       };
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -908,8 +919,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const sorted = daysOrder.filter((d) => updated.includes(d));
 
       const nextPrefs = { ...state.preferences, cookingDays: sorted };
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -927,8 +937,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       ];
       const sorted = daysOrder.filter((d) => days.includes(d));
       const nextPrefs = { ...state.preferences, cookingDays: sorted };
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -995,8 +1004,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         dietType: diet,
         dietTypes: [diet],
       };
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -1027,8 +1035,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           dietType: primaryDiet,
           dietTypes: nextDiets,
         };
-        void storageService.savePreferences(nextPrefs);
-        return { preferences: nextPrefs };
+        return applyPreferenceStep(state, nextPrefs);
       }
 
       // Check compatibility with existing selected diets
@@ -1067,8 +1074,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         dietTypes: nextDiets,
       };
 
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -1080,8 +1086,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         dietType: safeDiets[0],
         dietTypes: safeDiets,
       };
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -1143,8 +1148,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const rejection = exists ? rejectIfInfeasible(nextPrefs) : null;
       if (rejection) return rejection;
 
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
