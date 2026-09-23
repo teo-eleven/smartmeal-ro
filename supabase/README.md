@@ -25,7 +25,13 @@ supabase link --project-ref <project-ref>
 # 3. Cheia Gemini, server-side
 supabase secrets set GEMINI_API_KEY=<cheia-ta>
 
-# 4. Publicarea funcției
+# 4. Originile care au voie să apeleze funcția din browser
+#    Fără asta CORS rămâne '*', potrivit doar în dezvoltare: cheia anon e publică prin
+#    design, așa că orice site care a copiat-o poate apela funcția din browserul unui
+#    utilizator, pe cota ta de Gemini. Aplicațiile native nu trimit Origin și nu sunt afectate.
+supabase secrets set ALLOWED_ORIGINS=https://domeniul-tau.ro,https://www.domeniul-tau.ro
+
+# 5. Publicarea funcției
 supabase functions deploy proxy-gemini-plan
 ```
 

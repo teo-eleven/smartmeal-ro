@@ -23,6 +23,7 @@ import {
   getAlternativeRecipes,
   getEligibleRecipes,
   getSlotLabelRo,
+  hasRequiredAppliances,
   isSupermarketCompatible,
   selectOptimalDessertForDay,
   swapMealInPlan,
@@ -35,7 +36,7 @@ import { ALLERGEN_CATALOG } from '../data/allergens';
 import { getRecipeAllergens } from '../utils/allergenFilter';
 import { storageService } from '../services/storage';
 import { cloudSyncService } from '../services/supabase';
-import { areDietsCompatible } from '../utils/dietCompatibility';
+import { areDietsCompatible, isRecipeMatchingDiets } from '../utils/dietCompatibility';
 
 export type ActiveView = 'onboarding' | 'generating' | 'meals' | 'grocery';
 
@@ -441,6 +442,55 @@ function rejectIfInfeasible(nextPrefs: UserPreferences): Partial<AppState> | nul
   };
 }
 
+/**
+ * Applies one of the wizard's single-tap preference controls.
+ *
+ * Before a plan exists there is nothing to rebuild, which is the onboarding case. Once one
+ * exists these controls are reachable again -- the wizard opens over a live plan with
+ * ?onboarding=1 -- and the board then has to follow the preferences rather than keep meals
+ * they no longer allow. Diet and appliances are hard constraints, so this is a safety path.
+ */
+/**
+ * Explains why a recipe may not be put in front of this user, or null when it may.
+ *
+ * Diet, allergens and appliances are the three hard constraints the planner never relaxes;
+ * this states them once so a caller cannot accidentally skip one.
+ */
+function describeUnsafeRecipe(recipe: Recipe, preferences: UserPreferences): string | null {
+  const diets =
+    preferences.dietTypes && preferences.dietTypes.length > 0
+      ? preferences.dietTypes
+      : [preferences.dietType];
+
+  const offendingAllergens = getRecipeAllergens(recipe).filter((allergen) =>
+    (preferences.avoidedAllergens ?? []).includes(allergen)
+  );
+  if (offendingAllergens.length > 0) {
+    const labels = offendingAllergens
+      .map((id) => ALLERGEN_CATALOG.find((a) => a.id === id)?.label.toLowerCase() ?? id)
+      .join(', ');
+    return `„${recipe.title}" conține ${labels}, iar tu ai declarat această alergie.`;
+  }
+
+  if (!isRecipeMatchingDiets(recipe, diets)) {
+    return `„${recipe.title}" nu se potrivește cu dieta pe care ai ales-o.`;
+  }
+
+  if (!hasRequiredAppliances(recipe.appliances, preferences.appliances)) {
+    return `„${recipe.title}" are nevoie de un aparat pe care nu l-ai bifat în bucătăria ta.`;
+  }
+
+  return null;
+}
+
+function applyPreferenceStep(state: AppState, nextPrefs: UserPreferences): Partial<AppState> {
+  if (!state.currentPlan) {
+    void storageService.savePreferences(nextPrefs);
+    return { preferences: nextPrefs };
+  }
+  return applyPreferencesWithRebuild(state, nextPrefs);
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   currentStep: 1,
   maxVisitedStep: 1,
@@ -495,9 +545,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         // Storage is untrusted. An unreadable allergen list must not cost the user the rest
         // of their settings, and must never be silently treated as "no allergies".
         const { allergens, wasRepaired } = sanitizeAllergens(storedPrefs.avoidedAllergens);
-        if (wasRepaired) {
-          repairs.push('lista de alergii');
-        }
+        const allergensWereRepaired = wasRepaired;
         storedPrefs = { ...storedPrefs, avoidedAllergens: allergens };
 
         if (!checkPlanFeasibility(storedPrefs).isFeasible) {
@@ -528,21 +576,40 @@ export const useAppStore = create<AppState>((set, get) => ({
           }
         }
 
-        if (repairs.length > 0) {
+        if (repairs.length > 0 || allergensWereRepaired) {
           void storageService.savePreferences(storedPrefs);
           const stillBroken = !checkPlanFeasibility(storedPrefs).isFeasible;
+
+          // Two different failures, and they used to share one sentence: a list of allergies
+          // that could not be read has nothing to do with whether a plan was possible.
+          // Saying so is the point, because the app can no longer protect what it cannot read.
+          const allergenSentence = allergensWereRepaired
+            ? 'Lista ta de alergii nu a putut fi citită complet, așa că am păstrat doar ce am putut recunoaște. Verific-o din Filtre înainte să gătești.'
+            : '';
+          const feasibilitySentence =
+            repairs.length === 0
+              ? ''
+              : stillBroken
+                ? `Am restaurat ${repairs.join(' și ')}, dar combinația de dietă și alergii tot nu permite niciun plan. Verifică-le din Filtre.`
+                : `Setările salvate nu permiteau generarea niciunui plan, așa că am restaurat ${repairs.join(' și ')}. Le poți schimba oricând din Filtre.`;
+
           repairedPrefsNotice = {
             id: Date.now().toString(),
-            title: stillBroken ? 'Setări incomplete' : 'Setări restaurate',
-            message: stillBroken
-              ? `Am restaurat ${repairs.join(' și ')}, dar combinația de dietă și alergii tot nu permite niciun plan. Verifică-le din Filtre.`
-              : `Setările salvate nu permiteau generarea niciunui plan, așa că am restaurat ${repairs.join(' și ')}. Le poți schimba oricând din Filtre.`,
-            type: stillBroken ? 'warning' : 'info',
+            title: allergensWereRepaired
+              ? 'Verifică-ți alergiile'
+              : stillBroken
+                ? 'Setări incomplete'
+                : 'Setări restaurate',
+            message: [allergenSentence, feasibilitySentence].filter(Boolean).join(' '),
+            type: allergensWereRepaired || stillBroken ? 'warning' : 'info',
           };
         }
       }
 
       let sanitizedPlan = plan;
+      let hydratedItems = items;
+      let planSafetyNotice: SystemNotice | null = null;
+
       if (sanitizedPlan) {
         sanitizedPlan = {
           ...sanitizedPlan,
@@ -551,6 +618,43 @@ export const useAppStore = create<AppState>((set, get) => ({
             meals: d.meals.filter((m) => m.slot !== 'snack'),
           })),
         };
+
+        // Reopening the app is the first door a meal comes through, and the plan beside the
+        // preferences can be arbitrarily stale -- or, on web, edited by hand in localStorage.
+        // Restoring an archived plan was already re-checked here; this path was not.
+        const effectivePrefs = storedPrefs ?? DEFAULT_PREFERENCES;
+        const { days: safeDays, replacedCount, offendingAllergens } = makePlanSafeForPreferences(
+          sanitizedPlan.days,
+          effectivePrefs
+        );
+
+        if (replacedCount > 0) {
+          const aggregated = aggregateGroceryList(
+            collectMealsFromDays(safeDays),
+            effectivePrefs.supermarketId,
+            effectivePrefs.excludePantryStaples,
+            getActiveExtraProductIds(effectivePrefs),
+            effectivePrefs.pantryInventory || []
+          );
+
+          sanitizedPlan = {
+            ...sanitizedPlan,
+            days: safeDays,
+            totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+            totalCartCostRon: aggregated.totalCartCostRon,
+            extraProducts: getActiveExtraProducts(effectivePrefs),
+          };
+          hydratedItems = aggregated.items;
+
+          void storageService.savePlanAndGrocery(sanitizedPlan, aggregated.items);
+
+          planSafetyNotice = {
+            id: Date.now().toString(),
+            title: 'Plan adaptat la setările tale',
+            message: buildRestoreNotice(replacedCount, offendingAllergens),
+            type: 'warning',
+          };
+        }
       }
 
       const urlParams =
@@ -579,7 +683,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             }
           : state.preferences,
         currentPlan: sanitizedPlan || state.currentPlan,
-        groceryItems: items.length > 0 ? items : state.groceryItems,
+        groceryItems: hydratedItems.length > 0 ? hydratedItems : state.groceryItems,
         activeView:
           targetView ||
           (forceOnboarding ? 'onboarding' : sanitizedPlan ? 'meals' : state.activeView),
@@ -588,7 +692,11 @@ export const useAppStore = create<AppState>((set, get) => ({
           forceOnboarding && !isNaN(targetStep)
             ? Math.max(state.maxVisitedStep, targetStep)
             : state.maxVisitedStep,
-        activeNotice: repairedPrefsNotice ?? state.activeNotice,
+        activeNotice:
+          (repairedPrefsNotice?.type === 'warning' ? repairedPrefsNotice : null) ??
+          planSafetyNotice ??
+          repairedPrefsNotice ??
+          state.activeNotice,
         savedPlans,
       }));
     } catch (e) {
@@ -782,10 +890,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => {
       if (count < 1) {
         const nextPrefs = { ...state.preferences, peopleCount: 1 };
-        void storageService.savePreferences(nextPrefs);
         return {
-          ...state,
-          preferences: nextPrefs,
+          ...applyPreferenceStep(state, nextPrefs),
           activeNotice: {
             id: Date.now().toString(),
             title: 'Număr minim de persoane',
@@ -797,10 +903,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
       if (count > 10) {
         const nextPrefs = { ...state.preferences, peopleCount: 10 };
-        void storageService.savePreferences(nextPrefs);
         return {
-          ...state,
-          preferences: nextPrefs,
+          ...applyPreferenceStep(state, nextPrefs),
           activeNotice: {
             id: Date.now().toString(),
             title: 'Număr maxim de persoane',
@@ -813,8 +917,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         ...state.preferences,
         peopleCount: count,
       };
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -850,8 +953,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const sorted = daysOrder.filter((d) => updated.includes(d));
 
       const nextPrefs = { ...state.preferences, cookingDays: sorted };
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -869,8 +971,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       ];
       const sorted = daysOrder.filter((d) => days.includes(d));
       const nextPrefs = { ...state.preferences, cookingDays: sorted };
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -937,8 +1038,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         dietType: diet,
         dietTypes: [diet],
       };
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -969,8 +1069,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           dietType: primaryDiet,
           dietTypes: nextDiets,
         };
-        void storageService.savePreferences(nextPrefs);
-        return { preferences: nextPrefs };
+        return applyPreferenceStep(state, nextPrefs);
       }
 
       // Check compatibility with existing selected diets
@@ -1009,8 +1108,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         dietTypes: nextDiets,
       };
 
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -1022,8 +1120,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         dietType: safeDiets[0],
         dietTypes: safeDiets,
       };
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -1085,8 +1182,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const rejection = exists ? rejectIfInfeasible(nextPrefs) : null;
       if (rejection) return rejection;
 
-      void storageService.savePreferences(nextPrefs);
-      return { preferences: nextPrefs };
+      return applyPreferenceStep(state, nextPrefs);
     });
   },
 
@@ -2044,10 +2140,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.pantryInventory || []
     );
 
-    void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);
+    // The totals travel with the list they were computed from, the way every other
+    // meal-mutating action here does it.
+    const swappedPlan: MealPlan = {
+      ...updatedPlan,
+      totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+      totalCartCostRon: aggregated.totalCartCostRon,
+      extraProducts: getActiveExtraProducts(preferences),
+    };
+
+    void storageService.savePlanAndGrocery(swappedPlan, aggregated.items);
 
     set(() => ({
-      currentPlan: updatedPlan,
+      currentPlan: swappedPlan,
       groceryItems: aggregated.items,
     }));
   },
@@ -2058,6 +2163,22 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const dayIndex = currentPlan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
     if (dayIndex === -1) return;
+
+    // Every other action that puts a meal on the board re-derives safety itself. This one
+    // trusted whoever called it, and its only caller filters correctly -- which makes this
+    // a trap for the next caller rather than a live hole. It now checks for itself.
+    const rejection = describeUnsafeRecipe(newRecipe, preferences);
+    if (rejection) {
+      set({
+        activeNotice: {
+          id: Date.now().toString(),
+          title: 'Rețeta nu ți se potrivește',
+          message: rejection,
+          type: 'warning',
+        },
+      });
+      return;
+    }
 
     const targetDay = currentPlan.days[dayIndex];
     const targetSlot: MealSlot =

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -63,6 +63,14 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
 }) => {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<SmartSwapResult | null>(null);
+
+  // The modal stays mounted and only toggles `visible`, so without this the suggestion made
+  // for Monday's lunch was still on screen -- with its "choose it" button -- when the modal
+  // reopened for a different day.
+  useEffect(() => {
+    setAiResult(null);
+    setIsAiLoading(false);
+  }, [dayOfWeek, slot]);
 
   if (!visible || !dayOfWeek || !currentPlan) return null;
 

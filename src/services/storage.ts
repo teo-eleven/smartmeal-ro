@@ -24,6 +24,25 @@ export function isWellFormedSavedPlan(value: unknown): value is SavedPlan {
   );
 }
 
+/**
+ * Shape check for the current plan, before hydration touches it.
+ *
+ * loadSavedPlans has filtered its rows since the library existed; this one did not, and a
+ * plan whose days were missing or the wrong type threw from inside the hydration try block,
+ * which then discarded the preferences and the plan library alongside it.
+ */
+export function isWellFormedPlan(value: unknown): value is MealPlan {
+  if (typeof value !== 'object' || value === null) return false;
+  const plan = value as { days?: unknown };
+  if (!Array.isArray(plan.days)) return false;
+  return plan.days.every(
+    (day) =>
+      typeof day === 'object' &&
+      day !== null &&
+      Array.isArray((day as { meals?: unknown }).meals)
+  );
+}
+
 export const storageService = {
   async savePreferences(preferences: UserPreferences): Promise<void> {
     try {
@@ -64,9 +83,16 @@ export const storageService = {
       const rawPlan = await AsyncStorage.getItem(STORAGE_KEYS.CURRENT_PLAN);
       const rawItems = await AsyncStorage.getItem(STORAGE_KEYS.GROCERY_ITEMS);
 
+      const parsedPlan: unknown = rawPlan ? JSON.parse(rawPlan) : null;
+      const parsedItems: unknown = rawItems ? JSON.parse(rawItems) : [];
+
+      if (parsedPlan !== null && !isWellFormedPlan(parsedPlan)) {
+        console.warn('[StorageService] Stored plan has an unusable shape, ignoring it');
+      }
+
       return {
-        plan: rawPlan ? JSON.parse(rawPlan) : null,
-        items: rawItems ? JSON.parse(rawItems) : [],
+        plan: isWellFormedPlan(parsedPlan) ? parsedPlan : null,
+        items: Array.isArray(parsedItems) ? (parsedItems as GroceryListItem[]) : [],
       };
     } catch (e) {
       console.warn('[StorageService] Failed to load stored plan/items', e);

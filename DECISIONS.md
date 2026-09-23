@@ -1,5 +1,11 @@
 # DECISIONS.md — Architecture & Technical Decision Records
 
+> **Notă, 2026-09-23.** `SPEC.md`, `PLAN.md` și agentul de prompturi pentru fotografii
+> (`scripts/recipeImageAgent.ts`, `src/services/recipeVisualAgent.ts`) au fost șterse din repo.
+> ADR-urile de mai jos sunt păstrate neatinse, ca înregistrare a ceea ce era adevărat când au
+> fost luate deciziile — deci referirile lor la acele fișiere sunt istorice, nu legături vii.
+> Starea curentă a proiectului este în `HANDOFF.md`.
+
 This document records the foundational architectural decisions for Mise Romania. Each record details the context, evaluated alternatives, selected solution, rationale, accepted trade-offs, and falsification conditions.
 
 ---
@@ -268,3 +274,44 @@ They clear on their own when Metro eventually moves to image-size v2.
 *What would make this decision wrong:* if one of the overridden majors turned out to break
 something the build does not exercise — an EAS build, or a prebuild for the app stores, neither of
 which has been run here. Both should be tried before the first store submission.
+
+---
+
+## ADR-10: The gluten-free diet is derived from the allergen data, not its own list
+
+**Status:** Accepted · 2026-09-23
+
+### Context
+`isRecipeMatchingDiets` decided "Fără Gluten" from `GLUTEN_INGREDIENT_MARKERS`, a hand-written
+list of ingredient id fragments. `INGREDIENT_ALLERGENS` in `src/data/allergens.ts` separately
+decided what carries the `gluten` allergen. Two lists, maintained by hand, for one fact.
+
+They drifted. The diet list never learned about `fulgi_ovaz`, `sos_soia` or `bors_proaspat`,
+which the allergen map tags correctly. A user who picked the diet — described in the app as
+"ideal pentru sensibilitate" — but did not separately tick the gluten allergen was served
+gluten: measured at roughly three meals per generated week, in all eight mood configurations.
+
+### Options
+1. **Add the three missing ingredients to the diet list**
+   - *Pros:* One line each. Nothing else moves.
+   - *Cons:* Leaves two lists to keep in step, which is what failed. The next ingredient added
+     to one and not the other reopens exactly this hole.
+2. **Derive the diet check from `getIngredientAllergens`** *(chosen)*
+   - *Pros:* One source of truth. Adding an ingredient to the allergen map protects both the
+     allergy and the diet at once. Deletes the duplicated list outright.
+   - *Cons:* Couples the diet filter to the allergen data — which is the intent, not a cost.
+3. **Keep both and add a test that they agree**
+   - *Cons:* Detects the drift instead of preventing it, and still needs two edits per ingredient.
+
+### Decision
+Option 2. `GLUTEN_INGREDIENT_MARKERS` is gone.
+
+Before changing anything, both directions were measured: the allergen map proved a strict
+superset of the marker list, so no recipe that used to be excluded became allowed. Both
+directions are now asserted in `src/utils/__tests__/glutenConsistency.test.ts`, along with a
+check that the diet still leaves enough recipes for a full week.
+
+### Falsification Condition
+*What would make this decision wrong:* if the diet and the allergy ever needed to disagree on
+purpose — say a "reduced gluten" tier that permits oats for the non-coeliac. That is a different
+product decision, and it would need its own field on the ingredient, not a second list.

@@ -787,10 +787,14 @@ export function swapMealInPlan(
     });
   });
 
+  // Extras and pantry belong here exactly as they do in every other aggregation: leaving
+  // them out priced a cart the user never sees, and the header stopped matching the list.
   const reaggregated = aggregateGroceryList(
     allMealsToAggregate,
     preferences.supermarketId,
-    preferences.excludePantryStaples
+    preferences.excludePantryStaples,
+    getExtraProductIds(preferences),
+    preferences.pantryInventory || []
   );
 
   return {
