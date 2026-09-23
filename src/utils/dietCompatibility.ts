@@ -1,4 +1,5 @@
 import { DietType, Recipe } from '../types';
+import { getIngredientAllergens } from '../data/allergens';
 
 export interface DietOptionInfo {
   id: DietType;
@@ -89,23 +90,6 @@ export function getIncompatibleDietsFor(selectedDiets: DietType[]): Set<DietType
   return incompatible;
 }
 
-/**
- * Ingredient id fragments that mean wheat, barley or rye.
- *
- * This list is a safety filter, not a convenience: a gluten-intolerant user served a dish
- * with breadcrumbs gets ill. Any new wheat-based ingredient must be added here.
- */
-const GLUTEN_INGREDIENT_MARKERS = [
-  'faina_alba',
-  'faina_grau',
-  'pesmet',
-  'paste',
-  'spaghete',
-  'paine',
-  'chifle',
-  'biscuiti',
-  'lipii_tortilla',
-];
 
 /**
  * Checks whether a recipe matches the user's combined dietary preferences (1 or 2 selected).
@@ -137,8 +121,11 @@ export function isRecipeMatchingDiets(recipe: Recipe, selectedDiets: DietType[])
     }
 
     if (diet === 'gluten_free') {
+      // Single source of truth with the allergen filter. A second, hand-written ingredient
+      // list drifted from this one and missed oats, soy sauce and borscht, so a user who
+      // chose the diet without also ticking the allergen was served gluten.
       const hasGluten = recipe.ingredients.some((ing) =>
-        GLUTEN_INGREDIENT_MARKERS.some((marker) => ing.ingredientId.includes(marker))
+        getIngredientAllergens(ing.ingredientId).includes('gluten')
       );
       if (hasGluten) return false;
     }
