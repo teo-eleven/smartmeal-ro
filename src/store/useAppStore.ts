@@ -2088,10 +2088,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.pantryInventory || []
     );
 
-    void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);
+    // The totals travel with the list they were computed from, the way every other
+    // meal-mutating action here does it.
+    const swappedPlan: MealPlan = {
+      ...updatedPlan,
+      totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+      totalCartCostRon: aggregated.totalCartCostRon,
+      extraProducts: getActiveExtraProducts(preferences),
+    };
+
+    void storageService.savePlanAndGrocery(swappedPlan, aggregated.items);
 
     set(() => ({
-      currentPlan: updatedPlan,
+      currentPlan: swappedPlan,
       groceryItems: aggregated.items,
     }));
   },
