@@ -1,20 +1,20 @@
 import React from 'react';
-import { Image, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageBackground, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Recipe } from '../types';
 import { LOCAL_RECIPE_IMAGES } from '../../assets/recipes';
+import { ARCHETYPE_BACKDROPS } from '../../assets/recipes/backdrops';
 import {
   getArchetypePalette,
   getRecipeArchetype,
   getRecipeHighlights,
-  getRecipeIcons,
   getTotalMinutes,
 } from '../utils/recipeVisual';
 
 interface RecipeVisualProps {
   recipe: Recipe;
   isDark: boolean;
-  /** Compact cards drop the ingredient names and keep only the pictograms. */
+  /** Compact cards drop the ingredient line and shrink the title. */
   compact?: boolean;
   style?: object;
 }
@@ -22,10 +22,11 @@ interface RecipeVisualProps {
 /**
  * The picture at the top of a recipe card.
  *
- * A photograph is used only where one of this dish actually exists. Everything else gets a
- * card built from the recipe's own ingredients and timing: stock photography of "a stew"
- * standing in for a specific Romanian dish was, in practice, wrong often enough to be worse
- * than no photograph at all.
+ * A photograph of the dish itself is used wherever one exists. Everything else gets the dish
+ * name set over a heavily treated photograph from the same archetype — blurred, desaturated
+ * and darkened, so it reads as texture rather than as a portrait of that particular dish.
+ * Untreated stock photography was tried and produced a picture of headphones on a bean stew;
+ * see ADR-07.
  */
 export const RecipeVisual: React.FC<RecipeVisualProps> = ({
   recipe,
@@ -41,53 +42,77 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
 
   const archetype = getRecipeArchetype(recipe);
   const palette = getArchetypePalette(archetype);
-  const icons = getRecipeIcons(recipe, compact ? 3 : 4);
   const highlights = getRecipeHighlights(recipe, 3);
   const minutes = getTotalMinutes(recipe);
+  const backdrop = ARCHETYPE_BACKDROPS[archetype];
 
-  return (
-    <View
-      style={[styles.fill, style]}
-      accessibilityRole="image"
-      accessibilityLabel={`${palette.labelRo}. Ingrediente principale: ${highlights.join(', ')}. ${minutes} minute.`}
-    >
-      <LinearGradient
-        colors={isDark ? palette.darkColors : palette.lightColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+  const accessibilityLabel = `${recipe.title}. ${palette.labelRo}. Ingrediente principale: ${highlights.join(', ')}. ${minutes} minute.`;
 
-      <View style={styles.content}>
-        <View style={styles.iconRow}>
-          {icons.map((icon, index) => (
-            <Text key={`${icon}-${index}`} style={compact ? styles.iconCompact : styles.icon}>
-              {icon}
-            </Text>
-          ))}
-        </View>
+  const content = (
+    <View style={styles.content} pointerEvents="none">
+      <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={compact ? 2 : 3}>
+        {recipe.title}
+      </Text>
 
-        {!compact && (
-          <View style={styles.chipRow}>
-            {highlights.map((name) => (
-              <View key={name} style={styles.chip}>
-                <Text style={styles.chipText} numberOfLines={1}>
-                  {name}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
+      {!compact && (
+        <>
+          <View style={styles.rule} />
+          <Text style={styles.highlights} numberOfLines={1}>
+            {highlights.join(' · ').toUpperCase()}
+          </Text>
+        </>
+      )}
+    </View>
+  );
 
-      <View style={styles.cornerLabel}>
+  const corners = (
+    <>
+      <View style={styles.cornerLeft}>
         <Text style={styles.cornerText}>{palette.labelRo}</Text>
       </View>
-
-      <View style={styles.cornerTime}>
+      <View style={styles.cornerRight}>
         <Text style={styles.cornerText}>⏱ {minutes} min</Text>
       </View>
-    </View>
+    </>
+  );
+
+  // No backdrop exists for this archetype, so the gradient carries the card on its own.
+  if (!backdrop) {
+    return (
+      <View style={[styles.fill, style]} accessibilityLabel={accessibilityLabel}>
+        <LinearGradient
+          colors={isDark ? palette.darkColors : palette.lightColors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        {content}
+        {corners}
+      </View>
+    );
+  }
+
+  return (
+    <ImageBackground
+      source={backdrop}
+      resizeMode="cover"
+      style={[styles.fill, style]}
+      accessibilityLabel={accessibilityLabel}
+    >
+      {/* Tints the backdrop toward the archetype's colour and keeps the title readable. */}
+      <LinearGradient
+        colors={
+          isDark
+            ? ['rgba(0,0,0,0.30)', `${palette.darkColors[1]}E6`]
+            : ['rgba(0,0,0,0.25)', `${palette.darkColors[0]}D9`]
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      {content}
+      {corners}
+    </ImageBackground>
   );
 };
 
@@ -96,66 +121,63 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     overflow: 'hidden',
+    alignItems: 'center',
     justifyContent: 'center',
   },
   content: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    gap: 14,
+    paddingHorizontal: 22,
   },
-  iconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
+  title: {
+    color: '#ffffff',
+    fontSize: 19,
+    fontWeight: '800',
+    textAlign: 'center',
+    lineHeight: 25,
+    letterSpacing: -0.3,
+    textShadowColor: 'rgba(0,0,0,0.55)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
-  icon: {
-    fontSize: 42,
-    lineHeight: 52,
+  titleCompact: {
+    fontSize: 15,
+    lineHeight: 20,
   },
-  iconCompact: {
-    fontSize: 30,
-    lineHeight: 38,
+  rule: {
+    width: 46,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    marginTop: 12,
+    marginBottom: 10,
   },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  chip: {
-    backgroundColor: 'rgba(0, 0, 0, 0.32)',
-    borderRadius: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    maxWidth: 130,
-  },
-  chipText: {
-    color: 'rgba(255, 255, 255, 0.95)',
-    fontSize: 10,
+  highlights: {
+    color: 'rgba(255,255,255,0.88)',
+    fontSize: 9,
     fontWeight: '700',
+    letterSpacing: 1.1,
+    textAlign: 'center',
   },
-  cornerLabel: {
+  cornerLeft: {
     position: 'absolute',
     left: 10,
     bottom: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: 'rgba(0,0,0,0.42)',
     borderRadius: 7,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  cornerTime: {
+  cornerRight: {
     position: 'absolute',
     right: 10,
     bottom: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: 'rgba(0,0,0,0.42)',
     borderRadius: 7,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
   cornerText: {
-    color: 'rgba(255, 255, 255, 0.92)',
+    color: 'rgba(255,255,255,0.92)',
     fontSize: 9,
     fontWeight: '800',
     letterSpacing: 0.2,

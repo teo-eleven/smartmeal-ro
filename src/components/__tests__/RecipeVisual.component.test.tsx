@@ -22,9 +22,13 @@ describe('RecipeVisual', () => {
 
   test('the card names only ingredients the dish contains', () => {
     render(<RecipeVisual recipe={withoutPhoto} isDark={false} />);
-    getRecipeHighlights(withoutPhoto, 3).forEach((name) => {
-      expect(screen.getByText(name)).toBeTruthy();
-    });
+    const line = getRecipeHighlights(withoutPhoto, 3).join(' · ').toUpperCase();
+    expect(screen.getByText(line)).toBeTruthy();
+  });
+
+  test('the dish name is the subject of the card', () => {
+    render(<RecipeVisual recipe={withoutPhoto} isDark={false} />);
+    expect(screen.getByText(withoutPhoto.title)).toBeTruthy();
   });
 
   test('its accessible description matches the dish, not a stock photo', () => {
@@ -41,11 +45,11 @@ describe('RecipeVisual', () => {
     expect(screen.getByText(`⏱ ${total} min`)).toBeTruthy();
   });
 
-  test('the compact variant drops the ingredient names but keeps the icons', () => {
+  test('the compact variant keeps the name but drops the ingredient line', () => {
     render(<RecipeVisual recipe={withoutPhoto} isDark={false} compact />);
-    const names = getRecipeHighlights(withoutPhoto, 3);
-    expect(screen.queryByText(names[0])).toBeNull();
-    expect(screen.getByLabelText(/Ingrediente principale/i)).toBeTruthy();
+    const line = getRecipeHighlights(withoutPhoto, 3).join(' · ').toUpperCase();
+    expect(screen.getByText(withoutPhoto.title)).toBeTruthy();
+    expect(screen.queryByText(line)).toBeNull();
   });
 
   test('renders every recipe in the catalog without crashing', () => {
