@@ -15,6 +15,7 @@ import {
   Recipe,
   RetailProduct,
   SupermarketId,
+  ThemeMode,
   UserPreferences,
 } from '../types';
 import {
@@ -159,6 +160,8 @@ export interface AppState {
   setUserEmail: (email: string | null) => void;
   syncWithCloud: () => Promise<void>;
   syncFromCloud: () => Promise<void>;
+  themeMode: ThemeMode;
+  cycleThemeMode: () => void;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -644,6 +647,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   totalSteps: 9,
   activeView: 'onboarding',
   isHydrated: false,
+  themeMode: 'system',
   userEmail: null,
   isSyncing: false,
   lastSyncedAt: null,
@@ -689,6 +693,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const rawStoredPrefs = await storageService.loadPreferences();
       const { plan, items } = await storageService.loadPlanAndGrocery();
       const savedPlans = await storageService.loadSavedPlans();
+      const storedTheme = await storageService.loadThemeMode();
 
       // An older build could persist preferences that make the catalog empty, which left
       // the app unable to start at all. Repair such a state instead of inheriting it.
@@ -850,6 +855,10 @@ export const useAppStore = create<AppState>((set, get) => ({
           forceOnboarding && !isNaN(targetStep)
             ? Math.max(state.maxVisitedStep, targetStep)
             : state.maxVisitedStep,
+        themeMode:
+          storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
+            ? storedTheme
+            : state.themeMode,
         activeNotice:
           (repairedPrefsNotice?.type === 'warning' ? repairedPrefsNotice : null) ??
           planSafetyNotice ??
@@ -861,6 +870,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       console.warn('[useAppStore] Hydration error:', e);
       set({ isHydrated: true });
     }
+  },
+
+  /**
+   * System, then light, then dark. Following the phone is the right default, but a kitchen
+   * at night and a kitchen at noon are not the same room.
+   */
+  cycleThemeMode: () => {
+    set((state) => {
+      const order: ThemeMode[] = ['system', 'light', 'dark'];
+      const next = order[(order.indexOf(state.themeMode) + 1) % order.length];
+      void storageService.saveThemeMode(next);
+      return { themeMode: next };
+    });
   },
 
   setUserEmail: (email: string | null) => {

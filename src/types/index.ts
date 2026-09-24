@@ -115,6 +115,9 @@ export interface Recipe {
   storeBadgeLabel?: string;
 }
 
+/** Follows the phone unless the user overrides it. */
+export type ThemeMode = 'system' | 'light' | 'dark';
+
 export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert';
 export type FoodTier = 'basic' | 'medium' | 'premium';
 

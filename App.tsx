@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useAppStore } from './src/store/useAppStore';
+import { ThemeMode } from './src/types';
 import { OnboardingWizard } from './src/screens/onboarding/OnboardingWizard';
 import { GeneratingPlanModal } from './src/screens/onboarding/GeneratingPlanModal';
 import { MealBoardScreen } from './src/screens/MealBoardScreen';
@@ -24,12 +25,20 @@ import { injectEmeraldGlassStyles, getAppTheme } from './src/styles/theme';
 import { glass } from './src/styles/glass';
 import { UndoBanner } from './src/components/UndoBanner';
 
+const THEME_ICONS: Record<ThemeMode, string> = { system: '🌗', light: '☀️', dark: '🌙' };
+const THEME_LABELS: Record<ThemeMode, string> = {
+  system: 'ca telefonul',
+  light: 'luminoasă',
+  dark: 'întunecată',
+};
+
 export default function App() {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const [authModalVisible, setAuthModalVisible] = useState(false);
 
   const {
+    themeMode,
+    cycleThemeMode,
     activeView,
     currentPlan,
     groceryItems,
@@ -53,6 +62,9 @@ export default function App() {
     syncFromCloud,
     generatePlan,
   } = useAppStore();
+
+  // The phone's setting is the default; an explicit choice overrides it.
+  const isDark = themeMode === 'system' ? colorScheme === 'dark' : themeMode === 'dark';
 
   const { isDesktop, contentMaxWidth } = useResponsive();
 
@@ -230,6 +242,19 @@ export default function App() {
           )}
 
           <View style={styles.topBarActions}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={`Temă: ${THEME_LABELS[themeMode]}. Apasă pentru a schimba.`}
+              onPress={cycleThemeMode}
+              {...glass('pill')}
+              style={[styles.syncBtn, { backgroundColor: theme.accentBg, borderColor: theme.border }]}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.syncBtnText, { color: theme.textMuted }]}>
+                {THEME_ICONS[themeMode]}
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               accessibilityRole="button"
               onPress={() => setAuthModalVisible(true)}
