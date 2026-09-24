@@ -35,6 +35,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
     preferences,
     toggleGroceryItem,
     setExcludePantryStaples,
+    carryOverSurplus,
   } = useAppStore();
 
   const [showSnacksModal, setShowSnacksModal] = useState(false);
@@ -57,6 +58,16 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
   const purchasedItems = groceryItems.filter((i) => i.isPurchased).length;
   const remainingItems = totalItems - purchasedItems;
   const progressPercent = totalItems > 0 ? Math.round((purchasedItems / totalItems) * 100) : 0;
+
+  const leftovers = groceryItems.filter((item) => (item.leftoverAmount ?? 0) > 0 && !item.isFromPantry);
+  const surplusCount = leftovers.length;
+  const surplusValueRon = Math.round(
+    leftovers.reduce(
+      (total, item) =>
+        total + (item.packSize > 0 ? (item.leftoverAmount! / item.packSize) * item.estimatedPriceRon : 0),
+      0
+    )
+  );
   const isAllPurchased = totalItems > 0 && purchasedItems === totalItems;
 
   // Group items by aisle category
@@ -226,6 +237,25 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* What this week will not use up is worth more than the trip itself, so it gets
+              its own line rather than hiding inside the pantry screen. */}
+          {surplusCount > 0 && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Pune surplusul în cămară"
+              onPress={carryOverSurplus}
+              style={[styles.surplusBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.surplusTitle, { color: theme.text }]}>
+                ↻ Îți rămân {surplusCount} {surplusCount === 1 ? 'ingredient' : 'ingrediente'} după săptămâna asta
+              </Text>
+              <Text style={[styles.surplusHint, { color: theme.textMuted }]}>
+                Cam {surplusValueRon} lei. Apasă după ce ai făcut cumpărăturile și se scad din lista următoare.
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -321,6 +351,15 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
 };
 
 const styles = StyleSheet.create({
+  surplusBtn: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  surplusTitle: { fontSize: 13, fontWeight: '800' },
+  surplusHint: { fontSize: 11, fontWeight: '500', marginTop: 3, lineHeight: 16 },
   scrollContent: {
     alignItems: 'center',
     paddingVertical: 18,

@@ -91,7 +91,12 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({ item, onToggle, 
           </View>
 
           <Text style={[styles.details, { color: theme.textMuted }]}>
-            Necesar: <Text style={{ fontWeight: '700' }}>{item.neededAmount}{item.unit}</Text> • {item.isFromPantry ? 'Ai deja în cămară (0 lei la casă)' : `Cumperi: ${item.packsToBuy} × pachet ${item.packSize}${item.unit}`}
+            Necesar: <Text style={{ fontWeight: '700' }}>{item.neededAmount}{item.unit}</Text>
+          {(item.leftoverAmount ?? 0) > 0 && !item.isFromPantry && (
+            <Text style={[styles.leftover, { color: theme.textMuted }]} numberOfLines={1}>
+              ↻ îți rămân {item.leftoverAmount}{item.unit} pentru săptămâna viitoare
+            </Text>
+          )} • {item.isFromPantry ? 'Ai deja în cămară (0 lei la casă)' : item.packsToBuy === 0 ? `Acoperit din cămară (${item.fromStockAmount}${item.unit})` : `Cumperi: ${item.packsToBuy} × pachet ${item.packSize}${item.unit}`}
           </Text>
         </View>
 
@@ -115,6 +120,12 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({ item, onToggle, 
 };
 
 const styles = StyleSheet.create({
+  leftover: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 3,
+    fontStyle: 'italic',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
