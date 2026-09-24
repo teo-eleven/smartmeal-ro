@@ -566,3 +566,48 @@ days, not across the whole week — across six reshuffles each.
 *What would make this decision wrong:* a user cooking more than three meals a day, or a
 fourteen-day plan. Seven is the number the app plans for; a longer horizon needs the counts
 raised again, and the test states the assumption where it will be seen.
+
+
+---
+
+## ADR-17: The review of 2026-09-24 found eight critical defects; none was fixed that day
+
+**Status:** Accepted · 2026-09-24
+
+### Context
+A closing-session review ran over the whole project rather than the day's diff. Two agents
+ran as a second pass. Every claim either agent made was re-verified here by running code
+before being accepted — which mattered: one of them reported a test suite of 433 tests when
+the real figure is 600, and one of its findings did not reproduce at all.
+
+Eight critical defects came out. They share a shape: **the safety checks validate a name and
+then trust a body.** `makePlanSafeForPreferences` looks up the recipe id and returns the
+stored object; `replaceMealWithRecipe` reads the diet off the object it was handed;
+`isWellFormedPlan` checks that `meals` is an array and never looks inside it; `dietTypes` is
+tested with `.length > 0`, which a string satisfies. Each one is individually small. Together
+they mean a plan from storage or from the cloud can put an allergen in front of a user who
+declared the allergy, with no notice.
+
+### Options
+1. **Fix the critical ones immediately** — it was the end of a session, and the protocol's
+   first rule exists because the last hurried fix is the one that stays untested.
+2. **Record and stop** *(chosen)*
+3. Fix silently and report afterwards — not a real option; the user decides what gets touched.
+
+### Decision
+Nothing was changed. The findings are in `HANDOFF.md` with file, line, a reproduction and a
+proposed fix, ranked, so the next session starts by fixing rather than by re-finding.
+
+One theme is worth carrying into that session: these are not eight independent bugs. Seven of
+them would be closed by two shared pieces — a `parseUserPreferences(unknown)` validator used
+by every boundary, and resolving every recipe through `RECIPES_MAP[id]` instead of trusting a
+persisted object. Fixing them one at a time would be eight chances to miss the eighth door.
+
+### Accepted Trade-off
+The app ships nothing today, so no user is exposed in the meantime. The cost is that `main`
+now knowingly contains critical defects, which is only acceptable because nothing is released
+from it yet.
+
+### Falsification Condition
+*What would make this decision wrong:* shipping before the fixes. The moment a build reaches
+a real device, "recorded but not fixed" becomes "known and served".
