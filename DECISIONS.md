@@ -370,7 +370,11 @@ not the timestamp comparison.
 
 ## ADR-12: A recipe photograph must not show an ingredient the recipe does not contain
 
-**Status:** Accepted · 2026-09-24
+**Status:** Superseded by ADR-14 · 2026-09-24
+
+> The crop this record describes was reverted. No card shows a sharp photograph any more, so
+> the mismatch it worked around cannot appear. The reasoning is kept because it is why the
+> photographs were distrusted in the first place.
 
 ### Context
 `snitele_pui_cuptor` is "Șnițele … cu salată de varză": 150 g of white cabbage, no potatoes.
@@ -453,3 +457,57 @@ All eighteen photographs were rendered at that ratio and looked at before commit
 *What would make this decision wrong:* a layout where meal cards sit in a multi-column grid.
 Then each card is narrow again, the ceiling never binds, and the ratio should be revisited
 against the column width rather than the window.
+
+
+---
+
+## ADR-14: Every recipe card uses the same template, and none shows a sharp photograph
+
+**Status:** Accepted · 2026-09-24
+
+### Context
+Eighteen of the eighty-two recipes owned a photograph and rendered it sharp; the other
+sixty-four showed their name over a treated backdrop. Two different-looking cards in one
+list, and the eighteen were the ones that kept going wrong: wrong dish (ADR-07), wrong
+garnish (ADR-12), wrong slice of the frame (ADR-13). Each fix addressed one photograph while
+the inconsistency stayed.
+
+The user's instruction settles it: the card should look like the others, and it does not need
+to contain the actual photograph.
+
+### Options
+1. **Keep photographs and keep correcting them one at a time**
+   - *Cons:* Three rounds of this already. A photograph can disagree with a recipe in more
+     ways than a test can check, and checking needs eyes every time the catalog changes.
+2. **Give each photographed recipe its own blurred backdrop**
+   - *Pros:* Keeps some specificity.
+   - *Cons:* Eighteen cards would still differ from sixty-four, which is the complaint.
+3. **One template for all eighty-two** *(chosen)*
+   - *Pros:* One code path, one look. A treated backdrop is texture, so it cannot promise a
+     dish or a garnish the recipe does not contain — the whole class of defect disappears
+     rather than being corrected case by case.
+   - *Cons:* Loses eighteen genuine photographs of the real dishes.
+
+### Decision
+`RecipeVisual` no longer consults `LOCAL_RECIPE_IMAGES`; every recipe renders name over
+archetype backdrop. The "📸 Foto rețetă" badge went with it, from both the card and the
+detail sheet, since no card has a photograph to claim.
+
+Making archetypes right matters more now, because eighteen recipes started depending on
+theirs. Two were wrong and were fixed: the salad rule matched "salată" anywhere in the title,
+so two schnitzels and a burger were classed as salads — and salad has no backdrop, so those
+cards would have fallen back to a bare gradient while their neighbours showed a photograph.
+A dish is a salad when it *is* one, not when it comes with one.
+
+Seventy-seven of eighty-two now show a backdrop. The remaining five are genuine salads and
+wraps, archetypes with no source photograph; they keep the gradient, as ADR-07 requires —
+borrowing a picture from another archetype is the mistake that started all of this.
+
+### Accepted Trade-off
+Eighteen real photographs of the real dishes are no longer shown. They stay in the repository
+as the source material the backdrops were made from.
+
+### Falsification Condition
+*What would make this decision wrong:* a photograph for every recipe, verified by eye against
+its ingredients. Then consistency and specificity stop competing and the sharp photograph
+wins. Eighteen out of eighty-two was not that.

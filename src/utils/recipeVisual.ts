@@ -100,6 +100,12 @@ function titleSays(recipe: Recipe, words: string[]): boolean {
   return words.some((word) => title.includes(word));
 }
 
+/** True when the dish name opens with one of these words, so a garnish never counts. */
+function startsWithWord(recipe: Recipe, words: string[]): boolean {
+  const title = recipe.title.trim().toLowerCase();
+  return words.some((word) => title.startsWith(word));
+}
+
 /**
  * Picks the archetype from the recipe's own content. Order matters: the earliest match
  * wins, so the most telling signals are checked first.
@@ -132,7 +138,10 @@ export function getRecipeArchetype(recipe: Recipe): DishArchetype {
   if (slots.includes('snack') && !slots.includes('lunch') && !slots.includes('dinner')) {
     return 'snack';
   }
-  if (tags.includes('fresh_salad') || titleSays(recipe, ['salată', 'salata'])) return 'salad';
+  // A dish is a salad when it IS one, not when it comes with one. Matching "salată" anywhere
+  // in the title classed two schnitzels and a burger as salads, and salad has no backdrop --
+  // so those cards fell back to a bare gradient while every neighbour showed a photograph.
+  if (tags.includes('fresh_salad') || startsWithWord(recipe, ['salată', 'salata'])) return 'salad';
   if (hasAny(ids, ['chifle_burger', 'paine_toast'])) return 'wrap';
   if (tags.includes('grill_meat') || titleSays(recipe, ['grătar', 'gratar'])) return 'grill';
   if (hasAny(ids, ['orez_'])) return 'rice';

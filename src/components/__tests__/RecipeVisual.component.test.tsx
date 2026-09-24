@@ -2,20 +2,20 @@ import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 import { RecipeVisual } from '../RecipeVisual';
 import { RECIPES, RECIPES_MAP } from '../../data/recipes';
-import { LOCAL_RECIPE_IMAGES } from '../../../assets/recipes';
 import { getRecipeHighlights } from '../../utils/recipeVisual';
 
-const withPhoto = RECIPES.find((r) => LOCAL_RECIPE_IMAGES[r.id])!;
-const withoutPhoto = RECIPES.find((r) => !LOCAL_RECIPE_IMAGES[r.id])!;
+/** Two recipes that used to be treated differently: one once owned a photograph. */
+const oncePhotographed = RECIPES_MAP['snitele_pui_cuptor'];
+const withoutPhoto = RECIPES[0];
 
 describe('RecipeVisual', () => {
-  test('uses the real photograph when one of this dish exists', () => {
-    const view = render(<RecipeVisual recipe={withPhoto} isDark={false} />);
-    expect(view.toJSON()).toBeTruthy();
-    expect(screen.queryByLabelText(/Ingrediente principale/i)).toBeNull();
+  test('trateaza la fel si o reteta care avea candva fotografie proprie', () => {
+    render(<RecipeVisual recipe={oncePhotographed} isDark={false} />);
+    expect(screen.getByLabelText(/Ingrediente principale/i)).toBeTruthy();
+    expect(screen.getByText(oncePhotographed.title)).toBeTruthy();
   });
 
-  test('builds a card from the ingredients when no photograph exists', () => {
+  test('builds a card from the ingredients for every recipe', () => {
     render(<RecipeVisual recipe={withoutPhoto} isDark={false} />);
     expect(screen.getByLabelText(/Ingrediente principale/i)).toBeTruthy();
   });
@@ -63,7 +63,7 @@ describe('RecipeVisual', () => {
 
 describe('no stock photography is left anywhere', () => {
   test('no recipe points at an unverified remote image', () => {
-    const remote = RECIPES.filter((r) => r.imageUrl && !LOCAL_RECIPE_IMAGES[r.id]);
+    const remote = RECIPES.filter((r) => r.imageUrl);
     expect(remote.map((r) => r.id)).toEqual([]);
   });
 });

@@ -1,5 +1,4 @@
 import { ARCHETYPE_BACKDROPS } from '../../../assets/recipes/backdrops';
-import { LOCAL_RECIPE_IMAGES } from '../../../assets/recipes';
 import { RECIPES } from '../../data/recipes';
 import { getRecipeArchetype, getArchetypePalette, DishArchetype } from '../../utils/recipeVisual';
 
@@ -28,18 +27,16 @@ describe('archetype backdrops', () => {
     expect(ARCHETYPE_BACKDROPS.wrap).toBeUndefined();
   });
 
-  test('most recipes without a photo still get a backdrop from their own archetype', () => {
-    const withoutPhoto = RECIPES.filter((r) => !LOCAL_RECIPE_IMAGES[r.id]);
-    const covered = withoutPhoto.filter((r) => ARCHETYPE_BACKDROPS[getRecipeArchetype(r)]);
-    expect(covered.length / withoutPhoto.length).toBeGreaterThan(0.8);
+  test('most recipes get a backdrop from their own archetype', () => {
+    const covered = RECIPES.filter((r) => ARCHETYPE_BACKDROPS[getRecipeArchetype(r)]);
+    expect(covered.length / RECIPES.length).toBeGreaterThan(0.9);
   });
 
-  test('every recipe resolves to either its own photo, a backdrop, or a gradient', () => {
-    // None of the three can throw, so no recipe can end up with a blank card.
+  test('every recipe resolves to either a backdrop or a gradient', () => {
+    // Neither can throw, so no recipe can end up with a blank card.
     RECIPES.forEach((recipe) => {
       const archetype = getRecipeArchetype(recipe);
       const hasSomething =
-        Boolean(LOCAL_RECIPE_IMAGES[recipe.id]) ||
         Boolean(ARCHETYPE_BACKDROPS[archetype]) ||
         Boolean(getArchetypePalette(archetype).darkColors);
       expect(hasSomething).toBe(true);

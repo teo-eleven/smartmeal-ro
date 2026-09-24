@@ -1,8 +1,7 @@
 import React from 'react';
-import { Image, ImageBackground, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
+import { ImageBackground, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Recipe } from '../types';
-import { LOCAL_RECIPE_IMAGES } from '../../assets/recipes';
 import { ARCHETYPE_BACKDROPS } from '../../assets/recipes/backdrops';
 import {
   getArchetypePalette,
@@ -22,11 +21,11 @@ interface RecipeVisualProps {
 /**
  * The picture at the top of a recipe card.
  *
- * A photograph of the dish itself is used wherever one exists. Everything else gets the dish
- * name set over a heavily treated photograph from the same archetype — blurred, desaturated
- * and darkened, so it reads as texture rather than as a portrait of that particular dish.
- * Untreated stock photography was tried and produced a picture of headphones on a bean stew;
- * see ADR-07.
+ * Every recipe gets the same treatment: its name set over a heavily treated photograph from
+ * its archetype — blurred, desaturated and darkened, so it reads as texture rather than as a
+ * portrait of that particular dish. No card shows a sharp photograph, so no card can promise
+ * a dish or a garnish the recipe does not contain; see ADR-14, and ADR-07 for the earlier
+ * attempt at untreated stock photography that put headphones on a bean stew.
  */
 export const RecipeVisual: React.FC<RecipeVisualProps> = ({
   recipe,
@@ -34,12 +33,6 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
   compact = false,
   style,
 }) => {
-  const localPhoto: ImageSourcePropType | undefined = LOCAL_RECIPE_IMAGES[recipe.id];
-
-  if (localPhoto) {
-    return <Image source={localPhoto} style={[styles.fill, style]} resizeMode="cover" />;
-  }
-
   const archetype = getRecipeArchetype(recipe);
   const palette = getArchetypePalette(archetype);
   const highlights = getRecipeHighlights(recipe, 3);

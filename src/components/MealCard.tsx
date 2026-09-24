@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { DayOfWeek, FoodTier, MealPlanDay, MealSlot, PlannedMeal, SupermarketId } from '../types';
-import { LOCAL_RECIPE_IMAGES } from '../../assets/recipes';
 import { RecipeVisual } from './RecipeVisual';
 
 import { getAppTheme } from '../styles/theme';
@@ -160,7 +159,6 @@ export const MealCard: React.FC<MealCardProps> = ({
   const theme = getAppTheme(isDark);
 
   const totalCookingTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
-  const hasPhoto = Boolean(LOCAL_RECIPE_IMAGES[recipe.id]);
 
   const isDessert = meal?.slot === 'dessert';
 
@@ -212,11 +210,6 @@ export const MealCard: React.FC<MealCardProps> = ({
 
           {/* Bottom Info Floating on Image */}
           <View style={styles.imageBottomRow}>
-            {hasPhoto && (
-              <View style={[styles.pillBadge, { backgroundColor: 'rgba(255, 255, 255, 0.16)', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
-                <Text style={styles.pillText}>📸 Foto rețetă</Text>
-              </View>
-            )}
             {recipe.tier && (
               <View style={[styles.pillBadge, { backgroundColor: getTierBadgeBg(recipe.tier) }]}>
                 <Text style={styles.pillText}>{getTierLabel(recipe.tier)}</Text>

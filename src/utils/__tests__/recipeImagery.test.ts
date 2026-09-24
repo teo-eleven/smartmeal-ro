@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { RECIPES } from '../../data/recipes';
 import { getRecipeArchetype } from '../recipeVisual';
 import { LOCAL_RECIPE_IMAGES } from '../../../assets/recipes';
@@ -20,10 +22,15 @@ describe('registrul de fotografii', () => {
     expect(orphans).toEqual([]);
   });
 
-  test('nicio rețetă cu fotografie proprie nu ajunge pe un fundal comun', () => {
-    const withPhoto = RECIPES.filter((recipe) => LOCAL_RECIPE_IMAGES[recipe.id]);
+  test('nicio rețetă nu mai afișează o fotografie clară', () => {
+    // Every card goes through the same template now (ADR-14), so the registry is history:
+    // it is kept only as the source material for the archetype backdrops.
+    const source = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'components', 'RecipeVisual.tsx'),
+      'utf8'
+    );
 
-    expect(withPhoto.length).toBeGreaterThanOrEqual(18);
+    expect(source).not.toContain('LOCAL_RECIPE_IMAGES');
   });
 });
 
@@ -39,6 +46,16 @@ describe('arhetipul hotărăște ce fotografie vede utilizatorul', () => {
 
     expect(hummus.appliances).toEqual([]);
     expect(getRecipeArchetype(hummus)).not.toBe('stew');
+  });
+
+  test('o rețetă e salată doar dacă e chiar o salată, nu dacă o are ca garnitură', () => {
+    expect(getRecipeArchetype(byTitle('Salată grecească'))).toBe('salad');
+    expect(getRecipeArchetype(byTitle('Salată caldă cu pui'))).toBe('salad');
+
+    // These merely mention a side salad; the dish is a schnitzel and a burger.
+    expect(getRecipeArchetype(byTitle('Șnițele fragede de pui'))).not.toBe('salad');
+    expect(getRecipeArchetype(byTitle('Șnițel din piept de pui'))).not.toBe('salad');
+    expect(getRecipeArchetype(byTitle('Burger de pui crocant'))).not.toBe('salad');
   });
 
   test('tocănițele adevărate rămân tocănițe', () => {
