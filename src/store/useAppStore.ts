@@ -30,6 +30,7 @@ import {
 } from '../engine/plannerEngine';
 import { aggregateGroceryList } from '../engine/groceryAggregator';
 import { calculateMinimumViableBudget, calculateRecipePortionCost } from '../engine/budgetCalculator';
+import { INGREDIENTS } from '../data/ingredients';
 import { RETAIL_PRODUCTS_MAP } from '../data/retailProducts';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { ALLERGEN_CATALOG } from '../data/allergens';
@@ -111,6 +112,8 @@ export interface AppState {
   setDietTypes: (diets: DietType[]) => void;
   togglePantryItem: (ingredientId: string) => void;
   setPantryInventory: (items: string[]) => void;
+  carryOverSurplus: () => void;
+  clearPantryStock: () => void;
   toggleAvoidedAllergen: (allergen: Allergen) => void;
   toggleAppliance: (appliance: Appliance) => void;
   setExcludePantryStaples: (exclude: boolean) => void;
@@ -373,7 +376,8 @@ function applyPreferencesWithRebuild(
     nextPrefs.supermarketId,
     nextPrefs.excludePantryStaples,
     getActiveExtraProductIds(nextPrefs),
-    nextPrefs.pantryInventory || []
+    nextPrefs.pantryInventory || [],
+    nextPrefs.pantryStock || {}
   );
 
   const updatedPlan: MealPlan = {
@@ -412,7 +416,8 @@ function recalculateCartForPreferences(
     nextPrefs.supermarketId,
     nextPrefs.excludePantryStaples,
     getActiveExtraProductIds(nextPrefs),
-    nextPrefs.pantryInventory || []
+    nextPrefs.pantryInventory || [],
+    nextPrefs.pantryStock || {}
   );
 
   const updatedPlan: MealPlan = {
@@ -521,7 +526,8 @@ function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Partial<App
     effectivePrefs.supermarketId,
     effectivePrefs.excludePantryStaples,
     getActiveExtraProductIds(effectivePrefs),
-    effectivePrefs.pantryInventory || []
+    effectivePrefs.pantryInventory || [],
+    effectivePrefs.pantryStock || {}
   );
 
   const downloadedPlan: MealPlan = {
@@ -722,7 +728,8 @@ export const useAppStore = create<AppState>((set, get) => ({
             effectivePrefs.supermarketId,
             effectivePrefs.excludePantryStaples,
             getActiveExtraProductIds(effectivePrefs),
-            effectivePrefs.pantryInventory || []
+            effectivePrefs.pantryInventory || [],
+            effectivePrefs.pantryStock || {}
           );
 
           sanitizedPlan = {
@@ -1030,7 +1037,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           id,
           nextPrefs.excludePantryStaples,
           getActiveExtraProductIds(nextPrefs),
-          nextPrefs.pantryInventory || []
+          nextPrefs.pantryInventory || [],
+          nextPrefs.pantryStock || {}
         );
 
         const updatedPlan: MealPlan = {
@@ -1333,6 +1341,70 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
+  /**
+   * Moves what this week will not use up into the cupboard, so next week's list starts from
+   * it. A supermarket sells whole packs: a week needing 270 g of rice buys a kilo, and the
+   * remaining 730 g used to be forgotten and bought again seven days later.
+   */
+  carryOverSurplus: () => {
+    set((state) => {
+      if (!state.currentPlan) return state;
+
+      const carried: Record<string, number> = { ...(state.preferences.pantryStock || {}) };
+      let savedRon = 0;
+      let movedCount = 0;
+
+      state.groceryItems.forEach((item) => {
+        const leftover = item.leftoverAmount ?? 0;
+        if (leftover <= 0 || item.isFromPantry) return;
+
+        // Replaces rather than adds: `leftoverAmount` already counts the stock that was
+        // there when the list was built, so adding again would double it.
+        carried[item.ingredientId] = Math.round(leftover * 10) / 10;
+        movedCount += 1;
+
+        const ingredient = INGREDIENTS[item.ingredientId];
+        if (ingredient && item.packSize > 0) {
+          const packPrice = ingredient.typicalPriceRon[state.preferences.supermarketId] ?? 0;
+          savedRon += (leftover / item.packSize) * packPrice;
+        }
+      });
+
+      if (movedCount === 0) {
+        return {
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Nimic de pus deoparte',
+            message: 'Săptămâna asta consumă tot ce cumperi, deci cămara rămâne cum e.',
+            type: 'info',
+          },
+        };
+      }
+
+      const nextPrefs: UserPreferences = { ...state.preferences, pantryStock: carried };
+      void storageService.savePreferences(nextPrefs);
+
+      return {
+        preferences: nextPrefs,
+        activeNotice: {
+          id: Date.now().toString(),
+          title: 'Surplus trecut în cămară',
+          message: `Am pus deoparte ${movedCount} ${movedCount === 1 ? 'ingredient' : 'ingrediente'} care îți rămân, cam ${Math.round(savedRon)} lei. Se scad din lista de săptămâna viitoare.`,
+          type: 'info',
+        },
+      };
+    });
+  },
+
+  /** Forgets the cupboard, for when it no longer matches reality. */
+  clearPantryStock: () => {
+    set((state) => {
+      const nextPrefs: UserPreferences = { ...state.preferences, pantryStock: {} };
+      void storageService.savePreferences(nextPrefs);
+      return recalculateCartForPreferences(state, nextPrefs);
+    });
+  },
+
   setPantryInventory: (items: string[]) => {
     set((state) =>
       recalculateCartForPreferences(state, { ...state.preferences, pantryInventory: items })
@@ -1480,7 +1552,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         state.preferences.supermarketId,
         state.preferences.excludePantryStaples,
         getActiveExtraProductIds(state.preferences),
-        state.preferences.pantryInventory || []
+        state.preferences.pantryInventory || [],
+        state.preferences.pantryStock || {}
       );
 
       const updatedPlan: MealPlan = {
@@ -1545,7 +1618,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         state.preferences.supermarketId,
         state.preferences.excludePantryStaples,
         getActiveExtraProductIds(state.preferences),
-        state.preferences.pantryInventory || []
+        state.preferences.pantryInventory || [],
+        state.preferences.pantryStock || {}
       );
 
       const updatedPlan: MealPlan = {
@@ -1603,7 +1677,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         state.preferences.supermarketId,
         state.preferences.excludePantryStaples,
         getActiveExtraProductIds(state.preferences),
-        state.preferences.pantryInventory || []
+        state.preferences.pantryInventory || [],
+        state.preferences.pantryStock || {}
       );
 
       const updatedPlan: MealPlan = {
@@ -1647,7 +1722,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           nextPrefs.supermarketId,
           nextPrefs.excludePantryStaples,
           extraIds,
-          nextPrefs.pantryInventory || []
+          nextPrefs.pantryInventory || [],
+          nextPrefs.pantryStock || {}
         );
 
         const updatedPlan: MealPlan = {
@@ -1693,7 +1769,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           nextPrefs.supermarketId,
           nextPrefs.excludePantryStaples,
           extraIds,
-          nextPrefs.pantryInventory || []
+          nextPrefs.pantryInventory || [],
+          nextPrefs.pantryStock || {}
         );
 
         const updatedPlan: MealPlan = {
@@ -1747,7 +1824,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           nextPrefs.supermarketId,
           nextPrefs.excludePantryStaples,
           extraIds,
-          nextPrefs.pantryInventory || []
+          nextPrefs.pantryInventory || [],
+          nextPrefs.pantryStock || {}
         );
 
         const updatedPlan: MealPlan = {
@@ -1791,7 +1869,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           nextPrefs.supermarketId,
           nextPrefs.excludePantryStaples,
           [],
-          nextPrefs.pantryInventory || []
+          nextPrefs.pantryInventory || [],
+          nextPrefs.pantryStock || {}
         );
 
         const updatedPlan: MealPlan = {
@@ -1835,7 +1914,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           nextPrefs.supermarketId,
           exclude,
           getActiveExtraProductIds(nextPrefs),
-          nextPrefs.pantryInventory || []
+          nextPrefs.pantryInventory || [],
+          nextPrefs.pantryStock || {}
         );
 
         const updatedPlan: MealPlan = {
@@ -2035,7 +2115,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         effectivePrefs.supermarketId,
         effectivePrefs.excludePantryStaples,
         getActiveExtraProductIds(effectivePrefs),
-        effectivePrefs.pantryInventory || []
+        effectivePrefs.pantryInventory || [],
+        effectivePrefs.pantryStock || {}
       );
 
       const restoredPlan: MealPlan = {
@@ -2097,7 +2178,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.supermarketId,
       preferences.excludePantryStaples,
       getActiveExtraProductIds(preferences),
-      preferences.pantryInventory || []
+      preferences.pantryInventory || [],
+      preferences.pantryStock || {}
     );
 
     // The freshly aggregated totals are the ones shown to the user, so the plan has to
@@ -2192,7 +2274,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.supermarketId,
       preferences.excludePantryStaples,
       getActiveExtraProductIds(preferences),
-      preferences.pantryInventory || []
+      preferences.pantryInventory || [],
+      preferences.pantryStock || {}
     );
 
     const updatedPlan: MealPlan = {
@@ -2280,7 +2363,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       nextPrefs.supermarketId,
       nextPrefs.excludePantryStaples,
       getActiveExtraProductIds(nextPrefs),
-      nextPrefs.pantryInventory || []
+      nextPrefs.pantryInventory || [],
+      nextPrefs.pantryStock || {}
     );
 
     const updatedPlan: MealPlan = {
@@ -2315,7 +2399,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.supermarketId,
       preferences.excludePantryStaples,
       getActiveExtraProductIds(preferences),
-      preferences.pantryInventory || []
+      preferences.pantryInventory || [],
+      preferences.pantryStock || {}
     );
 
     // The totals travel with the list they were computed from, the way every other
@@ -2405,7 +2490,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.supermarketId,
       preferences.excludePantryStaples,
       getActiveExtraProductIds(preferences),
-      preferences.pantryInventory || []
+      preferences.pantryInventory || [],
+      preferences.pantryStock || {}
     );
 
     const updatedPlan: MealPlan = {

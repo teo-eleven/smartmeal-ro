@@ -152,7 +152,13 @@ export interface UserPreferences {
   dietTypes?: DietType[]; // up to 2 compatible diets
   appliances: Appliance[];
   excludePantryStaples: boolean;
-  pantryInventory?: string[]; // IDs of ingredients already at home in fridge/pantry
+  /** Ingredients the user says they have plenty of; treated as fully covering any need. */
+  pantryInventory?: string[];
+  /**
+   * Amounts already at home, in each ingredient's own unit. Filled by carrying the surplus
+   * of a finished week forward, so a 1 kg bag bought for 270 g is not bought again.
+   */
+  pantryStock?: Record<string, number>;
   /** Allergens to exclude entirely. Treated as a hard constraint, never relaxed. */
   avoidedAllergens?: Allergen[];
   mealSlots: MealSlot[];
@@ -212,6 +218,10 @@ export interface GroceryListItem {
   estimatedPriceRon: number;
   isPurchased: boolean;
   isFromPantry?: boolean; // Ingredient already available at home
+  /** How much of the need was covered by what is already at home. */
+  fromStockAmount?: number;
+  /** What will still be in the cupboard once this week is cooked. */
+  leftoverAmount?: number;
 }
 
 export interface MealPrepPhase {

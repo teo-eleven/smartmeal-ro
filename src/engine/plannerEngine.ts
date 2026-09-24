@@ -255,7 +255,8 @@ function computeCartCost(days: MealPlanDay[], preferences: UserPreferences): num
     preferences.supermarketId,
     preferences.excludePantryStaples,
     getExtraProductIds(preferences),
-    preferences.pantryInventory || []
+    preferences.pantryInventory || [],
+    preferences.pantryStock || {}
   ).totalCartCostRon;
 }
 
@@ -659,7 +660,8 @@ export function generateMealPlan(
     preferences.supermarketId,
     preferences.excludePantryStaples,
     getExtraProductIds(preferences),
-    preferences.pantryInventory || []
+    preferences.pantryInventory || [],
+    preferences.pantryStock || {}
   );
 
   return {
@@ -794,7 +796,8 @@ export function swapMealInPlan(
     preferences.supermarketId,
     preferences.excludePantryStaples,
     getExtraProductIds(preferences),
-    preferences.pantryInventory || []
+    preferences.pantryInventory || [],
+    preferences.pantryStock || {}
   );
 
   return {

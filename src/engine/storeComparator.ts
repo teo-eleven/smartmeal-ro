@@ -55,7 +55,8 @@ export function compareBasketAcrossStores(
       supermarketId,
       preferences.excludePantryStaples,
       extraProductIds,
-      preferences.pantryInventory || []
+      preferences.pantryInventory || [],
+      preferences.pantryStock || {}
     );
 
     const unavailableRecipeTitles = Array.from(
