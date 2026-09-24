@@ -144,6 +144,9 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
   const [detailServings, setDetailServings] = useState<number>(currentPlan?.peopleCount ?? 2);
   const [swapDay, setSwapDay] = useState<DayOfWeek | null>(null);
   const [swapSlot, setSwapSlot] = useState<MealSlot | null>(null);
+  const [detailTarget, setDetailTarget] = useState<{ dayOfWeek: DayOfWeek; slot: MealSlot } | null>(
+    null
+  );
 
   // Attempted only once per mount: a plan that cannot be built must not re-trigger the
   // effect on every render, which previously turned an impossible setup into a crash loop.
@@ -192,9 +195,21 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     preferences.mealSlots?.filter((s) => s === 'breakfast' || s === 'lunch' || s === 'dinner')
       .length || 1;
 
-  const handleOpenDetail = (recipe: Recipe, servings: number) => {
+  /**
+   * The meal the detail sheet is describing, remembered rather than searched for later.
+   * Looking it up again by recipe id picked the LAST day that used that recipe, and a
+   * restricted catalog repeats recipes freely -- a vegan week can serve one breakfast on
+   * all seven days, so swapping from Monday's sheet silently changed Sunday.
+   */
+  const handleOpenDetail = (
+    recipe: Recipe,
+    servings: number,
+    dayOfWeek: DayOfWeek,
+    slot: MealSlot
+  ) => {
     setSelectedRecipe(recipe);
     setDetailServings(servings);
+    setDetailTarget({ dayOfWeek, slot });
   };
 
   const handleOpenSwap = (dayOfWeek: DayOfWeek, slot?: MealSlot) => {
@@ -656,7 +671,9 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                         day={day}
                         meal={meal}
                         slotLabel={meal.slotLabelRo}
-                        onPressRecipe={() => handleOpenDetail(meal.recipe, meal.servings)}
+                        onPressRecipe={() =>
+                          handleOpenDetail(meal.recipe, meal.servings, day.dayOfWeek, meal.slot)
+                        }
                         onSwapMeal={() => handleOpenSwap(day.dayOfWeek, meal.slot)}
                         onRemoveMeal={
                           meal.slot === 'dessert'
@@ -682,26 +699,16 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
         visible={Boolean(selectedRecipe)}
         recipe={selectedRecipe}
         servings={detailServings}
-        onClose={() => setSelectedRecipe(null)}
-        onSwap={() => {
-          let foundDay: DayOfWeek | null = null;
-          let foundSlot: MealSlot | null = null;
-
-          currentPlan.days.forEach((d) => {
-            d.meals?.forEach((m) => {
-              if (m.recipe.id === selectedRecipe?.id) {
-                foundDay = d.dayOfWeek;
-                foundSlot = m.slot;
-              }
-            });
-            if (!foundDay && d.recipe.id === selectedRecipe?.id) {
-              foundDay = d.dayOfWeek;
-            }
-          });
-
+        onClose={() => {
           setSelectedRecipe(null);
-          if (foundDay) {
-            handleOpenSwap(foundDay, foundSlot || undefined);
+          setDetailTarget(null);
+        }}
+        onSwap={() => {
+          const target = detailTarget;
+          setSelectedRecipe(null);
+          setDetailTarget(null);
+          if (target) {
+            handleOpenSwap(target.dayOfWeek, target.slot);
           }
         }}
         isDark={isDark}

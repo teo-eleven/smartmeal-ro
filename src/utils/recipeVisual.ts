@@ -124,18 +124,25 @@ export function getRecipeArchetype(recipe: Recipe): DishArchetype {
     return 'soup';
   }
   if (tags.includes('pasta_italian') || hasAny(ids, ['paste_', 'spaghete'])) return 'pasta';
+  // A wrap is defined by what it is wrapped in, not by its filling: tuna inside a tortilla
+  // used to be classed as seafood and shown a photograph of a salmon fillet.
+  if (hasAny(ids, ['lipii_tortilla'])) return 'wrap';
   if (hasAny(ids, ['somon', 'ton_conserva', 'dorada', 'creveti'])) return 'seafood';
   if (slots.includes('breakfast')) return 'breakfast';
   if (slots.includes('snack') && !slots.includes('lunch') && !slots.includes('dinner')) {
     return 'snack';
   }
   if (tags.includes('fresh_salad') || titleSays(recipe, ['salată', 'salata'])) return 'salad';
-  if (hasAny(ids, ['lipii_tortilla', 'chifle_burger', 'paine_toast'])) return 'wrap';
+  if (hasAny(ids, ['chifle_burger', 'paine_toast'])) return 'wrap';
   if (tags.includes('grill_meat') || titleSays(recipe, ['grătar', 'gratar'])) return 'grill';
   if (hasAny(ids, ['orez_'])) return 'rice';
   if (recipe.appliances.includes('oven') || recipe.appliances.includes('air_fryer')) {
     return 'roast';
   }
+  // `stew` is the last resort, and its backdrop is a photograph of a stew in a pot. A dish
+  // that needs no appliance at all was never cooked, so it must not inherit that picture --
+  // a chickpea dip was being shown a dark meat stew.
+  if (recipe.appliances.length === 0) return 'snack';
   return 'stew';
 }
 
