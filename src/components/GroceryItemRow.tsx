@@ -8,9 +8,16 @@ interface GroceryItemRowProps {
   item: GroceryListItem;
   onToggle: () => void;
   isDark: boolean;
+  /** Bigger targets for a phone held in one hand in a supermarket aisle. */
+  isShoppingMode?: boolean;
 }
 
-export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({ item, onToggle, isDark }) => {
+export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({
+  item,
+  onToggle,
+  isDark,
+  isShoppingMode = false,
+}) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handleToggleWithFeedback = () => {
@@ -44,6 +51,7 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({ item, onToggle, 
         onPress={handleToggleWithFeedback}
         style={[
           styles.row,
+          isShoppingMode && styles.rowShopping,
           {
             backgroundColor: item.isPurchased ? (isDark ? 'rgba(28, 28, 30, 0.45)' : '#f2f2f7') : theme.card,
             borderColor: item.isPurchased ? 'transparent' : theme.border,
@@ -91,7 +99,12 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({ item, onToggle, 
           </View>
 
           <Text style={[styles.details, { color: theme.textMuted }]}>
-            Necesar: <Text style={{ fontWeight: '700' }}>{item.neededAmount}{item.unit}</Text> • {item.isFromPantry ? 'Ai deja în cămară (0 lei la casă)' : `Cumperi: ${item.packsToBuy} × pachet ${item.packSize}${item.unit}`}
+            Necesar: <Text style={{ fontWeight: '700' }}>{item.neededAmount}{item.unit}</Text>
+          {(item.leftoverAmount ?? 0) > 0 && !item.isFromPantry && (
+            <Text style={[styles.leftover, { color: theme.textMuted }]} numberOfLines={1}>
+              ↻ îți rămân {item.leftoverAmount}{item.unit} pentru săptămâna viitoare
+            </Text>
+          )} • {item.isFromPantry ? 'Ai deja în cămară (0 lei la casă)' : item.packsToBuy === 0 ? `Acoperit din cămară (${item.fromStockAmount}${item.unit})` : `Cumperi: ${item.packsToBuy} × pachet ${item.packSize}${item.unit}`}
           </Text>
         </View>
 
@@ -115,6 +128,17 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({ item, onToggle, 
 };
 
 const styles = StyleSheet.create({
+  /** One hand on the trolley, the other on the phone: a bigger target and more air. */
+  rowShopping: {
+    paddingVertical: 22,
+    marginBottom: 10,
+  },
+  leftover: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 3,
+    fontStyle: 'italic',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

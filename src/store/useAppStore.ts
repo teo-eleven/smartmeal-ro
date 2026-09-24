@@ -15,6 +15,7 @@ import {
   Recipe,
   RetailProduct,
   SupermarketId,
+  ThemeMode,
   UserPreferences,
 } from '../types';
 import {
@@ -29,7 +30,11 @@ import {
   swapMealInPlan,
 } from '../engine/plannerEngine';
 import { aggregateGroceryList } from '../engine/groceryAggregator';
-import { calculateMinimumViableBudget, calculateRecipePortionCost } from '../engine/budgetCalculator';
+import {
+  calculateMinimumViableBudget,
+  calculateRecipePortionCost,
+} from '../engine/budgetCalculator';
+import { INGREDIENTS } from '../data/ingredients';
 import { RETAIL_PRODUCTS_MAP } from '../data/retailProducts';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { ALLERGEN_CATALOG } from '../data/allergens';
@@ -111,6 +116,12 @@ export interface AppState {
   setDietTypes: (diets: DietType[]) => void;
   togglePantryItem: (ingredientId: string) => void;
   setPantryInventory: (items: string[]) => void;
+  carryOverSurplus: () => void;
+  toggleDislikedRecipe: (recipeId: string) => void;
+  cookDoubleFor: (dayOfWeek: DayOfWeek, mealId: string) => void;
+  undoCookDouble: (dayOfWeek: DayOfWeek, mealId: string) => void;
+  toggleFavouriteRecipe: (recipeId: string) => void;
+  clearPantryStock: () => void;
   toggleAvoidedAllergen: (allergen: Allergen) => void;
   toggleAppliance: (appliance: Appliance) => void;
   setExcludePantryStaples: (exclude: boolean) => void;
@@ -149,6 +160,8 @@ export interface AppState {
   setUserEmail: (email: string | null) => void;
   syncWithCloud: () => Promise<void>;
   syncFromCloud: () => Promise<void>;
+  themeMode: ThemeMode;
+  cycleThemeMode: () => void;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -329,7 +342,10 @@ function buildInfeasibleNotice(reason: string): SystemNotice {
 function collectMealsFromDays(days: MealPlanDay[]): { recipe: Recipe; servings: number }[] {
   const meals: { recipe: Recipe; servings: number }[] = [];
   days.forEach((day) =>
-    day.meals.forEach((meal) => meals.push({ recipe: meal.recipe, servings: meal.servings }))
+    day.meals.forEach((meal) => {
+      // A reheated portion was already shopped for on the day it was cooked.
+      if (!meal.isLeftover) meals.push({ recipe: meal.recipe, servings: meal.servings });
+    })
   );
   return meals;
 }
@@ -337,7 +353,10 @@ function collectMealsFromDays(days: MealPlanDay[]): { recipe: Recipe; servings: 
 function collectPlanMeals(plan: MealPlan): { recipe: Recipe; servings: number }[] {
   const meals: { recipe: Recipe; servings: number }[] = [];
   plan.days.forEach((day) => {
-    day.meals.forEach((meal) => meals.push({ recipe: meal.recipe, servings: meal.servings }));
+    day.meals.forEach((meal) => {
+      // A reheated portion was already shopped for on the day it was cooked.
+      if (!meal.isLeftover) meals.push({ recipe: meal.recipe, servings: meal.servings });
+    });
   });
   return meals;
 }
@@ -373,7 +392,8 @@ function applyPreferencesWithRebuild(
     nextPrefs.supermarketId,
     nextPrefs.excludePantryStaples,
     getActiveExtraProductIds(nextPrefs),
-    nextPrefs.pantryInventory || []
+    nextPrefs.pantryInventory || [],
+    nextPrefs.pantryStock || {}
   );
 
   const updatedPlan: MealPlan = {
@@ -412,7 +432,8 @@ function recalculateCartForPreferences(
     nextPrefs.supermarketId,
     nextPrefs.excludePantryStaples,
     getActiveExtraProductIds(nextPrefs),
-    nextPrefs.pantryInventory || []
+    nextPrefs.pantryInventory || [],
+    nextPrefs.pantryStock || {}
   );
 
   const updatedPlan: MealPlan = {
@@ -511,17 +532,19 @@ function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Partial<App
     ),
   };
 
-  const { days: safeDays, replacedCount, offendingAllergens } = makePlanSafeForPreferences(
-    pending.plan.days,
-    effectivePrefs
-  );
+  const {
+    days: safeDays,
+    replacedCount,
+    offendingAllergens,
+  } = makePlanSafeForPreferences(pending.plan.days, effectivePrefs);
 
   const aggregated = aggregateGroceryList(
     collectMealsFromDays(safeDays),
     effectivePrefs.supermarketId,
     effectivePrefs.excludePantryStaples,
     getActiveExtraProductIds(effectivePrefs),
-    effectivePrefs.pantryInventory || []
+    effectivePrefs.pantryInventory || [],
+    effectivePrefs.pantryStock || {}
   );
 
   const downloadedPlan: MealPlan = {
@@ -564,6 +587,52 @@ function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Partial<App
   };
 }
 
+/** Keeps a day's headline dish and total in step with the meals it actually holds. */
+function rebuildDayShape(
+  meals: PlannedMeal[],
+  day: MealPlanDay
+): { recipe: Recipe; estimatedCostRon: number } {
+  const primary = meals.find((m) => m.slot === 'dinner') ?? meals[0];
+  const sum = meals.reduce((total, m) => total + m.estimatedCostRon, 0);
+  return {
+    recipe: primary ? primary.recipe : day.recipe,
+    estimatedCostRon: Math.round(sum * 100) / 100,
+  };
+}
+
+/** Rebuilds the cart from a new set of days, so the header never drifts from the list. */
+function withRecalculatedCart(
+  state: AppState,
+  days: MealPlanDay[],
+  notice: SystemNotice | null
+): Partial<AppState> {
+  const prefs = state.preferences;
+  const aggregated = aggregateGroceryList(
+    collectMealsFromDays(days),
+    prefs.supermarketId,
+    prefs.excludePantryStaples,
+    getActiveExtraProductIds(prefs),
+    prefs.pantryInventory || [],
+    prefs.pantryStock || {}
+  );
+
+  const updatedPlan: MealPlan = {
+    ...state.currentPlan!,
+    days,
+    totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+    totalCartCostRon: aggregated.totalCartCostRon,
+    extraProducts: getActiveExtraProducts(prefs),
+  };
+
+  void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);
+
+  return {
+    currentPlan: updatedPlan,
+    groceryItems: aggregated.items,
+    activeNotice: notice ?? state.activeNotice,
+  };
+}
+
 function applyPreferenceStep(state: AppState, nextPrefs: UserPreferences): Partial<AppState> {
   if (!state.currentPlan) {
     void storageService.savePreferences(nextPrefs);
@@ -578,6 +647,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   totalSteps: 9,
   activeView: 'onboarding',
   isHydrated: false,
+  themeMode: 'system',
   userEmail: null,
   isSyncing: false,
   lastSyncedAt: null,
@@ -602,7 +672,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     if (pending === 'apply_cloud_plan') {
       set((state) =>
-        state.pendingCloudPlan ? applyCloudPlan(state, state.pendingCloudPlan) : { confirmRequest: null }
+        state.pendingCloudPlan
+          ? applyCloudPlan(state, state.pendingCloudPlan)
+          : { confirmRequest: null }
       );
     }
   },
@@ -621,6 +693,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const rawStoredPrefs = await storageService.loadPreferences();
       const { plan, items } = await storageService.loadPlanAndGrocery();
       const savedPlans = await storageService.loadSavedPlans();
+      const storedTheme = await storageService.loadThemeMode();
 
       // An older build could persist preferences that make the catalog empty, which left
       // the app unable to start at all. Repair such a state instead of inheriting it.
@@ -711,10 +784,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         // preferences can be arbitrarily stale -- or, on web, edited by hand in localStorage.
         // Restoring an archived plan was already re-checked here; this path was not.
         const effectivePrefs = storedPrefs ?? DEFAULT_PREFERENCES;
-        const { days: safeDays, replacedCount, offendingAllergens } = makePlanSafeForPreferences(
-          sanitizedPlan.days,
-          effectivePrefs
-        );
+        const {
+          days: safeDays,
+          replacedCount,
+          offendingAllergens,
+        } = makePlanSafeForPreferences(sanitizedPlan.days, effectivePrefs);
 
         if (replacedCount > 0) {
           const aggregated = aggregateGroceryList(
@@ -722,7 +796,8 @@ export const useAppStore = create<AppState>((set, get) => ({
             effectivePrefs.supermarketId,
             effectivePrefs.excludePantryStaples,
             getActiveExtraProductIds(effectivePrefs),
-            effectivePrefs.pantryInventory || []
+            effectivePrefs.pantryInventory || [],
+            effectivePrefs.pantryStock || {}
           );
 
           sanitizedPlan = {
@@ -780,6 +855,10 @@ export const useAppStore = create<AppState>((set, get) => ({
           forceOnboarding && !isNaN(targetStep)
             ? Math.max(state.maxVisitedStep, targetStep)
             : state.maxVisitedStep,
+        themeMode:
+          storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
+            ? storedTheme
+            : state.themeMode,
         activeNotice:
           (repairedPrefsNotice?.type === 'warning' ? repairedPrefsNotice : null) ??
           planSafetyNotice ??
@@ -791,6 +870,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       console.warn('[useAppStore] Hydration error:', e);
       set({ isHydrated: true });
     }
+  },
+
+  /**
+   * System, then light, then dark. Following the phone is the right default, but a kitchen
+   * at night and a kitchen at noon are not the same room.
+   */
+  cycleThemeMode: () => {
+    set((state) => {
+      const order: ThemeMode[] = ['system', 'light', 'dark'];
+      const next = order[(order.indexOf(state.themeMode) + 1) % order.length];
+      void storageService.saveThemeMode(next);
+      return { themeMode: next };
+    });
   },
 
   setUserEmail: (email: string | null) => {
@@ -1020,9 +1112,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
         const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
         updatedDays.forEach((d) => {
-          d.meals.forEach((m) =>
-            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-          );
+          d.meals.forEach((m) => {
+            if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+          });
         });
 
         const aggregated = aggregateGroceryList(
@@ -1030,7 +1122,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           id,
           nextPrefs.excludePantryStaples,
           getActiveExtraProductIds(nextPrefs),
-          nextPrefs.pantryInventory || []
+          nextPrefs.pantryInventory || [],
+          nextPrefs.pantryStock || {}
         );
 
         const updatedPlan: MealPlan = {
@@ -1333,6 +1426,234 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
+  /**
+   * Rejects a dish for good. This is a hard filter, like diet and allergens, because a thumb
+   * down that still served the dish next week would mean nothing — and like the others it is
+   * refused rather than stored when it would leave the catalog with nothing to offer.
+   */
+  /**
+   * Cooks a double portion on one day and reheats it the next, which is the cheapest thing a
+   * meal planner can suggest. The reheated meal keeps the dish but buys nothing: its
+   * ingredients were already on the list for the day it was cooked.
+   */
+  cookDoubleFor: (dayOfWeek: DayOfWeek, mealId: string) => {
+    set((state) => {
+      const plan = state.currentPlan;
+      if (!plan) return state;
+
+      const dayIndex = plan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
+      const source = plan.days[dayIndex]?.meals.find((m) => m.id === mealId);
+      if (!source || source.isLeftover) return state;
+
+      const nextDay = plan.days[dayIndex + 1];
+      if (!nextDay) {
+        return {
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Nu mai urmează nicio zi',
+            message: 'E ultima zi din plan, deci nu are unde să fie reîncălzită porția a doua.',
+            type: 'info',
+          },
+        };
+      }
+
+      const target = nextDay.meals.find((m) => m.slot === source.slot) ?? nextDay.meals[0];
+      if (!target) return state;
+
+      const days = plan.days.map((day, index) => {
+        if (index === dayIndex) {
+          const meals = day.meals.map((m) =>
+            m.id === mealId
+              ? { ...m, servings: m.servings * 2, estimatedCostRon: m.estimatedCostRon * 2 }
+              : m
+          );
+          return { ...day, meals, ...rebuildDayShape(meals, day) };
+        }
+        if (index === dayIndex + 1) {
+          const meals = day.meals.map((m) =>
+            m.id === target.id
+              ? { ...m, recipe: source.recipe, isLeftover: true, estimatedCostRon: 0 }
+              : m
+          );
+          return { ...day, meals, ...rebuildDayShape(meals, day) };
+        }
+        return day;
+      });
+
+      return withRecalculatedCart(state, days, {
+        id: Date.now().toString(),
+        title: 'Gătești o dată, mănânci de două ori',
+        message: `Porție dublă de „${source.recipe.title}" — a doua zi doar o reîncălzești, fără cumpărături în plus.`,
+        type: 'info',
+      });
+    });
+  },
+
+  /** Puts a reheated day back to a meal of its own, and halves the day it came from. */
+  undoCookDouble: (dayOfWeek: DayOfWeek, mealId: string) => {
+    set((state) => {
+      const plan = state.currentPlan;
+      if (!plan) return state;
+
+      const dayIndex = plan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
+      const leftover = plan.days[dayIndex]?.meals.find((m) => m.id === mealId);
+      if (!leftover || !leftover.isLeftover) return state;
+
+      const sourceDay = plan.days[dayIndex - 1];
+      const source = sourceDay?.meals.find((m) => m.recipe.id === leftover.recipe.id);
+
+      const days = plan.days.map((day, index) => {
+        if (index === dayIndex - 1 && source) {
+          const meals = day.meals.map((m) =>
+            m.id === source.id
+              ? {
+                  ...m,
+                  servings: Math.max(1, Math.round(m.servings / 2)),
+                  estimatedCostRon: Math.round((m.estimatedCostRon / 2) * 100) / 100,
+                }
+              : m
+          );
+          return { ...day, meals, ...rebuildDayShape(meals, day) };
+        }
+        if (index === dayIndex) {
+          const meals = day.meals.map((m) =>
+            m.id === mealId
+              ? {
+                  ...m,
+                  isLeftover: false,
+                  estimatedCostRon: calculateRecipePortionCost(
+                    m.recipe,
+                    m.servings,
+                    state.preferences.supermarketId,
+                    state.preferences.excludePantryStaples
+                  ),
+                }
+              : m
+          );
+          return { ...day, meals, ...rebuildDayShape(meals, day) };
+        }
+        return day;
+      });
+
+      return withRecalculatedCart(state, days, null);
+    });
+  },
+
+  toggleDislikedRecipe: (recipeId: string) => {
+    set((state) => {
+      const current = state.preferences.dislikedRecipeIds ?? [];
+      const isRemoving = current.includes(recipeId);
+      const next = isRemoving ? current.filter((id) => id !== recipeId) : [...current, recipeId];
+
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        dislikedRecipeIds: next,
+        // A dish cannot be both wanted and refused.
+        favouriteRecipeIds: isRemoving
+          ? state.preferences.favouriteRecipeIds
+          : (state.preferences.favouriteRecipeIds ?? []).filter((id) => id !== recipeId),
+      };
+
+      if (!isRemoving) {
+        const rejection = rejectIfInfeasible(nextPrefs);
+        if (rejection) {
+          return {
+            activeNotice: buildInfeasibleNotice(
+              'Dacă scoți și rețeta asta nu mai rămâne nimic de gătit cu setările tale. Lărgește dieta, aparatele sau alergiile întâi.'
+            ),
+          };
+        }
+      }
+
+      return applyPreferencesWithRebuild(state, nextPrefs);
+    });
+  },
+
+  /** Marks a dish as wanted. A strong pull in the scoring, never a way past a hard rule. */
+  toggleFavouriteRecipe: (recipeId: string) => {
+    set((state) => {
+      const current = state.preferences.favouriteRecipeIds ?? [];
+      const next = current.includes(recipeId)
+        ? current.filter((id) => id !== recipeId)
+        : [...current, recipeId];
+
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        favouriteRecipeIds: next,
+        dislikedRecipeIds: (state.preferences.dislikedRecipeIds ?? []).filter(
+          (id) => id !== recipeId
+        ),
+      };
+
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
+    });
+  },
+
+  /**
+   * Moves what this week will not use up into the cupboard, so next week's list starts from
+   * it. A supermarket sells whole packs: a week needing 270 g of rice buys a kilo, and the
+   * remaining 730 g used to be forgotten and bought again seven days later.
+   */
+  carryOverSurplus: () => {
+    set((state) => {
+      if (!state.currentPlan) return state;
+
+      const carried: Record<string, number> = { ...(state.preferences.pantryStock || {}) };
+      let savedRon = 0;
+      let movedCount = 0;
+
+      state.groceryItems.forEach((item) => {
+        const leftover = item.leftoverAmount ?? 0;
+        if (leftover <= 0 || item.isFromPantry) return;
+
+        // Replaces rather than adds: `leftoverAmount` already counts the stock that was
+        // there when the list was built, so adding again would double it.
+        carried[item.ingredientId] = Math.round(leftover * 10) / 10;
+        movedCount += 1;
+
+        const ingredient = INGREDIENTS[item.ingredientId];
+        if (ingredient && item.packSize > 0) {
+          const packPrice = ingredient.typicalPriceRon[state.preferences.supermarketId] ?? 0;
+          savedRon += (leftover / item.packSize) * packPrice;
+        }
+      });
+
+      if (movedCount === 0) {
+        return {
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Nimic de pus deoparte',
+            message: 'Săptămâna asta consumă tot ce cumperi, deci cămara rămâne cum e.',
+            type: 'info',
+          },
+        };
+      }
+
+      const nextPrefs: UserPreferences = { ...state.preferences, pantryStock: carried };
+      void storageService.savePreferences(nextPrefs);
+
+      return {
+        preferences: nextPrefs,
+        activeNotice: {
+          id: Date.now().toString(),
+          title: 'Surplus trecut în cămară',
+          message: `Am pus deoparte ${movedCount} ${movedCount === 1 ? 'ingredient' : 'ingrediente'} care îți rămân, cam ${Math.round(savedRon)} lei. Se scad din lista de săptămâna viitoare.`,
+          type: 'info',
+        },
+      };
+    });
+  },
+
+  /** Forgets the cupboard, for when it no longer matches reality. */
+  clearPantryStock: () => {
+    set((state) => {
+      const nextPrefs: UserPreferences = { ...state.preferences, pantryStock: {} };
+      void storageService.savePreferences(nextPrefs);
+      return recalculateCartForPreferences(state, nextPrefs);
+    });
+  },
+
   setPantryInventory: (items: string[]) => {
     set((state) =>
       recalculateCartForPreferences(state, { ...state.preferences, pantryInventory: items })
@@ -1470,9 +1791,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
       updatedDays.forEach((d) => {
-        d.meals.forEach((m) =>
-          allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-        );
+        d.meals.forEach((m) => {
+          if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+        });
       });
 
       const aggregated = aggregateGroceryList(
@@ -1480,7 +1801,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         state.preferences.supermarketId,
         state.preferences.excludePantryStaples,
         getActiveExtraProductIds(state.preferences),
-        state.preferences.pantryInventory || []
+        state.preferences.pantryInventory || [],
+        state.preferences.pantryStock || {}
       );
 
       const updatedPlan: MealPlan = {
@@ -1545,7 +1867,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         state.preferences.supermarketId,
         state.preferences.excludePantryStaples,
         getActiveExtraProductIds(state.preferences),
-        state.preferences.pantryInventory || []
+        state.preferences.pantryInventory || [],
+        state.preferences.pantryStock || {}
       );
 
       const updatedPlan: MealPlan = {
@@ -1593,9 +1916,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
       updatedDays.forEach((d) => {
-        d.meals.forEach((m) =>
-          allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-        );
+        d.meals.forEach((m) => {
+          if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+        });
       });
 
       const aggregated = aggregateGroceryList(
@@ -1603,7 +1926,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         state.preferences.supermarketId,
         state.preferences.excludePantryStaples,
         getActiveExtraProductIds(state.preferences),
-        state.preferences.pantryInventory || []
+        state.preferences.pantryInventory || [],
+        state.preferences.pantryStock || {}
       );
 
       const updatedPlan: MealPlan = {
@@ -1636,9 +1960,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (state.currentPlan) {
         const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
         state.currentPlan.days.forEach((d) => {
-          d.meals.forEach((m) =>
-            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-          );
+          d.meals.forEach((m) => {
+            if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+          });
         });
 
         const extraIds = [...updated, ...(nextPrefs.selectedDrinkIds || [])];
@@ -1647,7 +1971,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           nextPrefs.supermarketId,
           nextPrefs.excludePantryStaples,
           extraIds,
-          nextPrefs.pantryInventory || []
+          nextPrefs.pantryInventory || [],
+          nextPrefs.pantryStock || {}
         );
 
         const updatedPlan: MealPlan = {
@@ -1682,9 +2007,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (state.currentPlan) {
         const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
         state.currentPlan.days.forEach((d) => {
-          d.meals.forEach((m) =>
-            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-          );
+          d.meals.forEach((m) => {
+            if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+          });
         });
 
         const extraIds = [...(nextPrefs.selectedSnackIds || []), ...updated];
@@ -1693,7 +2018,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           nextPrefs.supermarketId,
           nextPrefs.excludePantryStaples,
           extraIds,
-          nextPrefs.pantryInventory || []
+          nextPrefs.pantryInventory || [],
+          nextPrefs.pantryStock || {}
         );
 
         const updatedPlan: MealPlan = {
@@ -1736,9 +2062,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (state.currentPlan) {
         const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
         state.currentPlan.days.forEach((d) => {
-          d.meals.forEach((m) =>
-            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-          );
+          d.meals.forEach((m) => {
+            if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+          });
         });
 
         const extraIds = [...(nextPrefs.selectedSnackIds || []), ...updatedDrinks];
@@ -1747,7 +2073,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           nextPrefs.supermarketId,
           nextPrefs.excludePantryStaples,
           extraIds,
-          nextPrefs.pantryInventory || []
+          nextPrefs.pantryInventory || [],
+          nextPrefs.pantryStock || {}
         );
 
         const updatedPlan: MealPlan = {
@@ -1781,9 +2108,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (state.currentPlan) {
         const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
         state.currentPlan.days.forEach((d) => {
-          d.meals.forEach((m) =>
-            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-          );
+          d.meals.forEach((m) => {
+            if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+          });
         });
 
         const aggregated = aggregateGroceryList(
@@ -1791,7 +2118,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           nextPrefs.supermarketId,
           nextPrefs.excludePantryStaples,
           [],
-          nextPrefs.pantryInventory || []
+          nextPrefs.pantryInventory || [],
+          nextPrefs.pantryStock || {}
         );
 
         const updatedPlan: MealPlan = {
@@ -1822,9 +2150,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
         state.currentPlan.days.forEach((d) => {
           if (d.meals && d.meals.length > 0) {
-            d.meals.forEach((m) =>
-              allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-            );
+            d.meals.forEach((m) => {
+              if (!m.isLeftover) {
+                allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+              }
+            });
           } else {
             allMealsToAggregate.push({ recipe: d.recipe, servings: d.servings });
           }
@@ -1835,7 +2165,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           nextPrefs.supermarketId,
           exclude,
           getActiveExtraProductIds(nextPrefs),
-          nextPrefs.pantryInventory || []
+          nextPrefs.pantryInventory || [],
+          nextPrefs.pantryStock || {}
         );
 
         const updatedPlan: MealPlan = {
@@ -2005,7 +2336,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           activeNotice: {
             id: Date.now().toString(),
             title: 'Plan deteriorat',
-            message: 'Planul salvat nu mai poate fi citit și nu a fost încărcat. Îl poți șterge din listă.',
+            message:
+              'Planul salvat nu mai poate fi citit și nu a fost încărcat. Îl poți șterge din listă.',
             type: 'error',
           },
         };
@@ -2025,17 +2357,19 @@ export const useAppStore = create<AppState>((set, get) => ({
         appliances: state.preferences.appliances,
       };
 
-      const { days: safeDays, replacedCount, offendingAllergens } = makePlanSafeForPreferences(
-        entry.plan.days,
-        effectivePrefs
-      );
+      const {
+        days: safeDays,
+        replacedCount,
+        offendingAllergens,
+      } = makePlanSafeForPreferences(entry.plan.days, effectivePrefs);
 
       const aggregated = aggregateGroceryList(
         collectMealsFromDays(safeDays),
         effectivePrefs.supermarketId,
         effectivePrefs.excludePantryStaples,
         getActiveExtraProductIds(effectivePrefs),
-        effectivePrefs.pantryInventory || []
+        effectivePrefs.pantryInventory || [],
+        effectivePrefs.pantryStock || {}
       );
 
       const restoredPlan: MealPlan = {
@@ -2097,7 +2431,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.supermarketId,
       preferences.excludePantryStaples,
       getActiveExtraProductIds(preferences),
-      preferences.pantryInventory || []
+      preferences.pantryInventory || [],
+      preferences.pantryStock || {}
     );
 
     // The freshly aggregated totals are the ones shown to the user, so the plan has to
@@ -2184,7 +2519,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
     updatedDays.forEach((d) => {
-      d.meals.forEach((m) => allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings }));
+      d.meals.forEach((m) => {
+        if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+      });
     });
 
     const aggregated = aggregateGroceryList(
@@ -2192,7 +2529,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.supermarketId,
       preferences.excludePantryStaples,
       getActiveExtraProductIds(preferences),
-      preferences.pantryInventory || []
+      preferences.pantryInventory || [],
+      preferences.pantryStock || {}
     );
 
     const updatedPlan: MealPlan = {
@@ -2272,7 +2610,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
     updatedDays.forEach((d) => {
-      d.meals.forEach((m) => allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings }));
+      d.meals.forEach((m) => {
+        if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+      });
     });
 
     const aggregated = aggregateGroceryList(
@@ -2280,7 +2620,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       nextPrefs.supermarketId,
       nextPrefs.excludePantryStaples,
       getActiveExtraProductIds(nextPrefs),
-      nextPrefs.pantryInventory || []
+      nextPrefs.pantryInventory || [],
+      nextPrefs.pantryStock || {}
     );
 
     const updatedPlan: MealPlan = {
@@ -2307,7 +2648,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const updatedPlan = swapMealInPlan(currentPlan, dayOfWeek, preferences, slot);
     const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
     updatedPlan.days.forEach((d) => {
-      d.meals.forEach((m) => allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings }));
+      d.meals.forEach((m) => {
+        if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+      });
     });
 
     const aggregated = aggregateGroceryList(
@@ -2315,7 +2658,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.supermarketId,
       preferences.excludePantryStaples,
       getActiveExtraProductIds(preferences),
-      preferences.pantryInventory || []
+      preferences.pantryInventory || [],
+      preferences.pantryStock || {}
     );
 
     // The totals travel with the list they were computed from, the way every other
@@ -2397,7 +2741,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
     updatedDays.forEach((d) => {
-      d.meals.forEach((m) => allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings }));
+      d.meals.forEach((m) => {
+        if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+      });
     });
 
     const aggregated = aggregateGroceryList(
@@ -2405,7 +2751,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       preferences.supermarketId,
       preferences.excludePantryStaples,
       getActiveExtraProductIds(preferences),
-      preferences.pantryInventory || []
+      preferences.pantryInventory || [],
+      preferences.pantryStock || {}
     );
 
     const updatedPlan: MealPlan = {

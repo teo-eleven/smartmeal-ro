@@ -8,8 +8,8 @@
 Code review pe **toată** aplicația, nu doar pe diferența sesiunii: eu întâi, apoi doi agenți
 (`code-reviewer` și `security-reviewer`) în paralel, iar la final am verificat empiric fiecare
 afirmație a lor înainte s-o accept. Au ieșit 9 defecte reale. **Toate sunt reparate**, fiecare
-cu testul care l-ar fi prins. Apoi a fost cablată sincronizarea descendentă din cloud (ADR-11).
-Teste: 434 → 518.
+cu testul care l-ar fi prins. Apoi a fost cablată sincronizarea descendentă din cloud (ADR-11),
+iar cardurile de rețetă au fost aduse pe un singur șablon (ADR-14). Teste: 434 → 526.
 
 ## Următorul pas exact
 
@@ -70,6 +70,9 @@ Le-am verificat și nu stau în picioare. Sunt aici ca să nu fie reinvestigate:
 
 ## Capcane
 
+- **Orice agregare a coșului ia acum 6 argumente**, nu 5: s-a adăugat `pantryStock`. Și
+  **orice loc care adună mese trebuie să sară peste `meal.isLeftover`**, altfel ingredientele
+  unei mese reîncălzite se cumpără de două ori.
 - **Alergiile și dieta sunt restricții dure pe cinci uși**: generare, restaurare, hidratare,
   `replaceMealWithRecipe` și **descărcarea din cloud**. Dacă adaugi a șasea cale prin care o
   masă ajunge la utilizator, trece-o prin `makePlanSafeForPreferences` sau
@@ -102,16 +105,54 @@ Le-am verificat și nu stau în picioare. Sunt aici ca să nu fie reinvestigate:
   afirmațiile lor erau false.** Verifică fiecare afirmație empiric înainte s-o accepți.
 - **Verificarea imaginilor cere ochi, nu cod de status.** Am raportat o dată „HTTP 200, totul
   bine" pentru poze care arătau căști audio la mâncare de fasole. A doua oară, o poză corectă
-  ca preparat arăta piure lângă o rețetă cu varză (ADR-12) — deci nu e destul să fie felul
-  potrivit, trebuie să fie și ingredientele potrivite. Un test nu poate verifica asta.
+  ca preparat arăta piure lângă o rețetă cu varză — deci nu e destul să fie felul potrivit,
+  trebuie să fie și ingredientele potrivite. Un test nu poate verifica asta. Din ADR-14 nu se
+  mai afișează nicio fotografie clară, deci regula se aplică acum doar fundalurilor.
+- **Întreabă ce înseamnă „bine" înainte să repari o problemă vizuală.** Am reparat patru
+  defecte reale (registru greșit, două arhetipuri greșite, raportul cardului) înainte să aflu
+  că se cerea de fapt consecvență, nu corectitudine bucată cu bucată. Patru reparații corecte
+  la altă problemă decât a lui tot înseamnă eșec.
 - **Cardul de rețetă arată centrul vertical al pozei** (`resizeMode="cover"`), nu toată poza.
   Când judeci o fotografie, judec-o pe banda din mijloc, la raportul cardului — nu ca imagine
   de sine stătătoare. Raportul e acum fixat prin `aspectRatio` (ADR-13); înainte era înălțime
   fixă, ceea ce făcea din fiecare poză o fâșie de 7:1 pe desktop.
-- `npm run test:coverage` — praguri în `jest.config.js`. Acum: 86,84 instrucțiuni / 65,05
-  ramuri / 85,46 funcții / 87,53 linii, deci ~1,5% spațiu peste praguri. Când pică, adaugă
+- `npm run test:coverage` — praguri în `jest.config.js`. Acum: 88,04 instrucțiuni / 66,27
+  ramuri / 86,68 funcții / 89,34 linii. Când pică, adaugă
   teste — nu coborî pragul. Ecranele cu cea mai slabă acoperire, deci cele mai profitabile
   de atacat: `PantryInventoryModal` (22%), `GroceryScreen` (29%), `SnacksAndDrinksModal` (45%).
+
+## Ce s-a construit după audit
+
+Patru funcții noi, fiecare cu testele ei:
+
+- **Surplusul din ambalaje se reportează în cămară** (ADR-15). Coșul cumpără pachete întregi,
+  deci o săptămână care cere 270 g de orez cumpără un kil. Restul intră acum în `pantryStock`
+  și se scade din lista următoare. Măsurat: săptămâna 1 costă 425 lei, săptămâna 2 costă 246.
+- **Planificatorul ține minte.** Deget în jos = filtru dur, ca dieta și alergenii, refuzat
+  dacă ar goli catalogul. Deget în sus = punctaj, niciodată o portiță peste o regulă.
+- **Gătesc o dată, mănânc de două ori.** Porție dublă într-o zi, a doua zi doar reîncălzită.
+  Masa reîncălzită e sărită de **toate** cele 16 locuri care construiesc lista de cumpărături.
+- **Catalogul a crescut de la 82 la 100 de rețete** (ADR-16), toate cele 18 noi fiind vegane
+  **și** fără gluten — exact cele două diete care aveau sub 7 feluri pe slot și forțau
+  repetiții. Acum orice dietă are cel puțin 8 per slot, iar `noRepeats.test.ts` verifică pe
+  toate șase dietele că nu se repetă nimic: nici în aceeași zi, nici în zile consecutive,
+  nici în toată săptămâna.
+- **Interfață:** comutator de temă (sistem / luminoasă / întunecată, ținut minte), vedere pe
+  săptămână lângă cea zi-cu-zi, mod cumpărături cu rânduri mari și ecran ținut aprins.
+
+## Ce a mai rămas, și pentru cine
+
+Doar lucruri care cer credențialele tale:
+
+0. **Două fundaluri lipsă: `salad` și `wrap`.** Cele 5 rețete din acele arhetipuri rămân pe
+   gradient, vizibil diferite de restul. Nu le pot rezolva eu: nu există nicio fotografie
+   sursă din acele categorii, iar împrumutul din alt arhetip e exact greșeala pe care ADR-07
+   o interzice. Îți trebuie două poze — o salată și un wrap — trecute prin aceeași
+   prelucrare ca celelalte (`scripts/generateBackdrops.md`).
+1. **Rulează migrația `0001_user_meal_plans.sql`.** Fără ea nu există RLS, iar cheia `anon`
+   (publică prin design) ar putea citi planurile altora. Obligatoriu înainte de orice deploy
+   cu cloud activ.
+2. **Publică funcția edge și setează `ALLOWED_ORIGINS`.** Pașii: `supabase/README.md`.
 
 ## Întrebări pentru tine
 

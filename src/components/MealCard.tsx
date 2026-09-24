@@ -20,6 +20,10 @@ interface MealCardProps {
   onPressRecipe: () => void;
   onSwapMeal: () => void;
   onRemoveMeal?: () => void;
+  /** Cook a double portion here and reheat it the next day. Absent when there is no next day. */
+  onCookDouble?: () => void;
+  /** Turn a reheated day back into a meal of its own. */
+  onUndoCookDouble?: () => void;
   onChangeServings?: (servings: number) => void;
   isDark: boolean;
 }
@@ -124,6 +128,8 @@ export const MealCard: React.FC<MealCardProps> = ({
   onPressRecipe,
   onSwapMeal,
   onRemoveMeal,
+  onCookDouble,
+  onUndoCookDouble,
   onChangeServings,
   isDark,
 }) => {
@@ -166,6 +172,7 @@ export const MealCard: React.FC<MealCardProps> = ({
     <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%', flex: 1, height: '100%' }}>
       <TouchableOpacity
         accessibilityRole="button"
+        accessibilityLabel={`${recipe.title}. Vezi rețeta.`}
         activeOpacity={0.92}
         onPress={onPressRecipe}
         onPressIn={handlePressIn}
@@ -231,10 +238,8 @@ export const MealCard: React.FC<MealCardProps> = ({
 
         {/* Content Body */}
         <View style={styles.contentBody}>
-          <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
-            {recipe.title}
-          </Text>
-
+          {/* The dish name is set over the visual just above; repeating it here said the
+              same thing twice in the space of two lines. */}
           <Text style={[styles.description, { color: theme.textMuted }]} numberOfLines={2}>
             {recipe.description}
           </Text>
@@ -335,6 +340,35 @@ export const MealCard: React.FC<MealCardProps> = ({
               )}
             </View>
 
+            {/* Cheapest suggestion the planner can make, so it sits with the other actions */}
+            {meal?.isLeftover ? (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Gătesc din nou în ziua asta"
+                onPress={onUndoCookDouble}
+                style={[styles.leftoverBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.leftoverBtnText, { color: theme.textMuted }]}>
+                  ♻️ Reîncălzit din ziua de dinainte · gătesc din nou
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              onCookDouble && (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Gătesc porție dublă și reîncălzesc mâine"
+                  onPress={onCookDouble}
+                  style={[styles.leftoverBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.leftoverBtnText, { color: theme.textMuted }]}>
+                    ♻️ Gătesc dublu · mâine doar reîncălzesc
+                  </Text>
+                </TouchableOpacity>
+              )
+            )}
+
             {/* Main Action Buttons: Perfectly sized, zero cutoff */}
             <View style={styles.actionButtonsRow}>
               <TouchableOpacity
@@ -363,6 +397,15 @@ export const MealCard: React.FC<MealCardProps> = ({
 };
 
 const styles = StyleSheet.create({
+  leftoverBtn: {
+    borderWidth: 1,
+    borderRadius: 11,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  leftoverBtnText: { fontSize: 11, fontWeight: '700' },
   card: {
     borderRadius: 24,
     borderWidth: 1,

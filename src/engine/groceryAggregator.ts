@@ -15,7 +15,9 @@ export function aggregateGroceryList(
   supermarketId: SupermarketId,
   excludePantryStaples: boolean = false,
   extraProductIds: string[] = [],
-  pantryInventory: string[] = []
+  pantryInventory: string[] = [],
+  /** Amounts already at home, in each ingredient's own unit. */
+  pantryStock: Record<string, number> = {}
 ): AggregatedGroceryResult {
   const ingredientMap: Record<
     string,
@@ -91,9 +93,18 @@ export function aggregateGroceryList(
     const packPrice = dbIngredient.typicalPriceRon[supermarketId] ?? 0;
     const isFromPantry = pantryInventory.includes(ingredientId);
 
-    // Minimum whole packs to purchase at the supermarket
-    const packsToBuy = isFromPantry ? 0 : Math.ceil(neededAmount / packSize);
-    const itemCost = isFromPantry ? 0 : Math.round(packsToBuy * packPrice * 100) / 100;
+    // What is already in the cupboard is used first; only the shortfall is bought, and it is
+    // still bought in whole packs because that is how a supermarket sells it.
+    const stocked = isFromPantry ? neededAmount : Math.max(0, pantryStock[ingredientId] ?? 0);
+    const fromStockAmount = Math.min(stocked, neededAmount);
+    const outstanding = Math.max(0, neededAmount - stocked);
+
+    const packsToBuy = outstanding > 0 ? Math.ceil(outstanding / packSize) : 0;
+    const itemCost = Math.round(packsToBuy * packPrice * 100) / 100;
+
+    // What this week will not use up, and therefore what next week can start from.
+    const leftoverAmount =
+      Math.round((stocked + packsToBuy * packSize - neededAmount) * 10) / 10;
 
     totalCartCostRon += itemCost;
 
@@ -109,6 +120,8 @@ export function aggregateGroceryList(
       estimatedPriceRon: itemCost,
       isPurchased: isFromPantry,
       isFromPantry,
+      fromStockAmount: Math.round(fromStockAmount * 10) / 10,
+      leftoverAmount: Math.max(0, leftoverAmount),
     };
 
     items.push(item);

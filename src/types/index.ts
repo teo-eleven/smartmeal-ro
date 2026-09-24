@@ -115,6 +115,9 @@ export interface Recipe {
   storeBadgeLabel?: string;
 }
 
+/** Follows the phone unless the user overrides it. */
+export type ThemeMode = 'system' | 'light' | 'dark';
+
 export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert';
 export type FoodTier = 'basic' | 'medium' | 'premium';
 
@@ -140,6 +143,11 @@ export interface PlannedMeal {
   recipe: Recipe;
   servings: number;
   estimatedCostRon: number;
+  /**
+   * Reheated from a double portion cooked earlier in the week. Costs nothing at the till and
+   * is skipped when the shopping list is built, or its ingredients would be bought twice.
+   */
+  isLeftover?: boolean;
 }
 
 export interface UserPreferences {
@@ -152,7 +160,20 @@ export interface UserPreferences {
   dietTypes?: DietType[]; // up to 2 compatible diets
   appliances: Appliance[];
   excludePantryStaples: boolean;
-  pantryInventory?: string[]; // IDs of ingredients already at home in fridge/pantry
+  /** Ingredients the user says they have plenty of; treated as fully covering any need. */
+  pantryInventory?: string[];
+  /**
+   * Amounts already at home, in each ingredient's own unit. Filled by carrying the surplus
+   * of a finished week forward, so a 1 kg bag bought for 270 g is not bought again.
+   */
+  pantryStock?: Record<string, number>;
+  /**
+   * Dishes the user rejected. A hard filter like diet and allergens, because "never again"
+   * has to mean it — which is why rejecting one is refused when it would empty the catalog.
+   */
+  dislikedRecipeIds?: string[];
+  /** Dishes the user liked. A strong preference in the scoring, never a licence to break a rule. */
+  favouriteRecipeIds?: string[];
   /** Allergens to exclude entirely. Treated as a hard constraint, never relaxed. */
   avoidedAllergens?: Allergen[];
   mealSlots: MealSlot[];
@@ -212,6 +233,10 @@ export interface GroceryListItem {
   estimatedPriceRon: number;
   isPurchased: boolean;
   isFromPantry?: boolean; // Ingredient already available at home
+  /** How much of the need was covered by what is already at home. */
+  fromStockAmount?: number;
+  /** What will still be in the cupboard once this week is cooked. */
+  leftoverAmount?: number;
 }
 
 export interface MealPrepPhase {

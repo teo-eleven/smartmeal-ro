@@ -10,6 +10,8 @@ interface GroceryAisleSectionProps {
   items: GroceryListItem[];
   onToggleItem: (ingredientId: string) => void;
   isDark: boolean;
+  /** Bigger targets for a phone held in one hand in a supermarket aisle. */
+  isShoppingMode?: boolean;
 }
 
 export const AISLE_METADATA: Record<
@@ -33,6 +35,7 @@ export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
   items,
   onToggleItem,
   isDark,
+  isShoppingMode = false,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -93,6 +96,7 @@ export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
               item={item}
               onToggle={() => onToggleItem(item.ingredientId)}
               isDark={isDark}
+              isShoppingMode={isShoppingMode}
             />
           ))}
         </View>

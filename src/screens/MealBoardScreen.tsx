@@ -13,6 +13,7 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { PlanHeader } from '../components/PlanHeader';
 import { MealCard } from '../components/MealCard';
+import { WeekOverview } from '../components/WeekOverview';
 import { RecipeDetailModal } from './RecipeDetailModal';
 import { MealSwapModal } from './MealSwapModal';
 import { QuickFiltersModal } from './QuickFiltersModal';
@@ -103,6 +104,8 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     generatePlan,
     reshufflePlan,
     updatePreferencesAndRebuild,
+    cookDoubleFor,
+    undoCookDouble,
     requestConfirm,
     replaceMealWithRecipe,
     setMealsPerDayCount,
@@ -147,6 +150,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
   const [detailTarget, setDetailTarget] = useState<{ dayOfWeek: DayOfWeek; slot: MealSlot } | null>(
     null
   );
+  const [boardView, setBoardView] = useState<'list' | 'week'>('list');
 
   // Attempted only once per mount: a plan that cannot be built must not re-trigger the
   // effect on every render, which previously turned an impossible setup into a crash loop.
@@ -570,9 +574,56 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
           </View>
         </View>
 
+        {/* One card per meal is right for deciding about a dinner and wrong for judging a
+            week; the overview trades the detail for the shape of the week. */}
+        <View style={[styles.viewToggle, { maxWidth: contentMaxWidth }]}>
+          {(
+            [
+              ['list', '📋 Zi cu zi'],
+              ['week', '🗓️ Săptămâna'],
+            ] as const
+          ).map(([mode, label]) => (
+            <TouchableOpacity
+              key={mode}
+              accessibilityRole="button"
+              accessibilityLabel={mode === 'week' ? 'Vezi toată săptămâna' : 'Vezi zi cu zi'}
+              onPress={() => setBoardView(mode)}
+              style={[
+                styles.viewToggleBtn,
+                {
+                  backgroundColor: boardView === mode ? theme.primary : theme.btnBg,
+                  borderColor: boardView === mode ? theme.primary : theme.border,
+                },
+              ]}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.viewToggleText,
+                  { color: boardView === mode ? theme.primaryText : theme.textMuted },
+                ]}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {boardView === 'week' && (
+          <View style={[styles.feed, { maxWidth: contentMaxWidth }]}>
+            <WeekOverview
+              days={currentPlan.days}
+              onPressMeal={(dayOfWeek, meal) =>
+                handleOpenDetail(meal.recipe, meal.servings, dayOfWeek, meal.slot)
+              }
+              isDark={isDark}
+            />
+          </View>
+        )}
+
         {/* Day-by-day Meal Cards Feed: Zilele una după cealaltă pe linii, mesele orizontal full-width */}
-        <View style={[styles.feed, { maxWidth: contentMaxWidth }]}>
-          {currentPlan.days.map((day) => {
+        <View style={[styles.feed, { maxWidth: contentMaxWidth, display: boardView === 'list' ? 'flex' : 'none' }]}>
+          {currentPlan.days.map((day, dayIdx) => {
             const visibleMeals = day.meals.filter((m) => m.slot !== 'snack');
             const hasDessert = visibleMeals.some((m) => m.slot === 'dessert');
 
@@ -675,6 +726,12 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                           handleOpenDetail(meal.recipe, meal.servings, day.dayOfWeek, meal.slot)
                         }
                         onSwapMeal={() => handleOpenSwap(day.dayOfWeek, meal.slot)}
+                        onCookDouble={
+                          dayIdx < currentPlan.days.length - 1
+                            ? () => cookDoubleFor(day.dayOfWeek, meal.id)
+                            : undefined
+                        }
+                        onUndoCookDouble={() => undoCookDouble(day.dayOfWeek, meal.id)}
                         onRemoveMeal={
                           meal.slot === 'dessert'
                             ? () => removeMealFromDay(day.dayOfWeek, meal.id)
@@ -911,6 +968,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  viewToggle: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  viewToggleBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  viewToggleText: { fontSize: 12, fontWeight: '800' },
   feed: {
     width: '100%',
     gap: 24,
@@ -1044,6 +1115,9 @@ const styles = StyleSheet.create({
   },
   marketPillText: {
     fontSize: 11,
+    // "Mega Image" is the only name that wraps, and without this it sat left-aligned while
+    // every single-line neighbour looked centred.
+    textAlign: 'center',
   },
   quickActionsBar: {
     width: '100%',
