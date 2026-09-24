@@ -411,3 +411,45 @@ shopping list. Cropping cannot fix a pasta shape, so those need new photographs 
 the crop is a workaround standing in the way of the real fix, and should be replaced outright.
 Composition cannot be asserted in a test — it needs eyes, which is why ADR-07's rule stands:
 look at the picture, never trust that the file name describes it.
+
+
+---
+
+## ADR-13: The recipe hero keeps its shape instead of its height
+
+**Status:** Accepted · 2026-09-24
+
+### Context
+`MealCard.imageContainer` was `width: '100%'` with `height: 190`. On a phone the card is
+about 500px wide, so the hero was roughly 2.7:1 — the shape the photographs were composed
+for. On a desktop browser `contentMaxWidth` resolves between 1200 and 1680, and the card
+takes all of it, so the same 190px height produced a **7:1 strip**. `resizeMode="cover"`
+then showed only the middle band of the photograph.
+
+That is why recipe pictures "looked wrong" on the web build regardless of which picture it
+was: a 7:1 slice through any plate of food is an unreadable close-up. The schnitzel photo
+was blamed first because its middle band happened to be the side dish, but cropping that one
+image only moved the problem — the slice was still a slice.
+
+### Options
+1. **Crop each photograph for the widest case**
+   - *Cons:* Solves it for one viewport and breaks the others, and there are eighteen photos
+     plus ten backdrops. Treats the symptom on every asset instead of the cause in one style.
+2. **Cap the card's width on desktop**
+   - *Cons:* `contentMaxWidth` is shared by the whole layout; narrowing it for the board
+     alone would misalign the board with the header and the shopping list.
+3. **Give the hero an aspect ratio instead of a height** *(chosen)*
+   - *Pros:* One line, fixes every card and every backdrop at once, and the photographs are
+     seen at the shape they were composed for.
+
+### Decision
+`aspectRatio: 2.85`, with `minHeight: 190` and `maxHeight: 380`.
+
+The floor is the old phone height, so phones render exactly as before. The ceiling stops the
+hero from swallowing a wide monitor: at 1364px wide the hero settles at 380px, about 3.6:1.
+All eighteen photographs were rendered at that ratio and looked at before committing.
+
+### Falsification Condition
+*What would make this decision wrong:* a layout where meal cards sit in a multi-column grid.
+Then each card is narrow again, the ceiling never binds, and the ratio should be revisited
+against the column width rather than the window.

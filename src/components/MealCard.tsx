@@ -382,7 +382,14 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: 190,
+    // A fixed height let the hero stretch with the window: on a desktop browser the card is
+    // over 1300px wide, so 190px tall made every dish a ~7:1 strip through the middle of the
+    // photograph -- unreadable whatever the picture was. Holding the shape instead keeps the
+    // dish legible at any width. The floor matches the old phone height, so phones are
+    // unchanged; the ceiling stops the hero swallowing the screen on a wide monitor.
+    aspectRatio: 2.85,
+    minHeight: 190,
+    maxHeight: 380,
     position: 'relative',
     backgroundColor: '#0f172a',
   },
