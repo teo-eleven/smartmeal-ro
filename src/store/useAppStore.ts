@@ -113,6 +113,8 @@ export interface AppState {
   togglePantryItem: (ingredientId: string) => void;
   setPantryInventory: (items: string[]) => void;
   carryOverSurplus: () => void;
+  toggleDislikedRecipe: (recipeId: string) => void;
+  toggleFavouriteRecipe: (recipeId: string) => void;
   clearPantryStock: () => void;
   toggleAvoidedAllergen: (allergen: Allergen) => void;
   toggleAppliance: (appliance: Appliance) => void;
@@ -1338,6 +1340,64 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (rejection) return rejection;
 
       return applyPreferencesWithRebuild(state, nextPrefs);
+    });
+  },
+
+  /**
+   * Rejects a dish for good. This is a hard filter, like diet and allergens, because a thumb
+   * down that still served the dish next week would mean nothing — and like the others it is
+   * refused rather than stored when it would leave the catalog with nothing to offer.
+   */
+  toggleDislikedRecipe: (recipeId: string) => {
+    set((state) => {
+      const current = state.preferences.dislikedRecipeIds ?? [];
+      const isRemoving = current.includes(recipeId);
+      const next = isRemoving
+        ? current.filter((id) => id !== recipeId)
+        : [...current, recipeId];
+
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        dislikedRecipeIds: next,
+        // A dish cannot be both wanted and refused.
+        favouriteRecipeIds: isRemoving
+          ? state.preferences.favouriteRecipeIds
+          : (state.preferences.favouriteRecipeIds ?? []).filter((id) => id !== recipeId),
+      };
+
+      if (!isRemoving) {
+        const rejection = rejectIfInfeasible(nextPrefs);
+        if (rejection) {
+          return {
+            activeNotice: buildInfeasibleNotice(
+              'Dacă scoți și rețeta asta nu mai rămâne nimic de gătit cu setările tale. Lărgește dieta, aparatele sau alergiile întâi.'
+            ),
+          };
+        }
+      }
+
+      return applyPreferencesWithRebuild(state, nextPrefs);
+    });
+  },
+
+  /** Marks a dish as wanted. A strong pull in the scoring, never a way past a hard rule. */
+  toggleFavouriteRecipe: (recipeId: string) => {
+    set((state) => {
+      const current = state.preferences.favouriteRecipeIds ?? [];
+      const next = current.includes(recipeId)
+        ? current.filter((id) => id !== recipeId)
+        : [...current, recipeId];
+
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        favouriteRecipeIds: next,
+        dislikedRecipeIds: (state.preferences.dislikedRecipeIds ?? []).filter(
+          (id) => id !== recipeId
+        ),
+      };
+
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
     });
   },
 

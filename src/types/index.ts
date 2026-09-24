@@ -159,6 +159,13 @@ export interface UserPreferences {
    * of a finished week forward, so a 1 kg bag bought for 270 g is not bought again.
    */
   pantryStock?: Record<string, number>;
+  /**
+   * Dishes the user rejected. A hard filter like diet and allergens, because "never again"
+   * has to mean it — which is why rejecting one is refused when it would empty the catalog.
+   */
+  dislikedRecipeIds?: string[];
+  /** Dishes the user liked. A strong preference in the scoring, never a licence to break a rule. */
+  favouriteRecipeIds?: string[];
   /** Allergens to exclude entirely. Treated as a hard constraint, never relaxed. */
   avoidedAllergens?: Allergen[];
   mealSlots: MealSlot[];

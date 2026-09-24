@@ -80,8 +80,11 @@ export function getEligibleRecipes(preferences: UserPreferences): Recipe[] {
       ? preferences.dietTypes
       : [preferences.dietType];
 
+  const rejected = new Set(preferences.dislikedRecipeIds ?? []);
+
   return RECIPES.filter(
     (recipe) =>
+      !rejected.has(recipe.id) &&
       isRecipeMatchingDiets(recipe, activeDiets) &&
       isRecipeSafeForAllergies(recipe, preferences.avoidedAllergens) &&
       hasRequiredAppliances(recipe.appliances, preferences.appliances) &&
@@ -425,6 +428,11 @@ export function generateMealPlan(
   const scoredRecipes = eligibleRecipes.map((recipe) => {
     let score = 0;
 
+    // Dishes the user said they liked, weighted the same as in the day-by-day pass.
+    if ((preferences.favouriteRecipeIds ?? []).includes(recipe.id)) {
+      score += 40;
+    }
+
     if (preferences.moodTags && preferences.moodTags.length > 0) {
       recipe.moodTags.forEach((tag) => {
         if (preferences.moodTags.includes(tag)) {
@@ -527,8 +535,15 @@ export function generateMealPlan(
     //    preference; eating the same thing twice when the catalog has more to offer is not
     //    something a user asked for, so freshness outranks it here.
     // 2. Otherwise prefer the matching tier, then anything, capped at MAX_RECIPE_REPEATS.
+    // A dish the user asked for counts as matching the tier. The tier narrowing happens
+    // before any score is consulted, so without this a favourite of another tier is dropped
+    // from the pool and its bonus is never read at all.
+    const isWanted = (id: string) => (preferences.favouriteRecipeIds ?? []).includes(id);
+    const matchesTier = (s: (typeof candidates)[number]) =>
+      s.recipe.tier === effectiveTier || isWanted(s.recipe.id);
+
     const unused = candidates.filter((c) => !recipeUsageCount.has(c.recipe.id));
-    const tierMatches = candidates.filter((s) => s.recipe.tier === effectiveTier);
+    const tierMatches = candidates.filter(matchesTier);
     const tierUnderLimit = tierMatches.filter(
       (c) => (recipeUsageCount.get(c.recipe.id) || 0) < MAX_RECIPE_REPEATS
     );
@@ -539,7 +554,7 @@ export function generateMealPlan(
     let candidatePool: typeof candidates;
     if (unused.length > 0) {
       // Within the untouched dishes the tier preference still applies, when it can.
-      const unusedMatchingTier = unused.filter((c) => c.recipe.tier === effectiveTier);
+      const unusedMatchingTier = unused.filter(matchesTier);
       candidatePool = unusedMatchingTier.length > 0 ? unusedMatchingTier : unused;
     } else if (tierUnderLimit.length > 0) {
       candidatePool = tierUnderLimit;
@@ -924,6 +939,12 @@ export function selectOptimalDessertForDay(
     // RULE 6: Food Tier synergy
     if (preferences.foodTier && candidate.tier === preferences.foodTier) {
       score += 20;
+    }
+
+    // RULE 8: dishes the user said they liked. Large enough to be felt, small enough that it
+    // cannot drag a dish past the variety and budget rules that follow.
+    if ((preferences.favouriteRecipeIds ?? []).includes(candidate.id)) {
+      score += 40;
     }
 
     // RULE 7: Shopping cart ingredient overlap (economical synergy)

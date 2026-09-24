@@ -117,7 +117,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
   const { isDesktop, isTablet, contentMaxWidth } = useResponsive();
   const isWide = isDesktop || isTablet;
-  const { preferences } = useAppStore();
+  const { preferences, toggleFavouriteRecipe, toggleDislikedRecipe } = useAppStore();
 
   useEffect(() => {
     setActiveServings(initialServings);
@@ -141,6 +141,9 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   };
 
   const totalTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
+
+  const isFavourite = (preferences.favouriteRecipeIds ?? []).includes(recipe.id);
+  const isDisliked = (preferences.dislikedRecipeIds ?? []).includes(recipe.id);
 
   const toggleStep = (stepNumber: number) => {
     setCompletedSteps((prev) => ({
@@ -566,6 +569,49 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 />
               </View>
 
+              {/* What the planner should remember about this dish */}
+              <View style={styles.verdictRow}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={isFavourite ? 'Scoate de la preferate' : 'Marchează ca preferat'}
+                  onPress={() => toggleFavouriteRecipe(recipe.id)}
+                  style={[
+                    styles.verdictBtn,
+                    {
+                      borderColor: isFavourite ? '#16a34a' : theme.border,
+                      backgroundColor: isFavourite ? 'rgba(22,163,74,0.12)' : theme.btnBg,
+                    },
+                  ]}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[styles.verdictText, { color: isFavourite ? '#16a34a' : theme.textMuted }]}
+                  >
+                    {isFavourite ? '👍 Îmi place' : '👍 Îmi place'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={isDisliked ? 'Adu rețeta înapoi în propuneri' : 'Nu mai propune rețeta'}
+                  onPress={() => toggleDislikedRecipe(recipe.id)}
+                  style={[
+                    styles.verdictBtn,
+                    {
+                      borderColor: isDisliked ? '#ef4444' : theme.border,
+                      backgroundColor: isDisliked ? 'rgba(239,68,68,0.12)' : theme.btnBg,
+                    },
+                  ]}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[styles.verdictText, { color: isDisliked ? '#ef4444' : theme.textMuted }]}
+                  >
+                    {isDisliked ? '↩︎ Adu-o înapoi' : '👎 Nu mai propune'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               {/* Actions Row */}
               <View style={styles.actionButtonsContainer}>
                 <TouchableOpacity
@@ -597,6 +643,15 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 };
 
 const styles = StyleSheet.create({
+  verdictRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  verdictBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 11,
+    alignItems: 'center',
+  },
+  verdictText: { fontSize: 12, fontWeight: '800' },
   container: {
     flex: 1,
   },
