@@ -42,18 +42,27 @@ describe('ținta swapului pornit din detaliul rețetei', () => {
     });
     useAppStore.getState().generatePlan();
 
-    const plan = useAppStore.getState().currentPlan!;
-    const uses = new Map<string, { day: DayOfWeek; title: string }[]>();
-    plan.days.forEach((d) =>
-      d.meals.forEach((m) =>
-        uses.set(m.recipe.id, [...(uses.get(m.recipe.id) ?? []), { day: d.dayOfWeek, title: m.recipe.title }])
-      )
-    );
-    const repeated = [...uses.values()].find((places) => places.length > 1);
-    expect(repeated).toBeDefined();
+    // The catalog is now large enough that a generated week never repeats a dish, so the
+    // duplicate this test needs is planted deliberately: it is the shape that used to make
+    // the swap land on the wrong day, not something the planner should produce on its own.
+    const generated = useAppStore.getState().currentPlan!;
+    const shared = generated.days[0].meals[0].recipe;
+    const lastIndex = generated.days.length - 1;
 
-    const first = repeated![0];
-    const last = repeated![repeated!.length - 1];
+    useAppStore.setState({
+      currentPlan: {
+        ...generated,
+        days: generated.days.map((day, index) =>
+          index === lastIndex
+            ? { ...day, meals: day.meals.map((m, i) => (i === 0 ? { ...m, recipe: shared } : m)) }
+            : day
+        ),
+      },
+    });
+
+    const plan = useAppStore.getState().currentPlan!;
+    const first = { day: plan.days[0].dayOfWeek, title: shared.title };
+    const last = { day: plan.days[lastIndex].dayOfWeek };
     expect(first.day).not.toBe(last.day);
 
     render(<MealBoardScreen isDark={false} />);

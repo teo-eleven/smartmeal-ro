@@ -511,3 +511,58 @@ as the source material the backdrops were made from.
 *What would make this decision wrong:* a photograph for every recipe, verified by eye against
 its ingredients. Then consistency and specificity stop competing and the sharp photograph
 wins. Eighteen out of eighty-two was not that.
+
+
+---
+
+## ADR-16: The catalog is sized so the variety rules can actually be honoured
+
+**Status:** Accepted · 2026-09-24
+
+### Context
+A user on a narrow diet saw the same dish twice in one day and on consecutive days. The
+planner's variety rules were not at fault — it already refuses to repeat while an unused
+dish is available for the slot, and refuses a back-to-back repeat. The catalog simply held
+fewer dishes than the week had meals, and no rule can invent food.
+
+Measured per slot, against the seven a full week needs:
+
+| diet        | breakfast | lunch | dinner | dessert |
+| ----------- | --------- | ----- | ------ | ------- |
+| vegan       | 5         | 7     | 6      | 3       |
+| gluten-free | 5         | 23    | 25     | 5       |
+| omnivore    | 15        | 40    | 40     | 11      |
+
+Vegan and gluten-free were the two that forced repeats. Note the shared cause: oats carry
+gluten, and most of the quick vegan breakfasts were oat-based, so one ingredient shortened
+both lists.
+
+### Options
+1. **Loosen the repetition rules**
+   - *Cons:* Hides the shortage instead of fixing it and gives the user exactly what they
+     complained about.
+2. **Relax the diet filters when the catalog runs short**
+   - *Cons:* Diet is a hard constraint. Serving a vegan a dish that is nearly vegan to avoid
+     a repeat is a far worse failure than the repeat.
+3. **Add recipes where the catalog is short** *(chosen)*
+
+### Decision
+Eighteen recipes added, every one of them **both vegan and gluten-free**, because those were
+the two short diets and a dish that is both lengthens both lists at once — as well as the
+vegetarian, pescatarian and omnivore ones, which are supersets.
+
+82 → 100 recipes. Every diet now has at least eight dishes per slot.
+
+The first fourteen closed the per-slot gaps but left vegan with exactly twenty-one dishes for
+a twenty-one-meal week: arithmetically possible, so any imperfection in a greedy choice still
+produced a repeat. Four more mains were added for slack, and only then did the week come out
+clean.
+
+`noRepeats.test.ts` now asserts both halves for all six diets: that each slot holds at least
+seven dishes, and that generated plans repeat nothing — not in a day, not on consecutive
+days, not across the whole week — across six reshuffles each.
+
+### Falsification Condition
+*What would make this decision wrong:* a user cooking more than three meals a day, or a
+fourteen-day plan. Seven is the number the app plans for; a longer horizon needs the counts
+raised again, and the test states the assumption where it will be seen.

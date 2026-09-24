@@ -1115,6 +1115,9 @@ const styles = StyleSheet.create({
   },
   marketPillText: {
     fontSize: 11,
+    // "Mega Image" is the only name that wraps, and without this it sat left-aligned while
+    // every single-line neighbour looked centred.
+    textAlign: 'center',
   },
   quickActionsBar: {
     width: '100%',

@@ -116,8 +116,8 @@ Le-am verificat și nu stau în picioare. Sunt aici ca să nu fie reinvestigate:
   Când judeci o fotografie, judec-o pe banda din mijloc, la raportul cardului — nu ca imagine
   de sine stătătoare. Raportul e acum fixat prin `aspectRatio` (ADR-13); înainte era înălțime
   fixă, ceea ce făcea din fiecare poză o fâșie de 7:1 pe desktop.
-- `npm run test:coverage` — praguri în `jest.config.js`. Acum: 88,21 instrucțiuni / 66,81
-  ramuri / 86,81 funcții / 89,55 linii. Când pică, adaugă
+- `npm run test:coverage` — praguri în `jest.config.js`. Acum: 88,04 instrucțiuni / 66,27
+  ramuri / 86,68 funcții / 89,34 linii. Când pică, adaugă
   teste — nu coborî pragul. Ecranele cu cea mai slabă acoperire, deci cele mai profitabile
   de atacat: `PantryInventoryModal` (22%), `GroceryScreen` (29%), `SnacksAndDrinksModal` (45%).
 
@@ -132,6 +132,11 @@ Patru funcții noi, fiecare cu testele ei:
   dacă ar goli catalogul. Deget în sus = punctaj, niciodată o portiță peste o regulă.
 - **Gătesc o dată, mănânc de două ori.** Porție dublă într-o zi, a doua zi doar reîncălzită.
   Masa reîncălzită e sărită de **toate** cele 16 locuri care construiesc lista de cumpărături.
+- **Catalogul a crescut de la 82 la 100 de rețete** (ADR-16), toate cele 18 noi fiind vegane
+  **și** fără gluten — exact cele două diete care aveau sub 7 feluri pe slot și forțau
+  repetiții. Acum orice dietă are cel puțin 8 per slot, iar `noRepeats.test.ts` verifică pe
+  toate șase dietele că nu se repetă nimic: nici în aceeași zi, nici în zile consecutive,
+  nici în toată săptămâna.
 - **Interfață:** comutator de temă (sistem / luminoasă / întunecată, ținut minte), vedere pe
   săptămână lângă cea zi-cu-zi, mod cumpărături cu rânduri mari și ecran ținut aprins.
 
