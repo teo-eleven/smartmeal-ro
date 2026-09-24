@@ -140,6 +140,11 @@ export interface PlannedMeal {
   recipe: Recipe;
   servings: number;
   estimatedCostRon: number;
+  /**
+   * Reheated from a double portion cooked earlier in the week. Costs nothing at the till and
+   * is skipped when the shopping list is built, or its ingredients would be bought twice.
+   */
+  isLeftover?: boolean;
 }
 
 export interface UserPreferences {

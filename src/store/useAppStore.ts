@@ -29,7 +29,10 @@ import {
   swapMealInPlan,
 } from '../engine/plannerEngine';
 import { aggregateGroceryList } from '../engine/groceryAggregator';
-import { calculateMinimumViableBudget, calculateRecipePortionCost } from '../engine/budgetCalculator';
+import {
+  calculateMinimumViableBudget,
+  calculateRecipePortionCost,
+} from '../engine/budgetCalculator';
 import { INGREDIENTS } from '../data/ingredients';
 import { RETAIL_PRODUCTS_MAP } from '../data/retailProducts';
 import { SUPERMARKETS } from '../data/supermarkets';
@@ -114,6 +117,8 @@ export interface AppState {
   setPantryInventory: (items: string[]) => void;
   carryOverSurplus: () => void;
   toggleDislikedRecipe: (recipeId: string) => void;
+  cookDoubleFor: (dayOfWeek: DayOfWeek, mealId: string) => void;
+  undoCookDouble: (dayOfWeek: DayOfWeek, mealId: string) => void;
   toggleFavouriteRecipe: (recipeId: string) => void;
   clearPantryStock: () => void;
   toggleAvoidedAllergen: (allergen: Allergen) => void;
@@ -334,7 +339,10 @@ function buildInfeasibleNotice(reason: string): SystemNotice {
 function collectMealsFromDays(days: MealPlanDay[]): { recipe: Recipe; servings: number }[] {
   const meals: { recipe: Recipe; servings: number }[] = [];
   days.forEach((day) =>
-    day.meals.forEach((meal) => meals.push({ recipe: meal.recipe, servings: meal.servings }))
+    day.meals.forEach((meal) => {
+      // A reheated portion was already shopped for on the day it was cooked.
+      if (!meal.isLeftover) meals.push({ recipe: meal.recipe, servings: meal.servings });
+    })
   );
   return meals;
 }
@@ -342,7 +350,10 @@ function collectMealsFromDays(days: MealPlanDay[]): { recipe: Recipe; servings: 
 function collectPlanMeals(plan: MealPlan): { recipe: Recipe; servings: number }[] {
   const meals: { recipe: Recipe; servings: number }[] = [];
   plan.days.forEach((day) => {
-    day.meals.forEach((meal) => meals.push({ recipe: meal.recipe, servings: meal.servings }));
+    day.meals.forEach((meal) => {
+      // A reheated portion was already shopped for on the day it was cooked.
+      if (!meal.isLeftover) meals.push({ recipe: meal.recipe, servings: meal.servings });
+    });
   });
   return meals;
 }
@@ -518,10 +529,11 @@ function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Partial<App
     ),
   };
 
-  const { days: safeDays, replacedCount, offendingAllergens } = makePlanSafeForPreferences(
-    pending.plan.days,
-    effectivePrefs
-  );
+  const {
+    days: safeDays,
+    replacedCount,
+    offendingAllergens,
+  } = makePlanSafeForPreferences(pending.plan.days, effectivePrefs);
 
   const aggregated = aggregateGroceryList(
     collectMealsFromDays(safeDays),
@@ -572,6 +584,52 @@ function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Partial<App
   };
 }
 
+/** Keeps a day's headline dish and total in step with the meals it actually holds. */
+function rebuildDayShape(
+  meals: PlannedMeal[],
+  day: MealPlanDay
+): { recipe: Recipe; estimatedCostRon: number } {
+  const primary = meals.find((m) => m.slot === 'dinner') ?? meals[0];
+  const sum = meals.reduce((total, m) => total + m.estimatedCostRon, 0);
+  return {
+    recipe: primary ? primary.recipe : day.recipe,
+    estimatedCostRon: Math.round(sum * 100) / 100,
+  };
+}
+
+/** Rebuilds the cart from a new set of days, so the header never drifts from the list. */
+function withRecalculatedCart(
+  state: AppState,
+  days: MealPlanDay[],
+  notice: SystemNotice | null
+): Partial<AppState> {
+  const prefs = state.preferences;
+  const aggregated = aggregateGroceryList(
+    collectMealsFromDays(days),
+    prefs.supermarketId,
+    prefs.excludePantryStaples,
+    getActiveExtraProductIds(prefs),
+    prefs.pantryInventory || [],
+    prefs.pantryStock || {}
+  );
+
+  const updatedPlan: MealPlan = {
+    ...state.currentPlan!,
+    days,
+    totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+    totalCartCostRon: aggregated.totalCartCostRon,
+    extraProducts: getActiveExtraProducts(prefs),
+  };
+
+  void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);
+
+  return {
+    currentPlan: updatedPlan,
+    groceryItems: aggregated.items,
+    activeNotice: notice ?? state.activeNotice,
+  };
+}
+
 function applyPreferenceStep(state: AppState, nextPrefs: UserPreferences): Partial<AppState> {
   if (!state.currentPlan) {
     void storageService.savePreferences(nextPrefs);
@@ -610,7 +668,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     if (pending === 'apply_cloud_plan') {
       set((state) =>
-        state.pendingCloudPlan ? applyCloudPlan(state, state.pendingCloudPlan) : { confirmRequest: null }
+        state.pendingCloudPlan
+          ? applyCloudPlan(state, state.pendingCloudPlan)
+          : { confirmRequest: null }
       );
     }
   },
@@ -719,10 +779,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         // preferences can be arbitrarily stale -- or, on web, edited by hand in localStorage.
         // Restoring an archived plan was already re-checked here; this path was not.
         const effectivePrefs = storedPrefs ?? DEFAULT_PREFERENCES;
-        const { days: safeDays, replacedCount, offendingAllergens } = makePlanSafeForPreferences(
-          sanitizedPlan.days,
-          effectivePrefs
-        );
+        const {
+          days: safeDays,
+          replacedCount,
+          offendingAllergens,
+        } = makePlanSafeForPreferences(sanitizedPlan.days, effectivePrefs);
 
         if (replacedCount > 0) {
           const aggregated = aggregateGroceryList(
@@ -1029,9 +1090,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
         const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
         updatedDays.forEach((d) => {
-          d.meals.forEach((m) =>
-            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-          );
+          d.meals.forEach((m) => {
+            if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+          });
         });
 
         const aggregated = aggregateGroceryList(
@@ -1348,13 +1409,119 @@ export const useAppStore = create<AppState>((set, get) => ({
    * down that still served the dish next week would mean nothing — and like the others it is
    * refused rather than stored when it would leave the catalog with nothing to offer.
    */
+  /**
+   * Cooks a double portion on one day and reheats it the next, which is the cheapest thing a
+   * meal planner can suggest. The reheated meal keeps the dish but buys nothing: its
+   * ingredients were already on the list for the day it was cooked.
+   */
+  cookDoubleFor: (dayOfWeek: DayOfWeek, mealId: string) => {
+    set((state) => {
+      const plan = state.currentPlan;
+      if (!plan) return state;
+
+      const dayIndex = plan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
+      const source = plan.days[dayIndex]?.meals.find((m) => m.id === mealId);
+      if (!source || source.isLeftover) return state;
+
+      const nextDay = plan.days[dayIndex + 1];
+      if (!nextDay) {
+        return {
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Nu mai urmează nicio zi',
+            message: 'E ultima zi din plan, deci nu are unde să fie reîncălzită porția a doua.',
+            type: 'info',
+          },
+        };
+      }
+
+      const target = nextDay.meals.find((m) => m.slot === source.slot) ?? nextDay.meals[0];
+      if (!target) return state;
+
+      const days = plan.days.map((day, index) => {
+        if (index === dayIndex) {
+          const meals = day.meals.map((m) =>
+            m.id === mealId
+              ? { ...m, servings: m.servings * 2, estimatedCostRon: m.estimatedCostRon * 2 }
+              : m
+          );
+          return { ...day, meals, ...rebuildDayShape(meals, day) };
+        }
+        if (index === dayIndex + 1) {
+          const meals = day.meals.map((m) =>
+            m.id === target.id
+              ? { ...m, recipe: source.recipe, isLeftover: true, estimatedCostRon: 0 }
+              : m
+          );
+          return { ...day, meals, ...rebuildDayShape(meals, day) };
+        }
+        return day;
+      });
+
+      return withRecalculatedCart(state, days, {
+        id: Date.now().toString(),
+        title: 'Gătești o dată, mănânci de două ori',
+        message: `Porție dublă de „${source.recipe.title}" — a doua zi doar o reîncălzești, fără cumpărături în plus.`,
+        type: 'info',
+      });
+    });
+  },
+
+  /** Puts a reheated day back to a meal of its own, and halves the day it came from. */
+  undoCookDouble: (dayOfWeek: DayOfWeek, mealId: string) => {
+    set((state) => {
+      const plan = state.currentPlan;
+      if (!plan) return state;
+
+      const dayIndex = plan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
+      const leftover = plan.days[dayIndex]?.meals.find((m) => m.id === mealId);
+      if (!leftover || !leftover.isLeftover) return state;
+
+      const sourceDay = plan.days[dayIndex - 1];
+      const source = sourceDay?.meals.find((m) => m.recipe.id === leftover.recipe.id);
+
+      const days = plan.days.map((day, index) => {
+        if (index === dayIndex - 1 && source) {
+          const meals = day.meals.map((m) =>
+            m.id === source.id
+              ? {
+                  ...m,
+                  servings: Math.max(1, Math.round(m.servings / 2)),
+                  estimatedCostRon: Math.round((m.estimatedCostRon / 2) * 100) / 100,
+                }
+              : m
+          );
+          return { ...day, meals, ...rebuildDayShape(meals, day) };
+        }
+        if (index === dayIndex) {
+          const meals = day.meals.map((m) =>
+            m.id === mealId
+              ? {
+                  ...m,
+                  isLeftover: false,
+                  estimatedCostRon: calculateRecipePortionCost(
+                    m.recipe,
+                    m.servings,
+                    state.preferences.supermarketId,
+                    state.preferences.excludePantryStaples
+                  ),
+                }
+              : m
+          );
+          return { ...day, meals, ...rebuildDayShape(meals, day) };
+        }
+        return day;
+      });
+
+      return withRecalculatedCart(state, days, null);
+    });
+  },
+
   toggleDislikedRecipe: (recipeId: string) => {
     set((state) => {
       const current = state.preferences.dislikedRecipeIds ?? [];
       const isRemoving = current.includes(recipeId);
-      const next = isRemoving
-        ? current.filter((id) => id !== recipeId)
-        : [...current, recipeId];
+      const next = isRemoving ? current.filter((id) => id !== recipeId) : [...current, recipeId];
 
       const nextPrefs: UserPreferences = {
         ...state.preferences,
@@ -1602,9 +1769,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
       updatedDays.forEach((d) => {
-        d.meals.forEach((m) =>
-          allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-        );
+        d.meals.forEach((m) => {
+          if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+        });
       });
 
       const aggregated = aggregateGroceryList(
@@ -1727,9 +1894,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
       updatedDays.forEach((d) => {
-        d.meals.forEach((m) =>
-          allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-        );
+        d.meals.forEach((m) => {
+          if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+        });
       });
 
       const aggregated = aggregateGroceryList(
@@ -1771,9 +1938,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (state.currentPlan) {
         const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
         state.currentPlan.days.forEach((d) => {
-          d.meals.forEach((m) =>
-            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-          );
+          d.meals.forEach((m) => {
+            if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+          });
         });
 
         const extraIds = [...updated, ...(nextPrefs.selectedDrinkIds || [])];
@@ -1818,9 +1985,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (state.currentPlan) {
         const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
         state.currentPlan.days.forEach((d) => {
-          d.meals.forEach((m) =>
-            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-          );
+          d.meals.forEach((m) => {
+            if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+          });
         });
 
         const extraIds = [...(nextPrefs.selectedSnackIds || []), ...updated];
@@ -1873,9 +2040,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (state.currentPlan) {
         const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
         state.currentPlan.days.forEach((d) => {
-          d.meals.forEach((m) =>
-            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-          );
+          d.meals.forEach((m) => {
+            if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+          });
         });
 
         const extraIds = [...(nextPrefs.selectedSnackIds || []), ...updatedDrinks];
@@ -1919,9 +2086,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (state.currentPlan) {
         const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
         state.currentPlan.days.forEach((d) => {
-          d.meals.forEach((m) =>
-            allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-          );
+          d.meals.forEach((m) => {
+            if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+          });
         });
 
         const aggregated = aggregateGroceryList(
@@ -1961,9 +2128,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
         state.currentPlan.days.forEach((d) => {
           if (d.meals && d.meals.length > 0) {
-            d.meals.forEach((m) =>
-              allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings })
-            );
+            d.meals.forEach((m) => {
+              if (!m.isLeftover) {
+                allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+              }
+            });
           } else {
             allMealsToAggregate.push({ recipe: d.recipe, servings: d.servings });
           }
@@ -2145,7 +2314,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           activeNotice: {
             id: Date.now().toString(),
             title: 'Plan deteriorat',
-            message: 'Planul salvat nu mai poate fi citit și nu a fost încărcat. Îl poți șterge din listă.',
+            message:
+              'Planul salvat nu mai poate fi citit și nu a fost încărcat. Îl poți șterge din listă.',
             type: 'error',
           },
         };
@@ -2165,10 +2335,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         appliances: state.preferences.appliances,
       };
 
-      const { days: safeDays, replacedCount, offendingAllergens } = makePlanSafeForPreferences(
-        entry.plan.days,
-        effectivePrefs
-      );
+      const {
+        days: safeDays,
+        replacedCount,
+        offendingAllergens,
+      } = makePlanSafeForPreferences(entry.plan.days, effectivePrefs);
 
       const aggregated = aggregateGroceryList(
         collectMealsFromDays(safeDays),
@@ -2326,7 +2497,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
     updatedDays.forEach((d) => {
-      d.meals.forEach((m) => allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings }));
+      d.meals.forEach((m) => {
+        if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+      });
     });
 
     const aggregated = aggregateGroceryList(
@@ -2415,7 +2588,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
     updatedDays.forEach((d) => {
-      d.meals.forEach((m) => allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings }));
+      d.meals.forEach((m) => {
+        if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+      });
     });
 
     const aggregated = aggregateGroceryList(
@@ -2451,7 +2626,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const updatedPlan = swapMealInPlan(currentPlan, dayOfWeek, preferences, slot);
     const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
     updatedPlan.days.forEach((d) => {
-      d.meals.forEach((m) => allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings }));
+      d.meals.forEach((m) => {
+        if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+      });
     });
 
     const aggregated = aggregateGroceryList(
@@ -2542,7 +2719,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
     updatedDays.forEach((d) => {
-      d.meals.forEach((m) => allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings }));
+      d.meals.forEach((m) => {
+        if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+      });
     });
 
     const aggregated = aggregateGroceryList(

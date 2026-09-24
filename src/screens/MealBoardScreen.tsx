@@ -103,6 +103,8 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     generatePlan,
     reshufflePlan,
     updatePreferencesAndRebuild,
+    cookDoubleFor,
+    undoCookDouble,
     requestConfirm,
     replaceMealWithRecipe,
     setMealsPerDayCount,
@@ -572,7 +574,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
 
         {/* Day-by-day Meal Cards Feed: Zilele una după cealaltă pe linii, mesele orizontal full-width */}
         <View style={[styles.feed, { maxWidth: contentMaxWidth }]}>
-          {currentPlan.days.map((day) => {
+          {currentPlan.days.map((day, dayIdx) => {
             const visibleMeals = day.meals.filter((m) => m.slot !== 'snack');
             const hasDessert = visibleMeals.some((m) => m.slot === 'dessert');
 
@@ -675,6 +677,12 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                           handleOpenDetail(meal.recipe, meal.servings, day.dayOfWeek, meal.slot)
                         }
                         onSwapMeal={() => handleOpenSwap(day.dayOfWeek, meal.slot)}
+                        onCookDouble={
+                          dayIdx < currentPlan.days.length - 1
+                            ? () => cookDoubleFor(day.dayOfWeek, meal.id)
+                            : undefined
+                        }
+                        onUndoCookDouble={() => undoCookDouble(day.dayOfWeek, meal.id)}
                         onRemoveMeal={
                           meal.slot === 'dessert'
                             ? () => removeMealFromDay(day.dayOfWeek, meal.id)

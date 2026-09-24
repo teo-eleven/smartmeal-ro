@@ -242,7 +242,10 @@ const BUDGET_TIE_TOLERANCE_RATIO = 0.15;
 export function collectDayMeals(days: MealPlanDay[]): { recipe: Recipe; servings: number }[] {
   const meals: { recipe: Recipe; servings: number }[] = [];
   days.forEach((day) =>
-    day.meals.forEach((meal) => meals.push({ recipe: meal.recipe, servings: meal.servings }))
+    day.meals.forEach((meal) => {
+      // A reheated portion was already shopped for on the day it was cooked.
+      if (!meal.isLeftover) meals.push({ recipe: meal.recipe, servings: meal.servings });
+    })
   );
   return meals;
 }
@@ -800,7 +803,7 @@ export function swapMealInPlan(
   const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
   updatedDays.forEach((d) => {
     d.meals.forEach((m) => {
-      allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+      if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
     });
   });
 
