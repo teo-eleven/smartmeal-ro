@@ -39,6 +39,7 @@ import { RETAIL_PRODUCTS_MAP } from '../data/retailProducts';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { ALLERGEN_CATALOG } from '../data/allergens';
 import { getRecipeAllergens } from '../utils/allergenFilter';
+import { parseUserPreferences, sanitizePantryStock } from '../utils/preferencesValidation';
 import { storageService } from '../services/storage';
 import { cloudSyncService } from '../services/supabase';
 import { areDietsCompatible, isRecipeMatchingDiets } from '../utils/dietCompatibility';
@@ -219,7 +220,11 @@ const KNOWN_ALLERGENS = new Set<string>(ALLERGEN_CATALOG.map((a) => a.id));
  * back from storage, must never be a way to end up protected against less than before.
  */
 function mergeAllergens(a?: Allergen[], b?: Allergen[]): Allergen[] {
-  return Array.from(new Set([...(a ?? []), ...(b ?? [])]));
+  // Defensive on both sides: either can arrive from storage or a cloud row as something
+  // that is not a list at all, and spreading that throws.
+  const left = Array.isArray(a) ? a : [];
+  const right = Array.isArray(b) ? b : [];
+  return Array.from(new Set([...left, ...right]));
 }
 
 /** Storage is untrusted: anything that is not a known allergen id is dropped. */
@@ -524,13 +529,36 @@ export interface PendingCloudPlan {
  * against the result, and the shopping list is recomputed rather than believed.
  */
 function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Partial<AppState> {
+  // The row crossed a network and was written by another copy of this app, possibly older.
+  // It gets the same whitelist as anything read from storage, falling back field by field to
+  // what this device already holds -- a cloud row carrying peopleCount: -3 used to be adopted
+  // whole and then threw out of a tap handler.
+  const cloudPrefs = pending.preferences
+    ? parseUserPreferences(pending.preferences, state.preferences)
+    : state.preferences;
+
   const effectivePrefs: UserPreferences = {
-    ...(pending.preferences ?? state.preferences),
+    ...cloudPrefs,
     avoidedAllergens: mergeAllergens(
       state.preferences.avoidedAllergens,
-      pending.preferences?.avoidedAllergens
+      cloudPrefs.avoidedAllergens
     ),
   };
+
+  // Even valid-looking preferences can describe a week nobody can cook. Refusing beats
+  // adopting a state the app cannot generate from.
+  const feasibility = checkPlanFeasibility(effectivePrefs);
+  if (!feasibility.isFeasible) {
+    return {
+      confirmRequest: null,
+      pendingCloudPlan: null,
+      activeNotice: buildInfeasibleNotice(
+        `Planul din cloud vine cu setări care nu permit niciun meniu aici: ${
+          feasibility.reasonRo ?? 'combinație imposibilă'
+        } Am păstrat ce ai pe dispozitivul ăsta.`
+      ),
+    };
+  }
 
   const {
     days: safeDays,
@@ -695,9 +723,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       const savedPlans = await storageService.loadSavedPlans();
       const storedTheme = await storageService.loadThemeMode();
 
-      // An older build could persist preferences that make the catalog empty, which left
-      // the app unable to start at all. Repair such a state instead of inheriting it.
-      let storedPrefs = rawStoredPrefs;
+      // Storage is untrusted, and on web it is localStorage: editable by hand, by another
+      // tab, or by an extension. Everything is whitelisted against its catalog before any of
+      // it is believed, so a `dietTypes` that is a string, a negative household or a
+      // non-numeric cupboard amount cannot reach the planner.
+      let storedPrefs: UserPreferences | null =
+        rawStoredPrefs === null || rawStoredPrefs === undefined
+          ? null
+          : parseUserPreferences(rawStoredPrefs, DEFAULT_PREFERENCES);
       let repairedPrefsNotice: SystemNotice | null = null;
 
       if (storedPrefs) {
@@ -705,9 +738,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
         // Storage is untrusted. An unreadable allergen list must not cost the user the rest
         // of their settings, and must never be silently treated as "no allergies".
-        const { allergens, wasRepaired } = sanitizeAllergens(storedPrefs.avoidedAllergens);
+        // parseUserPreferences already dropped anything unrecognisable; this only asks
+        // whether it had to, so the user can be told their list changed under them.
+        const { wasRepaired } = sanitizeAllergens(
+          (rawStoredPrefs as { avoidedAllergens?: unknown })?.avoidedAllergens
+        );
         const allergensWereRepaired = wasRepaired;
-        storedPrefs = { ...storedPrefs, avoidedAllergens: allergens };
 
         if (!checkPlanFeasibility(storedPrefs).isFeasible) {
           storedPrefs = {
@@ -2790,6 +2826,12 @@ declare global {
   }
 }
 
-if (typeof window !== 'undefined') {
+// Debug hook only. Without the __DEV__ guard this shipped in the release bundle, where any
+// script on the page could read the user's allergies -- health data -- and switch them off.
+// React Native defines global.window, so the typeof check alone does not keep it out of a
+// native release either.
+const isDevBuild = typeof __DEV__ !== 'undefined' && __DEV__;
+
+if (isDevBuild && typeof window !== 'undefined') {
   window.__SMARTMEAL_STORE__ = useAppStore;
 }

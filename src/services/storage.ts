@@ -53,7 +53,14 @@ export const storageService = {
     }
   },
 
-  async loadPreferences(): Promise<UserPreferences | null> {
+  /**
+   * Returns whatever was stored, unparsed and untyped on purpose.
+   *
+   * This was the one loader that cast its JSON straight to `UserPreferences`, while its two
+   * neighbours each had a shape gate. The caller runs it through `parseUserPreferences`,
+   * which owns the defaults; keeping that here would make this module depend on the store.
+   */
+  async loadPreferences(): Promise<unknown> {
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEYS.PREFERENCES);
       return raw ? JSON.parse(raw) : null;

@@ -1,4 +1,5 @@
 import { storageService } from '../../services/storage';
+import { parseUserPreferences } from '../../utils/preferencesValidation';
 import { useAppStore } from '../../store/useAppStore';
 import { aggregateGroceryList } from '../../engine/groceryAggregator';
 import { RECIPES } from '../../data/recipes';
@@ -13,10 +14,10 @@ describe('Grocery Screen & Storage Integration (Phase 6)', () => {
     const prefs = useAppStore.getState().preferences;
     await storageService.savePreferences(prefs);
 
-    const loaded = await storageService.loadPreferences();
-    expect(loaded).not.toBeNull();
-    expect(loaded?.supermarketId).toBe(prefs.supermarketId);
-    expect(loaded?.peopleCount).toBe(prefs.peopleCount);
+    // loadPreferences returns the raw stored value now; the store validates it.
+    const loaded = parseUserPreferences(await storageService.loadPreferences(), prefs);
+    expect(loaded.supermarketId).toBe(prefs.supermarketId);
+    expect(loaded.peopleCount).toBe(prefs.peopleCount);
   });
 
   it('saves and loads plan and grocery items from storageService', async () => {

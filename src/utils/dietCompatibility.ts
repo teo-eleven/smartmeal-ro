@@ -94,55 +94,70 @@ export function getIncompatibleDietsFor(selectedDiets: DietType[]): Set<DietType
 /**
  * Checks whether a recipe matches the user's combined dietary preferences (1 or 2 selected).
  */
+/**
+ * Whether a recipe may be served to someone on these diets.
+ *
+ * The switch below has a `default: return false`, and that default is the point: the chain of
+ * `if`s it replaced fell through to `return true` for any diet it did not recognise. Adding a
+ * diet to `DietType` without adding a branch here silently served everything, and so did a
+ * corrupted value that reached this far.
+ */
 export function isRecipeMatchingDiets(recipe: Recipe, selectedDiets: DietType[]): boolean {
   if (!selectedDiets || selectedDiets.length === 0) return true;
 
   for (const diet of selectedDiets) {
-    if (diet === 'omnivore') {
-      continue; // Omnivore accepts all recipes
-    }
+    switch (diet) {
+      case 'omnivore':
+        break; // Accepts everything.
 
-    if (diet === 'vegan') {
-      if (recipe.dietType !== 'vegan') return false;
-    }
+      case 'vegan':
+        if (recipe.dietType !== 'vegan') return false;
+        break;
 
-    if (diet === 'vegetarian') {
-      if (recipe.dietType !== 'vegetarian' && recipe.dietType !== 'vegan') return false;
-    }
+      case 'vegetarian':
+        if (recipe.dietType !== 'vegetarian' && recipe.dietType !== 'vegan') return false;
+        break;
 
-    if (diet === 'pescatarian') {
-      if (
-        recipe.dietType !== 'pescatarian' &&
-        recipe.dietType !== 'vegetarian' &&
-        recipe.dietType !== 'vegan'
-      ) {
-        return false;
+      case 'pescatarian':
+        if (
+          recipe.dietType !== 'pescatarian' &&
+          recipe.dietType !== 'vegetarian' &&
+          recipe.dietType !== 'vegan'
+        ) {
+          return false;
+        }
+        break;
+
+      case 'gluten_free': {
+        // Single source of truth with the allergen filter. A second, hand-written ingredient
+        // list drifted from this one and missed oats, soy sauce and borscht, so a user who
+        // chose the diet without also ticking the allergen was served gluten.
+        const hasGluten = recipe.ingredients.some((ing) =>
+          getIngredientAllergens(ing.ingredientId).includes('gluten')
+        );
+        if (hasGluten) return false;
+        break;
       }
-    }
 
-    if (diet === 'gluten_free') {
-      // Single source of truth with the allergen filter. A second, hand-written ingredient
-      // list drifted from this one and missed oats, soy sauce and borscht, so a user who
-      // chose the diet without also ticking the allergen was served gluten.
-      const hasGluten = recipe.ingredients.some((ing) =>
-        getIngredientAllergens(ing.ingredientId).includes('gluten')
-      );
-      if (hasGluten) return false;
-    }
+      case 'keto': {
+        const hasHighCarbs = recipe.ingredients.some(
+          (ing) =>
+            ing.ingredientId.includes('cartofi') ||
+            ing.ingredientId.includes('orez') ||
+            ing.ingredientId.includes('malai') ||
+            ing.ingredientId.includes('paste') ||
+            ing.ingredientId.includes('spaghete')
+        );
+        if (hasHighCarbs) return false;
+        break;
+      }
 
-    if (diet === 'keto') {
-      // Exclude high-carb recipes (potatoes, rice, cornmeal/mălai, pasta)
-      const hasHighCarbs = recipe.ingredients.some(
-        (ing) =>
-          ing.ingredientId.includes('cartofi') ||
-          ing.ingredientId.includes('orez') ||
-          ing.ingredientId.includes('malai') ||
-          ing.ingredientId.includes('paste') ||
-          ing.ingredientId.includes('spaghete')
-      );
-      if (hasHighCarbs) return false;
+      default:
+        // A diet nobody wrote a rule for permits nothing, rather than everything.
+        return false;
     }
   }
 
   return true;
 }
+
