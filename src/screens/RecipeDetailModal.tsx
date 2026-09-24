@@ -15,7 +15,6 @@ import { INGREDIENTS } from '../data/ingredients';
 import { MacroBar } from '../components/MacroBar';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAppStore } from '../store/useAppStore';
-import { LOCAL_RECIPE_IMAGES } from '../../assets/recipes';
 import { RecipeVisual } from '../components/RecipeVisual';
 
 import { getAppTheme } from '../styles/theme';
@@ -142,7 +141,6 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   };
 
   const totalTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
-  const hasPhoto = Boolean(LOCAL_RECIPE_IMAGES[recipe.id]);
 
   const toggleStep = (stepNumber: number) => {
     setCompletedSteps((prev) => ({
@@ -245,11 +243,6 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   {recipe.storeBadgeLabel && (
                     <View style={[styles.heroPill, { backgroundColor: getStoreBadgeBg(recipe.storeSignature) }]}>
                       <Text style={styles.heroPillText}>{recipe.storeBadgeLabel}</Text>
-                    </View>
-                  )}
-                  {hasPhoto && (
-                    <View style={[styles.heroPill, { backgroundColor: 'rgba(255, 255, 255, 0.18)', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
-                      <Text style={styles.heroPillText}>📸 Foto rețetă</Text>
                     </View>
                   )}
                 </View>

@@ -364,3 +364,150 @@ Option 2, with three rules that are not negotiable by the conflict resolution:
 mutation touched, option 1 would become defensible for the no-local-changes case and the
 confirmation could be narrowed to genuine conflicts. Adding that field is the prerequisite,
 not the timestamp comparison.
+
+
+---
+
+## ADR-12: A recipe photograph must not show an ingredient the recipe does not contain
+
+**Status:** Superseded by ADR-14 · 2026-09-24
+
+> The crop this record describes was reverted. No card shows a sharp photograph any more, so
+> the mismatch it worked around cannot appear. The reasoning is kept because it is why the
+> photographs were distrusted in the first place.
+
+### Context
+`snitele_pui_cuptor` is "Șnițele … cu salată de varză": 150 g of white cabbage, no potatoes.
+Its photograph showed the schnitzels beside a mound of mashed potato with melting butter.
+The card is a wide banner rendered with `resizeMode="cover"`, so it keeps the vertical centre
+of the source — and the centre of that photograph was the mash. The user saw a picture
+advertising a side dish their shopping list could not make, while the one it could was absent.
+
+This is the same failure as ADR-07, one level down: there the picture was of the wrong dish,
+here it is of the right dish with the wrong ingredient in it.
+
+### Options
+1. **Rewrite the recipe to match the picture** — swap the cabbage for potatoes.
+   - *Cons:* Backwards. The picture is meant to describe the recipe, not the other way round,
+     and it would change what the user cooks and buys to suit a stock photo.
+2. **Drop the photograph and fall back to the archetype card**
+   - *Pros:* Nothing wrong is shown.
+   - *Cons:* Loses a real photograph of the actual dish, on a project that deliberately
+     prefers photography where it exists.
+3. **Crop the photograph to the part that is true** *(chosen)*
+   - *Pros:* Keeps real photography of the right dish, removes the ingredient that is not in
+     the recipe. Two golden schnitzels, lemon and parsley — all of which the recipe has.
+   - *Cons:* The cabbage salad still is not shown. The picture is now silent about the side
+     rather than wrong about it, which is the best available without a new photograph.
+
+### Decision
+Option 3. Cropped from 1376×768 to 1004×369, which is also closer to the banner's own ratio,
+so `cover` crops less and what was chosen is what is seen.
+
+Two milder mismatches were left alone deliberately, with the reasoning recorded so they are
+not re-investigated: `paste_bolognese_clasice` buys `paste_penne` but the photograph shows a
+long pasta, and `muschiulet_porc_cuptor` buys `cartofi_albi` and shows them mashed rather
+than roasted. Both show an ingredient the recipe actually contains; neither misleads the
+shopping list. Cropping cannot fix a pasta shape, so those need new photographs or nothing.
+
+### Falsification Condition
+*What would make this decision wrong:* a photograph of schnitzels with cabbage salad. Then
+the crop is a workaround standing in the way of the real fix, and should be replaced outright.
+Composition cannot be asserted in a test — it needs eyes, which is why ADR-07's rule stands:
+look at the picture, never trust that the file name describes it.
+
+
+---
+
+## ADR-13: The recipe hero keeps its shape instead of its height
+
+**Status:** Accepted · 2026-09-24
+
+### Context
+`MealCard.imageContainer` was `width: '100%'` with `height: 190`. On a phone the card is
+about 500px wide, so the hero was roughly 2.7:1 — the shape the photographs were composed
+for. On a desktop browser `contentMaxWidth` resolves between 1200 and 1680, and the card
+takes all of it, so the same 190px height produced a **7:1 strip**. `resizeMode="cover"`
+then showed only the middle band of the photograph.
+
+That is why recipe pictures "looked wrong" on the web build regardless of which picture it
+was: a 7:1 slice through any plate of food is an unreadable close-up. The schnitzel photo
+was blamed first because its middle band happened to be the side dish, but cropping that one
+image only moved the problem — the slice was still a slice.
+
+### Options
+1. **Crop each photograph for the widest case**
+   - *Cons:* Solves it for one viewport and breaks the others, and there are eighteen photos
+     plus ten backdrops. Treats the symptom on every asset instead of the cause in one style.
+2. **Cap the card's width on desktop**
+   - *Cons:* `contentMaxWidth` is shared by the whole layout; narrowing it for the board
+     alone would misalign the board with the header and the shopping list.
+3. **Give the hero an aspect ratio instead of a height** *(chosen)*
+   - *Pros:* One line, fixes every card and every backdrop at once, and the photographs are
+     seen at the shape they were composed for.
+
+### Decision
+`aspectRatio: 2.85`, with `minHeight: 190` and `maxHeight: 380`.
+
+The floor is the old phone height, so phones render exactly as before. The ceiling stops the
+hero from swallowing a wide monitor: at 1364px wide the hero settles at 380px, about 3.6:1.
+All eighteen photographs were rendered at that ratio and looked at before committing.
+
+### Falsification Condition
+*What would make this decision wrong:* a layout where meal cards sit in a multi-column grid.
+Then each card is narrow again, the ceiling never binds, and the ratio should be revisited
+against the column width rather than the window.
+
+
+---
+
+## ADR-14: Every recipe card uses the same template, and none shows a sharp photograph
+
+**Status:** Accepted · 2026-09-24
+
+### Context
+Eighteen of the eighty-two recipes owned a photograph and rendered it sharp; the other
+sixty-four showed their name over a treated backdrop. Two different-looking cards in one
+list, and the eighteen were the ones that kept going wrong: wrong dish (ADR-07), wrong
+garnish (ADR-12), wrong slice of the frame (ADR-13). Each fix addressed one photograph while
+the inconsistency stayed.
+
+The user's instruction settles it: the card should look like the others, and it does not need
+to contain the actual photograph.
+
+### Options
+1. **Keep photographs and keep correcting them one at a time**
+   - *Cons:* Three rounds of this already. A photograph can disagree with a recipe in more
+     ways than a test can check, and checking needs eyes every time the catalog changes.
+2. **Give each photographed recipe its own blurred backdrop**
+   - *Pros:* Keeps some specificity.
+   - *Cons:* Eighteen cards would still differ from sixty-four, which is the complaint.
+3. **One template for all eighty-two** *(chosen)*
+   - *Pros:* One code path, one look. A treated backdrop is texture, so it cannot promise a
+     dish or a garnish the recipe does not contain — the whole class of defect disappears
+     rather than being corrected case by case.
+   - *Cons:* Loses eighteen genuine photographs of the real dishes.
+
+### Decision
+`RecipeVisual` no longer consults `LOCAL_RECIPE_IMAGES`; every recipe renders name over
+archetype backdrop. The "📸 Foto rețetă" badge went with it, from both the card and the
+detail sheet, since no card has a photograph to claim.
+
+Making archetypes right matters more now, because eighteen recipes started depending on
+theirs. Two were wrong and were fixed: the salad rule matched "salată" anywhere in the title,
+so two schnitzels and a burger were classed as salads — and salad has no backdrop, so those
+cards would have fallen back to a bare gradient while their neighbours showed a photograph.
+A dish is a salad when it *is* one, not when it comes with one.
+
+Seventy-seven of eighty-two now show a backdrop. The remaining five are genuine salads and
+wraps, archetypes with no source photograph; they keep the gradient, as ADR-07 requires —
+borrowing a picture from another archetype is the mistake that started all of this.
+
+### Accepted Trade-off
+Eighteen real photographs of the real dishes are no longer shown. They stay in the repository
+as the source material the backdrops were made from.
+
+### Falsification Condition
+*What would make this decision wrong:* a photograph for every recipe, verified by eye against
+its ingredients. Then consistency and specificity stop competing and the sharp photograph
+wins. Eighteen out of eighty-two was not that.

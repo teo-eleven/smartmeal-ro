@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { DayOfWeek, FoodTier, MealPlanDay, MealSlot, PlannedMeal, SupermarketId } from '../types';
-import { LOCAL_RECIPE_IMAGES } from '../../assets/recipes';
 import { RecipeVisual } from './RecipeVisual';
 
 import { getAppTheme } from '../styles/theme';
@@ -160,7 +159,6 @@ export const MealCard: React.FC<MealCardProps> = ({
   const theme = getAppTheme(isDark);
 
   const totalCookingTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
-  const hasPhoto = Boolean(LOCAL_RECIPE_IMAGES[recipe.id]);
 
   const isDessert = meal?.slot === 'dessert';
 
@@ -212,11 +210,6 @@ export const MealCard: React.FC<MealCardProps> = ({
 
           {/* Bottom Info Floating on Image */}
           <View style={styles.imageBottomRow}>
-            {hasPhoto && (
-              <View style={[styles.pillBadge, { backgroundColor: 'rgba(255, 255, 255, 0.16)', borderColor: 'rgba(255, 255, 255, 0.25)' }]}>
-                <Text style={styles.pillText}>📸 Foto rețetă</Text>
-              </View>
-            )}
             {recipe.tier && (
               <View style={[styles.pillBadge, { backgroundColor: getTierBadgeBg(recipe.tier) }]}>
                 <Text style={styles.pillText}>{getTierLabel(recipe.tier)}</Text>
@@ -382,7 +375,14 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: 190,
+    // A fixed height let the hero stretch with the window: on a desktop browser the card is
+    // over 1300px wide, so 190px tall made every dish a ~7:1 strip through the middle of the
+    // photograph -- unreadable whatever the picture was. Holding the shape instead keeps the
+    // dish legible at any width. The floor matches the old phone height, so phones are
+    // unchanged; the ceiling stops the hero swallowing the screen on a wide monitor.
+    aspectRatio: 2.85,
+    minHeight: 190,
+    maxHeight: 380,
     position: 'relative',
     backgroundColor: '#0f172a',
   },

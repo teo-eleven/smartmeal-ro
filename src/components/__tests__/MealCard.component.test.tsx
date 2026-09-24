@@ -127,7 +127,8 @@ describe('MealCard variants', () => {
           isDark
         />
       );
-      expect(screen.getByText(recipe.title)).toBeTruthy();
+      // The name is now drawn over the visual as well as below it, like every other card.
+      expect(screen.getAllByText(recipe.title).length).toBeGreaterThan(0);
     });
   });
 
@@ -143,7 +144,8 @@ describe('MealCard variants', () => {
           isDark={false}
         />
       );
-      expect(screen.getByText(recipe.title)).toBeTruthy();
+      // The name is now drawn over the visual as well as below it, like every other card.
+      expect(screen.getAllByText(recipe.title).length).toBeGreaterThan(0);
     });
   });
 
@@ -159,7 +161,8 @@ describe('MealCard variants', () => {
         isDark={false}
       />
     );
-    fireEvent.press(screen.getByText(recipe.title));
+    // The title below the visual is the pressable one; the visual's own copy is decorative.
+    fireEvent.press(screen.getAllByText(recipe.title).at(-1)!);
     expect(onPressRecipe).toHaveBeenCalled();
   });
 
@@ -176,7 +179,8 @@ describe('MealCard variants', () => {
         isDark={false}
       />
     );
-    expect(screen.getByText(recipe.title)).toBeTruthy();
+    // The name is now drawn over the visual as well as below it, like every other card.
+      expect(screen.getAllByText(recipe.title).length).toBeGreaterThan(0);
   });
 
   test('falls back to the day when no explicit meal is given', () => {
@@ -189,6 +193,7 @@ describe('MealCard variants', () => {
         isDark={false}
       />
     );
-    expect(screen.getByText(recipe.title)).toBeTruthy();
+    // The name is now drawn over the visual as well as below it, like every other card.
+      expect(screen.getAllByText(recipe.title).length).toBeGreaterThan(0);
   });
 });

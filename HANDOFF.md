@@ -101,7 +101,13 @@ Le-am verificat și nu stau în picioare. Sunt aici ca să nu fie reinvestigate:
   au găsit 6 din 9, iar unul singur a găsit cel mai grav defect (glutenul). **Dar 3 din
   afirmațiile lor erau false.** Verifică fiecare afirmație empiric înainte s-o accepți.
 - **Verificarea imaginilor cere ochi, nu cod de status.** Am raportat o dată „HTTP 200, totul
-  bine" pentru poze care arătau căști audio la mâncare de fasole.
+  bine" pentru poze care arătau căști audio la mâncare de fasole. A doua oară, o poză corectă
+  ca preparat arăta piure lângă o rețetă cu varză (ADR-12) — deci nu e destul să fie felul
+  potrivit, trebuie să fie și ingredientele potrivite. Un test nu poate verifica asta.
+- **Cardul de rețetă arată centrul vertical al pozei** (`resizeMode="cover"`), nu toată poza.
+  Când judeci o fotografie, judec-o pe banda din mijloc, la raportul cardului — nu ca imagine
+  de sine stătătoare. Raportul e acum fixat prin `aspectRatio` (ADR-13); înainte era înălțime
+  fixă, ceea ce făcea din fiecare poză o fâșie de 7:1 pe desktop.
 - `npm run test:coverage` — praguri în `jest.config.js`. Acum: 86,84 instrucțiuni / 65,05
   ramuri / 85,46 funcții / 87,53 linii, deci ~1,5% spațiu peste praguri. Când pică, adaugă
   teste — nu coborî pragul. Ecranele cu cea mai slabă acoperire, deci cele mai profitabile

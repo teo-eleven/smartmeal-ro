@@ -100,6 +100,12 @@ function titleSays(recipe: Recipe, words: string[]): boolean {
   return words.some((word) => title.includes(word));
 }
 
+/** True when the dish name opens with one of these words, so a garnish never counts. */
+function startsWithWord(recipe: Recipe, words: string[]): boolean {
+  const title = recipe.title.trim().toLowerCase();
+  return words.some((word) => title.startsWith(word));
+}
+
 /**
  * Picks the archetype from the recipe's own content. Order matters: the earliest match
  * wins, so the most telling signals are checked first.
@@ -124,18 +130,28 @@ export function getRecipeArchetype(recipe: Recipe): DishArchetype {
     return 'soup';
   }
   if (tags.includes('pasta_italian') || hasAny(ids, ['paste_', 'spaghete'])) return 'pasta';
+  // A wrap is defined by what it is wrapped in, not by its filling: tuna inside a tortilla
+  // used to be classed as seafood and shown a photograph of a salmon fillet.
+  if (hasAny(ids, ['lipii_tortilla'])) return 'wrap';
   if (hasAny(ids, ['somon', 'ton_conserva', 'dorada', 'creveti'])) return 'seafood';
   if (slots.includes('breakfast')) return 'breakfast';
   if (slots.includes('snack') && !slots.includes('lunch') && !slots.includes('dinner')) {
     return 'snack';
   }
-  if (tags.includes('fresh_salad') || titleSays(recipe, ['salată', 'salata'])) return 'salad';
-  if (hasAny(ids, ['lipii_tortilla', 'chifle_burger', 'paine_toast'])) return 'wrap';
+  // A dish is a salad when it IS one, not when it comes with one. Matching "salată" anywhere
+  // in the title classed two schnitzels and a burger as salads, and salad has no backdrop --
+  // so those cards fell back to a bare gradient while every neighbour showed a photograph.
+  if (tags.includes('fresh_salad') || startsWithWord(recipe, ['salată', 'salata'])) return 'salad';
+  if (hasAny(ids, ['chifle_burger', 'paine_toast'])) return 'wrap';
   if (tags.includes('grill_meat') || titleSays(recipe, ['grătar', 'gratar'])) return 'grill';
   if (hasAny(ids, ['orez_'])) return 'rice';
   if (recipe.appliances.includes('oven') || recipe.appliances.includes('air_fryer')) {
     return 'roast';
   }
+  // `stew` is the last resort, and its backdrop is a photograph of a stew in a pot. A dish
+  // that needs no appliance at all was never cooked, so it must not inherit that picture --
+  // a chickpea dip was being shown a dark meat stew.
+  if (recipe.appliances.length === 0) return 'snack';
   return 'stew';
 }
 
