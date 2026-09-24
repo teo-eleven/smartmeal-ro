@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore } from '../store/useAppStore';
@@ -39,6 +39,36 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
   } = useAppStore();
 
   const [showSnacksModal, setShowSnacksModal] = useState(false);
+  const [isShoppingMode, setIsShoppingMode] = useState(false);
+
+  // Hands are full and the phone is in a trolley: keep the screen on while shopping, where
+  // the browser allows it. Native builds would need expo-keep-awake; this degrades quietly.
+  useEffect(() => {
+    if (!isShoppingMode) return undefined;
+    let sentinel: { release: () => Promise<void> } | null = null;
+    let cancelled = false;
+
+    const wakeLock = (
+      globalThis as unknown as {
+        navigator?: { wakeLock?: { request: (type: string) => Promise<typeof sentinel> } };
+      }
+    ).navigator?.wakeLock;
+
+    if (wakeLock) {
+      wakeLock
+        .request('screen')
+        .then((lock) => {
+          if (cancelled) void lock?.release();
+          else sentinel = lock;
+        })
+        .catch(() => undefined);
+    }
+
+    return () => {
+      cancelled = true;
+      void sentinel?.release().catch(() => undefined);
+    };
+  }, [isShoppingMode]);
   const [shareCopiedFeedback, setShareCopiedFeedback] = useState(false);
   const { isDesktop, isTablet, contentMaxWidth } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;
@@ -240,6 +270,29 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
 
           {/* What this week will not use up is worth more than the trip itself, so it gets
               its own line rather than hiding inside the pantry screen. */}
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={isShoppingMode ? 'Ieși din modul cumpărături' : 'Intră în modul cumpărături'}
+            onPress={() => setIsShoppingMode((on) => !on)}
+            style={[
+              styles.shoppingModeBtn,
+              {
+                borderColor: isShoppingMode ? theme.primary : theme.border,
+                backgroundColor: isShoppingMode ? theme.primary : theme.btnBg,
+              },
+            ]}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.shoppingModeText,
+                { color: isShoppingMode ? theme.primaryText : theme.text },
+              ]}
+            >
+              {isShoppingMode ? '✓ Sunt în magazin — rânduri mari' : '🛒 Sunt în magazin'}
+            </Text>
+          </TouchableOpacity>
+
           {surplusCount > 0 && (
             <TouchableOpacity
               accessibilityRole="button"
@@ -334,6 +387,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
                 items={items}
                 onToggleItem={toggleGroceryItem}
                 isDark={isDark}
+                isShoppingMode={isShoppingMode}
               />
             </View>
           );
@@ -351,6 +405,14 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
 };
 
 const styles = StyleSheet.create({
+  shoppingModeBtn: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  shoppingModeText: { fontSize: 13, fontWeight: '800' },
   surplusBtn: {
     marginTop: 10,
     borderWidth: 1,

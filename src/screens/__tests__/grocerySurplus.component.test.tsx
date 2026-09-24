@@ -63,6 +63,16 @@ describe('surplusul pe ecranul de cumpărături', () => {
     expect(screen.getAllByText(/îți rămân .* pentru săptămâna viitoare/i).length).toBeGreaterThan(0);
   });
 
+  test('modul cumpărături se poate porni și opri', () => {
+    render(<GroceryScreen isDark={false} />);
+
+    fireEvent.press(screen.getByLabelText('Intră în modul cumpărături'));
+    expect(screen.getByLabelText('Ieși din modul cumpărături')).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Ieși din modul cumpărături'));
+    expect(screen.getByLabelText('Intră în modul cumpărături')).toBeTruthy();
+  });
+
   test('fără surplus, butonul nu apare deloc', () => {
     useAppStore.setState((s) => ({
       groceryItems: s.groceryItems.map((item) => ({ ...item, leftoverAmount: 0 })),
