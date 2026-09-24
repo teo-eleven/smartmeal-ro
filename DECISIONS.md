@@ -364,3 +364,50 @@ Option 2, with three rules that are not negotiable by the conflict resolution:
 mutation touched, option 1 would become defensible for the no-local-changes case and the
 confirmation could be narrowed to genuine conflicts. Adding that field is the prerequisite,
 not the timestamp comparison.
+
+
+---
+
+## ADR-12: A recipe photograph must not show an ingredient the recipe does not contain
+
+**Status:** Accepted · 2026-09-24
+
+### Context
+`snitele_pui_cuptor` is "Șnițele … cu salată de varză": 150 g of white cabbage, no potatoes.
+Its photograph showed the schnitzels beside a mound of mashed potato with melting butter.
+The card is a wide banner rendered with `resizeMode="cover"`, so it keeps the vertical centre
+of the source — and the centre of that photograph was the mash. The user saw a picture
+advertising a side dish their shopping list could not make, while the one it could was absent.
+
+This is the same failure as ADR-07, one level down: there the picture was of the wrong dish,
+here it is of the right dish with the wrong ingredient in it.
+
+### Options
+1. **Rewrite the recipe to match the picture** — swap the cabbage for potatoes.
+   - *Cons:* Backwards. The picture is meant to describe the recipe, not the other way round,
+     and it would change what the user cooks and buys to suit a stock photo.
+2. **Drop the photograph and fall back to the archetype card**
+   - *Pros:* Nothing wrong is shown.
+   - *Cons:* Loses a real photograph of the actual dish, on a project that deliberately
+     prefers photography where it exists.
+3. **Crop the photograph to the part that is true** *(chosen)*
+   - *Pros:* Keeps real photography of the right dish, removes the ingredient that is not in
+     the recipe. Two golden schnitzels, lemon and parsley — all of which the recipe has.
+   - *Cons:* The cabbage salad still is not shown. The picture is now silent about the side
+     rather than wrong about it, which is the best available without a new photograph.
+
+### Decision
+Option 3. Cropped from 1376×768 to 1004×369, which is also closer to the banner's own ratio,
+so `cover` crops less and what was chosen is what is seen.
+
+Two milder mismatches were left alone deliberately, with the reasoning recorded so they are
+not re-investigated: `paste_bolognese_clasice` buys `paste_penne` but the photograph shows a
+long pasta, and `muschiulet_porc_cuptor` buys `cartofi_albi` and shows them mashed rather
+than roasted. Both show an ingredient the recipe actually contains; neither misleads the
+shopping list. Cropping cannot fix a pasta shape, so those need new photographs or nothing.
+
+### Falsification Condition
+*What would make this decision wrong:* a photograph of schnitzels with cabbage salad. Then
+the crop is a workaround standing in the way of the real fix, and should be replaced outright.
+Composition cannot be asserted in a test — it needs eyes, which is why ADR-07's rule stands:
+look at the picture, never trust that the file name describes it.
