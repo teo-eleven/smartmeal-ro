@@ -8,8 +8,8 @@
 Code review pe **toată** aplicația, nu doar pe diferența sesiunii: eu întâi, apoi doi agenți
 (`code-reviewer` și `security-reviewer`) în paralel, iar la final am verificat empiric fiecare
 afirmație a lor înainte s-o accept. Au ieșit 9 defecte reale. **Toate sunt reparate**, fiecare
-cu testul care l-ar fi prins. Apoi a fost cablată sincronizarea descendentă din cloud (ADR-11).
-Teste: 434 → 518.
+cu testul care l-ar fi prins. Apoi a fost cablată sincronizarea descendentă din cloud (ADR-11),
+iar cardurile de rețetă au fost aduse pe un singur șablon (ADR-14). Teste: 434 → 526.
 
 ## Următorul pas exact
 
@@ -102,16 +102,30 @@ Le-am verificat și nu stau în picioare. Sunt aici ca să nu fie reinvestigate:
   afirmațiile lor erau false.** Verifică fiecare afirmație empiric înainte s-o accepți.
 - **Verificarea imaginilor cere ochi, nu cod de status.** Am raportat o dată „HTTP 200, totul
   bine" pentru poze care arătau căști audio la mâncare de fasole. A doua oară, o poză corectă
-  ca preparat arăta piure lângă o rețetă cu varză (ADR-12) — deci nu e destul să fie felul
-  potrivit, trebuie să fie și ingredientele potrivite. Un test nu poate verifica asta.
+  ca preparat arăta piure lângă o rețetă cu varză — deci nu e destul să fie felul potrivit,
+  trebuie să fie și ingredientele potrivite. Un test nu poate verifica asta. Din ADR-14 nu se
+  mai afișează nicio fotografie clară, deci regula se aplică acum doar fundalurilor.
+- **Întreabă ce înseamnă „bine" înainte să repari o problemă vizuală.** Am reparat patru
+  defecte reale (registru greșit, două arhetipuri greșite, raportul cardului) înainte să aflu
+  că se cerea de fapt consecvență, nu corectitudine bucată cu bucată. Patru reparații corecte
+  la altă problemă decât a lui tot înseamnă eșec.
 - **Cardul de rețetă arată centrul vertical al pozei** (`resizeMode="cover"`), nu toată poza.
   Când judeci o fotografie, judec-o pe banda din mijloc, la raportul cardului — nu ca imagine
   de sine stătătoare. Raportul e acum fixat prin `aspectRatio` (ADR-13); înainte era înălțime
   fixă, ceea ce făcea din fiecare poză o fâșie de 7:1 pe desktop.
-- `npm run test:coverage` — praguri în `jest.config.js`. Acum: 86,84 instrucțiuni / 65,05
-  ramuri / 85,46 funcții / 87,53 linii, deci ~1,5% spațiu peste praguri. Când pică, adaugă
+- `npm run test:coverage` — praguri în `jest.config.js`. Acum: 87,23 instrucțiuni / 65,47
+  ramuri / 85,90 funcții / 87,93 linii, deci ~1,9% spațiu peste praguri. Când pică, adaugă
   teste — nu coborî pragul. Ecranele cu cea mai slabă acoperire, deci cele mai profitabile
   de atacat: `PantryInventoryModal` (22%), `GroceryScreen` (29%), `SnacksAndDrinksModal` (45%).
+
+## Ce a mai rămas, și pentru cine
+
+Doar lucruri care cer credențialele tale:
+
+1. **Rulează migrația `0001_user_meal_plans.sql`.** Fără ea nu există RLS, iar cheia `anon`
+   (publică prin design) ar putea citi planurile altora. Obligatoriu înainte de orice deploy
+   cu cloud activ.
+2. **Publică funcția edge și setează `ALLOWED_ORIGINS`.** Pașii: `supabase/README.md`.
 
 ## Întrebări pentru tine
 

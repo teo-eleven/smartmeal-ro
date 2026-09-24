@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { RECIPES } from '../../data/recipes';
 import { getRecipeArchetype } from '../recipeVisual';
-import { LOCAL_RECIPE_IMAGES } from '../../../assets/recipes';
 import { ARCHETYPE_BACKDROPS } from '../../../assets/recipes/backdrops';
 
 const byTitle = (fragment: string) =>
@@ -15,22 +14,16 @@ const byTitle = (fragment: string) =>
  * and the user sees a wrong picture, which is the whole thing ADR-07 exists to prevent.
  */
 describe('registrul de fotografii', () => {
-  test('fiecare cheie corespunde unei rețete reale din catalog', () => {
-    const known = new Set(RECIPES.map((recipe) => recipe.id));
-    const orphans = Object.keys(LOCAL_RECIPE_IMAGES).filter((id) => !known.has(id));
-
-    expect(orphans).toEqual([]);
-  });
-
-  test('nicio rețetă nu mai afișează o fotografie clară', () => {
-    // Every card goes through the same template now (ADR-14), so the registry is history:
-    // it is kept only as the source material for the archetype backdrops.
+  test('nicio rețetă nu afișează o fotografie clară', () => {
+    // One template for every card (ADR-14): the per-recipe photo registry is gone, so the
+    // only imagery left is the treated archetype backdrop.
     const source = fs.readFileSync(
       path.join(__dirname, '..', '..', 'components', 'RecipeVisual.tsx'),
       'utf8'
     );
 
     expect(source).not.toContain('LOCAL_RECIPE_IMAGES');
+    expect(source).not.toContain('assets/recipes\'');
   });
 });
 
@@ -68,9 +61,7 @@ describe('arhetipul hotărăște ce fotografie vede utilizatorul', () => {
     // `stew` is the last resort of the ladder, and its backdrop is a photograph of a stew in
     // a pot. A dish that needs no appliance at all is not a stew under any reading, so it
     // must never inherit that picture. A vegan bean stew still may -- it is a stew.
-    const onStew = RECIPES.filter(
-      (recipe) => !LOCAL_RECIPE_IMAGES[recipe.id] && getRecipeArchetype(recipe) === 'stew'
-    );
+    const onStew = RECIPES.filter((recipe) => getRecipeArchetype(recipe) === 'stew');
     const uncooked = onStew.filter((recipe) => recipe.appliances.length === 0);
 
     expect(uncooked.map((recipe) => recipe.title)).toEqual([]);

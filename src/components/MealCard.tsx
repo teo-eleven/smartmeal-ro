@@ -166,6 +166,7 @@ export const MealCard: React.FC<MealCardProps> = ({
     <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%', flex: 1, height: '100%' }}>
       <TouchableOpacity
         accessibilityRole="button"
+        accessibilityLabel={`${recipe.title}. Vezi rețeta.`}
         activeOpacity={0.92}
         onPress={onPressRecipe}
         onPressIn={handlePressIn}
@@ -231,10 +232,8 @@ export const MealCard: React.FC<MealCardProps> = ({
 
         {/* Content Body */}
         <View style={styles.contentBody}>
-          <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
-            {recipe.title}
-          </Text>
-
+          {/* The dish name is set over the visual just above; repeating it here said the
+              same thing twice in the space of two lines. */}
           <Text style={[styles.description, { color: theme.textMuted }]} numberOfLines={2}>
             {recipe.description}
           </Text>
