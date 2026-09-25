@@ -6,6 +6,8 @@ import { getAppTheme } from '../styles/theme';
 interface ReminderSettingsPanelProps {
   reminders: ReminderSettings;
   onChange: (patch: Partial<ReminderSettings>) => void;
+  /** Email reminders come from the server, so they need an account to mean anything. */
+  hasAccount: boolean;
   isDark: boolean;
 }
 
@@ -24,6 +26,7 @@ const SHOPPING_TIMES = ['08:00', '09:00', '10:00', '11:00', '16:00', '17:00', '1
 export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
   reminders,
   onChange,
+  hasAccount,
   isDark,
 }) => {
   const theme = getAppTheme(isDark);
@@ -135,6 +138,79 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
           </Text>
         </View>
       </TouchableOpacity>
+
+      {/* Sent from the server, so it only means anything with an account. Offering it to a
+          guest would be a switch that quietly does nothing. */}
+      {hasAccount && (
+        <>
+          <TouchableOpacity
+            accessibilityRole="switch"
+            accessibilityState={{ checked: reminders.emailEnabled }}
+            accessibilityLabel="Mementouri pe email"
+            onPress={() => onChange({ emailEnabled: !reminders.emailEnabled })}
+            style={[styles.toggleRow, { borderColor: theme.border }]}
+            activeOpacity={0.8}
+          >
+            <View style={styles.toggleText}>
+              <Text style={[styles.toggleTitle, { color: theme.text }]}>Și pe email</Text>
+              <Text style={[styles.toggleHint, { color: theme.textMuted }]}>
+                Rar, nu zilnic — doar cât să nu uiți de plan
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.pill,
+                {
+                  backgroundColor: reminders.emailEnabled ? theme.primary : theme.btnBg,
+                  borderColor: reminders.emailEnabled ? theme.primary : theme.border,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.pillText,
+                  { color: reminders.emailEnabled ? theme.primaryText : theme.textMuted },
+                ]}
+              >
+                {reminders.emailEnabled ? 'Pornit' : 'Oprit'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {reminders.emailEnabled && (
+            <View style={styles.chipRow}>
+              {[2, 3, 7].map((days) => {
+                const active = reminders.emailFrequencyDays === days;
+                return (
+                  <TouchableOpacity
+                    key={days}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Email la ${days} zile`}
+                    onPress={() => onChange({ emailFrequencyDays: days })}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: active ? theme.primary : theme.btnBg,
+                        borderColor: active ? theme.primary : theme.border,
+                      },
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        { color: active ? theme.primaryText : theme.textMuted },
+                      ]}
+                    >
+                      {days === 7 ? 'săptămânal' : `la ${days} zile`}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </>
+      )}
 
       {reminders.shoppingEnabled && (
         <>

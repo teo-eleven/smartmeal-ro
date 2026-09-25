@@ -160,6 +160,7 @@ export function parseReminderSettings(value: unknown): ReminderSettings {
     typeof candidate === 'string' && TIME_PATTERN.test(candidate) ? candidate : fallback;
 
   const weekday = Number(raw.shoppingWeekday);
+  const frequency = Number(raw.emailFrequencyDays);
 
   return {
     cookingEnabled: raw.cookingEnabled === true,
@@ -170,5 +171,12 @@ export function parseReminderSettings(value: unknown): ReminderSettings {
         ? weekday
         : DEFAULT_REMINDERS.shoppingWeekday,
     shoppingTime: time(raw.shoppingTime, DEFAULT_REMINDERS.shoppingTime),
+    emailEnabled: raw.emailEnabled === true,
+    // Clamped rather than rejected: a value outside the range is a stale client, not an
+    // attack, and the database would refuse the write anyway.
+    emailFrequencyDays:
+      Number.isInteger(frequency) && frequency >= 2 && frequency <= 7
+        ? frequency
+        : DEFAULT_REMINDERS.emailFrequencyDays,
   };
 }

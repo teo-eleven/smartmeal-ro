@@ -31,8 +31,9 @@ Acestea sunt stocate local. Le poți șterge oricând din aplicație, prin „Re
 
 ### În cloud, **numai dacă îți faci cont**
 
-- **adresa de email**, pentru autentificare
+- **adresa de email**, pentru autentificare și, dacă o ceri, pentru mementouri
 - planul, lista de cumpărături și preferințele de mai sus, ca să le regăsești pe alt telefon
+- alegerea ta privind mementourile: dacă le vrei, la ce oră, și la câte zile pe email
 
 Parola nu ne este niciodată vizibilă: autentificarea e gestionată de Supabase, care stochează
 doar o amprentă criptografică a ei.
@@ -55,9 +56,15 @@ Date de plată. Aplicația cere o singură permisiune Android: accesul la intern
 | --- | --- | --- |
 | **Supabase** (găzduire UE) | email, plan, preferințe | doar dacă ai cont; stocare și autentificare |
 | **Google Gemini** | id-uri de rețete și preferințele planului, **fără email și fără date de identificare** | doar când apeși explicit „Întreabă AI" pentru o sugestie de înlocuire |
+| **Resend** (livrare de email) | adresa de email și conținutul mementoului | doar dacă ai pornit mementourile pe email |
 
 Cererea către Gemini pleacă de pe serverul nostru, nu de pe telefonul tău, și nu conține
 adresa ta de email sau vreun identificator al contului.
+
+Mementourile de pe telefon sunt programate **local**, pe dispozitiv: nu colectăm niciun token
+de notificare și nu trece nimic prin serverele noastre pentru ele. Mementourile pe email sunt
+oprite din start; se trimit numai după ce le pornești tu, se opresc din același loc, iar
+fiecare email spune unde se opresc.
 
 ## Cât păstrăm datele
 

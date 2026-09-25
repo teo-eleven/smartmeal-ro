@@ -291,7 +291,9 @@ export const cloudSyncService = {
     try {
       const { data, error } = await client
         .from('user_reminders')
-        .select('cooking_enabled, cooking_time, shopping_enabled, shopping_weekday, shopping_time')
+        .select(
+          'cooking_enabled, cooking_time, shopping_enabled, shopping_weekday, shopping_time, email_enabled, email_frequency_days'
+        )
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -305,6 +307,8 @@ export const cloudSyncService = {
         shoppingEnabled: data.shopping_enabled,
         shoppingWeekday: data.shopping_weekday,
         shoppingTime: data.shopping_time,
+        emailEnabled: data.email_enabled,
+        emailFrequencyDays: data.email_frequency_days,
       });
     } catch (e) {
       console.warn('[Supabase] Could not read the reminder settings:', e);
@@ -329,6 +333,8 @@ export const cloudSyncService = {
           shopping_enabled: reminders.shoppingEnabled,
           shopping_weekday: reminders.shoppingWeekday,
           shopping_time: reminders.shoppingTime,
+          email_enabled: reminders.emailEnabled,
+          email_frequency_days: reminders.emailFrequencyDays,
         },
         { onConflict: 'user_id' }
       );

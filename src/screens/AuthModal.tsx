@@ -190,7 +190,9 @@ export function AuthModal({
 
     setLoading(true);
     try {
-      const { success, error } = await cloudSyncService.updatePassword(newPassword);
+      // The address is needed by the local simulation, which has no session to hang the new
+      // password on; the real backend ignores it and uses the session the code produced.
+      const { success, error } = await cloudSyncService.updatePassword(newPassword, email.trim());
       if (!success) {
         setErrorMessage(error ?? 'Parola nu a putut fi schimbată.');
         return;
@@ -296,6 +298,7 @@ export function AuthModal({
                 <ReminderSettingsPanel
                   reminders={reminders}
                   onChange={updateReminders}
+                  hasAccount={Boolean(userEmail)}
                   isDark={isDark}
                 />
 

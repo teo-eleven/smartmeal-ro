@@ -61,6 +61,8 @@ const ON: ReminderSettings = {
   shoppingEnabled: true,
   shoppingWeekday: 5,
   shoppingTime: '10:00',
+  emailEnabled: false,
+  emailFrequencyDays: 3,
 };
 
 function planOf(days: DayOfWeek[]) {

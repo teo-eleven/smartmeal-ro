@@ -19,7 +19,7 @@ GIT curat
 
 ## Următorul pas exact
 
-**`STORE.md`, secțiunea 1.** Rulează `supabase db push` și publică cele două funcții edge.
+**`STORE.md`, secțiunea 1.** Rulează `supabase db push` și publică cele trei funcții edge.
 Până atunci butonul de ștergere a contului există în aplicație dar nu are ce apela, iar fără
 migrația 0001 nu există RLS.
 
@@ -63,10 +63,25 @@ la `NSUserDefaults` · App Transport Security fără excepții · Android cu o s
   pentru cumpărături. Programate **local**, deci merg fără internet și nu colectează niciun
   token de notificare. Migrația **0003** ține alegerea, nu mementoul, ca să urmeze contul pe
   alt telefon.
+- **Poarta de la prima pornire**: te conectezi sau îți faci cont înainte de a folosi
+  aplicația. „Continuă fără cont" există și rămâne — fără ea, Apple respinge la 5.1.1(i).
+  Sesiunea e de 30 de zile, dar **asta se setează în proiectul Supabase**
+  (Authentication → Sessions), nu din cod; dacă serverul expiră tokenul mai devreme, omul e
+  scos afară oricât ar spune aplicația altceva. Vezi `STORE.md` §1.
+- **Simularea locală de conturi** (`localAuthSimulation`): pornește doar când *nu* există
+  Supabase configurat **și** mediul nu e `production`. Ține o amprentă, nu parola. Codul de
+  resetare e fix, `123456`, ca să poți parcurge fluxul fără email.
+- **Mementouri pe email, la 2–7 zile** (implicit 3): comutatorul apare doar cu cont, fiindcă
+  fără cont n-ar avea unde trimite. Migrația **0004** ține frecvența și ultima trimitere;
+  funcția edge `send-reminder-emails` le trimite prin Resend, apărată de `x-cron-secret`.
+  **Nu trimite nimic până nu faci pașii din `STORE.md` §1b** — până atunci comutatorul doar
+  salvează alegerea, ceea ce e în regulă: la lansare preferința omului există deja.
 
 ## Ce e blocat — doar de tine
 
-1. **`supabase db push`** (acum trei migrații) și publicarea celor două funcții edge.
+1. **`supabase db push`** (acum patru migrații) și publicarea celor trei funcții edge.
+   Pentru emailuri mai trebuie un cont Resend cu domeniu verificat și cron-ul zilnic —
+   `STORE.md` §1b, cu tot ce se copiază de-a gata.
    Plus, în Supabase → Authentication: activează confirmarea emailului, verifică șablonul de
    recuperare a parolei și ridică lungimea minimă a parolei la 10. Detalii în `STORE.md` §1.
 2. **Completează și publică `PRIVACY.md`** la un URL public. Ambele magazine cer link-ul.

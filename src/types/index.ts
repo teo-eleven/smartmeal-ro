@@ -132,6 +132,14 @@ export interface ReminderSettings {
   /** 0 = Monday, matching the order of DayOfWeek. */
   shoppingWeekday: number;
   shoppingTime: string;
+  /**
+   * Email nudges, sent from the server rather than scheduled on the phone. Off by default
+   * and never daily -- a planner that emails every morning gets muted, and a muted channel
+   * is worth less than no channel.
+   */
+  emailEnabled: boolean;
+  /** Minimum days between emails. Two is the floor; the database enforces the same. */
+  emailFrequencyDays: number;
 }
 
 export const DEFAULT_REMINDERS: ReminderSettings = {
@@ -140,6 +148,8 @@ export const DEFAULT_REMINDERS: ReminderSettings = {
   shoppingEnabled: false,
   shoppingWeekday: 5,
   shoppingTime: '10:00',
+  emailEnabled: false,
+  emailFrequencyDays: 3,
 };
 
 export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert';

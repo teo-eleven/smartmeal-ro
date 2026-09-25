@@ -11,7 +11,8 @@ nu sunt protejate.
 
 - [ ] `supabase login` și `supabase link --project-ref <ref>`
 - [ ] `supabase db push` — rulează migrațiile **0001** (tabela planurilor, RLS, limite de
-      mărime), **0002** (limita de rată partajată pentru AI) și **0003** (mementourile)
+      mărime), **0002** (limita de rată partajată pentru AI), **0003** (mementourile) și
+      **0004** (mementourile pe email: frecvența și ultima trimitere)
 - [ ] în Supabase → Authentication → Email: activează **Confirm email** și verifică șablonul
       de recuperare a parolei. Codul de șase cifre din email e ce tastează utilizatorul
       înapoi în aplicație
@@ -22,12 +23,52 @@ nu sunt protejate.
 - [ ] `supabase functions deploy proxy-gemini-plan`
 - [ ] `supabase functions deploy delete-account` — **obligatorie**, altfel butonul de ștergere
       a contului din aplicație nu are ce apela, iar submisia e respinsă
+- [ ] Authentication → Sessions: pune durata sesiunii pe **30 de zile**. Aplicația nu poate
+      decide asta singură — ține de proiectul Supabase, iar dacă serverul expiră tokenul mai
+      devreme, utilizatorul e scos afară oricât de mult ar spune aplicația altceva
 - [ ] în `.env`: `EXPO_PUBLIC_SUPABASE_URL` (obligatoriu `https://`) și
       `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 - [ ] pune o **alertă de buget** pe proiectul Google Cloud pentru cheia Gemini
 
 Cheia `service_role` nu se pune niciodată în `.env` și nu ajunge niciodată în client.
 Supabase o injectează singur în funcțiile edge.
+
+### 1b. Mementourile pe email — se pornesc la lansare
+
+Codul e scris și testat, dar nu trimite nimic până nu faci pașii ăștia. Până atunci
+comutatorul din aplicație salvează alegerea și atât, ceea ce e în regulă: la prima trimitere
+preferința omului există deja.
+
+- [ ] cont [Resend](https://resend.com) și un domeniu verificat. Fără domeniu verificat
+      emailurile ajung în spam sau sunt respinse
+- [ ] `supabase secrets set RESEND_API_KEY=<cheia>`
+- [ ] `supabase secrets set REMINDER_FROM='SmartMeal RO <noreply@domeniul-tau.ro>'`
+- [ ] `supabase secrets set APP_URL=https://domeniul-tau.ro`
+- [ ] `supabase secrets set CRON_SECRET=<un șir lung, aleator>` — funcția refuză orice apel
+      care nu vine cu el în antetul `x-cron-secret`. Generează-l cu
+      `openssl rand -base64 32`, nu din cap
+- [ ] `supabase functions deploy send-reminder-emails --no-verify-jwt` (o cheamă cron-ul, nu
+      un utilizator; poarta e `x-cron-secret`)
+- [ ] programează-o zilnic, din SQL editor:
+
+```sql
+select cron.schedule(
+  'smartmeal-reminder-emails',
+  '0 8 * * *',
+  $$select net.http_post(
+      url := 'https://<ref>.supabase.co/functions/v1/send-reminder-emails',
+      headers := '{"x-cron-secret":"<același șir>"}'::jsonb
+  )$$
+);
+```
+
+Rulează în fiecare zi, dar trimite doar cui i-a trecut intervalul ales (2–7 zile) de la
+ultimul email — asta decide `reminders_due_for_email()` din migrația 0004, nu orarul cron.
+`mark_reminder_email_sent()` se apelează **numai** după ce Resend confirmă, deci o pană de
+email nu consumă intervalul.
+
+- [ ] trimite-ți primul email ție, cu contul tău, și citește-l cap-coadă — inclusiv varianta
+      text — înainte de a-l lăsa să plece către utilizatori reali
 
 ## 2. Configurația aplicației — gata
 
@@ -72,16 +113,16 @@ Console (25 USD, o dată).
 
 Răspunde exact așa — corespunde cu ce face codul:
 
-| Întrebare | Răspuns |
-| --- | --- |
-| Colectați date? | Da |
-| Ce tip | **Contact Info → Email Address** și **Health & Fitness → Health** (alergiile și restricțiile alimentare) |
-| Legate de identitate? | Da, dacă utilizatorul își face cont |
-| Folosite pentru urmărire? | **Nu** |
-| Folosite pentru publicitate? | **Nu** |
-| Partajate cu terți? | Doar procesatori: Supabase (găzduire) și Google Gemini (sugestii AI, fără date de identificare) |
-| Ștergerea contului | Da, din aplicație: ecranul de cont → „Șterge contul și datele mele" |
-| Notificări | Locale, programate pe telefon. Nu există push de pe server, deci nu se colectează token-uri de notificare |
+| Întrebare                    | Răspuns                                                                                                   |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Colectați date?              | Da                                                                                                        |
+| Ce tip                       | **Contact Info → Email Address** și **Health & Fitness → Health** (alergiile și restricțiile alimentare)  |
+| Legate de identitate?        | Da, dacă utilizatorul își face cont                                                                       |
+| Folosite pentru urmărire?    | **Nu**                                                                                                    |
+| Folosite pentru publicitate? | **Nu**                                                                                                    |
+| Partajate cu terți?          | Doar procesatori: Supabase (găzduire) și Google Gemini (sugestii AI, fără date de identificare)           |
+| Ștergerea contului           | Da, din aplicație: ecranul de cont → „Șterge contul și datele mele"                                       |
+| Notificări                   | Locale, programate pe telefon. Nu există push de pe server, deci nu se colectează token-uri de notificare |
 
 Google Play cere în plus o **adresă web** de la care se poate cere ștergerea contului. Pune un
 formular sau adresa de email din politică.
