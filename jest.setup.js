@@ -18,3 +18,15 @@ jest.mock('expo-secure-store', () => {
     },
   };
 });
+
+// expo-notifications reaches for a native module that does not exist under Jest. The
+// scheduling logic is covered directly in reminderScheduler.test.ts, which supplies its own
+// mock; this one only keeps the module importable everywhere else.
+jest.mock('expo-notifications', () => ({
+  SchedulableTriggerInputTypes: { WEEKLY: 'weekly' },
+  getPermissionsAsync: async () => ({ granted: true, canAskAgain: true }),
+  requestPermissionsAsync: async () => ({ granted: true }),
+  getAllScheduledNotificationsAsync: async () => [],
+  scheduleNotificationAsync: async () => 'stub-id',
+  cancelScheduledNotificationAsync: async () => undefined,
+}));

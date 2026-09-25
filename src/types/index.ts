@@ -118,6 +118,30 @@ export interface Recipe {
 /** Follows the phone unless the user overrides it. */
 export type ThemeMode = 'system' | 'light' | 'dark';
 
+/**
+ * When the user wants to be nudged.
+ *
+ * The notifications are scheduled on the device, because a phone knows the time without a
+ * connection. These settings follow the account so a second phone behaves the same.
+ */
+export interface ReminderSettings {
+  cookingEnabled: boolean;
+  /** Local wall-clock time as HH:MM. */
+  cookingTime: string;
+  shoppingEnabled: boolean;
+  /** 0 = Monday, matching the order of DayOfWeek. */
+  shoppingWeekday: number;
+  shoppingTime: string;
+}
+
+export const DEFAULT_REMINDERS: ReminderSettings = {
+  cookingEnabled: false,
+  cookingTime: '17:30',
+  shoppingEnabled: false,
+  shoppingWeekday: 5,
+  shoppingTime: '10:00',
+};
+
 export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert';
 export type FoodTier = 'basic' | 'medium' | 'premium';
 

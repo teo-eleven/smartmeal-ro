@@ -1,7 +1,8 @@
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { secureSessionStore } from './secureSessionStore';
 import { env } from '../../config/env';
-import { MealPlan, GroceryListItem, UserPreferences } from '../types';
+import { MealPlan, GroceryListItem, ReminderSettings, UserPreferences } from '../types';
+import { parseReminderSettings } from '../utils/preferencesValidation';
 import { isWellFormedPlan } from './storage';
 
 let supabaseClientInstance: SupabaseClient | null = null;
@@ -224,6 +225,64 @@ export const cloudSyncService = {
       return { success: true, error: null };
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Eroare la schimbarea parolei.';
+      return { success: false, error: message };
+    }
+  },
+
+  /** Reads the reminder choices stored against the account, whitelisting every field. */
+  async loadReminders(userId: string): Promise<ReminderSettings | null> {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    try {
+      const { data, error } = await client
+        .from('user_reminders')
+        .select('cooking_enabled, cooking_time, shopping_enabled, shopping_weekday, shopping_time')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error || !data) return null;
+
+      // The table speaks snake_case; the app speaks camelCase. Mapping here keeps a single
+      // validator rather than one parser trying to understand two spellings.
+      return parseReminderSettings({
+        cookingEnabled: data.cooking_enabled,
+        cookingTime: data.cooking_time,
+        shoppingEnabled: data.shopping_enabled,
+        shoppingWeekday: data.shopping_weekday,
+        shoppingTime: data.shopping_time,
+      });
+    } catch (e) {
+      console.warn('[Supabase] Could not read the reminder settings:', e);
+      return null;
+    }
+  },
+
+  /** Writes them back, keyed on the user so a second device picks them up. */
+  async saveReminders(
+    userId: string,
+    reminders: ReminderSettings
+  ): Promise<{ success: boolean; error: string | null }> {
+    const client = getSupabaseClient();
+    if (!client) return { success: false, error: 'Cloud neconfigurat.' };
+
+    try {
+      const { error } = await client.from('user_reminders').upsert(
+        {
+          user_id: userId,
+          cooking_enabled: reminders.cookingEnabled,
+          cooking_time: reminders.cookingTime,
+          shopping_enabled: reminders.shoppingEnabled,
+          shopping_weekday: reminders.shoppingWeekday,
+          shopping_time: reminders.shoppingTime,
+        },
+        { onConflict: 'user_id' }
+      );
+
+      if (error) return { success: false, error: error.message };
+      return { success: true, error: null };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Eroare la salvarea mementourilor.';
       return { success: false, error: message };
     }
   },

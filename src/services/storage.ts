@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   GROCERY_ITEMS: '@smartmeal_grocery_items',
   SAVED_PLANS: '@smartmeal_saved_plans',
   THEME_MODE: '@smartmeal_theme_mode',
+  REMINDERS: '@smartmeal_reminders',
 };
 
 /** Shape check for a row read back from storage, before anything relies on it. */
@@ -158,6 +159,25 @@ export const storageService = {
       return await AsyncStorage.getItem(STORAGE_KEYS.THEME_MODE);
     } catch (e) {
       console.warn('[StorageService] Failed to load the theme choice', e);
+      return null;
+    }
+  },
+
+  async saveReminders(reminders: unknown): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify(reminders));
+    } catch (e) {
+      console.warn('[StorageService] Failed to save the reminder settings', e);
+    }
+  },
+
+  /** Raw on purpose, like loadPreferences: the caller validates before believing it. */
+  async loadReminders(): Promise<unknown> {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.REMINDERS);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.warn('[StorageService] Failed to load the reminder settings', e);
       return null;
     }
   },

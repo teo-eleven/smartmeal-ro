@@ -14,6 +14,8 @@ import {
   PlannedMeal,
   Recipe,
   RetailProduct,
+  DEFAULT_REMINDERS,
+  ReminderSettings,
   SupermarketId,
   ThemeMode,
   UserPreferences,
@@ -40,7 +42,8 @@ import { RETAIL_PRODUCTS_MAP } from '../data/retailProducts';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { ALLERGEN_CATALOG } from '../data/allergens';
 import { getRecipeAllergens } from '../utils/allergenFilter';
-import { parseUserPreferences } from '../utils/preferencesValidation';
+import { parseReminderSettings, parseUserPreferences } from '../utils/preferencesValidation';
+import { reminderScheduler } from '../services/reminderScheduler';
 import { storageService } from '../services/storage';
 import { cloudSyncService } from '../services/supabase';
 import { areDietsCompatible, isRecipeMatchingDiets } from '../utils/dietCompatibility';
@@ -164,6 +167,9 @@ export interface AppState {
   syncFromCloud: () => Promise<void>;
   themeMode: ThemeMode;
   cycleThemeMode: () => void;
+  reminders: ReminderSettings;
+  updateReminders: (patch: Partial<ReminderSettings>) => void;
+  loadRemindersFromCloud: () => Promise<void>;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -709,6 +715,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeView: 'onboarding',
   isHydrated: false,
   themeMode: 'system',
+  reminders: { ...DEFAULT_REMINDERS },
   userEmail: null,
   isSyncing: false,
   lastSyncedAt: null,
@@ -755,6 +762,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const { plan, items } = await storageService.loadPlanAndGrocery();
       const savedPlans = await storageService.loadSavedPlans();
       const storedTheme = await storageService.loadThemeMode();
+      const storedReminders = parseReminderSettings(await storageService.loadReminders());
 
       // Storage is untrusted, and on web it is localStorage: editable by hand, by another
       // tab, or by an extension. Everything is whitelisted against its catalog before any of
@@ -956,6 +964,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
             ? storedTheme
             : state.themeMode,
+        reminders: storedReminders,
         activeNotice:
           (repairedPrefsNotice?.type === 'warning' ? repairedPrefsNotice : null) ??
           planSafetyNotice ??
@@ -985,6 +994,47 @@ export const useAppStore = create<AppState>((set, get) => ({
    * System, then light, then dark. Following the phone is the right default, but a kitchen
    * at night and a kitchen at noon are not the same room.
    */
+  /**
+   * Changes a reminder choice, then rebuilds the schedule from it.
+   *
+   * The notifications live on the device; this only records the intention and asks the
+   * scheduler to catch up. Saving to the account happens alongside, so a second phone
+   * behaves the same -- but a signed-out user still gets their reminders.
+   */
+  updateReminders: (patch: Partial<ReminderSettings>) => {
+    const next: ReminderSettings = { ...get().reminders, ...patch };
+    set({ reminders: next });
+
+    void storageService.saveReminders(next);
+    void reminderScheduler.reschedule(next, get().currentPlan);
+
+    const email = get().userEmail;
+    if (email) {
+      void (async () => {
+        const user = await cloudSyncService.getCurrentUser();
+        if (user) void cloudSyncService.saveReminders(user.id, next);
+      })();
+    }
+  },
+
+  /** Pulls the choices stored against the account, which is what a second phone starts from. */
+  loadRemindersFromCloud: async () => {
+    if (!get().userEmail) return;
+    try {
+      const user = await cloudSyncService.getCurrentUser();
+      if (!user) return;
+
+      const remote = await cloudSyncService.loadReminders(user.id);
+      if (!remote) return;
+
+      set({ reminders: remote });
+      void storageService.saveReminders(remote);
+      void reminderScheduler.reschedule(remote, get().currentPlan);
+    } catch (e) {
+      console.warn('[useAppStore] Could not read the reminder settings:', e);
+    }
+  },
+
   cycleThemeMode: () => {
     set((state) => {
       const order: ThemeMode[] = ['system', 'light', 'dark'];
@@ -996,6 +1046,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setUserEmail: (email: string | null) => {
     set({ userEmail: email });
+
+    if (email) {
+      // A second phone starts from what the account already knows.
+      void get().loadRemindersFromCloud();
+    } else {
+      // Signing out must not leave the previous account's nudges firing on this phone.
+      void reminderScheduler.cancelAll();
+    }
   },
 
   syncWithCloud: async () => {

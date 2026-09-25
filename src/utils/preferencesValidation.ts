@@ -9,6 +9,7 @@ import {
   SupermarketId,
   UserPreferences,
 } from '../types';
+import { DEFAULT_REMINDERS, ReminderSettings } from '../types';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { ALLERGEN_CATALOG } from '../data/allergens';
 import { DIET_OPTIONS_CATALOG } from './dietCompatibility';
@@ -136,5 +137,38 @@ export function parseUserPreferences(
     selectedSnackIds: pickStringList(raw.selectedSnackIds),
     selectedDrinkIds: pickStringList(raw.selectedDrinkIds),
     includeAlcohol: pickBoolean(raw.includeAlcohol, fallback.includeAlcohol ?? false),
+  };
+}
+
+const TIME_PATTERN = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
+
+/**
+ * Reminder settings in the shape the app uses.
+ *
+ * Untrusted like everything else that comes back from storage or a network: a malformed time
+ * would schedule nothing at all, silently, which is the worst way for a reminder to fail.
+ * The database speaks snake_case, so `supabase.ts` maps its row into this shape first --
+ * one parser for two spellings is how the local copy stopped being read at all.
+ */
+export function parseReminderSettings(value: unknown): ReminderSettings {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return { ...DEFAULT_REMINDERS };
+  }
+  const raw = value as Record<string, unknown>;
+
+  const time = (candidate: unknown, fallback: string) =>
+    typeof candidate === 'string' && TIME_PATTERN.test(candidate) ? candidate : fallback;
+
+  const weekday = Number(raw.shoppingWeekday);
+
+  return {
+    cookingEnabled: raw.cookingEnabled === true,
+    cookingTime: time(raw.cookingTime, DEFAULT_REMINDERS.cookingTime),
+    shoppingEnabled: raw.shoppingEnabled === true,
+    shoppingWeekday:
+      Number.isInteger(weekday) && weekday >= 0 && weekday <= 6
+        ? weekday
+        : DEFAULT_REMINDERS.shoppingWeekday,
+    shoppingTime: time(raw.shoppingTime, DEFAULT_REMINDERS.shoppingTime),
   };
 }

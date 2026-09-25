@@ -11,7 +11,12 @@ nu sunt protejate.
 
 - [ ] `supabase login` și `supabase link --project-ref <ref>`
 - [ ] `supabase db push` — rulează migrațiile **0001** (tabela planurilor, RLS, limite de
-      mărime) și **0002** (limita de rată partajată pentru AI)
+      mărime), **0002** (limita de rată partajată pentru AI) și **0003** (mementourile)
+- [ ] în Supabase → Authentication → Email: activează **Confirm email** și verifică șablonul
+      de recuperare a parolei. Codul de șase cifre din email e ce tastează utilizatorul
+      înapoi în aplicație
+- [ ] Authentication → Policies: ridică lungimea minimă a parolei la **10** (aplicația o
+      verifică deja pe telefon, dar serverul trebuie să fie de acord)
 - [ ] `supabase secrets set GEMINI_API_KEY=<cheia>`
 - [ ] `supabase secrets set ALLOWED_ORIGINS=https://domeniul-tau.ro`
 - [ ] `supabase functions deploy proxy-gemini-plan`
@@ -76,6 +81,7 @@ Răspunde exact așa — corespunde cu ce face codul:
 | Folosite pentru publicitate? | **Nu** |
 | Partajate cu terți? | Doar procesatori: Supabase (găzduire) și Google Gemini (sugestii AI, fără date de identificare) |
 | Ștergerea contului | Da, din aplicație: ecranul de cont → „Șterge contul și datele mele" |
+| Notificări | Locale, programate pe telefon. Nu există push de pe server, deci nu se colectează token-uri de notificare |
 
 Google Play cere în plus o **adresă web** de la care se poate cere ștergerea contului. Pune un
 formular sau adresa de email din politică.

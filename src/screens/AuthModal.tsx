@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { cloudSyncService } from '../services/supabase';
+import { ReminderSettingsPanel } from '../components/ReminderSettingsPanel';
+import { useAppStore } from '../store/useAppStore';
 import { describeWeakPassword } from '../utils/passwordPolicy';
 import { getAppTheme } from '../styles/theme';
 
@@ -48,6 +50,7 @@ export function AuthModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const { reminders, updateReminders } = useAppStore();
 
   const appTheme = getAppTheme(isDark);
   const theme = {
@@ -289,6 +292,12 @@ export function AuthModal({
                 >
                   <Text style={[styles.secondaryBtnText, { color: '#ef4444' }]}>Deconectare cont</Text>
                 </TouchableOpacity>
+
+                <ReminderSettingsPanel
+                  reminders={reminders}
+                  onChange={updateReminders}
+                  isDark={isDark}
+                />
 
                 {/* Required by both stores, and the account holds declared allergies, which
                     is special-category data under GDPR. Asked for twice because it cannot
