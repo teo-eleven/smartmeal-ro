@@ -148,6 +148,12 @@ export interface PlannedMeal {
    * is skipped when the shopping list is built, or its ingredients would be bought twice.
    */
   isLeftover?: boolean;
+  /**
+   * Which meal was cooked double to produce this one. Undo used to find the source by recipe
+   * id, which halved the wrong meal when a day served the same dish twice, and did nothing
+   * at all once the source had been swapped.
+   */
+  leftoverFromMealId?: string;
 }
 
 export interface UserPreferences {

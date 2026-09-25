@@ -1599,7 +1599,13 @@ export const useAppStore = create<AppState>((set, get) => ({
         if (index === dayIndex + 1) {
           const meals = day.meals.map((m) =>
             m.id === target.id
-              ? { ...m, recipe: source.recipe, isLeftover: true, estimatedCostRon: 0 }
+              ? {
+                  ...m,
+                  recipe: source.recipe,
+                  isLeftover: true,
+                  leftoverFromMealId: source.id,
+                  estimatedCostRon: 0,
+                }
               : m
           );
           return { ...day, meals, ...rebuildDayShape(meals, day) };
@@ -1627,7 +1633,24 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (!leftover || !leftover.isLeftover) return state;
 
       const sourceDay = plan.days[dayIndex - 1];
-      const source = sourceDay?.meals.find((m) => m.recipe.id === leftover.recipe.id);
+      // By identity, not by recipe id: a day that serves the same dish twice used to have
+      // the wrong meal halved, and a source that had since been swapped matched nothing at
+      // all, leaving the double portion booked and the cart inflated.
+      const source = leftover.leftoverFromMealId
+        ? sourceDay?.meals.find((m) => m.id === leftover.leftoverFromMealId)
+        : sourceDay?.meals.find((m) => m.recipe.id === leftover.recipe.id);
+
+      if (!source) {
+        return {
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Nu mai găsesc porția dublată',
+            message:
+              'Masa din care venea reîncălzirea s-a schimbat între timp, așa că nu o pot anula singur. Schimbă manual ziua asta.',
+            type: 'warning',
+          },
+        };
+      }
 
       const days = plan.days.map((day, index) => {
         if (index === dayIndex - 1 && source) {
@@ -1648,6 +1671,7 @@ export const useAppStore = create<AppState>((set, get) => ({
               ? {
                   ...m,
                   isLeftover: false,
+                  leftoverFromMealId: undefined,
                   estimatedCostRon: calculateRecipePortionCost(
                     m.recipe,
                     m.servings,
@@ -1778,8 +1802,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   /** Forgets the cupboard, for when it no longer matches reality. */
   clearPantryStock: () => {
     set((state) => {
-      const nextPrefs: UserPreferences = { ...state.preferences, pantryStock: {} };
-      void storageService.savePreferences(nextPrefs);
+      // recalculateCartForPreferences persists the preferences itself; saving here too wrote
+      // the same blob twice on one tap.
+      const nextPrefs: UserPreferences = { ...state.preferences, pantryStock: {}, pendingPantryStock: {} };
       return recalculateCartForPreferences(state, nextPrefs);
     });
   },
@@ -1913,7 +1938,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         ...day,
         meals: updatedMeals,
         estimatedCostRon:
-          Math.round(updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0) * 10) / 10,
+          Math.round(updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0) * 100) / 100,
       };
 
       const updatedDays = [...state.currentPlan.days];
@@ -2038,7 +2063,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         meals: updatedMeals,
         recipe: primaryMeal.recipe,
         estimatedCostRon:
-          Math.round(updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0) * 10) / 10,
+          Math.round(updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0) * 100) / 100,
       };
 
       const updatedDays = [...state.currentPlan.days];
@@ -2896,7 +2921,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       ...targetDay,
       meals: updatedMeals,
       recipe: primaryMeal.recipe,
-      estimatedCostRon: Math.round(dayCostSum * 10) / 10,
+      // Two decimals, like every meal cost and every sibling day total. One decimal
+      // here let a day drift from the sum of its own meals by up to five bani.
+      estimatedCostRon: Math.round(dayCostSum * 100) / 100,
     };
 
     const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
