@@ -11,8 +11,8 @@ completă pentru App Store și Google Play, imaginile de aplicație, politica de
 ## Starea, rulată la închidere
 
 ```
-TESTE 83 suite / 663 teste · TYPECHECK 0 · LINT 0 · BUILD web 1,4 MB
-COVERAGE 87,00 / 66,41 / 86,16 / 87,97 — toate pragurile trecute
+TESTE 85 suite / 686 teste · TYPECHECK 0 · LINT 0 · BUILD web 1,4 MB
+COVERAGE 86,18 / 65,21 / 84,75 / 87,29 — toate pragurile trecute
 BUNDLE 0 chei, 0 cârlige de depanare
 GIT curat
 ```
@@ -52,9 +52,23 @@ la `NSUserDefaults` · App Transport Security fără excepții · Android cu o s
 **Documente:** `PRIVACY.md` (prima variantă, de completat cu datele operatorului) și
 `STORE.md` (tot drumul, în ordine, cu răspunsurile exacte pentru formularele magazinelor).
 
+## Adăugat în sesiunea asta
+
+- **Autentificare completă**: resetare de parolă prin cod de șase cifre pe email, în trei
+  pași care se deblochează unul după altul. Răspunsul la primul pas e identic indiferent dacă
+  adresa are cont — altfel endpointul devine o metodă de a afla cine e înregistrat.
+- **Politică de parolă**: 10 caractere, literă și cifră, plus refuzul celor din listele
+  scurse. Verificată pe telefon *și* de setat în Supabase (vezi `STORE.md` §1).
+- **Mementouri**: unul pe fiecare zi de gătit, cu numele felului din plan, și unul săptămânal
+  pentru cumpărături. Programate **local**, deci merg fără internet și nu colectează niciun
+  token de notificare. Migrația **0003** ține alegerea, nu mementoul, ca să urmeze contul pe
+  alt telefon.
+
 ## Ce e blocat — doar de tine
 
-1. **`supabase db push`** și publicarea celor două funcții edge (`STORE.md` §1).
+1. **`supabase db push`** (acum trei migrații) și publicarea celor două funcții edge.
+   Plus, în Supabase → Authentication: activează confirmarea emailului, verifică șablonul de
+   recuperare a parolei și ridică lungimea minimă a parolei la 10. Detalii în `STORE.md` §1.
 2. **Completează și publică `PRIVACY.md`** la un URL public. Ambele magazine cer link-ul.
 3. **Conturile de dezvoltator**: Apple 99 USD/an, Google Play 25 USD o dată.
 4. **Anteturile de securitate web** (`STORE.md` §6) se pun pe gazdă, nu se pot seta din
@@ -80,7 +94,10 @@ cârligul de depanare care expunea tot magazinul (0 în bundle, verificat).
 - **Nimic nu are voie să insereze o rețetă care nu vine din `RECIPES_MAP`.**
 - **Orice loc care adună mese sare peste `meal.isLeftover`**; orice loc care le prețuiește le
   dă zero.
-- `expo-secure-store` cere un modul nativ; e mocat în `jest.setup.js`. `secureSessionStore` nu
+- **Mementourile nu se pot testa pe simulator** cu adevărat; programarea e acoperită de teste,
+  dar verifică pe un telefon real înainte de lansare.
+- `expo-secure-store` și `expo-notifications` cer module native; ambele sunt mocate în
+  `jest.setup.js`. `secureSessionStore` nu
   importă `react-native` tocmai ca să poată rula în proiectul Jest de logică.
 - `__DEV__` nu există în proiectul de logică — garda e `typeof __DEV__ !== 'undefined'`.
 - Imaginile de aplicație sunt **generate**, nu desenate. Înlocuiește-le când ai identitate.
