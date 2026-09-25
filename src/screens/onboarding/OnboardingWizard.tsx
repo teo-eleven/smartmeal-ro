@@ -289,7 +289,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
         <View style={[styles.header, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
           <View style={styles.topRow}>
             {currentStep > 1 ? (
-              <TouchableOpacity onPress={prevStep} style={styles.backButton}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Înapoi la pasul anterior"
+                onPress={prevStep}
+                style={styles.backButton}
+              >
                 <Text style={[styles.backButtonText, { color: theme.text }]}>← Înapoi</Text>
               </TouchableOpacity>
             ) : (

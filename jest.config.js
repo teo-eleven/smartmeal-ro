@@ -25,7 +25,7 @@ module.exports = {
       // Floors at the level actually reached. Much of the remaining branch and function
       // surface is defensive fallbacks and theme permutations rather than user behaviour.
       functions: 87,
-      branches: 66,
+      branches: 68,
     },
   },
   projects: [
