@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
+import { localAuthSimulation } from './localAuthSimulation';
 import { secureSessionStore } from './secureSessionStore';
 import { env } from '../../config/env';
 import { MealPlan, GroceryListItem, ReminderSettings, UserPreferences } from '../types';
@@ -62,6 +63,21 @@ export const cloudSyncService = {
     return env.isCloudSyncConfigured && getSupabaseClient() !== null;
   },
 
+  /**
+   * The signed-in address, or null. Answers from the simulation when there is no project.
+   *
+   * Supabase refreshes its own session as long as the refresh token is valid, so "stay signed
+   * in for thirty days" is a project setting (Authentication → Sessions), not something the
+   * client can decide. The simulation honours the same thirty days locally.
+   */
+  async currentEmail(): Promise<string | null> {
+    if (localAuthSimulation.isActive()) {
+      return localAuthSimulation.currentEmail();
+    }
+    const user = await this.getCurrentUser();
+    return user?.email ?? null;
+  },
+
   async getCurrentUser(): Promise<User | null> {
     const client = getSupabaseClient();
     if (!client) return null;
@@ -76,6 +92,13 @@ export const cloudSyncService = {
   },
 
   async signInWithEmail(email: string, password: string): Promise<{ user: User | null; error: string | null }> {
+    // With no project configured, the sign-in gate would be a screen nobody can get past.
+    // The simulation refuses to run in a production build; see localAuthSimulation.
+    if (localAuthSimulation.isActive()) {
+      const { email: signedIn, error } = await localAuthSimulation.signIn(email, password);
+      return { user: signedIn ? ({ email: signedIn } as User) : null, error };
+    }
+
     const client = getSupabaseClient();
     if (!client) {
       return { user: null, error: 'Sincronizarea Cloud nu este configurată pe acest server.' };
@@ -93,6 +116,11 @@ export const cloudSyncService = {
   },
 
   async signUpWithEmail(email: string, password: string): Promise<{ user: User | null; error: string | null }> {
+    if (localAuthSimulation.isActive()) {
+      const { email: created, error } = await localAuthSimulation.signUp(email, password);
+      return { user: created ? ({ email: created } as User) : null, error };
+    }
+
     const client = getSupabaseClient();
     if (!client) {
       return { user: null, error: 'Sincronizarea Cloud nu este configurată pe acest server.' };
@@ -118,6 +146,11 @@ export const cloudSyncService = {
    * reach the client; the function identifies the caller from their own token.
    */
   async deleteAccount(): Promise<{ success: boolean; error: string | null }> {
+    if (localAuthSimulation.isActive()) {
+      await localAuthSimulation.deleteAccount();
+      return { success: true, error: null };
+    }
+
     const client = getSupabaseClient();
     if (!client || !env.supabaseUrl) {
       return { success: false, error: 'Ștergerea contului nu este disponibilă offline.' };
@@ -166,6 +199,11 @@ export const cloudSyncService = {
    * into a way to find out who has one.
    */
   async requestPasswordReset(email: string): Promise<{ success: boolean; error: string | null }> {
+    if (localAuthSimulation.isActive()) {
+      // No inbox to send to, so the code is fixed and the screen says which one it is.
+      return { success: true, error: null };
+    }
+
     const client = getSupabaseClient();
     if (!client) {
       return { success: false, error: 'Resetarea parolei nu este disponibilă offline.' };
@@ -189,6 +227,12 @@ export const cloudSyncService = {
     email: string,
     code: string
   ): Promise<{ success: boolean; error: string | null }> {
+    if (localAuthSimulation.isActive()) {
+      return code.trim() === localAuthSimulation.SIMULATED_RESET_CODE
+        ? { success: true, error: null }
+        : { success: false, error: 'Codul nu este valid sau a expirat. Cere altul.' };
+    }
+
     const client = getSupabaseClient();
     if (!client) {
       return { success: false, error: 'Resetarea parolei nu este disponibilă offline.' };
@@ -211,7 +255,17 @@ export const cloudSyncService = {
   },
 
   /** Sets a new password on the session the verified code produced. */
-  async updatePassword(newPassword: string): Promise<{ success: boolean; error: string | null }> {
+  async updatePassword(
+    newPassword: string,
+    emailForSimulation?: string
+  ): Promise<{ success: boolean; error: string | null }> {
+    if (localAuthSimulation.isActive()) {
+      const done = await localAuthSimulation.resetPassword(emailForSimulation ?? '', newPassword);
+      return done
+        ? { success: true, error: null }
+        : { success: false, error: 'Nu există un cont cu adresa aceasta.' };
+    }
+
     const client = getSupabaseClient();
     if (!client) {
       return { success: false, error: 'Schimbarea parolei nu este disponibilă offline.' };
@@ -288,6 +342,11 @@ export const cloudSyncService = {
   },
 
   async signOut(): Promise<void> {
+    if (localAuthSimulation.isActive()) {
+      await localAuthSimulation.signOut();
+      return;
+    }
+
     const client = getSupabaseClient();
     if (!client) return;
     try {

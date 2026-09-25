@@ -13,6 +13,9 @@ describe('a full journey through the real app', () => {
   beforeEach(async () => {
     await AsyncStorage.clear();
     useAppStore.setState({
+      // The app now opens on a sign-in gate; these tests are about what is behind it.
+      authStatus: 'guest',
+      isHydrated: true,
       activeView: 'onboarding',
       currentPlan: null,
       groceryItems: [],
@@ -133,6 +136,8 @@ describe('walking the onboarding end to end, step by step', () => {
     await AsyncStorage.clear();
     useAppStore.getState().resetOnboarding();
     useAppStore.getState().dismissUndo();
+    // The app opens on a sign-in gate now; these tests are about the wizard behind it.
+    useAppStore.setState({ authStatus: 'guest', isHydrated: true });
   });
 
   test('every one of the nine steps renders and can be reached', () => {
@@ -202,6 +207,7 @@ describe('the screens reachable from the meal board', () => {
     await AsyncStorage.clear();
     useAppStore.getState().resetOnboarding();
     useAppStore.getState().dismissUndo();
+    useAppStore.setState({ authStatus: 'guest', isHydrated: true });
     useAppStore.getState().quickStart();
     act(() => {
       useAppStore.getState().setActiveView('meals');

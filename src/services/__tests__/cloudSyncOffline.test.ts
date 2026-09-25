@@ -33,16 +33,31 @@ describe('cloud sync without a configured backend', () => {
     await expect(cloudSyncService.getCurrentUser()).resolves.toBeNull();
   });
 
-  test('sign in fails with a message a user can understand', async () => {
-    const result = await cloudSyncService.signInWithEmail('a@b.ro', 'parola123');
+  // In development with no project configured, the local simulation answers instead, so the
+  // sign-in gate can be walked through on a laptop. It refuses to run in a production build.
+  test('an unknown account is refused, without saying which part was wrong', async () => {
+    const result = await cloudSyncService.signInWithEmail('nimeni@b.ro', 'parola123');
     expect(result.user).toBeNull();
-    expect(result.error).toMatch(/nu este configurat/i);
+    expect(result.error).toMatch(/adresa sau parola/i);
   });
 
-  test('sign up fails the same way', async () => {
-    const result = await cloudSyncService.signUpWithEmail('a@b.ro', 'parola123');
+  test('creating an account then signing in works against the simulation', async () => {
+    const created = await cloudSyncService.signUpWithEmail('nou@b.ro', 'Muntele7Verde');
+    expect(created.error).toBeNull();
+    expect(created.user?.email).toBe('nou@b.ro');
+
+    await cloudSyncService.signOut();
+
+    const back = await cloudSyncService.signInWithEmail('nou@b.ro', 'Muntele7Verde');
+    expect(back.user?.email).toBe('nou@b.ro');
+  });
+
+  test('the wrong password is refused', async () => {
+    await cloudSyncService.signUpWithEmail('altul@b.ro', 'Muntele7Verde');
+    await cloudSyncService.signOut();
+
+    const result = await cloudSyncService.signInWithEmail('altul@b.ro', 'gresita123');
     expect(result.user).toBeNull();
-    expect(result.error).toMatch(/nu este configurat/i);
   });
 
   test('signing out is safe even though nobody is signed in', async () => {

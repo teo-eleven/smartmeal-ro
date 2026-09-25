@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   SAVED_PLANS: '@smartmeal_saved_plans',
   THEME_MODE: '@smartmeal_theme_mode',
   REMINDERS: '@smartmeal_reminders',
+  GUEST_CHOICE: '@smartmeal_guest_choice',
 };
 
 /** Shape check for a row read back from storage, before anything relies on it. */
@@ -179,6 +180,23 @@ export const storageService = {
     } catch (e) {
       console.warn('[StorageService] Failed to load the reminder settings', e);
       return null;
+    }
+  },
+
+  /** Remembers that the user chose to carry on without an account, so the gate stops asking. */
+  async saveGuestChoice(isGuest: boolean): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.GUEST_CHOICE, isGuest ? 'yes' : 'no');
+    } catch (e) {
+      console.warn('[StorageService] Failed to save the guest choice', e);
+    }
+  },
+
+  async loadGuestChoice(): Promise<boolean> {
+    try {
+      return (await AsyncStorage.getItem(STORAGE_KEYS.GUEST_CHOICE)) === 'yes';
+    } catch {
+      return false;
     }
   },
 

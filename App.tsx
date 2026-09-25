@@ -18,6 +18,7 @@ import { GeneratingPlanModal } from './src/screens/onboarding/GeneratingPlanModa
 import { MealBoardScreen } from './src/screens/MealBoardScreen';
 import { GroceryScreen } from './src/screens/GroceryScreen';
 import { AuthModal } from './src/screens/AuthModal';
+import { WelcomeGate } from './src/screens/WelcomeGate';
 import { InformativeNoticeModal } from './src/components/InformativeNoticeModal';
 import { ConfirmDialog } from './src/components/ConfirmDialog';
 import { SUPERMARKETS } from './src/data/supermarkets';
@@ -38,6 +39,9 @@ function AppShell() {
   const [authModalVisible, setAuthModalVisible] = useState(false);
 
   const {
+    authStatus,
+    continueAsGuest,
+    isHydrated,
     themeMode,
     cycleThemeMode,
     activeView,
@@ -102,6 +106,34 @@ function AppShell() {
   const theme = getAppTheme(isDark);
 
   // If in onboarding wizard
+  // Nothing renders until the stored session has been read, so the gate cannot flash in
+  // front of somebody who signed in three weeks ago.
+  if (!isHydrated || authStatus === 'checking') {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        {isHydrated && (
+          <WelcomeGate
+            onOpenAuth={() => setAuthModalVisible(true)}
+            onContinueAsGuest={continueAsGuest}
+            isDark={isDark}
+          />
+        )}
+        <AuthModal
+          visible={authModalVisible}
+          onClose={() => setAuthModalVisible(false)}
+          isDark={isDark}
+          userEmail={userEmail}
+          onUserChanged={setUserEmail}
+          onSyncTriggered={syncWithCloud}
+          onDownloadTriggered={syncFromCloud}
+          isSyncing={isSyncing}
+          lastSyncedAt={lastSyncedAt}
+        />
+      </SafeAreaView>
+    );
+  }
+
   if (activeView === 'onboarding') {
     return (
       <SafeAreaView

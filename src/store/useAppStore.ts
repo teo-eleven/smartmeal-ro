@@ -75,6 +75,15 @@ export interface AppState {
   activeView: ActiveView;
   isHydrated: boolean;
   userEmail: string | null;
+  /**
+   * Whether the sign-in gate should be showing.
+   *
+   * `checking` until the stored session has been read, so the gate never flashes in front of
+   * somebody who is already signed in. `guest` is a deliberate choice the user made, not an
+   * absence of one -- the app works fully without an account.
+   */
+  authStatus: 'checking' | 'signedIn' | 'guest';
+  continueAsGuest: () => void;
   isSyncing: boolean;
   lastSyncedAt: string | null;
 
@@ -717,6 +726,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   themeMode: 'system',
   reminders: { ...DEFAULT_REMINDERS },
   userEmail: null,
+  authStatus: 'checking',
   isSyncing: false,
   lastSyncedAt: null,
   preferences: { ...DEFAULT_PREFERENCES },
@@ -763,6 +773,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       const savedPlans = await storageService.loadSavedPlans();
       const storedTheme = await storageService.loadThemeMode();
       const storedReminders = parseReminderSettings(await storageService.loadReminders());
+
+      // Read the session before anything renders, so the gate never flashes in front of
+      // somebody who signed in three weeks ago and is still within their thirty days.
+      const signedInEmail = await cloudSyncService.currentEmail();
+      const choseGuest = await storageService.loadGuestChoice();
 
       // Storage is untrusted, and on web it is localStorage: editable by hand, by another
       // tab, or by an extension. Everything is whitelisted against its catalog before any of
@@ -965,6 +980,8 @@ export const useAppStore = create<AppState>((set, get) => ({
             ? storedTheme
             : state.themeMode,
         reminders: storedReminders,
+        userEmail: signedInEmail ?? state.userEmail,
+        authStatus: signedInEmail ? 'signedIn' : choseGuest ? 'guest' : 'checking',
         activeNotice:
           (repairedPrefsNotice?.type === 'warning' ? repairedPrefsNotice : null) ??
           planSafetyNotice ??
@@ -1044,8 +1061,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
+  /**
+   * Skips the gate. Kept deliberately explicit rather than implicit, because Apple's
+   * guideline 5.1.1(i) requires an app whose core works offline to be usable without an
+   * account -- and because a meal planner genuinely is useful without one.
+   */
+  continueAsGuest: () => {
+    void storageService.saveGuestChoice(true);
+    set({ authStatus: 'guest' });
+  },
+
   setUserEmail: (email: string | null) => {
-    set({ userEmail: email });
+    set({ userEmail: email, authStatus: email ? 'signedIn' : 'guest' });
 
     if (email) {
       // A second phone starts from what the account already knows.

@@ -8,7 +8,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 describe('alegerea temei', () => {
   beforeEach(async () => {
     await AsyncStorage.clear();
-    useAppStore.setState({ themeMode: 'system', activeView: 'meals', activeNotice: null });
+    // The app now opens on a sign-in gate; this test is about what is behind it.
+    useAppStore.setState({
+      themeMode: 'system',
+      activeView: 'meals',
+      activeNotice: null,
+      authStatus: 'guest',
+      isHydrated: true,
+    });
     useAppStore.getState().generatePlan();
   });
 
@@ -35,7 +42,7 @@ describe('alegerea temei', () => {
     render(<App />);
     fireEvent.press(screen.getByLabelText(/Temă: ca telefonul/i));
 
-    useAppStore.setState({ themeMode: 'system', isHydrated: false });
+    useAppStore.setState({ themeMode: 'system', isHydrated: false, authStatus: 'guest' });
     await useAppStore.getState().hydrateStorage();
 
     expect(useAppStore.getState().themeMode).toBe('light');

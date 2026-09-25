@@ -9,6 +9,12 @@ jest.mock('../../services/supabase', () => ({
     getCurrentUser: jest.fn(),
     loadMealPlan: jest.fn(),
     saveMealPlan: jest.fn(),
+    // Hydration asks who is signed in before anything renders, so the mock has to answer.
+    // Without it the call threw and every stored preference fell back to the defaults --
+    // which is exactly what these tests check has stopped happening.
+    currentEmail: jest.fn(async () => null),
+    loadReminders: jest.fn(async () => null),
+    saveReminders: jest.fn(async () => ({ success: true, error: null })),
   },
 }));
 
