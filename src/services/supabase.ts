@@ -105,6 +105,54 @@ export const cloudSyncService = {
     }
   },
 
+  /**
+   * Deletes the account and everything stored against it.
+   *
+   * Both stores require an in-app path to this, and the account holds declared allergies,
+   * which is special-category data under GDPR. The work happens in the `delete-account`
+   * edge function because removing a user needs the service-role key, which must never
+   * reach the client; the function identifies the caller from their own token.
+   */
+  async deleteAccount(): Promise<{ success: boolean; error: string | null }> {
+    const client = getSupabaseClient();
+    if (!client || !env.supabaseUrl) {
+      return { success: false, error: 'Ștergerea contului nu este disponibilă offline.' };
+    }
+
+    try {
+      const {
+        data: { session },
+      } = await client.auth.getSession();
+
+      if (!session?.access_token) {
+        return { success: false, error: 'Autentifică-te din nou pentru a șterge contul.' };
+      }
+
+      const response = await fetch(`${env.supabaseUrl}/functions/v1/delete-account`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: 'Contul nu a putut fi șters. Încearcă din nou sau scrie-ne.',
+        };
+      }
+
+      // The session is dead once the user is gone; clear it locally so the app does not go
+      // on believing someone is signed in.
+      await client.auth.signOut();
+      return { success: true, error: null };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Eroare la ștergerea contului.';
+      return { success: false, error: message };
+    }
+  },
+
   async signOut(): Promise<void> {
     const client = getSupabaseClient();
     if (!client) return;

@@ -41,6 +41,7 @@ export function AuthModal({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const appTheme = getAppTheme(isDark);
   const theme = {
@@ -87,6 +88,25 @@ export function AuthModal({
       }
     } catch {
       setErrorMessage('A apărut o problemă la comunicarea cu serverul.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setLoading(true);
+    try {
+      const { success, error } = await cloudSyncService.deleteAccount();
+      if (!success) {
+        setErrorMessage(error ?? 'Contul nu a putut fi șters.');
+        setConfirmingDelete(false);
+        return;
+      }
+      onUserChanged(null);
+      setConfirmingDelete(false);
+      setSuccessMessage('Contul și datele lui au fost șterse.');
     } finally {
       setLoading(false);
     }
@@ -181,6 +201,52 @@ export function AuthModal({
                 >
                   <Text style={[styles.secondaryBtnText, { color: '#ef4444' }]}>Deconectare cont</Text>
                 </TouchableOpacity>
+
+                {/* Required by both stores, and the account holds declared allergies, which
+                    is special-category data under GDPR. Asked for twice because it cannot
+                    be undone. */}
+                {confirmingDelete ? (
+                  <View style={styles.deleteConfirmRow}>
+                    <Text style={[styles.deleteWarning, { color: theme.textMuted }]}>
+                      Se șterg definitiv contul, planul din cloud și preferințele salvate pe el.
+                      Acțiunea nu poate fi anulată.
+                    </Text>
+                    <View style={styles.deleteActions}>
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel="Renunță la ștergerea contului"
+                        onPress={() => setConfirmingDelete(false)}
+                        style={[styles.deleteBtn, { borderColor: theme.border }]}
+                        disabled={loading}
+                      >
+                        <Text style={[styles.deleteBtnText, { color: theme.text }]}>Renunț</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel="Confirmă ștergerea definitivă a contului"
+                        onPress={handleDeleteAccount}
+                        style={[styles.deleteBtn, { backgroundColor: '#ef4444', borderColor: '#ef4444' }]}
+                        disabled={loading}
+                      >
+                        <Text style={[styles.deleteBtnText, { color: '#ffffff' }]}>
+                          Șterge definitiv
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Șterge contul"
+                    onPress={() => setConfirmingDelete(true)}
+                    style={styles.deleteLink}
+                    disabled={loading}
+                  >
+                    <Text style={[styles.deleteLinkText, { color: theme.textMuted }]}>
+                      Șterge contul și datele mele
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ) : (
               /* Unauthenticated Form */
@@ -289,6 +355,19 @@ export function AuthModal({
 }
 
 const styles = StyleSheet.create({
+  deleteLink: { paddingVertical: 12, alignItems: 'center' },
+  deleteLinkText: { fontSize: 12, fontWeight: '600', textDecorationLine: 'underline' },
+  deleteConfirmRow: { marginTop: 10 },
+  deleteWarning: { fontSize: 11, fontWeight: '500', lineHeight: 16, marginBottom: 10 },
+  deleteActions: { flexDirection: 'row', gap: 10 },
+  deleteBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 11,
+    alignItems: 'center',
+  },
+  deleteBtnText: { fontSize: 12, fontWeight: '800' },
   backdrop: {
     flex: 1,
     justifyContent: 'center',

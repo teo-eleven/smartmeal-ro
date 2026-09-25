@@ -31,9 +31,16 @@ supabase secrets set GEMINI_API_KEY=<cheia-ta>
 #    utilizator, pe cota ta de Gemini. Aplicațiile native nu trimit Origin și nu sunt afectate.
 supabase secrets set ALLOWED_ORIGINS=https://domeniul-tau.ro,https://www.domeniul-tau.ro
 
-# 5. Publicarea funcției
+# 5. Publicarea funcțiilor
 supabase functions deploy proxy-gemini-plan
+supabase functions deploy delete-account
 ```
+
+`delete-account` este **obligatorie** înainte de orice submisie în magazine: Apple cere din
+2022 o cale de ștergere a contului direct din aplicație (5.1.1v), iar Google Play cere și una
+accesibilă din web. Contul păstrează alergiile declarate, deci intră sub art. 9 GDPR.
+Funcția folosește `SUPABASE_SERVICE_ROLE_KEY`, pe care Supabase îl injectează singur — nu îl
+pune niciodată în `.env` și nu îl trimite în client.
 
 Apoi completează în `.env`:
 

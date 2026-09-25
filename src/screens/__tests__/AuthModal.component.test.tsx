@@ -8,6 +8,7 @@ jest.mock('../../services/supabase', () => ({
     signInWithEmail: jest.fn(),
     signUpWithEmail: jest.fn(),
     signOut: jest.fn(),
+    deleteAccount: jest.fn(),
   },
 }));
 
@@ -155,6 +156,49 @@ describe('AuthModal', () => {
 
     expect(screen.queryByLabelText('Adu planul din cloud')).toBeNull();
     expect(screen.queryByLabelText('Urcă planul în cloud')).toBeNull();
+  });
+
+  test('ștergerea contului cere o confirmare separată', () => {
+    render(<AuthModal {...baseProps} userEmail="a@b.ro" />);
+
+    expect(screen.queryByLabelText(/Confirmă ștergerea/i)).toBeNull();
+    fireEvent.press(screen.getByLabelText('Șterge contul'));
+    expect(screen.getByLabelText(/Confirmă ștergerea/i)).toBeTruthy();
+    expect(cloudSyncService.deleteAccount).not.toHaveBeenCalled();
+  });
+
+  test('se poate renunța la ștergere', () => {
+    render(<AuthModal {...baseProps} userEmail="a@b.ro" />);
+
+    fireEvent.press(screen.getByLabelText('Șterge contul'));
+    fireEvent.press(screen.getByLabelText(/Renunță la ștergerea/i));
+
+    expect(screen.getByLabelText('Șterge contul')).toBeTruthy();
+    expect(cloudSyncService.deleteAccount).not.toHaveBeenCalled();
+  });
+
+  test('confirmată, șterge contul și deconectează aplicația', async () => {
+    (cloudSyncService.deleteAccount as jest.Mock).mockResolvedValue({ success: true, error: null });
+    render(<AuthModal {...baseProps} userEmail="a@b.ro" />);
+
+    fireEvent.press(screen.getByLabelText('Șterge contul'));
+    fireEvent.press(screen.getByLabelText(/Confirmă ștergerea/i));
+
+    await waitFor(() => expect(baseProps.onUserChanged).toHaveBeenCalledWith(null));
+  });
+
+  test('un eșec la ștergere este spus, nu înghițit', async () => {
+    (cloudSyncService.deleteAccount as jest.Mock).mockResolvedValue({
+      success: false,
+      error: 'serverul nu răspunde',
+    });
+    render(<AuthModal {...baseProps} userEmail="a@b.ro" />);
+
+    fireEvent.press(screen.getByLabelText('Șterge contul'));
+    fireEvent.press(screen.getByLabelText(/Confirmă ștergerea/i));
+
+    await waitFor(() => expect(screen.getByText('serverul nu răspunde')).toBeTruthy());
+    expect(baseProps.onUserChanged).not.toHaveBeenCalledWith(null);
   });
 
   test('nu cere parola de două ori: parola este mascată', () => {
