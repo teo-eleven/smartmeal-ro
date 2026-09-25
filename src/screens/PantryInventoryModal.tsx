@@ -20,25 +20,25 @@ interface PantryInventoryModalProps {
 }
 
 // Common staples frequently present in Romanian home pantries and fridges
-const PANTRY_STAPLES_LIST = [
+export const PANTRY_STAPLES_LIST = [
   { id: 'ulei_floarea_soarelui', name: 'Ulei de floarea-soarelui', icon: '🌻', cat: 'Cămară' },
-  { id: 'ulei_masline_extra', name: 'Ulei de măsline extravirgin', icon: '🫒', cat: 'Cămară' },
+  { id: 'ulei_masline', name: 'Ulei de măsline extravirgin', icon: '🫒', cat: 'Cămară' },
   { id: 'ceapa_galbena', name: 'Ceapă galbenă', icon: '🧅', cat: 'Legume' },
-  { id: 'usturoi_capatana', name: 'Usturoi', icon: '🧄', cat: 'Legume' },
+  { id: 'usturoi', name: 'Usturoi', icon: '🧄', cat: 'Legume' },
   { id: 'cartofi_albi', name: 'Cartofi', icon: '🥔', cat: 'Legume' },
   { id: 'orez_bob_rotund', name: 'Orez', icon: '🍚', cat: 'Cămară' },
-  { id: 'paste_spaghetti', name: 'Paste spaghetti', icon: '🍝', cat: 'Cămară' },
-  { id: 'faina_alba_000', name: 'Făină albă', icon: '🌾', cat: 'Cămară' },
+  { id: 'paste_spaghete', name: 'Paste spaghete', icon: '🍝', cat: 'Cămară' },
+  { id: 'faina_alba', name: 'Făină albă', icon: '🌾', cat: 'Cămară' },
   { id: 'malai_superior', name: 'Mălai', icon: '🌽', cat: 'Cămară' },
   { id: 'sare_fina', name: 'Sare de masă', icon: '🧂', cat: 'Condimente' },
-  { id: 'piper_negru_macinat', name: 'Piper negru măcinat', icon: '🌶️', cat: 'Condimente' },
+  { id: 'piper_negru', name: 'Piper negru măcinat', icon: '🌶️', cat: 'Condimente' },
   { id: 'boia_dulce', name: 'Boia dulce', icon: '🌶️', cat: 'Condimente' },
   { id: 'oregano_uscat', name: 'Oregano / Cimbru', icon: '🌿', cat: 'Condimente' },
-  { id: 'otet_alb', name: 'Oțet / Suc de lămâie', icon: '🍋', cat: 'Cămară' },
-  { id: 'oua_marimea_m', name: 'Ouă de găină', icon: '🥚', cat: 'Lactate' },
-  { id: 'unt_65_grasime', name: 'Unt', icon: '🧈', cat: 'Lactate' },
-  { id: 'lapte_15', name: 'Lapte 1.5%', icon: '🥛', cat: 'Lactate' },
-  { id: 'suc_rosii_passata', name: 'Pastă / Suc de roșii', icon: '🥫', cat: 'Conserve' },
+  { id: 'lamaie', name: 'Lămâi', icon: '🍋', cat: 'Legume' },
+  { id: 'oua_m', name: 'Ouă mărimea M', icon: '🥚', cat: 'Lactate' },
+  { id: 'unt_82', name: 'Unt', icon: '🧈', cat: 'Lactate' },
+  { id: 'lapte_3_5', name: 'Lapte 3.5%', icon: '🥛', cat: 'Lactate' },
+  { id: 'rosii_pasate', name: 'Roșii pasate', icon: '🥫', cat: 'Conserve' },
   { id: 'mustar_clasic', name: 'Muștar clasic', icon: '🌭', cat: 'Sosuri' },
 ];
 
@@ -69,9 +69,14 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
 
   const theme = getAppTheme(isDark);
 
+  // The cart is priced at the plan's chain, so the saving has to be quoted there too.
+  // Reading it from the preferences instead showed two different numbers on one screen
+  // whenever someone switched stores without regenerating.
+  const pricedAt = currentPlan?.supermarketId ?? preferences.supermarketId;
+
   const totalSavedEstimate = currentPantry.reduce((acc: number, id: string) => {
     const ing = INGREDIENTS[id];
-    return acc + (ing?.typicalPriceRon[preferences.supermarketId] ?? 6);
+    return acc + (ing?.typicalPriceRon[pricedAt] ?? 0);
   }, 0);
 
   return (
@@ -153,7 +158,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
               {PANTRY_STAPLES_LIST.map((item) => {
                 const isSelected = currentPantry.includes(item.id);
                 const dbIng = INGREDIENTS[item.id];
-                const price = currentPlan && dbIng ? dbIng.typicalPriceRon[currentPlan.supermarketId] : null;
+                const price = dbIng ? dbIng.typicalPriceRon[pricedAt] : null;
 
                 return (
                   <TouchableOpacity
