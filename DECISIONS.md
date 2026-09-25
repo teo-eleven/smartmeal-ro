@@ -611,3 +611,53 @@ from it yet.
 ### Falsification Condition
 *What would make this decision wrong:* shipping before the fixes. The moment a build reaches
 a real device, "recorded but not fixed" becomes "known and served".
+
+
+---
+
+## ADR-18: The eight criticals were closed by two shared pieces, not eight patches
+
+**Status:** Accepted · 2026-09-25 · closes ADR-17
+
+### Context
+ADR-17 recorded eight critical defects and the observation that they were not eight
+independent bugs. They shared one shape: **a check validated a name and then trusted a body.**
+`makePlanSafeForPreferences` looked up a recipe id and returned the stored object;
+`replaceMealWithRecipe` read the diet off the object it was handed; `isWellFormedPlan`
+checked that `meals` was an array and never looked inside; `dietTypes` was tested with
+`.length > 0`, which a string satisfies.
+
+### Options
+1. **Fix each finding where it was reported** — eight patches, eight chances to miss the
+   ninth door, and no reason the next boundary added would be safe.
+2. **Two shared pieces, then the remainder** *(chosen)*
+
+### Decision
+Two pieces first:
+
+- **`parseUserPreferences(unknown, fallback)`** whitelists every preference field against its
+  own catalogue and falls back field by field. Used at all three untrusted boundaries: local
+  storage, a cloud row, and the app's older formats. This alone closed the diet-as-a-string
+  bypass, the negative household that threw out of a tap handler, the non-numeric cupboard
+  amount that silently dropped an ingredient, and the unsanitised cloud allergens.
+- **Resolving every recipe through `RECIPES_MAP[id]`** in both safety gates. An id the
+  catalogue does not know is refused rather than inserted, so a tampered body cannot be
+  served and a fabricated dish cannot reach the board.
+
+Two supporting changes made those hold: `isRecipeMatchingDiets` became a `switch` whose
+`default` returns false, so an unrecognised diet permits nothing; and hydration now always
+applies the checked days rather than only when something was replaced.
+
+The remainder were fixed in themed batches: leftover integrity, the surplus lifecycle, one
+definition of an allowed recipe, and account deletion.
+
+### Accepted Trade-off
+`parseUserPreferences` is strict enough to discard a field rather than guess at it, so a
+future field added to `UserPreferences` and not added to the validator will be silently
+dropped on the next load. That is the safe direction to fail, but it is a real maintenance
+obligation: the validator is now part of the definition of the type.
+
+### Falsification Condition
+*What would make this decision wrong:* a boundary that needs to accept a shape the catalogue
+cannot describe — a plan imported from another app, say. Then the whitelist is the wrong
+tool and the import needs its own adapter rather than a loosened validator.

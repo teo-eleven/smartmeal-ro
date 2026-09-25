@@ -73,7 +73,7 @@ Aplicația se va deschide pe: `http://localhost:8081`.
 ```bash
 npm test                 # toate testele (logică + componente)
 npm run test:components  # doar testele de componente
-npm run test:coverage    # cu raport de acoperire (prag: 80% instrucțiuni și linii)
+npm run test:coverage    # cu raport de acoperire (praguri în jest.config.js: 83/83/84/62)
 ```
 
 Testele rulează în două proiecte Jest: logica (motor, store, date) în Node, iar componentele
@@ -90,15 +90,31 @@ npm run typecheck
 
 ## 📱 Export pentru iOS & Android
 
-Configurația este deja pregătită pentru build-uri native prin EAS (Expo Application Services):
+**Aplicația nu poate fi încă trimisă în magazine.** Identificatorii de pachet există:
 - **iOS Bundle Identifier**: `ro.smartmeal.app`
 - **Android Package**: `ro.smartmeal.app`
 
-Pentru generarea aplicației mobile:
+Dar lipsesc fișiere obligatorii, iar `eas build` nu are ce citi fără ele:
+
+| Lipsește | De ce e obligatoriu |
+| --- | --- |
+| `assets/icon.png` (1024×1024) | fără el se livrează iconița implicită Expo |
+| `assets/splash.png` | ecranul de pornire |
+| `assets/adaptive-icon.png` | cerut de Android |
+| `eas.json` | `eas build` nu pornește fără profiluri |
+| `ios.buildNumber`, `android.versionCode` | cerute la fiecare urcare |
+| politică de confidențialitate (URL public) | cerută de ambele magazine |
+| `ios.privacyManifests` | cerut de Apple din mai 2024 pentru AsyncStorage |
+
+După ce există toate, comenzile sunt:
 ```bash
 npx eas-cli build --platform android
 npx eas-cli build --platform ios
 ```
+
+Migrația `supabase/migrations/0001_user_meal_plans.sql` și funcțiile edge
+(`proxy-gemini-plan`, `delete-account`) trebuie publicate înainte de orice build cu cloud
+activ — vezi `supabase/README.md`.
 
 ---
 

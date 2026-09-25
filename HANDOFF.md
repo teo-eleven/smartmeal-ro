@@ -1,107 +1,95 @@
 # HANDOFF.md
 
-**Sesiune:** 2026-09-24 · `main` @ 7ac7ba8 · PR #1–#7 toate fuzionate
+**Sesiune:** 2026-09-25 · `main` · toate defectele din review-ul de ieri sunt reparate
 
 ## Unde am rămas
 
-Sesiune de închidere: review complet pe tot proiectul, eu plus doi agenți, cu fiecare
-afirmație verificată empiric de mine înainte de a fi acceptată. **Nu s-a reparat nimic** —
-regula 1 a protocolului. Aplicația rulează și toate porțile automate sunt verzi, dar review-ul
-a scos 8 defecte critice care nu erau vizibile din teste.
+Review-ul de ieri a scos 8 defecte critice, 6 majore și 6 minore. **Toate sunt reparate**,
+fiecare cu testul care l-ar fi prins. Testele au crescut de la 600 la 655.
+
+Cele 8 critice nu erau opt bug-uri independente: aveau aceeași formă — **o verificare valida
+un nume și apoi avea încredere într-un corp**. S-au închis cu două piese comune (ADR-18), nu
+cu opt petice.
 
 ## Starea, rulată la închidere
 
 ```
-TESTE 75 suite / 600 teste · TYPECHECK 0 · LINT 0 · BUILD web 1,4 MB
-COVERAGE 88,14 / 66,57 / 86,74 / 89,50 — toate pragurile trecute
-GIT curat, 0 necommise · AUDIT 6 high, doar lanțul Metro (ADR-09)
+TESTE 82 suite / 655 teste · TYPECHECK 0 · LINT 0 · BUILD web 1,4 MB
+COVERAGE 87,45 / 66,71 / 86,32 / 88,21 — toate pragurile trecute
+GIT curat
 ```
 
 ## Următorul pas exact
 
-**Reparațiile de mai jos, în ordinea listată.** Prima acțiune concretă:
-`src/store/useAppStore.ts:2794` — pune `__DEV__ &&` în fața expunerii pe `window`. E o linie
-și închide cea mai largă gaură.
+**Pregătirea pentru magazine.** Nu mai e nimic de reparat în cod; lipsesc fișiere. Prima
+acțiune concretă: pune un `assets/icon.png` de 1024×1024 și referă-l din `app.json`.
+Lista completă e în `README.md`, la secțiunea de deploy.
 
-## Din review — nimic reparat, toate confirmate de mine prin rulare
+## Ce s-a reparat
 
-### Critice — siguranța alimentară și datele
+**Cele două piese comune:**
 
-| # | Fișier:linie | Ce se întâmplă |
-| - | ------------ | -------------- |
-| 1 | `useAppStore.ts:2794` | Tot magazinul e expus pe `window` **în bundle-ul livrat** (verificat în `dist/`), păzit doar de `typeof window`, nu de `__DEV__`. Orice script din pagină citește alergiile (date de sănătate) și le poate șterge. |
-| 2 | `useAppStore.ts:869` + `storage.ts:35` | O singură masă malformată în storage pornește aplicația ca **omnivor fără nicio alergie**, cu arhiva goală și **fără niciun avertisment**. `isWellFormedPlan` nu se uită în interiorul mesei; excepția e prinsă de un catch care aruncă tot ce citise. |
-| 3 | `plannerEngine.ts:78` + `dietCompatibility.ts:97` | `dietTypes` ca **șir** în loc de listă dezactivează complet dieta: 90 de rețete eligibile pentru vegan, 25 cu carne. `.length > 0` e adevărat și pentru un string. Plus: o dietă necunoscută permite tot — nu există `default: return false`. |
-| 4 | `useAppStore.ts:257` | `makePlanSafeForPreferences` validează **id-ul** rețetei și returnează **corpul** venit din storage. Un plan cu id legitim dar ingrediente modificate trece intact: am servit unt de arahide unui profil cu alergie la arahide, fără notificare. |
-| 5 | `useAppStore.ts:2692` | `replaceMealWithRecipe` verifică obiectul primit, nu catalogul. O rețetă inventată, cu instrucțiuni arbitrare, ajunge pe tablă. |
-| 6 | `plannerEngine.ts:777` + `useAppStore.ts:2717` | Schimbarea unei mese reîncălzite păstrează `isLeftover` pe felul **nou**: cardul zice „reîncălzit de ieri", arată alt preparat, iar ingredientele lui **nu se cumpără deloc**. Butonul „Schimbă" e activ pe reîncălziri. |
-| 7 | `useAppStore.ts:526` | `applyCloudPlan` adoptă preferințele din cloud nevalidate. `peopleCount: -3` aruncă din `onPress`, fără error boundary → ecran alb. |
-| 8 | — | **Nu există ștergere de cont.** Obligatorie la Apple (5.1.1v) din 2022 și la Google Play. Contul ține alergii — date de sănătate sub GDPR art. 9. Respingere garantată la submisie. |
+- `src/utils/preferencesValidation.ts` — `parseUserPreferences` verifică fiecare câmp față de
+  catalogul lui, la toate cele trei granițe neîncrezute (storage local, rând din cloud,
+  formate vechi ale aplicației). A închis singur: dieta trimisă ca șir care dezactiva complet
+  dieta (90 de rețete eligibile pentru vegan, 25 cu carne), numărul negativ de persoane care
+  arunca dintr-un buton, cantitatea nenumerică din cămară care ștergea tăcut un produs din
+  listă, și alergiile nevalidate din cloud.
+- **Rețetele se rezolvă prin `RECIPES_MAP[id]`** în ambele porți de siguranță. Un id pe care
+  catalogul nu-l cunoaște e refuzat, nu inserat.
 
-### Majore
+**Restul, pe teme:**
 
-- `useAppStore.ts:1598` — **surplusul se aplică săptămânii curente.** După „pune în cămară",
-  prima reagregare scade stocul din lista pentru care **încă n-ai cumpărat**: coș 123,40 → 68,46,
-  cinci produse dispar din listă în mijlocul cumpărăturilor. Funcția e azi în minus.
-- `useAppStore.ts:2226` — `resetOnboarding` șterge `pantryStock`, `dislikedRecipeIds` și
-  `favouriteRecipeIds`. „+ Plan Nou" distruge exact ce trebuia să plătească.
-- `WeeklyMacroModal.tsx:42` — rezumatul nutrițional citește doar `day.recipe`, deci raportează
-  **o treime** din realitate (2780 kcal în loc de 7550), pe un ecran prezentat ca ghidaj.
-- `storeComparator.ts:44` — singurul loc din 24 care **nu** filtrează reîncălzirile. La mine
-  diferența a fost 0 (rotunjirea pe ambalaje a absorbit-o), dar codul e greșit și apare la
-  gospodării mari.
-- `storage.ts:56` — `loadPreferences` e singurul cititor fără verificare de formă.
-- `groceryAggregator.ts:98` — un `pantryStock` nenumeric face `NaN` și șterge tăcut un produs
-  din listă.
+- Hidratarea aplică mereu versiunea verificată, nu doar când a înlocuit ceva; o masă
+  nelizibilă nu mai costă preferințele și utilizatorul e anunțat.
+- `isRecipeMatchingDiets` e acum `switch` cu `default: return false`.
+- Mesele reîncălzite: nu mai pot fi schimbate, nu mai sunt cotate de comparația de magazine,
+  costul rămâne zero peste tot, gătitul dublu nu mai compune, anularea folosește identitatea.
+- Surplusul așteaptă planul următor în `pendingPantryStock`, deci nu mai golește lista din
+  care cumperi acum; „+ Plan Nou" nu mai șterge cămara și ce a învățat planificatorul.
+- O singură definiție a unei rețete permise — respinsele și disponibilitatea în magazin sunt
+  respectate și la înlocuirea directă, și pe scara de relaxare.
+- Rezumatul nutrițional numără toate mesele, nu doar felul principal (raporta o treime).
+- Hook-ul de depanare care expunea magazinul pe `window` e în spatele `__DEV__`; verificat în
+  bundle: 0 potriviri.
+- Ștergerea contului există, cu funcția edge `delete-account`.
+- `lucide-react-native` scos: 31 MB, nefolosit.
 
-### Minore
+## Ce e blocat — doar de tine
 
-- `useAppStore.ts:282` — costul unei mese reîncălzite nu e păstrat la 0 când planul e
-  revalidat: afișează 10,56 lei pentru ceva ce nu se cumpără. **Găsit de mine.**
-- `useAppStore.ts:1463` — „gătesc dublu" se poate apăsa la nesfârșit: 6 apăsări → 128 porții.
-- `useAppStore.ts:1502` — `undoCookDouble` caută sursa după id, nu după identitate: poate
-  înjumătăți altă masă.
-- `lucide-react-native` — **31 MB, nefolosit nicăieri**, 0 potriviri în bundle.
-
-## Ce e blocat — deploy în magazine
-
-**Aplicația nu poate fi trimisă la niciun magazin.** Nu lipsește curățenie, lipsesc fișiere:
-
-- **icon, splash, adaptive icon** — `assets/` are doar fundaluri de rețete; ar porni cu
-  iconița implicită Expo
-- **`eas.json`** — nu există, deci `eas build` n-are ce citi
-- **`ios.buildNumber` / `android.versionCode`** — absente
-- **politică de confidențialitate** — nicăieri; obligatorie la ambele magazine
-- **`ios.privacyManifests`** — cerut de Apple din mai 2024 pentru AsyncStorage
-
-`README.md:93` susține că „configurația este deja pregătită pentru build-uri native prin EAS".
-**Nu e adevărat** — e afirmația care costă cel mai mult din tot repo-ul.
-
-Rămân blocate și: migrația `0001` scrisă dar **nerulată**, funcția edge nepublicată,
-`ALLOWED_ORIGINS` nesetat.
+1. **Fișierele pentru magazine**: icon, splash, adaptive icon, `eas.json`, `buildNumber`,
+   `versionCode`, politică de confidențialitate, `ios.privacyManifests`. Tabelul complet e în
+   `README.md`.
+2. **Rulează migrația `0001_user_meal_plans.sql`** — scrisă, nerulată. Fără RLS, cheia `anon`
+   ar vedea planurile altora.
+3. **Publică `proxy-gemini-plan` și `delete-account`** și setează `ALLOWED_ORIGINS`. Pașii:
+   `supabase/README.md`. Fără `delete-account` publicată, butonul din aplicație există dar
+   nu are ce apela.
 
 ## Capcane
 
-- **Alergiile și dieta sunt restricții dure pe șase uși.** Trei dintre ele (hidratare, cloud,
-  restaurare) trec prin `makePlanSafeForPreferences`, care azi validează doar id-ul.
-- **Orice agregare a coșului ia 6 argumente** și **orice loc care adună mese trebuie să sară
-  peste `meal.isLeftover`.** Un loc din 24 nu o face; de-aia a apărut defectul.
-- Testele rulează în **două proiecte Jest**; un test care importă `react-native` trebuie numit
+- **`parseUserPreferences` e acum parte din definiția tipului.** Un câmp nou pe
+  `UserPreferences` care nu e adăugat și în validator va fi tăcut aruncat la următoarea
+  încărcare. Direcția e sigură, dar e o obligație reală (ADR-18).
+- **Nimic nu are voie să insereze o rețetă care nu vine din `RECIPES_MAP`.**
+- **Orice loc care adună mese trebuie să sară peste `meal.isLeftover`**, și orice loc care
+  le prețuiește trebuie să le dea zero.
+- Alergiile și dieta sunt restricții dure pe șase uși; toate trec acum prin
+  `makePlanSafeForPreferences` sau `describeUnsafeRecipe`.
+- Testele rulează în două proiecte Jest; un test care importă `react-native` trebuie numit
   `*.component.test.tsx`.
-- `npm run test:coverage` — praguri în `jest.config.js`. Nu le coborî; adaugă teste.
-- `README.md:76` spune prag 80%; real e 83/83/84/62.
+- `__DEV__` nu există în proiectul Jest de logică — de-aia garda e `typeof __DEV__ !== 'undefined'`.
 
 ## Unelte
 
-- `code-reviewer` și `security-reviewer` rulați în paralel pe tot proiectul: împreună au găsit
-  14 defecte pe care eu le ratasem. **Dar unul a raportat 433 teste / 51 suite când realitatea
-  e 600 / 75** — cifră greșită, deci i-am verificat fiecare afirmație. Una (slot greșit la
-  gătitul dublu) nu s-a reprodus la mine. **Verifică întotdeauna, nu prelua.**
-- Tehnica cea mai productivă rămâne testul-sondă care rulează fiecare acțiune și verifică
-  invarianții după fiecare.
+- `code-reviewer` și `security-reviewer` în paralel pe tot proiectul au găsit 14 defecte pe
+  care eu le ratasem. **Dar unul a raportat 433 teste când realitatea era 600**, iar una
+  dintre afirmațiile lui nu s-a reprodus. Verifică fiecare afirmație prin rulare.
+- Testul-sondă care rulează fiecare acțiune și verifică invarianții după fiecare rămâne cea
+  mai productivă tehnică.
 
 ## Întrebări pentru tine
 
-1. Reparăm cele 8 critice într-o sesiune dedicată? Ordinea propusă: 1 → 2 → 3 → 4 → 6 → 5 → 7 → 8.
-2. Scot `lucide-react-native`?
-3. Pregătesc lista completă pentru deploy (icon, splash, `eas.json`, versiuni, politică)?
+1. Îți pregătesc `eas.json` și structura de `assets/` cu locurile pentru icon și splash, ca
+   să nu-ți rămână decât să pui imaginile?
+2. Scriu o primă variantă de politică de confidențialitate, pe care s-o revizuiești?
