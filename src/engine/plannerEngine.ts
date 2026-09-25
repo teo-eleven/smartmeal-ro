@@ -427,6 +427,10 @@ export function generateMealPlan(
 
   const effectiveTier = preferences.foodTier || 'medium';
 
+  // The relaxation ladder below rebuilds candidates from the whole catalog when a slot runs
+  // dry. It relaxes the store and the slot -- never a dish the user asked never to see again.
+  const rejectedIds = new Set(preferences.dislikedRecipeIds ?? []);
+
   // Score each recipe based on mood tags, food tier preference, and portion cost
   const scoredRecipes = eligibleRecipes.map((recipe) => {
     let score = 0;
@@ -510,6 +514,7 @@ export function generateMealPlan(
       // 1. Drop the supermarket requirement, keep diet + appliances + slot.
       const ignoringStore = RECIPES.filter(
         (r) =>
+          !rejectedIds.has(r.id) &&
           matchesSlot(r, slot) &&
           isRecipeMatchingDiets(r, activeDiets) &&
           isRecipeSafeForAllergies(r, preferences.avoidedAllergens) &&
@@ -524,6 +529,7 @@ export function generateMealPlan(
         //    (for example: there is no vegan breakfast recipe).
         const cookableAndEdible = RECIPES.filter(
           (r) =>
+            !rejectedIds.has(r.id) &&
             isRecipeMatchingDiets(r, activeDiets) &&
             isRecipeSafeForAllergies(r, preferences.avoidedAllergens) &&
             hasRequiredAppliances(r.appliances, preferences.appliances)

@@ -506,6 +506,19 @@ function rejectIfInfeasible(nextPrefs: UserPreferences): Partial<AppState> | nul
  * this states them once so a caller cannot accidentally skip one.
  */
 function describeUnsafeRecipe(recipe: Recipe, preferences: UserPreferences): string | null {
+  // `dislikedRecipeIds` is documented as a hard filter like diet and allergens, and
+  // `getEligibleRecipes` treats it as one. This check did not, so a refused dish could be
+  // put straight back on the board through a direct replacement.
+  if ((preferences.dislikedRecipeIds ?? []).includes(recipe.id)) {
+    return `Ai spus că nu vrei să-ți mai propun „${recipe.title}".`;
+  }
+
+  // Store availability is the other predicate getEligibleRecipes enforces and this one
+  // omitted, so the two definitions of "allowed" disagreed by exactly two rules.
+  if (!isSupermarketCompatible(recipe, preferences.supermarketId)) {
+    return `„${recipe.title}" nu se găsește la magazinul pe care l-ai ales.`;
+  }
+
   const diets =
     preferences.dietTypes && preferences.dietTypes.length > 0
       ? preferences.dietTypes
