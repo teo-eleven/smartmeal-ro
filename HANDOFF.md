@@ -11,8 +11,8 @@ completă pentru App Store și Google Play, imaginile de aplicație, politica de
 ## Starea, rulată la închidere
 
 ```
-TESTE 85 suite / 686 teste · TYPECHECK 0 · LINT 0 · BUILD web 1,4 MB
-COVERAGE 86,18 / 65,21 / 84,75 / 87,29 — toate pragurile trecute
+TESTE 89 suite / 738 teste · TYPECHECK 0 · LINT 0
+COVERAGE 87,47 / 68,85 / 87,99 / 88,97 — toate pragurile trecute
 BUNDLE 0 chei, 0 cârlige de depanare
 GIT curat
 ```
@@ -51,6 +51,14 @@ la `NSUserDefaults` · App Transport Security fără excepții · Android cu o s
 
 **Documente:** `PRIVACY.md` (prima variantă, de completat cu datele operatorului) și
 `STORE.md` (tot drumul, în ordine, cu răspunsurile exacte pentru formularele magazinelor).
+
+## Găsit reparând ecranele slabe
+
+`PantryInventoryModal` avea **zece din nouăsprezece id-uri scrise altfel decât în catalog**.
+Agregatorul de coș compară după id, deci bifarea ouălor colora un card și nu scotea nimic din
+listă. Insigna de economie punea 6 lei bucata pentru ele — o cifră inventată care arăta ca o
+cifră reală. Reparat, plus un test care verifică fiecare id, adică exact ce l-ar fi prins din
+prima zi.
 
 ## Adăugat în sesiunea asta
 
@@ -119,7 +127,7 @@ cârligul de depanare care expunea tot magazinul (0 în bundle, verificat).
 
 ## Întrebări pentru tine
 
-1. Vrei să continui cu acoperirea de teste pe ecranele slabe (`PantryInventoryModal` 22%,
-   `GroceryScreen` 29%), sau lăsăm așa până după prima urcare?
-2. Îți trebuie un formular web de ștergere a contului, pentru cerința Google Play, sau e
+1. Îți trebuie un formular web de ștergere a contului, pentru cerința Google Play, sau e
    suficientă adresa de email din politică?
+2. Cel mai slab fișier rămas e `OnboardingWizard` la 72%, iar restul sunt servicii care cer
+   Supabase real ca să fie testate cinstit. Mai insistăm sau ne oprim aici cu testele?
