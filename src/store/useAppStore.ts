@@ -35,11 +35,12 @@ import {
   calculateRecipePortionCost,
 } from '../engine/budgetCalculator';
 import { INGREDIENTS } from '../data/ingredients';
+import { RECIPES_MAP } from '../data/recipes';
 import { RETAIL_PRODUCTS_MAP } from '../data/retailProducts';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { ALLERGEN_CATALOG } from '../data/allergens';
 import { getRecipeAllergens } from '../utils/allergenFilter';
-import { parseUserPreferences, sanitizePantryStock } from '../utils/preferencesValidation';
+import { parseUserPreferences } from '../utils/preferencesValidation';
 import { storageService } from '../services/storage';
 import { cloudSyncService } from '../services/supabase';
 import { areDietsCompatible, isRecipeMatchingDiets } from '../utils/dietCompatibility';
@@ -259,10 +260,15 @@ function makePlanSafeForPreferences(
 
   const safeDays = days.map((day) => {
     const meals = day.meals.map((meal) => {
-      const isSafe = eligible.some((recipe) => recipe.id === meal.recipe.id);
-      if (isSafe) return meal;
+      // The id was checked and the body was believed. A plan from storage or the cloud could
+      // keep a legitimate id while its ingredients said something else entirely, and the
+      // allergen verdict was then computed against a list the catalog never contained.
+      // Whatever arrives, the dish served is the one the catalog defines.
+      const canonical = RECIPES_MAP[meal.recipe.id];
+      const isSafe = Boolean(canonical) && eligible.some((recipe) => recipe.id === canonical.id);
+      if (isSafe) return meal.recipe === canonical ? meal : { ...meal, recipe: canonical };
 
-      getRecipeAllergens(meal.recipe)
+      getRecipeAllergens(canonical ?? meal.recipe)
         .filter((allergen) => avoided.includes(allergen))
         .forEach((allergen) => offending.add(allergen));
 
@@ -808,6 +814,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       let planSafetyNotice: SystemNotice | null = null;
 
       if (sanitizedPlan) {
+        // Older builds produced `snack` meals the board no longer shows. Dropping them left
+        // the day's headline dish dangling and the cart still holding their money, because
+        // nothing was rebuilt afterwards.
+        const snacksRemoved = sanitizedPlan.days.some((d) =>
+          d.meals.some((m) => m.slot === 'snack')
+        );
         sanitizedPlan = {
           ...sanitizedPlan,
           days: sanitizedPlan.days.map((d) => ({
@@ -826,27 +838,33 @@ export const useAppStore = create<AppState>((set, get) => ({
           offendingAllergens,
         } = makePlanSafeForPreferences(sanitizedPlan.days, effectivePrefs);
 
-        if (replacedCount > 0) {
-          const aggregated = aggregateGroceryList(
-            collectMealsFromDays(safeDays),
-            effectivePrefs.supermarketId,
-            effectivePrefs.excludePantryStaples,
-            getActiveExtraProductIds(effectivePrefs),
-            effectivePrefs.pantryInventory || [],
-            effectivePrefs.pantryStock || {}
-          );
+        // The checked days are always the ones kept, not only when something was replaced.
+        // Guarding this on `replacedCount > 0` meant a plan whose recipe ids were all valid
+        // kept whatever body storage had attached to them, and a plan that only lost its
+        // snacks kept a dangling headline dish and their money in the cart.
+        const aggregated = aggregateGroceryList(
+          collectMealsFromDays(safeDays),
+          effectivePrefs.supermarketId,
+          effectivePrefs.excludePantryStaples,
+          getActiveExtraProductIds(effectivePrefs),
+          effectivePrefs.pantryInventory || [],
+          effectivePrefs.pantryStock || {}
+        );
 
-          sanitizedPlan = {
-            ...sanitizedPlan,
-            days: safeDays,
-            totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
-            totalCartCostRon: aggregated.totalCartCostRon,
-            extraProducts: getActiveExtraProducts(effectivePrefs),
-          };
-          hydratedItems = aggregated.items;
+        sanitizedPlan = {
+          ...sanitizedPlan,
+          days: safeDays.map((day) => ({ ...day, ...rebuildDayShape(day.meals, day) })),
+          totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+          totalCartCostRon: aggregated.totalCartCostRon,
+          extraProducts: getActiveExtraProducts(effectivePrefs),
+        };
+        hydratedItems = aggregated.items;
 
+        if (replacedCount > 0 || snacksRemoved) {
           void storageService.savePlanAndGrocery(sanitizedPlan, aggregated.items);
+        }
 
+        if (replacedCount > 0) {
           planSafetyNotice = {
             id: Date.now().toString(),
             title: 'Plan adaptat la setările tale',
@@ -2722,10 +2740,24 @@ export const useAppStore = create<AppState>((set, get) => ({
     const dayIndex = currentPlan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
     if (dayIndex === -1) return;
 
-    // Every other action that puts a meal on the board re-derives safety itself. This one
-    // trusted whoever called it, and its only caller filters correctly -- which makes this
-    // a trap for the next caller rather than a live hole. It now checks for itself.
-    const rejection = describeUnsafeRecipe(newRecipe, preferences);
+    // The safety check used to read the diet, appliances and ingredients off the object it
+    // was handed, so a fabricated recipe claiming `dietType: 'vegan'` and no ingredients
+    // passed all three trivially and landed on the board with arbitrary cooking steps.
+    // Nothing outside the catalog can be cooked, so nothing outside it may be inserted.
+    const canonical = RECIPES_MAP[newRecipe.id];
+    if (!canonical) {
+      set({
+        activeNotice: {
+          id: Date.now().toString(),
+          title: 'Rețetă necunoscută',
+          message: 'Rețeta aceasta nu există în catalog, așa că nu poate fi pusă în plan.',
+          type: 'warning',
+        },
+      });
+      return;
+    }
+
+    const rejection = describeUnsafeRecipe(canonical, preferences);
     if (rejection) {
       set({
         activeNotice: {
@@ -2743,7 +2775,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       slot || (targetDay.meals && targetDay.meals.length > 0 ? targetDay.meals[0].slot : 'dinner');
 
     const newCost = calculateRecipePortionCost(
-      newRecipe,
+      canonical,
       currentPlan.peopleCount,
       preferences.supermarketId,
       preferences.excludePantryStaples
@@ -2754,7 +2786,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (m.slot === targetSlot) {
         return {
           ...m,
-          recipe: newRecipe,
+          recipe: canonical,
           estimatedCostRon: newCost,
         };
       }
@@ -2763,7 +2795,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const primaryMeal = updatedMeals.find((m) => m.slot === 'dinner') ||
       updatedMeals[0] || {
-        recipe: newRecipe,
+        recipe: canonical,
         estimatedCostRon: newCost,
       };
     const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);

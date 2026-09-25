@@ -79,7 +79,11 @@ describe('Phase 8: Offline Storage, Cloud Sync & AI Proxy Services', () => {
       expect(state.preferences.supermarketId).toBe('kaufland');
       expect(state.preferences.peopleCount).toBe(4);
       expect(state.currentPlan?.id).toBe('test-plan-1');
-      expect(state.groceryItems.length).toBe(1);
+      // The list is derived from the plan's meals on every hydration rather than trusted
+      // from storage, so its length follows the plan, not whatever was persisted beside it.
+      expect(state.groceryItems.length).toBeGreaterThan(0);
+      const sum = state.groceryItems.reduce((total, item) => total + item.estimatedPriceRon, 0);
+      expect(Math.abs(sum - state.currentPlan!.totalCartCostRon)).toBeLessThan(0.02);
       expect(state.activeView).toBe('meals');
     });
   });
