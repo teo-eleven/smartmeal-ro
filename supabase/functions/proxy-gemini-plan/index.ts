@@ -6,7 +6,15 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || '';
 const GEMINI_MODEL = 'gemini-1.5-flash';
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+// The key goes in a header, not the query string: a URL is the part most likely to be
+// captured whole by a proxy, a CDN or an observability tool.
+const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+/** The client gives up at 8s; without this the isolate keeps the call open and billing. */
+const UPSTREAM_TIMEOUT_MS = 7000;
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
 interface RequestPayload {
   action: 'suggest_swap' | 'generate_plan';
@@ -42,30 +50,64 @@ function corsHeaders(req: Request): Record<string, string> {
   };
 }
 
-/**
- * The anon key is public by design, so it is not a meaningful gate on its own. This bounds
- * what a single caller can burn of the project's Gemini quota. In-memory, so it resets when
- * the isolate recycles and does not coordinate across instances — enough to stop casual
- * scripted abuse, not a substitute for a shared store if this ever gets real traffic.
- */
-const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 20;
-const callers = new Map<string, { count: number; windowStart: number }>();
 
-function isRateLimited(req: Request): boolean {
-  const caller =
-    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-    req.headers.get('cf-connecting-ip') ||
-    'unknown';
-  const now = Date.now();
-  const entry = callers.get(caller);
+/**
+ * Identifies the caller from their own token.
+ *
+ * The anon key is public by design and ships in the client bundle, so it proves nothing: it
+ * satisfies Supabase's default `verify_jwt` while saying only "somebody has the app". A real
+ * user token gives an id that cannot be forged, which is what both the rate limit and any
+ * future per-user quota need.
+ */
+async function authenticatedUserId(req: Request): Promise<string | null> {
+  const header = req.headers.get('Authorization') || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (!token || !SUPABASE_URL || !SERVICE_ROLE_KEY) return null;
 
-  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-    callers.set(caller, { count: 1, windowStart: now });
-    return false;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: SERVICE_ROLE_KEY },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return null;
+    const user = await res.json();
+    return typeof user?.id === 'string' ? user.id : null;
+  } catch (e) {
+    console.error('[proxy-gemini-plan] Could not verify the caller:', e);
+    return null;
   }
-  entry.count += 1;
-  return entry.count > RATE_LIMIT_MAX_REQUESTS;
+}
+
+/**
+ * One shared counter in Postgres, keyed on the user id.
+ *
+ * The previous limit lived in a Map inside the isolate. Supabase recycles and scales those,
+ * so it was really twenty per minute per isolate, and it keyed on X-Forwarded-For, which the
+ * caller sets. Rotating that header walked past it entirely, on the project's Gemini bill.
+ */
+async function isRateLimited(userId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/register_ai_call`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ p_user_id: userId, p_limit: RATE_LIMIT_MAX_REQUESTS }),
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) {
+      // Fail closed: an unavailable limiter must not become an open proxy.
+      console.error('[proxy-gemini-plan] Rate limiter unavailable:', res.status);
+      return true;
+    }
+    return (await res.json()) === true;
+  } catch (e) {
+    console.error('[proxy-gemini-plan] Rate limiter failed:', e);
+    return true;
+  }
 }
 
 /** Caps on anything that ends up inside the prompt, so cost per call cannot be inflated. */
@@ -129,7 +171,18 @@ serve(async (req: Request) => {
     });
   }
 
-  if (isRateLimited(req)) {
+  // Identity first: everything below is priced against somebody's quota, so an anonymous
+  // caller is refused rather than counted. The client falls back to its own deterministic
+  // choice, so a signed-out user still gets a sensible swap -- just not a paid one.
+  const userId = await authenticatedUserId(req);
+  if (!userId) {
+    return new Response(
+      JSON.stringify({ error: 'unauthenticated', fallbackToLocal: true }),
+      { status: 401, headers: { ...cors, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (await isRateLimited(userId)) {
     return new Response(
       JSON.stringify({ error: 'Too many requests', fallbackToLocal: true }),
       { status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' } }
@@ -140,7 +193,7 @@ serve(async (req: Request) => {
     if (!GEMINI_API_KEY) {
       return new Response(
         JSON.stringify({
-          error: 'GEMINI_API_KEY is not configured in Supabase secrets.',
+          error: 'not_configured',
           fallbackToLocal: true,
         }),
         {
@@ -199,15 +252,21 @@ Structura JSON:
 
     const response = await fetch(GEMINI_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': GEMINI_API_KEY,
+      },
       body: JSON.stringify(geminiBody),
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
     if (!response.ok) {
-      const errText = await response.text();
+      // The upstream body is logged, never forwarded: this endpoint is publicly callable and
+      // Google's error bodies can echo request metadata and quota state.
+      console.error('[proxy-gemini-plan] Upstream error', response.status, await response.text());
       return new Response(
-        JSON.stringify({ error: `Gemini API error: ${response.status}`, details: errText }),
-        { status: response.status, headers: { ...cors, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'upstream_error', fallbackToLocal: true }),
+        { status: 502, headers: { ...cors, 'Content-Type': 'application/json' } }
       );
     }
 

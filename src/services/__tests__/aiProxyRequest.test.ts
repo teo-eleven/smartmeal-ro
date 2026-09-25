@@ -16,6 +16,17 @@ jest.mock('../../../config/env', () => ({
   },
 }));
 
+// The proxy now prices every call against a signed-in user's quota, so it asks Supabase for
+// the session before it sends anything. Without a token it falls back deterministically --
+// correct, but not the branch these tests are about.
+jest.mock('../supabase', () => ({
+  getSupabaseClient: () => ({
+    auth: {
+      getSession: async () => ({ data: { session: { access_token: 'user-token-stub' } } }),
+    },
+  }),
+}));
+
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { aiProxyService } = require('../aiProxy');
 
@@ -127,5 +138,29 @@ describe('the request the client actually sends', () => {
     const result = await aiProxyService.suggestSmartSwap(current, candidates, buildPreferences());
 
     expect(result.reason.trim().length).toBeGreaterThan(0);
+  });
+});
+
+describe('apelurile plătite cer un utilizator autentificat', () => {
+  test('fără sesiune nu se atinge deloc funcția edge', async () => {
+    jest.resetModules();
+    jest.doMock('../supabase', () => ({
+      getSupabaseClient: () => ({
+        auth: { getSession: async () => ({ data: { session: null } }) },
+      }),
+    }));
+    /* eslint-disable @typescript-eslint/no-require-imports */
+    const { aiProxyService: signedOut } = require('../aiProxy');
+
+    const fetchSpy = jest.fn();
+    global.fetch = fetchSpy as unknown as typeof fetch;
+
+    const prefs = buildPreferences();
+    const result = await signedOut.suggestSmartSwap(RECIPES[0], [RECIPES[1], RECIPES[2]], prefs);
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    // The deterministic choice still comes from the candidates the caller pre-filtered.
+    expect([RECIPES[1].id, RECIPES[2].id]).toContain(result.recipe.id);
+    expect(result.isAiGenerated).toBe(false);
   });
 });

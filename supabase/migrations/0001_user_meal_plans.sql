@@ -24,6 +24,21 @@ comment on column public.user_meal_plans.preferences is
 
 -- saveMealPlan upserts with onConflict: 'user_id'; the primary key above is what makes that work.
 
+-- A row is one week's plan. Without a ceiling an authenticated user can upsert multi-megabyte
+-- blobs in a loop and turn their own row into a storage bill. 256 KB is far above any real
+-- plan: a full seven-day, three-meal week serialises to a few tens of kilobytes.
+alter table public.user_meal_plans
+  add constraint user_meal_plans_plan_data_size
+  check (pg_column_size(plan_data) <= 262144);
+
+alter table public.user_meal_plans
+  add constraint user_meal_plans_grocery_items_size
+  check (pg_column_size(grocery_items) <= 262144);
+
+alter table public.user_meal_plans
+  add constraint user_meal_plans_preferences_size
+  check (pg_column_size(preferences) <= 65536);
+
 alter table public.user_meal_plans enable row level security;
 
 -- Without these policies the anon key, which ships in the client bundle, would be able to

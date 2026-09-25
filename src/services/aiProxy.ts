@@ -1,4 +1,5 @@
 import { env } from '../../config/env';
+import { getSupabaseClient } from './supabase';
 import { Recipe, UserPreferences } from '../types';
 
 export interface SmartSwapResult {
@@ -35,6 +36,20 @@ function pickDeterministicFallback(
   };
 }
 
+/** The signed-in user's token, or null when nobody is signed in. */
+async function getAccessToken(): Promise<string | null> {
+  try {
+    const client = getSupabaseClient();
+    if (!client) return null;
+    const {
+      data: { session },
+    } = await client.auth.getSession();
+    return session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export const aiProxyService = {
   /**
    * AI runs behind the Supabase edge function, which holds the provider key server-side.
@@ -65,6 +80,13 @@ export const aiProxyService = {
       return pickDeterministicFallback(validCandidates, preferences);
     }
 
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
+      // Not signed in, so there is no quota to spend. The deterministic choice is drawn from
+      // the same pre-filtered candidates and is a perfectly good swap.
+      return pickDeterministicFallback(validCandidates, preferences);
+    }
+
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
@@ -74,7 +96,11 @@ export const aiProxyService = {
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
-          ...(env.supabaseAnonKey ? { Authorization: `Bearer ${env.supabaseAnonKey}` } : {}),
+          // A real user token, not the public anon key: the function prices every call
+          // against somebody's quota, so it needs to know whose. Signed out, the request is
+          // refused and the deterministic fallback below takes over.
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          ...(env.supabaseAnonKey ? { apikey: env.supabaseAnonKey } : {}),
         },
         body: JSON.stringify({
           action: 'suggest_swap',
