@@ -290,12 +290,16 @@ function makePlanSafeForPreferences(
       return {
         ...meal,
         recipe: replacement,
-        estimatedCostRon: calculateRecipePortionCost(
-          replacement,
-          meal.servings,
-          preferences.supermarketId,
-          preferences.excludePantryStaples
-        ),
+        // A reheated portion was paid for on the day it was cooked; recomputing it here put
+        // a price on the card and in the day total for something the cart never buys.
+        estimatedCostRon: meal.isLeftover
+          ? 0
+          : calculateRecipePortionCost(
+              replacement,
+              meal.servings,
+              preferences.supermarketId,
+              preferences.excludePantryStaples
+            ),
       };
     });
 
@@ -1163,12 +1167,17 @@ export const useAppStore = create<AppState>((set, get) => ({
             dayRecipeIds.add(activeRecipe.id);
             usedRecipeIdsInWeek.add(activeRecipe.id);
 
-            const cost = calculateRecipePortionCost(
-              activeRecipe,
-              nextPrefs.peopleCount,
-              id,
-              nextPrefs.excludePantryStaples
-            );
+            // Priced for the portions this meal actually books, not for the household size:
+            // a doubled meal books four and was being charged for two. A reheated portion
+            // costs nothing wherever you shop, because it is not in the cart at all.
+            const cost = m.isLeftover
+              ? 0
+              : calculateRecipePortionCost(
+                  activeRecipe,
+                  m.servings,
+                  id,
+                  nextPrefs.excludePantryStaples
+                );
 
             return {
               ...m,
@@ -1526,6 +1535,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       const dayIndex = plan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
       const source = plan.days[dayIndex]?.meals.find((m) => m.id === mealId);
       if (!source || source.isLeftover) return state;
+
+      // The button stays on the card after a double, and it compounded: six taps booked 128
+      // portions and a 1331-lei cart. One double is the whole idea; a second is a mistake.
+      if (source.servings > state.preferences.peopleCount) {
+        return {
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Deja gătești porție dublă',
+            message: `„${source.recipe.title}" e deja dublat pentru ziua următoare. Anulează întâi dacă vrei altceva.`,
+            type: 'info',
+          },
+        };
+      }
 
       const nextDay = plan.days[dayIndex + 1];
       if (!nextDay) {
@@ -2811,7 +2833,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const updatedDays = [...currentPlan.days];
     const updatedMeals = (targetDay.meals || []).map((m) => {
-      if (m.slot === targetSlot) {
+      // Same rule as a swap: a reheated portion belongs to the day it was cooked on.
+      if (m.slot === targetSlot && !m.isLeftover) {
         return {
           ...m,
           recipe: canonical,

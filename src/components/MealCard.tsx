@@ -371,14 +371,18 @@ export const MealCard: React.FC<MealCardProps> = ({
 
             {/* Main Action Buttons: Perfectly sized, zero cutoff */}
             <View style={styles.actionButtonsRow}>
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={onSwapMeal}
-                style={[styles.swapBtn, { backgroundColor: theme.accentBg, borderColor: theme.border }]}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.swapBtnText, { color: theme.text }]}>🔄 Schimbă</Text>
-              </TouchableOpacity>
+              {/* A reheated portion belongs to the day it was cooked on; the store refuses
+                  to swap it, so offering the button would only be a dead tap. */}
+              {!meal?.isLeftover && (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={onSwapMeal}
+                  style={[styles.swapBtn, { backgroundColor: theme.accentBg, borderColor: theme.border }]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.swapBtnText, { color: theme.text }]}>🔄 Schimbă</Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 accessibilityRole="button"

@@ -775,7 +775,10 @@ export function swapMealInPlan(
 
   const updatedDays = [...currentPlan.days];
   const updatedMeals = (targetDay.meals || []).map((m) => {
-    if (m.slot === slotToSwap) {
+    // A reheated portion belongs to the day it was cooked on. Swapping it kept the
+    // "reheated" flag on a different dish, so the card claimed yesterday's leftovers while
+    // showing something else entirely -- and nothing was bought for it.
+    if (m.slot === slotToSwap && !m.isLeftover) {
       return {
         ...m,
         recipe: replacementRecipe,

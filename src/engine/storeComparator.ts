@@ -41,8 +41,13 @@ export function compareBasketAcrossStores(
   plan: MealPlan,
   preferences: UserPreferences
 ): StoreComparison {
+  // The only aggregation in the app that counted reheated portions. The day they were cooked
+  // on already carries the doubled servings, so counting them here priced a basket nobody
+  // would ever buy, and every quote came out inflated.
   const meals = plan.days.flatMap((day) =>
-    day.meals.map((meal) => ({ recipe: meal.recipe, servings: meal.servings }))
+    day.meals
+      .filter((meal) => !meal.isLeftover)
+      .map((meal) => ({ recipe: meal.recipe, servings: meal.servings }))
   );
   const extraProductIds = [
     ...(preferences.selectedSnackIds || []),
