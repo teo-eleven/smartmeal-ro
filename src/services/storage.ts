@@ -32,16 +32,31 @@ export function isWellFormedSavedPlan(value: unknown): value is SavedPlan {
  * plan whose days were missing or the wrong type threw from inside the hydration try block,
  * which then discarded the preferences and the plan library alongside it.
  */
+const VALID_MEAL_SLOTS = new Set<string>(['breakfast', 'lunch', 'dinner', 'snack', 'dessert']);
+
+/** A meal is only usable if it names a recipe and a slot the app knows. */
+function isWellFormedMeal(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) return false;
+  const meal = value as { recipe?: unknown; slot?: unknown };
+  if (typeof meal.slot !== 'string' || !VALID_MEAL_SLOTS.has(meal.slot)) return false;
+  const recipe = meal.recipe as { id?: unknown } | undefined;
+  return typeof recipe === 'object' && recipe !== null && typeof recipe.id === 'string';
+}
+
 export function isWellFormedPlan(value: unknown): value is MealPlan {
   if (typeof value !== 'object' || value === null) return false;
   const plan = value as { days?: unknown };
   if (!Array.isArray(plan.days)) return false;
-  return plan.days.every(
-    (day) =>
-      typeof day === 'object' &&
-      day !== null &&
-      Array.isArray((day as { meals?: unknown }).meals)
-  );
+
+  // This used to stop at `Array.isArray(day.meals)` and never look inside. A `meals: [null]`
+  // therefore passed the gate and threw later, deep inside hydration, where a single catch
+  // discarded the preferences and the plan library it had already read successfully -- the
+  // app then started as an unrestricted omnivore with no allergies and said nothing.
+  return plan.days.every((day) => {
+    if (typeof day !== 'object' || day === null) return false;
+    const meals = (day as { meals?: unknown }).meals;
+    return Array.isArray(meals) && meals.every(isWellFormedMeal);
+  });
 }
 
 export const storageService = {

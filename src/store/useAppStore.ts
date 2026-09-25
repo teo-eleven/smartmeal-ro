@@ -813,65 +813,81 @@ export const useAppStore = create<AppState>((set, get) => ({
       let hydratedItems = items;
       let planSafetyNotice: SystemNotice | null = null;
 
-      if (sanitizedPlan) {
-        // Older builds produced `snack` meals the board no longer shows. Dropping them left
-        // the day's headline dish dangling and the cart still holding their money, because
-        // nothing was rebuilt afterwards.
-        const snacksRemoved = sanitizedPlan.days.some((d) =>
-          d.meals.some((m) => m.slot === 'snack')
-        );
-        sanitizedPlan = {
-          ...sanitizedPlan,
-          days: sanitizedPlan.days.map((d) => ({
-            ...d,
-            meals: d.meals.filter((m) => m.slot !== 'snack'),
-          })),
-        };
-
-        // Reopening the app is the first door a meal comes through, and the plan beside the
-        // preferences can be arbitrarily stale -- or, on web, edited by hand in localStorage.
-        // Restoring an archived plan was already re-checked here; this path was not.
-        const effectivePrefs = storedPrefs ?? DEFAULT_PREFERENCES;
-        const {
-          days: safeDays,
-          replacedCount,
-          offendingAllergens,
-        } = makePlanSafeForPreferences(sanitizedPlan.days, effectivePrefs);
-
-        // The checked days are always the ones kept, not only when something was replaced.
-        // Guarding this on `replacedCount > 0` meant a plan whose recipe ids were all valid
-        // kept whatever body storage had attached to them, and a plan that only lost its
-        // snacks kept a dangling headline dish and their money in the cart.
-        const aggregated = aggregateGroceryList(
-          collectMealsFromDays(safeDays),
-          effectivePrefs.supermarketId,
-          effectivePrefs.excludePantryStaples,
-          getActiveExtraProductIds(effectivePrefs),
-          effectivePrefs.pantryInventory || [],
-          effectivePrefs.pantryStock || {}
-        );
-
-        sanitizedPlan = {
-          ...sanitizedPlan,
-          days: safeDays.map((day) => ({ ...day, ...rebuildDayShape(day.meals, day) })),
-          totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
-          totalCartCostRon: aggregated.totalCartCostRon,
-          extraProducts: getActiveExtraProducts(effectivePrefs),
-        };
-        hydratedItems = aggregated.items;
-
-        if (replacedCount > 0 || snacksRemoved) {
-          void storageService.savePlanAndGrocery(sanitizedPlan, aggregated.items);
-        }
-
-        if (replacedCount > 0) {
-          planSafetyNotice = {
-            id: Date.now().toString(),
-            title: 'Plan adaptat la setările tale',
-            message: buildRestoreNotice(replacedCount, offendingAllergens),
-            type: 'warning',
+      try {
+        if (sanitizedPlan) {
+          // Older builds produced `snack` meals the board no longer shows. Dropping them left
+          // the day's headline dish dangling and the cart still holding their money, because
+          // nothing was rebuilt afterwards.
+          const snacksRemoved = sanitizedPlan.days.some((d) =>
+            d.meals.some((m) => m.slot === 'snack')
+          );
+          sanitizedPlan = {
+            ...sanitizedPlan,
+            days: sanitizedPlan.days.map((d) => ({
+              ...d,
+              meals: d.meals.filter((m) => m.slot !== 'snack'),
+            })),
           };
+
+          // Reopening the app is the first door a meal comes through, and the plan beside the
+          // preferences can be arbitrarily stale -- or, on web, edited by hand in localStorage.
+          // Restoring an archived plan was already re-checked here; this path was not.
+          const effectivePrefs = storedPrefs ?? DEFAULT_PREFERENCES;
+          const {
+            days: safeDays,
+            replacedCount,
+            offendingAllergens,
+          } = makePlanSafeForPreferences(sanitizedPlan.days, effectivePrefs);
+
+          // The checked days are always the ones kept, not only when something was replaced.
+          // Guarding this on `replacedCount > 0` meant a plan whose recipe ids were all valid
+          // kept whatever body storage had attached to them, and a plan that only lost its
+          // snacks kept a dangling headline dish and their money in the cart.
+          const aggregated = aggregateGroceryList(
+            collectMealsFromDays(safeDays),
+            effectivePrefs.supermarketId,
+            effectivePrefs.excludePantryStaples,
+            getActiveExtraProductIds(effectivePrefs),
+            effectivePrefs.pantryInventory || [],
+            effectivePrefs.pantryStock || {}
+          );
+
+          sanitizedPlan = {
+            ...sanitizedPlan,
+            days: safeDays.map((day) => ({ ...day, ...rebuildDayShape(day.meals, day) })),
+            totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+            totalCartCostRon: aggregated.totalCartCostRon,
+            extraProducts: getActiveExtraProducts(effectivePrefs),
+          };
+          hydratedItems = aggregated.items;
+
+          if (replacedCount > 0 || snacksRemoved) {
+            void storageService.savePlanAndGrocery(sanitizedPlan, aggregated.items);
+          }
+
+          if (replacedCount > 0) {
+            planSafetyNotice = {
+              id: Date.now().toString(),
+              title: 'Plan adaptat la setările tale',
+              message: buildRestoreNotice(replacedCount, offendingAllergens),
+              type: 'warning',
+            };
+          }
         }
+      } catch (planError) {
+        // A plan that cannot be read must not cost the user their preferences or their plan
+        // library, which were both read successfully a moment ago. Drop the plan, keep the
+        // rest, and say so rather than starting over in silence.
+        console.warn('[useAppStore] Stored plan unusable, starting without it:', planError);
+        sanitizedPlan = null;
+        hydratedItems = [];
+        planSafetyNotice = {
+          id: Date.now().toString(),
+          title: 'Planul salvat nu a putut fi citit',
+          message:
+            'Setările și planurile tale salvate sunt intacte, dar meniul curent s-a pierdut. Generează-l din nou când vrei.',
+          type: 'warning',
+        };
       }
 
       const urlParams =
@@ -921,8 +937,20 @@ export const useAppStore = create<AppState>((set, get) => ({
         savedPlans,
       }));
     } catch (e) {
+      // Whatever went wrong, the user must not be told nothing: starting silently on the
+      // defaults means an unrestricted omnivore with no allergies, which looks like a
+      // working app right up until it puts an allergen on the board.
       console.warn('[useAppStore] Hydration error:', e);
-      set({ isHydrated: true });
+      set({
+        isHydrated: true,
+        activeNotice: {
+          id: Date.now().toString(),
+          title: 'Setările nu au putut fi citite',
+          message:
+            'Nu am reușit să îți încarc setările salvate, inclusiv dieta și alergiile. Verifică-le din Filtre înainte să gătești ceva.',
+          type: 'error',
+        },
+      });
     }
   },
 
