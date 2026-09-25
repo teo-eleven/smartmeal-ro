@@ -156,6 +156,78 @@ export const cloudSyncService = {
     }
   },
 
+  /**
+   * Starts a password reset by emailing a six-digit code.
+   *
+   * Supabase calls this a "recovery OTP". The code is what the user types back in, and it is
+   * the only way to prove they reach the mailbox — so the reply is deliberately identical
+   * whether the address exists or not. Saying "no such account" would turn this endpoint
+   * into a way to find out who has one.
+   */
+  async requestPasswordReset(email: string): Promise<{ success: boolean; error: string | null }> {
+    const client = getSupabaseClient();
+    if (!client) {
+      return { success: false, error: 'Resetarea parolei nu este disponibilă offline.' };
+    }
+
+    try {
+      await client.auth.resetPasswordForEmail(email.trim());
+      return { success: true, error: null };
+    } catch (e: unknown) {
+      // Network failures are worth reporting; a rejected address is not, for the reason above.
+      const message = e instanceof Error ? e.message : 'Eroare la trimiterea codului.';
+      return { success: false, error: message };
+    }
+  },
+
+  /**
+   * Exchanges the emailed code for a session, which is what lets the next step set a new
+   * password. A wrong or expired code fails here, before anything is changed.
+   */
+  async verifyPasswordResetCode(
+    email: string,
+    code: string
+  ): Promise<{ success: boolean; error: string | null }> {
+    const client = getSupabaseClient();
+    if (!client) {
+      return { success: false, error: 'Resetarea parolei nu este disponibilă offline.' };
+    }
+
+    try {
+      const { error } = await client.auth.verifyOtp({
+        email: email.trim(),
+        token: code.trim(),
+        type: 'recovery',
+      });
+      if (error) {
+        return { success: false, error: 'Codul nu este valid sau a expirat. Cere altul.' };
+      }
+      return { success: true, error: null };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Eroare la verificarea codului.';
+      return { success: false, error: message };
+    }
+  },
+
+  /** Sets a new password on the session the verified code produced. */
+  async updatePassword(newPassword: string): Promise<{ success: boolean; error: string | null }> {
+    const client = getSupabaseClient();
+    if (!client) {
+      return { success: false, error: 'Schimbarea parolei nu este disponibilă offline.' };
+    }
+
+    try {
+      const { error } = await client.auth.updateUser({ password: newPassword });
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true, error: null };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Eroare la schimbarea parolei.';
+      return { success: false, error: message };
+    }
+  },
+
   async signOut(): Promise<void> {
     const client = getSupabaseClient();
     if (!client) return;

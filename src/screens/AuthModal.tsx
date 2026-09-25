@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { cloudSyncService } from '../services/supabase';
+import { describeWeakPassword } from '../utils/passwordPolicy';
 import { getAppTheme } from '../styles/theme';
 
 interface AuthModalProps {
@@ -36,6 +37,11 @@ export function AuthModal({
   lastSyncedAt = null,
 }: AuthModalProps) {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  // The reset runs as its own little machine: ask for the address, take the emailed code,
+  // then set the password. Each step only unlocks once the one before it succeeded.
+  const [resetStep, setResetStep] = useState<'off' | 'email' | 'code' | 'password'>('off');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -78,6 +84,11 @@ export function AuthModal({
           }, 800);
         }
       } else {
+        const weak = describeWeakPassword(password);
+        if (weak) {
+          setErrorMessage(weak);
+          return;
+        }
         const { user, error } = await cloudSyncService.signUpWithEmail(email.trim(), password);
         if (error) {
           setErrorMessage(error);
@@ -107,6 +118,83 @@ export function AuthModal({
       onUserChanged(null);
       setConfirmingDelete(false);
       setSuccessMessage('Contul și datele lui au fost șterse.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const leaveReset = () => {
+    setResetStep('off');
+    setResetCode('');
+    setNewPassword('');
+    setErrorMessage(null);
+  };
+
+  const handleRequestReset = async () => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    if (!email.trim()) {
+      setErrorMessage('Scrie adresa de email a contului.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { success, error } = await cloudSyncService.requestPasswordReset(email);
+      if (!success) {
+        setErrorMessage(error ?? 'Codul nu a putut fi trimis.');
+        return;
+      }
+      // Deliberately the same message whether the address has an account or not: anything
+      // else turns this into a way of finding out who is registered.
+      setSuccessMessage('Dacă adresa are cont, îți trimitem un cod pe email în câteva minute.');
+      setResetStep('code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    if (resetCode.trim().length < 6) {
+      setErrorMessage('Codul are șase cifre.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { success, error } = await cloudSyncService.verifyPasswordResetCode(email, resetCode);
+      if (!success) {
+        setErrorMessage(error ?? 'Codul nu este valid.');
+        return;
+      }
+      setResetStep('password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetNewPassword = async () => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    const weak = describeWeakPassword(newPassword);
+    if (weak) {
+      setErrorMessage(weak);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { success, error } = await cloudSyncService.updatePassword(newPassword);
+      if (!success) {
+        setErrorMessage(error ?? 'Parola nu a putut fi schimbată.');
+        return;
+      }
+      onUserChanged(email.trim());
+      leaveReset();
+      setSuccessMessage('Parola a fost schimbată. Ești conectat.');
     } finally {
       setLoading(false);
     }
@@ -249,6 +337,107 @@ export function AuthModal({
                 )}
               </View>
             ) : (
+              resetStep !== 'off' ? (
+                /* Password reset: address, then the emailed code, then the new password. */
+                <View style={styles.formSection}>
+                  <Text style={[styles.resetTitle, { color: theme.text }]}>
+                    {resetStep === 'email'
+                      ? 'Ți-ai uitat parola?'
+                      : resetStep === 'code'
+                        ? 'Codul din email'
+                        : 'Alege o parolă nouă'}
+                  </Text>
+                  <Text style={[styles.resetHint, { color: theme.textMuted }]}>
+                    {resetStep === 'email'
+                      ? 'Scrie adresa contului și îți trimitem un cod de șase cifre.'
+                      : resetStep === 'code'
+                        ? `Am trimis un cod la ${email.trim()}. Verifică și în spam.`
+                        : 'Minimum 10 caractere, cu cel puțin o literă și o cifră.'}
+                  </Text>
+
+                  {resetStep === 'email' && (
+                    <TextInput
+                      value={email}
+                      onChangeText={setEmail}
+                      placeholder="exemplu@email.ro"
+                      placeholderTextColor={theme.textMuted}
+                      accessibilityLabel="Adresa de email pentru resetare"
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
+                    />
+                  )}
+
+                  {resetStep === 'code' && (
+                    <TextInput
+                      value={resetCode}
+                      onChangeText={setResetCode}
+                      placeholder="123456"
+                      placeholderTextColor={theme.textMuted}
+                      accessibilityLabel="Codul primit pe email"
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
+                    />
+                  )}
+
+                  {resetStep === 'password' && (
+                    <TextInput
+                      value={newPassword}
+                      onChangeText={setNewPassword}
+                      placeholder="••••••••••"
+                      placeholderTextColor={theme.textMuted}
+                      accessibilityLabel="Parola nouă"
+                      secureTextEntry
+                      style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
+                    />
+                  )}
+
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      resetStep === 'email'
+                        ? 'Trimite codul pe email'
+                        : resetStep === 'code'
+                          ? 'Verifică codul'
+                          : 'Salvează parola nouă'
+                    }
+                    onPress={
+                      resetStep === 'email'
+                        ? handleRequestReset
+                        : resetStep === 'code'
+                          ? handleVerifyCode
+                          : handleSetNewPassword
+                    }
+                    style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color={theme.primaryText} size="small" />
+                    ) : (
+                      <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>
+                        {resetStep === 'email'
+                          ? 'Trimite codul'
+                          : resetStep === 'code'
+                            ? 'Verifică codul'
+                            : 'Salvează parola'}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Renunță la resetarea parolei"
+                    onPress={leaveReset}
+                    style={styles.resetBackBtn}
+                    disabled={loading}
+                  >
+                    <Text style={[styles.resetBackText, { color: theme.textMuted }]}>
+                      ← Înapoi la autentificare
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
               /* Unauthenticated Form */
               <View style={styles.formSection}>
                 <View style={styles.tabSwitch}>
@@ -333,7 +522,26 @@ export function AuthModal({
                     </Text>
                   )}
                 </TouchableOpacity>
+
+                {mode === 'signin' && (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Am uitat parola"
+                    onPress={() => {
+                      setErrorMessage(null);
+                      setSuccessMessage(null);
+                      setResetStep('email');
+                    }}
+                    style={styles.resetBackBtn}
+                    disabled={loading}
+                  >
+                    <Text style={[styles.resetBackText, { color: theme.textMuted }]}>
+                      Am uitat parola
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
+              )
             )}
 
             {/* Close Button */}
@@ -355,6 +563,10 @@ export function AuthModal({
 }
 
 const styles = StyleSheet.create({
+  resetTitle: { fontSize: 16, fontWeight: '900', marginBottom: 6 },
+  resetHint: { fontSize: 12, fontWeight: '500', lineHeight: 18, marginBottom: 14 },
+  resetBackBtn: { paddingVertical: 12, alignItems: 'center' },
+  resetBackText: { fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
   deleteLink: { paddingVertical: 12, alignItems: 'center' },
   deleteLinkText: { fontSize: 12, fontWeight: '600', textDecorationLine: 'underline' },
   deleteConfirmRow: { marginTop: 10 },

@@ -9,6 +9,9 @@ jest.mock('../../services/supabase', () => ({
     signUpWithEmail: jest.fn(),
     signOut: jest.fn(),
     deleteAccount: jest.fn(),
+    requestPasswordReset: jest.fn(),
+    verifyPasswordResetCode: jest.fn(),
+    updatePassword: jest.fn(),
   },
 }));
 
@@ -74,7 +77,8 @@ describe('AuthModal', () => {
 
     fireEvent.press(screen.getByText('Creează cont'));
     fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
-    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'parola');
+    // Has to satisfy the policy now, or it never reaches the server.
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
     fireEvent.press(screen.getByText('Înregistrare'));
 
     await waitFor(() => expect(screen.getByText(/Verifică email-ul/i)).toBeTruthy());
@@ -205,5 +209,126 @@ describe('AuthModal', () => {
     render(<AuthModal {...baseProps} />);
 
     expect(screen.getByPlaceholderText('••••••••').props.secureTextEntry).toBe(true);
+  });
+});
+
+/**
+ * Three steps, each unlocking only once the one before it succeeded. The code is the only
+ * proof the person reaches the mailbox, so nothing changes before it is verified.
+ */
+describe('resetarea parolei', () => {
+  function openReset() {
+    render(<AuthModal {...baseProps} />);
+    fireEvent.press(screen.getByLabelText('Am uitat parola'));
+  }
+
+  test('cere adresa înainte să trimită ceva', async () => {
+    openReset();
+
+    fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
+
+    await waitFor(() => expect(screen.getByText(/Scrie adresa contului/i)).toBeTruthy());
+    expect(cloudSyncService.requestPasswordReset).not.toHaveBeenCalled();
+  });
+
+  test('răspunde la fel indiferent dacă adresa are cont', async () => {
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+    openReset();
+
+    fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
+    fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
+
+    await waitFor(() => expect(screen.getByText(/Dacă adresa are cont/i)).toBeTruthy());
+  });
+
+  test('un cod prea scurt nu ajunge la server', async () => {
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({ success: true, error: null });
+    openReset();
+    fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
+    fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
+    await waitFor(() => screen.getByLabelText('Codul primit pe email'));
+
+    fireEvent.changeText(screen.getByLabelText('Codul primit pe email'), '123');
+    fireEvent.press(screen.getByLabelText('Verifică codul'));
+
+    await waitFor(() => expect(screen.getByText(/șase cifre/i)).toBeTruthy());
+    expect(cloudSyncService.verifyPasswordResetCode).not.toHaveBeenCalled();
+  });
+
+  test('un cod greșit nu deschide pasul parolei', async () => {
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({ success: true, error: null });
+    (cloudSyncService.verifyPasswordResetCode as jest.Mock).mockResolvedValue({
+      success: false,
+      error: 'Codul nu este valid sau a expirat. Cere altul.',
+    });
+    openReset();
+    fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
+    fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
+    await waitFor(() => screen.getByLabelText('Codul primit pe email'));
+
+    fireEvent.changeText(screen.getByLabelText('Codul primit pe email'), '000000');
+    fireEvent.press(screen.getByLabelText('Verifică codul'));
+
+    await waitFor(() => expect(screen.getByText(/nu este valid/i)).toBeTruthy());
+    expect(screen.queryByLabelText('Parola nouă')).toBeNull();
+    expect(cloudSyncService.updatePassword).not.toHaveBeenCalled();
+  });
+
+  test('o parolă slabă este refuzată înainte de server', async () => {
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({ success: true, error: null });
+    (cloudSyncService.verifyPasswordResetCode as jest.Mock).mockResolvedValue({ success: true, error: null });
+    openReset();
+    fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
+    fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
+    await waitFor(() => screen.getByLabelText('Codul primit pe email'));
+    fireEvent.changeText(screen.getByLabelText('Codul primit pe email'), '123456');
+    fireEvent.press(screen.getByLabelText('Verifică codul'));
+    await waitFor(() => screen.getByLabelText('Parola nouă'));
+
+    fireEvent.changeText(screen.getByLabelText('Parola nouă'), 'parola');
+    fireEvent.press(screen.getByLabelText('Salvează parola nouă'));
+
+    await waitFor(() => expect(screen.getByText(/cel puțin 10 caractere/i)).toBeTruthy());
+    expect(cloudSyncService.updatePassword).not.toHaveBeenCalled();
+  });
+
+  test('parcursul complet schimbă parola și conectează utilizatorul', async () => {
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({ success: true, error: null });
+    (cloudSyncService.verifyPasswordResetCode as jest.Mock).mockResolvedValue({ success: true, error: null });
+    (cloudSyncService.updatePassword as jest.Mock).mockResolvedValue({ success: true, error: null });
+    openReset();
+    fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
+    fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
+    await waitFor(() => screen.getByLabelText('Codul primit pe email'));
+    fireEvent.changeText(screen.getByLabelText('Codul primit pe email'), '123456');
+    fireEvent.press(screen.getByLabelText('Verifică codul'));
+    await waitFor(() => screen.getByLabelText('Parola nouă'));
+
+    fireEvent.changeText(screen.getByLabelText('Parola nouă'), 'Muntele7Verde');
+    fireEvent.press(screen.getByLabelText('Salvează parola nouă'));
+
+    await waitFor(() => expect(baseProps.onUserChanged).toHaveBeenCalledWith('a@b.ro'));
+  });
+
+  test('se poate renunța și se revine la autentificare', async () => {
+    openReset();
+
+    fireEvent.press(screen.getByLabelText('Renunță la resetarea parolei'));
+
+    expect(screen.getByLabelText('Am uitat parola')).toBeTruthy();
+  });
+
+  test('înregistrarea refuză o parolă slabă înainte de server', async () => {
+    render(<AuthModal {...baseProps} />);
+    fireEvent.press(screen.getByText('Creează cont'));
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), '123456');
+    fireEvent.press(screen.getByText('Înregistrare'));
+
+    await waitFor(() => expect(screen.getByText(/cel puțin 10 caractere/i)).toBeTruthy());
+    expect(cloudSyncService.signUpWithEmail).not.toHaveBeenCalled();
   });
 });
