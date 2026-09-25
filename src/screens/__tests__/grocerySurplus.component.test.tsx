@@ -53,8 +53,9 @@ describe('surplusul pe ecranul de cumpărături', () => {
 
     fireEvent.press(screen.getByLabelText('Pune surplusul în cămară'));
 
-    const stock = useAppStore.getState().preferences.pantryStock!;
-    expect(Object.keys(stock).length).toBeGreaterThan(0);
+    // Parked until the next plan; the list being shopped from must not change underfoot.
+    const parked = useAppStore.getState().preferences.pendingPantryStock!;
+    expect(Object.keys(parked).length).toBeGreaterThan(0);
   });
 
   test('un rând spune ce rămâne din el', () => {

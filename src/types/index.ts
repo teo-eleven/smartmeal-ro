@@ -168,6 +168,14 @@ export interface UserPreferences {
    */
   pantryStock?: Record<string, number>;
   /**
+   * Surplus put aside for the week that has not been generated yet.
+   *
+   * It waits here rather than landing in `pantryStock` straight away, because the current
+   * week's list was built on the assumption that everything on it would be bought. Applying
+   * it immediately made items vanish from the list the user was still shopping from.
+   */
+  pendingPantryStock?: Record<string, number>;
+  /**
    * Dishes the user rejected. A hard filter like diet and allergens, because "never again"
    * has to mean it — which is why rejecting one is refused when it would empty the catalog.
    */

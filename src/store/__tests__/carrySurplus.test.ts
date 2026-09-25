@@ -49,11 +49,17 @@ describe('reportarea surplusului în cămară', () => {
     expect(leftovers.length).toBeGreaterThan(0);
 
     useAppStore.getState().carryOverSurplus();
-    const stock = useAppStore.getState().preferences.pantryStock!;
 
+    // Parked, not applied: the current week's list was built assuming everything on it gets
+    // bought, so the cupboard only opens when the next plan is generated.
+    const parked = useAppStore.getState().preferences.pendingPantryStock!;
     leftovers.forEach((item) => {
-      expect(stock[item.ingredientId]).toBeCloseTo(item.leftoverAmount!, 1);
+      expect(parked[item.ingredientId]).toBeCloseTo(item.leftoverAmount!, 1);
     });
+
+    useAppStore.getState().generatePlan();
+    const stock = useAppStore.getState().preferences.pantryStock!;
+    expect(Object.keys(stock).length).toBeGreaterThan(0);
   });
 
   test('a doua săptămână costă mai puțin decât prima', () => {
@@ -107,6 +113,7 @@ describe('reportarea surplusului în cămară', () => {
   test('golirea cămării șterge stocul', () => {
     boot();
     useAppStore.getState().carryOverSurplus();
+    useAppStore.getState().generatePlan();
     expect(Object.keys(useAppStore.getState().preferences.pantryStock!).length).toBeGreaterThan(0);
 
     useAppStore.getState().clearPantryStock();

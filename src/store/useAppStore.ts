@@ -383,6 +383,16 @@ function collectPlanMeals(plan: MealPlan): { recipe: Recipe; servings: number }[
  * actually produce a plan. Persisting first and generating second is what used to let a
  * failed rebuild leave storage holding a state the app could not start from.
  */
+/**
+ * Moves the parked surplus into the cupboard, which is what starting a new week means.
+ * Called wherever a fresh plan is generated, never while one is being shopped for.
+ */
+function promotePendingStock(prefs: UserPreferences): UserPreferences {
+  const pending = prefs.pendingPantryStock;
+  if (!pending || Object.keys(pending).length === 0) return prefs;
+  return { ...prefs, pantryStock: pending, pendingPantryStock: {} };
+}
+
 function applyPreferencesWithRebuild(
   state: AppState,
   nextPrefs: UserPreferences
@@ -1734,7 +1744,10 @@ export const useAppStore = create<AppState>((set, get) => ({
         };
       }
 
-      const nextPrefs: UserPreferences = { ...state.preferences, pantryStock: carried };
+      // Parked until the next plan is generated. Writing straight to `pantryStock` meant the
+      // first re-aggregation of the CURRENT week subtracted it, and eleven items disappeared
+      // from a list the user was still shopping from.
+      const nextPrefs: UserPreferences = { ...state.preferences, pendingPantryStock: carried };
       void storageService.savePreferences(nextPrefs);
 
       return {
@@ -1742,7 +1755,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeNotice: {
           id: Date.now().toString(),
           title: 'Surplus trecut în cămară',
-          message: `Am pus deoparte ${movedCount} ${movedCount === 1 ? 'ingredient' : 'ingrediente'} care îți rămân, cam ${Math.round(savedRon)} lei. Se scad din lista de săptămâna viitoare.`,
+          message: `Am pus deoparte ${movedCount} ${movedCount === 1 ? 'ingredient' : 'ingrediente'} care îți rămân, cam ${Math.round(savedRon)} lei. Se scad când generezi planul următor.`,
           type: 'info',
         },
       };
@@ -2327,7 +2340,16 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeView: 'onboarding',
       currentPlan: null,
       groceryItems: [],
-      preferences: { ...DEFAULT_PREFERENCES },
+      // The cupboard and the thumbs are things the user built up, not onboarding answers.
+      // Starting a new week is exactly when the surplus is supposed to pay off, so wiping
+      // it here erased the point of having carried it.
+      preferences: {
+        ...DEFAULT_PREFERENCES,
+        pantryStock: state.preferences.pantryStock,
+        pendingPantryStock: state.preferences.pendingPantryStock,
+        dislikedRecipeIds: state.preferences.dislikedRecipeIds,
+        favouriteRecipeIds: state.preferences.favouriteRecipeIds,
+      },
       // Held in memory only, so the user can take the reset back straight away.
       lastDiscardedPlan: state.currentPlan
         ? {
@@ -2516,7 +2538,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   setActiveView: (view) => set(() => ({ activeView: view })),
 
   generatePlan: () => {
-    const { preferences } = get();
+    // Generating a plan is the moment a new week starts, so whatever was put aside from the
+    // last one becomes the cupboard now.
+    const preferences = promotePendingStock(get().preferences);
+    if (preferences !== get().preferences) {
+      void storageService.savePreferences(preferences);
+      set({ preferences });
+    }
 
     const feasibility = checkPlanFeasibility(preferences);
     if (!feasibility.isFeasible) {
