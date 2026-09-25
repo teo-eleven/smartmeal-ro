@@ -10,6 +10,7 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { useAppStore } from './src/store/useAppStore';
 import { ThemeMode } from './src/types';
 import { OnboardingWizard } from './src/screens/onboarding/OnboardingWizard';
@@ -32,7 +33,7 @@ const THEME_LABELS: Record<ThemeMode, string> = {
   dark: 'întunecată',
 };
 
-export default function App() {
+function AppShell() {
   const colorScheme = useColorScheme();
   const [authModalVisible, setAuthModalVisible] = useState(false);
 
@@ -537,3 +538,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 });
+
+/**
+ * The shell has several exits and any of them can throw from a tap handler, which would
+ * unmount the tree and leave a white screen. The boundary follows the phone's theme rather
+ * than the user's override, because reading the store is exactly what might have failed.
+ */
+export default function App() {
+  const colorScheme = useColorScheme();
+  return (
+    <ErrorBoundary isDark={colorScheme === 'dark'}>
+      <AppShell />
+    </ErrorBoundary>
+  );
+}

@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { secureSessionStore } from './secureSessionStore';
 import { env } from '../../config/env';
 import { MealPlan, GroceryListItem, UserPreferences } from '../types';
 import { isWellFormedPlan } from './storage';
@@ -18,7 +18,10 @@ export function getSupabaseClient(): SupabaseClient | null {
   try {
     supabaseClientInstance = createClient(env.supabaseUrl, env.supabaseAnonKey, {
       auth: {
-        storage: AsyncStorage,
+        // Keychain on iOS, Keystore on Android; localStorage on web, where there is no
+        // equivalent. Plain AsyncStorage kept the access and refresh tokens in a file that
+        // is included in iCloud and iTunes backups.
+        storage: secureSessionStore,
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
