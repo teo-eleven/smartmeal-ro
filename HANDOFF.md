@@ -206,7 +206,8 @@ cârligul de depanare care expunea tot magazinul (0 în bundle, verificat).
 
 ## Întrebări pentru tine
 
-1. `app.json` are `supportsTablet: true`, deci Apple cere capturi de iPad și va testa pe
-   iPad. Aplicația a fost verificată pe iPad? Dacă nu, `false` e mai sigur la prima urcare.
-2. Marja la funcții e mică (87,14 față de 87). Orice funcție nouă fără test pică poarta, și e
-   intenționat, dar să știi de ce pică.
+Niciuna deschisă. Hotărât pe 2026-09-28: lansăm **doar pe telefoane** (iPhone și Android,
+inclusiv Samsung), cu `supportsTablet: false` pe iOS.
+
+De știut: marja la funcții e mică (87,27 față de pragul de 87). Orice funcție nouă fără test
+pică poarta, intenționat.

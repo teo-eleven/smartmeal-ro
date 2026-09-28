@@ -320,18 +320,21 @@ reale** din aplicație, nu machete — Apple respinge capturile care nu arată a
 | Dispozitiv  | Dimensiune (portret) | Obligatoriu?                                                                                   |
 | ----------- | -------------------- | ---------------------------------------------------------------------------------------------- |
 | iPhone 6.9" | 1320 × 2868          | **da**, între 1 și 10 capturi, JPG sau PNG                                                     |
-| iPad 13"    | 2064 × 2752          | **da**, obligatoriu dacă aplicația rulează pe iPad — iar `app.json` are `supportsTablet: true` |
 
 Apple scalează singur capturile pentru ecranele mai mici. Deschide pagina „Screenshot
 specifications" din App Store Connect Help înainte de upload: acolo e lista completă de
-dimensiuni acceptate pentru fiecare ecran. Simulatoarele potrivite sunt
-**iPhone 16 Pro Max** și **iPad Pro 13" (M4)**; captura se face cu ⌘S.
+dimensiuni acceptate pentru fiecare ecran. Simulatorul potrivit e **iPhone 16 Pro Max**;
+captura se face cu ⌘S.
 
-⚠️ `supportsTablet: true` înseamnă că recenzentul va testa **și pe iPad**. Dacă aplicația
-arată întinsă sau goală pe iPad, e respinsă (guideline 4.0). Ori o verifici pe simulatorul
-de iPad, ori pui `supportsTablet: false` și nu mai ai nevoie nici de capturile de iPad.
+**Doar iPhone, decizie din 2026-09-28.** `app.json` are `supportsTablet: false`, deci nu
+trebuie capturi de iPad. Pe un iPad aplicația se deschide tot, în modul de compatibilitate
+iPhone. Ca s-o activezi mai târziu pe iPad, pui `true`, verifici aspectul pe simulatorul de
+iPad și adaugi capturile de 2064 × 2752.
 
 ### Google Play
+
+**Doar telefoane (inclusiv Samsung).** Toate telefoanele Samsung sunt Android, deci același
+`.aab` le acoperă. Capturile de tabletă sunt opționale la Google, așa că nu le încarci.
 
 | Ce                    | Dimensiune                                                                                                                                                                             | Obligatoriu?                                  |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
