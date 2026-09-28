@@ -47,7 +47,8 @@ module.exports = {
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
       moduleNameMapper: sharedModuleNameMapper,
       testMatch: ['**/__tests__/**/*.(test|spec).(ts|tsx|js)', '**/?(*.)+(spec|test).(ts|tsx|js)'],
-      testPathIgnorePatterns: ['/node_modules/', '\\.component\\.test\\.(ts|tsx)$'],
+      // supabase/functions runs on Deno and has its own tests: `deno test supabase/functions`.
+      testPathIgnorePatterns: ['/node_modules/', '\\.component\\.test\\.(ts|tsx)$', '/supabase/'],
       // Babel, the same transformer the components project uses. Both projects load the
       // engine and the store, and coverage merges the two instrumentations of each file.
       // With ts-jest here the two maps counted different statements for the same file
