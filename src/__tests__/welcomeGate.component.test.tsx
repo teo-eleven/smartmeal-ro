@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../../App';
 import { useAppStore } from '../store/useAppStore';
 import { localAuthSimulation } from '../services/localAuthSimulation';
+import { asSubscriber } from './helpers/subscriber';
 
 /**
  * The first screen of a fresh install. An account is what carries the week to a second
@@ -13,6 +14,7 @@ import { localAuthSimulation } from '../services/localAuthSimulation';
  */
 describe('poarta de la prima pornire', () => {
   beforeEach(async () => {
+    asSubscriber();
     await AsyncStorage.clear();
     useAppStore.setState({
       authStatus: 'checking',
@@ -103,6 +105,7 @@ describe('poarta de la prima pornire', () => {
  */
 describe('sesiunea de 30 de zile', () => {
   beforeEach(async () => {
+    asSubscriber();
     await AsyncStorage.clear();
   });
 
@@ -177,6 +180,7 @@ describe('sesiunea de 30 de zile', () => {
  */
 describe('fila de mese', () => {
   test('numără zilele și spune că sunt zile', async () => {
+    asSubscriber();
     await AsyncStorage.clear();
     useAppStore.setState({ authStatus: 'guest', isHydrated: true, activeNotice: null });
     useAppStore.getState().quickStart();

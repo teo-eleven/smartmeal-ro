@@ -3,6 +3,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react-native';
 import App from '../../App';
 import { useAppStore } from '../store/useAppStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { asSubscriber } from './helpers/subscriber';
 
 /**
  * The closest automated stand-in for walking through the app by hand: it mounts the real
@@ -11,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  */
 describe('a full journey through the real app', () => {
   beforeEach(async () => {
+    asSubscriber();
     await AsyncStorage.clear();
     useAppStore.setState({
       // The app now opens on a sign-in gate; these tests are about what is behind it.
@@ -133,6 +135,7 @@ describe('a full journey through the real app', () => {
 
 describe('walking the onboarding end to end, step by step', () => {
   beforeEach(async () => {
+    asSubscriber();
     await AsyncStorage.clear();
     useAppStore.getState().resetOnboarding();
     useAppStore.getState().dismissUndo();
@@ -204,6 +207,7 @@ describe('walking the onboarding end to end, step by step', () => {
 
 describe('the screens reachable from the meal board', () => {
   beforeEach(async () => {
+    asSubscriber();
     await AsyncStorage.clear();
     useAppStore.getState().resetOnboarding();
     useAppStore.getState().dismissUndo();

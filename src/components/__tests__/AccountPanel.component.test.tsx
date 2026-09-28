@@ -2,6 +2,9 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { AccountPanel } from '../AccountPanel';
 import { DEFAULT_REMINDERS } from '../../types';
+import { Linking } from 'react-native';
+import { useSubscriptionStore } from '../../store/subscriptionStore';
+import { NOT_SUBSCRIBED } from '../../services/subscriptionParse';
 
 jest.mock('../../services/dataExport', () => ({ collectDataExport: jest.fn() }));
 
@@ -130,6 +133,54 @@ describe('panoul de cont pe ecran lat', () => {
 
     expect(screen.queryByTestId('account-column-right')).toBeNull();
     expect(screen.getByText('MEMENTOURI')).toBeTruthy();
+  });
+});
+
+/**
+ * Apple wants a subscriber to be able to reach the store's own page to manage or cancel, and
+ * deleting the account does not cancel the subscription: it lives in the store, and has to
+ * be stopped there.
+ */
+describe('panoul de cont, abonamentul', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  test('arată că ești în perioada gratuită', () => {
+    useSubscriptionStore.setState({
+      status: { ...NOT_SUBSCRIBED, isActive: true, isTrial: true },
+      isChecked: true,
+    });
+    show();
+
+    expect(screen.getByText(/perioada gratuită/i)).toBeTruthy();
+  });
+
+  test('„Gestionează abonamentul” deschide pagina magazinului', () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    useSubscriptionStore.setState({
+      status: {
+        ...NOT_SUBSCRIBED,
+        isActive: true,
+        managementUrl: 'https://apps.apple.com/account/subscriptions',
+      },
+      isChecked: true,
+    });
+    show();
+
+    fireEvent.press(screen.getByLabelText('Gestionează abonamentul'));
+
+    expect(open).toHaveBeenCalledWith('https://apps.apple.com/account/subscriptions');
+  });
+
+  test('la ștergerea contului spune că abonamentul se anulează separat', () => {
+    useSubscriptionStore.setState({
+      status: { ...NOT_SUBSCRIBED, isActive: true },
+      isChecked: true,
+    });
+    show();
+
+    fireEvent.press(screen.getByLabelText('Șterge contul'));
+
+    expect(screen.getByText(/nu anulează abonamentul/i)).toBeTruthy();
   });
 });
 

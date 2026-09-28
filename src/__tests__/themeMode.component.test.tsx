@@ -3,10 +3,12 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import App from '../../App';
 import { useAppStore } from '../store/useAppStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { asSubscriber } from './helpers/subscriber';
 
 /** Following the phone is the right default; a kitchen at night is not a kitchen at noon. */
 describe('alegerea temei', () => {
   beforeEach(async () => {
+    asSubscriber();
     await AsyncStorage.clear();
     // The app now opens on a sign-in gate; this test is about what is behind it.
     useAppStore.setState({

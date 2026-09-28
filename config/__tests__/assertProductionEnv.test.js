@@ -5,6 +5,9 @@ const GOOD = {
   EXPO_PUBLIC_SUPABASE_URL: 'https://abcd.supabase.co',
   EXPO_PUBLIC_SUPABASE_ANON_KEY: 'anon-public-key',
   EXPO_PUBLIC_PRIVACY_POLICY_URL: 'https://smartmeal.ro/privacy',
+  EXPO_PUBLIC_TERMS_URL: 'https://smartmeal.ro/terms',
+  EXPO_PUBLIC_REVENUECAT_IOS_KEY: 'appl_publicKey123',
+  EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: 'goog_publicKey123',
 };
 
 /**
@@ -58,5 +61,38 @@ describe('garda build-ului de producție', () => {
   test('în dezvoltare nu cere nimic', () => {
     expect(() => assertProductionEnv({ EXPO_PUBLIC_APP_ENV: 'development' })).not.toThrow();
     expect(() => assertProductionEnv({})).not.toThrow();
+  });
+
+  /** Without the keys the app opens to a subscription screen that can never be paid. */
+  test('fără cheile RevenueCat, build-ul de producție se oprește', () => {
+    expect(() => assertProductionEnv({ ...GOOD, EXPO_PUBLIC_REVENUECAT_IOS_KEY: '' })).toThrow(
+      /EXPO_PUBLIC_REVENUECAT_IOS_KEY/
+    );
+    expect(() => assertProductionEnv({ ...GOOD, EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: '' })).toThrow(
+      /EXPO_PUBLIC_REVENUECAT_ANDROID_KEY/
+    );
+  });
+
+  /**
+   * The public SDK keys start appl_ and goog_. A secret key (sk_) in the bundle would let
+   * anyone read and change every customer's purchases, so it stops the build outright.
+   */
+  test('o cheie secretă RevenueCat oprește build-ul', () => {
+    expect(() =>
+      assertProductionEnv({ ...GOOD, EXPO_PUBLIC_REVENUECAT_IOS_KEY: 'sk_secretKey123' })
+    ).toThrow(/secret/i);
+  });
+
+  test('cheile puse invers (iOS în locul Android) opresc build-ul', () => {
+    expect(() =>
+      assertProductionEnv({ ...GOOD, EXPO_PUBLIC_REVENUECAT_IOS_KEY: 'goog_publicKey123' })
+    ).toThrow(/EXPO_PUBLIC_REVENUECAT_IOS_KEY/);
+  });
+
+  /** Apple 3.1.2: a subscription screen must link to the terms of use. */
+  test('fără adresa termenilor, build-ul de producție se oprește', () => {
+    expect(() => assertProductionEnv({ ...GOOD, EXPO_PUBLIC_TERMS_URL: '' })).toThrow(
+      /EXPO_PUBLIC_TERMS_URL/
+    );
   });
 });

@@ -86,6 +86,25 @@ describe('environment validation', () => {
     expect(loadConfig().privacyPolicyUrl).toBe('https://site.ro/privacy');
   });
 
+  test('cheile RevenueCat și adresa termenilor sunt citite', () => {
+    process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY = 'appl_x';
+    process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY = 'goog_x';
+    process.env.EXPO_PUBLIC_TERMS_URL = 'https://site.ro/terms';
+
+    const config = loadConfig();
+
+    expect(config.revenueCatIosKey).toBe('appl_x');
+    expect(config.revenueCatAndroidKey).toBe('goog_x');
+    expect(config.termsUrl).toBe('https://site.ro/terms');
+  });
+
+  test('fără chei, abonamentele nu sunt configurate', () => {
+    delete process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY;
+    delete process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
+
+    expect(loadConfig().revenueCatIosKey).toBeNull();
+  });
+
   test('the config object cannot be mutated at runtime', () => {
     const config = loadConfig();
     expect(Object.isFrozen(config)).toBe(true);

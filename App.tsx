@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
+  AppState,
   Platform,
   SafeAreaView,
   StatusBar,
@@ -26,6 +28,9 @@ import { useResponsive } from './src/hooks/useResponsive';
 import { injectEmeraldGlassStyles, getAppTheme } from './src/styles/theme';
 import { glass } from './src/styles/glass';
 import { UndoBanner } from './src/components/UndoBanner';
+import { PaywallScreen } from './src/screens/PaywallScreen';
+import { useSubscriptionStore } from './src/store/subscriptionStore';
+import { cloudSyncService } from './src/services/supabase';
 
 const THEME_ICONS: Record<ThemeMode, string> = { system: '🌗', light: '☀️', dark: '🌙' };
 const THEME_LABELS: Record<ThemeMode, string> = {
@@ -83,6 +88,33 @@ function AppShell() {
   useEffect(() => {
     void hydrateStorage();
   }, [hydrateStorage]);
+
+  const subscription = useSubscriptionStore((s) => s.status);
+  const isSubscriptionChecked = useSubscriptionStore((s) => s.isChecked);
+
+  // Read once the stored session is known, then again whenever the app comes back to the
+  // foreground, so a renewal or an expiry shows without a restart.
+  useEffect(() => {
+    if (!isHydrated) return;
+    const { isChecked, refresh } = useSubscriptionStore.getState();
+    if (!isChecked) void refresh();
+    const listener = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void useSubscriptionStore.getState().refresh();
+    });
+    return () => listener.remove();
+  }, [isHydrated]);
+
+  // The subscription follows the account: on sign-in it is linked to the account's id, so a
+  // second phone signed in to it is unlocked too; on sign-out it is unlinked.
+  const previousEmail = useRef(userEmail);
+  useEffect(() => {
+    if (!isHydrated || previousEmail.current === userEmail) return;
+    previousEmail.current = userEmail;
+    void (async () => {
+      const user = userEmail ? await cloudSyncService.getCurrentUser() : null;
+      await useSubscriptionStore.getState().switchAccount(user?.id ?? null);
+    })();
+  }, [userEmail, isHydrated]);
 
   useEffect(() => {
     viewFadeAnim.setValue(0.35);
@@ -165,6 +197,26 @@ function AppShell() {
           onDismiss={dismissUndo}
           isDark={isDark}
         />
+        <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
+      </SafeAreaView>
+    );
+  }
+
+  // Past the questionnaire, which stays free, the app needs the subscription. Until it has
+  // been read, a spinner: a paying person must never see the paywall flash on start.
+  if (!isSubscriptionChecked) {
+    return (
+      <SafeAreaView style={[styles.safeArea, styles.centered, { backgroundColor: theme.background }]}>
+        <ActivityIndicator color={theme.text} accessibilityLabel="Se verifică abonamentul" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!subscription.isActive) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <PaywallScreen isDark={isDark} onBackToQuestions={() => setActiveView('onboarding')} />
         <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
       </SafeAreaView>
     );
@@ -482,6 +534,10 @@ function AppShell() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  centered: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dashboardContainer: {
     flex: 1,

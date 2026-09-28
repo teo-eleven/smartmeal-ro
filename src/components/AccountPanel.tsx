@@ -1,10 +1,23 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ReminderSettings } from '../types';
 import { getAppTheme } from '../styles/theme';
 import { DataExportButton } from './DataExportButton';
 import { PrivacyPolicyLink } from './PrivacyPolicyLink';
 import { ReminderSettingsPanel } from './ReminderSettingsPanel';
+import { useSubscriptionStore } from '../store/subscriptionStore';
+import { currentOs } from '../services/platformOs';
+
+/**
+ * The store's own subscriptions page, for when RevenueCat does not hand one over. Managing
+ * and cancelling happen there, never inside the app.
+ */
+function storeSubscriptionsPage(): string | null {
+  const os = currentOs();
+  if (os === 'ios') return 'https://apps.apple.com/account/subscriptions';
+  if (os === 'android') return 'https://play.google.com/store/account/subscriptions';
+  return null;
+}
 
 interface AccountPanelProps {
   userEmail: string;
@@ -64,6 +77,8 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
 }) => {
   const theme = getAppTheme(isDark);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const subscription = useSubscriptionStore((s) => s.status);
+  const manageUrl = subscription.managementUrl ?? storeSubscriptionsPage();
 
   const confirmDelete = async () => {
     await onDeleteAccount();
@@ -86,6 +101,26 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
           <Text style={[styles.smallBtnText, { color: '#ef4444' }]}>Deconectare</Text>
         </TouchableOpacity>
       </View>
+      {subscription.isActive && (
+        <View style={styles.subscriptionRow}>
+          <Text style={[styles.note, styles.subscriptionText, { color: theme.textMuted }]}>
+            {subscription.isTrial
+              ? 'Abonament: în perioada gratuită.'
+              : subscription.willRenew
+                ? 'Abonament: activ, se reînnoiește lunar.'
+                : 'Abonament: activ până la sfârșitul perioadei plătite.'}
+          </Text>
+          {manageUrl && (
+            <TouchableOpacity
+              accessibilityRole="link"
+              accessibilityLabel="Gestionează abonamentul"
+              onPress={() => void Linking.openURL(manageUrl)}
+            >
+              <Text style={[styles.manageText, { color: theme.text }]}>Gestionează</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
     </Section>
   );
 
@@ -154,6 +189,14 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
             Se șterg definitiv contul, planul din cloud și preferințele salvate pe el. Acțiunea nu
             poate fi anulată.
           </Text>
+          {subscription.isActive && (
+            // Apple 5.1.1(v): the subscription lives in the store, and deleting the account
+            // does not stop the payments. Said here, where it matters.
+            <Text style={[styles.note, { color: theme.text }]}>
+              Ștergerea contului nu anulează abonamentul. Îl anulezi din setările abonamentelor
+              contului tău Apple sau Google Play, altfel plata continuă.
+            </Text>
+          )}
           <View style={styles.syncRow}>
             <TouchableOpacity
               accessibilityRole="button"
@@ -237,6 +280,9 @@ const styles = StyleSheet.create({
   syncBtnOutline: { borderWidth: 1, backgroundColor: 'transparent' },
   syncBtnText: { fontSize: 14, fontWeight: '800' },
   deleteConfirm: { marginTop: 12 },
+  subscriptionRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
+  subscriptionText: { flex: 1, marginBottom: 0 },
+  manageText: { fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' },
   deleteLink: { alignSelf: 'center', paddingVertical: 10, marginTop: 6 },
   deleteLinkText: { fontSize: 12, textDecorationLine: 'underline' },
 });

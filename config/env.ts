@@ -21,6 +21,14 @@ export interface AppConfig {
    * Required for a production build; see config/assertProductionEnv.js.
    */
   privacyPolicyUrl: string | null;
+  /** Where the terms of use live; Apple 3.1.2 wants them linked from the subscription screen. */
+  termsUrl: string | null;
+  /**
+   * RevenueCat's public SDK keys, one per store (appl_… and goog_…). Public by design, like
+   * the Supabase anon key. The secret key never belongs here; see assertProductionEnv.js.
+   */
+  revenueCatIosKey: string | null;
+  revenueCatAndroidKey: string | null;
 }
 
 function parsePort(value: string | undefined, defaultPort: number): number {
@@ -82,6 +90,13 @@ function loadConfig(): AppConfig {
       'EXPO_PUBLIC_PRIVACY_POLICY_URL',
       'The privacy policy link stays hidden.'
     ),
+    termsUrl: parseHttpsUrl(
+      process.env.EXPO_PUBLIC_TERMS_URL,
+      'EXPO_PUBLIC_TERMS_URL',
+      'The terms link stays hidden.'
+    ),
+    revenueCatIosKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY?.trim() || null,
+    revenueCatAndroidKey: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY?.trim() || null,
   });
 }
 
