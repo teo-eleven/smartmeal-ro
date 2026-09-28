@@ -554,3 +554,32 @@ describe('AuthModal, mesajul de eroare', () => {
   });
 });
 
+/**
+ * After signing in or up, the form kept the password in its state, and the consent boxes
+ * stayed ticked. Signing out showed it all again, on a shared phone, to whoever came next:
+ * the password ready to use and consent already given in someone else's name.
+ */
+describe('AuthModal, formularul după conectare', () => {
+  test('după cont nou, parola și bifele nu mai sunt în formular', async () => {
+    (cloudSyncService.signUpWithEmail as jest.Mock).mockResolvedValue({
+      user: { email: 'nou@b.ro' },
+      error: null,
+      needsConfirmation: false,
+    });
+    const { rerender } = render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    tickBothConsents();
+    fireEvent.press(screen.getByText('Înregistrare'));
+    await waitFor(() => expect(baseProps.onUserChanged).toHaveBeenCalled());
+
+    // Signed in, then signed out again: the same window, back to the form.
+    rerender(<AuthModal {...baseProps} userEmail="nou@b.ro" />);
+    rerender(<AuthModal {...baseProps} userEmail={null} />);
+
+    expect(screen.getByText('Conectare')).toBeTruthy();
+    expect(screen.getByPlaceholderText('••••••••').props.value).toBe('');
+    fireEvent.press(screen.getByText('Creează cont'));
+    expect(screen.getByLabelText(AGE).props.accessibilityState.checked).toBe(false);
+  });
+});
+

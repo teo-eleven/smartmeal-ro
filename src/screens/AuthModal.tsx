@@ -69,6 +69,16 @@ export function AuthModal({
     overlayBg: isDark ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.45)',
   };
 
+  // Once someone is signed in, nothing they typed stays behind. The form used to keep the
+  // password and the ticked consent boxes, and signing out showed them again, ready for
+  // whoever used the phone next.
+  const clearForm = () => {
+    setEmail('');
+    setPassword('');
+    setConsent(NO_CONSENT);
+    setMode('signin');
+  };
+
   // Any edit clears the last error. One left on screen after the person has fixed the field
   // it was about reads as a second, new error.
   const editEmail = (value: string) => {
@@ -101,6 +111,7 @@ export function AuthModal({
           setErrorMessage(error);
         } else {
           onUserChanged(user?.email || email.trim());
+          clearForm();
           setSuccessMessage('Te-ai conectat cu succes!');
           setTimeout(() => {
             onClose();
@@ -134,6 +145,7 @@ export function AuthModal({
           );
         } else {
           onUserChanged(user?.email || email.trim());
+          clearForm();
           setSuccessMessage('Cont creat. Te-ai conectat.');
           // Closed the same way as after signing in. Left open, the window came back on its
           // own over the plan once the main screen mounted.
@@ -238,6 +250,7 @@ export function AuthModal({
         return;
       }
       onUserChanged(email.trim());
+      clearForm();
       leaveReset();
       setSuccessMessage('Parola a fost schimbată. Ești conectat.');
     } finally {
@@ -250,6 +263,7 @@ export function AuthModal({
     try {
       await cloudSyncService.signOut();
       onUserChanged(null);
+      clearForm();
       setSuccessMessage('Te-ai deconectat.');
     } finally {
       setLoading(false);
