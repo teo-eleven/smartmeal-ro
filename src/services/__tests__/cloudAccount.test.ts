@@ -1,6 +1,7 @@
 import { AuthRetryableFetchError, createClient } from '@supabase/supabase-js';
 import { cloudSyncService } from '../supabase';
-import { DEFAULT_REMINDERS } from '../../types';
+import { DEFAULT_REMINDERS, SignUpConsent } from '../../types';
+import { PRIVACY_POLICY_VERSION } from '../../../config/legal';
 
 jest.mock('@supabase/supabase-js', () => ({
   ...jest.requireActual('@supabase/supabase-js'),
@@ -41,6 +42,8 @@ const from = jest.fn(() => ({ select, upsert }));
 
 (createClient as jest.Mock).mockReturnValue({ auth, from });
 
+const CONSENT: SignUpConsent = { isAtLeast16: true, healthDataConsent: true };
+
 const fetchMock = jest.fn();
 global.fetch = fetchMock as unknown as typeof fetch;
 
@@ -80,7 +83,7 @@ describe('conectare și cont nou', () => {
   test('contul nou reușit întoarce utilizatorul', async () => {
     auth.signUp.mockResolvedValue({ data: { user: { id: 'u2' } }, error: null });
 
-    expect(await cloudSyncService.signUpWithEmail('c@d.ro', 'Muntele7Verde')).toEqual({
+    expect(await cloudSyncService.signUpWithEmail('c@d.ro', 'Muntele7Verde', CONSENT)).toEqual({
       user: { id: 'u2' },
       error: null,
     });
@@ -89,7 +92,7 @@ describe('conectare și cont nou', () => {
   test('refuzul serverului la cont nou se transmite', async () => {
     auth.signUp.mockResolvedValue({ data: { user: null }, error: { message: 'Weak password' } });
 
-    expect(await cloudSyncService.signUpWithEmail('c@d.ro', 'x')).toEqual({
+    expect(await cloudSyncService.signUpWithEmail('c@d.ro', 'x', CONSENT)).toEqual({
       user: null,
       error: 'Weak password',
     });
@@ -98,7 +101,80 @@ describe('conectare și cont nou', () => {
   test('o excepție la cont nou nu scapă din serviciu', async () => {
     auth.signUp.mockRejectedValue(new Error('timeout'));
 
-    expect((await cloudSyncService.signUpWithEmail('c@d.ro', 'x')).error).toBe('timeout');
+    expect((await cloudSyncService.signUpWithEmail('c@d.ro', 'x', CONSENT)).error).toBe('timeout');
+  });
+
+  /**
+   * The screen already refuses without both boxes ticked. This is the second line: anything
+   * that reaches the service some other way still cannot open an account holding health data
+   * for someone who has not said they are 16 and agreed to it.
+   */
+  test('fără declarația de vârstă nu creează contul și nu apelează serverul', async () => {
+    const result = await cloudSyncService.signUpWithEmail('c@d.ro', 'Muntele7Verde', {
+      isAtLeast16: false,
+      healthDataConsent: true,
+    });
+
+    expect(result.user).toBeNull();
+    expect(result.error).toMatch(/16 ani/);
+    expect(auth.signUp).not.toHaveBeenCalled();
+  });
+
+  test('fără acordul pentru datele de sănătate nu creează contul', async () => {
+    const result = await cloudSyncService.signUpWithEmail('c@d.ro', 'Muntele7Verde', {
+      isAtLeast16: true,
+      healthDataConsent: false,
+    });
+
+    expect(result.error).toMatch(/sănătate/);
+    expect(auth.signUp).not.toHaveBeenCalled();
+  });
+
+  /** Consent has to be provable later: what was agreed, and to which version of the policy. */
+  /**
+   * The statements travel in the sign-up metadata, where migration 0005's trigger freezes
+   * them into user_consents. The time is not sent: a phone's clock is whatever the phone
+   * says, and the trigger stamps the row with the server's.
+   */
+  test('declarațiile pleacă la server, dar ora o pune serverul', async () => {
+    auth.signUp.mockResolvedValue({ data: { user: { id: 'u2' } }, error: null });
+
+    await cloudSyncService.signUpWithEmail('c@d.ro', 'Muntele7Verde', CONSENT);
+
+    expect(auth.signUp.mock.calls[0][0].options.data).toEqual({
+      age_confirmed_16: true,
+      health_data_consent: true,
+      privacy_policy_version: PRIVACY_POLICY_VERSION,
+    });
+  });
+
+  test('acordul se citește din tabela pe care utilizatorul n-o poate modifica', async () => {
+    maybeSingle.mockResolvedValue({
+      data: {
+        age_confirmed_16: true,
+        health_data_consent: true,
+        privacy_policy_version: '2026-09-28',
+        consented_at: '2026-09-28T10:00:00Z',
+      },
+      error: null,
+    });
+
+    const consent = await cloudSyncService.loadConsent('u1');
+
+    expect(from).toHaveBeenCalledWith('user_consents');
+    expect(eq).toHaveBeenCalledWith('user_id', 'u1');
+    expect(consent).toEqual({
+      age_confirmed_16: true,
+      health_data_consent: true,
+      privacy_policy_version: '2026-09-28',
+      consented_at: '2026-09-28T10:00:00Z',
+    });
+  });
+
+  test('fără rând de acord întoarce null, nu un acord inventat', async () => {
+    maybeSingle.mockResolvedValue({ data: null, error: null });
+
+    expect(await cloudSyncService.loadConsent('u1')).toBeNull();
   });
 
   test('adresa curentă vine din sesiunea Supabase', async () => {

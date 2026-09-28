@@ -1,6 +1,8 @@
 import { cloudSyncService, getSupabaseClient } from '../supabase';
 import { MealPlan } from '../../types';
 
+const CONSENT = { isAtLeast16: true, healthDataConsent: true };
+
 /**
  * The app is guest-first: Supabase is optional and unconfigured in development. These tests
  * pin the offline contract, so a missing backend degrades into a clear message instead of a
@@ -42,7 +44,7 @@ describe('cloud sync without a configured backend', () => {
   });
 
   test('creating an account then signing in works against the simulation', async () => {
-    const created = await cloudSyncService.signUpWithEmail('nou@b.ro', 'Muntele7Verde');
+    const created = await cloudSyncService.signUpWithEmail('nou@b.ro', 'Muntele7Verde', CONSENT);
     expect(created.error).toBeNull();
     expect(created.user?.email).toBe('nou@b.ro');
 
@@ -53,7 +55,7 @@ describe('cloud sync without a configured backend', () => {
   });
 
   test('the wrong password is refused', async () => {
-    await cloudSyncService.signUpWithEmail('altul@b.ro', 'Muntele7Verde');
+    await cloudSyncService.signUpWithEmail('altul@b.ro', 'Muntele7Verde', CONSENT);
     await cloudSyncService.signOut();
 
     const result = await cloudSyncService.signInWithEmail('altul@b.ro', 'gresita123');

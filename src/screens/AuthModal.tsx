@@ -10,9 +10,15 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { cloudSyncService } from '../services/supabase';
+import { DataExportButton } from '../components/DataExportButton';
 import { ReminderSettingsPanel } from '../components/ReminderSettingsPanel';
+import { SignUpConsent } from '../components/SignUpConsent';
 import { useAppStore } from '../store/useAppStore';
+import { SignUpConsent as Consent } from '../types';
 import { describeWeakPassword } from '../utils/passwordPolicy';
+import { describeMissingConsent } from '../utils/signUpConsent';
+
+const NO_CONSENT: Consent = { isAtLeast16: false, healthDataConsent: false };
 import { getAppTheme } from '../styles/theme';
 
 interface AuthModalProps {
@@ -50,6 +56,7 @@ export function AuthModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [consent, setConsent] = useState<Consent>(NO_CONSENT);
   const { reminders, updateReminders } = useAppStore();
 
   const appTheme = getAppTheme(isDark);
@@ -92,7 +99,16 @@ export function AuthModal({
           setErrorMessage(weak);
           return;
         }
-        const { user, error } = await cloudSyncService.signUpWithEmail(email.trim(), password);
+        const missing = describeMissingConsent(consent);
+        if (missing) {
+          setErrorMessage(missing);
+          return;
+        }
+        const { user, error } = await cloudSyncService.signUpWithEmail(
+          email.trim(),
+          password,
+          consent
+        );
         if (error) {
           setErrorMessage(error);
         } else {
@@ -246,8 +262,15 @@ export function AuthModal({
             {/* Authenticated State */}
             {userEmail ? (
               <View style={styles.userSection}>
-                <View style={[styles.userBadge, { borderColor: theme.border, backgroundColor: theme.inputBg }]}>
-                  <Text style={[styles.userLabel, { color: theme.textMuted }]}>Autentificat ca:</Text>
+                <View
+                  style={[
+                    styles.userBadge,
+                    { borderColor: theme.border, backgroundColor: theme.inputBg },
+                  ]}
+                >
+                  <Text style={[styles.userLabel, { color: theme.textMuted }]}>
+                    Autentificat ca:
+                  </Text>
                   <Text style={[styles.userEmailText, { color: theme.text }]}>{userEmail}</Text>
                   {lastSyncedAt && (
                     <Text style={[styles.syncTimeText, { color: theme.primary }]}>
@@ -267,7 +290,9 @@ export function AuthModal({
                     {isSyncing ? (
                       <ActivityIndicator color={theme.primaryText} size="small" />
                     ) : (
-                      <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>⬆ Urcă planul de aici</Text>
+                      <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>
+                        ⬆ Urcă planul de aici
+                      </Text>
                     )}
                   </TouchableOpacity>
                 )}
@@ -292,7 +317,9 @@ export function AuthModal({
                   onPress={handleSignOut}
                   disabled={loading}
                 >
-                  <Text style={[styles.secondaryBtnText, { color: '#ef4444' }]}>Deconectare cont</Text>
+                  <Text style={[styles.secondaryBtnText, { color: '#ef4444' }]}>
+                    Deconectare cont
+                  </Text>
                 </TouchableOpacity>
 
                 <ReminderSettingsPanel
@@ -301,6 +328,8 @@ export function AuthModal({
                   hasAccount={Boolean(userEmail)}
                   isDark={isDark}
                 />
+
+                <DataExportButton isDark={isDark} />
 
                 {/* Required by both stores, and the account holds declared allergies, which
                     is special-category data under GDPR. Asked for twice because it cannot
@@ -325,7 +354,10 @@ export function AuthModal({
                         accessibilityRole="button"
                         accessibilityLabel="Confirmă ștergerea definitivă a contului"
                         onPress={handleDeleteAccount}
-                        style={[styles.deleteBtn, { backgroundColor: '#ef4444', borderColor: '#ef4444' }]}
+                        style={[
+                          styles.deleteBtn,
+                          { backgroundColor: '#ef4444', borderColor: '#ef4444' },
+                        ]}
                         disabled={loading}
                       >
                         <Text style={[styles.deleteBtnText, { color: '#ffffff' }]}>
@@ -348,108 +380,107 @@ export function AuthModal({
                   </TouchableOpacity>
                 )}
               </View>
-            ) : (
-              resetStep !== 'off' ? (
-                /* Password reset: address, then the emailed code, then the new password. */
-                <View style={styles.formSection}>
-                  <Text style={[styles.resetTitle, { color: theme.text }]}>
-                    {resetStep === 'email'
-                      ? 'Ți-ai uitat parola?'
+            ) : resetStep !== 'off' ? (
+              /* Password reset: address, then the emailed code, then the new password. */
+              <View style={styles.formSection}>
+                <Text style={[styles.resetTitle, { color: theme.text }]}>
+                  {resetStep === 'email'
+                    ? 'Ți-ai uitat parola?'
+                    : resetStep === 'code'
+                      ? 'Codul din email'
+                      : 'Alege o parolă nouă'}
+                </Text>
+                <Text style={[styles.resetHint, { color: theme.textMuted }]}>
+                  {resetStep === 'email'
+                    ? 'Scrie adresa contului și îți trimitem un cod de șase cifre.'
+                    : resetStep === 'code'
+                      ? `Am trimis un cod la ${email.trim()}. Verifică și în spam.`
+                      : 'Minimum 10 caractere, cu cel puțin o literă și o cifră.'}
+                </Text>
+
+                {resetStep === 'email' && (
+                  <TextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="exemplu@email.ro"
+                    placeholderTextColor={theme.textMuted}
+                    accessibilityLabel="Adresa de email pentru resetare"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
+                  />
+                )}
+
+                {resetStep === 'code' && (
+                  <TextInput
+                    value={resetCode}
+                    onChangeText={setResetCode}
+                    placeholder="123456"
+                    placeholderTextColor={theme.textMuted}
+                    accessibilityLabel="Codul primit pe email"
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
+                  />
+                )}
+
+                {resetStep === 'password' && (
+                  <TextInput
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    placeholder="••••••••••"
+                    placeholderTextColor={theme.textMuted}
+                    accessibilityLabel="Parola nouă"
+                    secureTextEntry
+                    style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
+                  />
+                )}
+
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    resetStep === 'email'
+                      ? 'Trimite codul pe email'
                       : resetStep === 'code'
-                        ? 'Codul din email'
-                        : 'Alege o parolă nouă'}
-                  </Text>
-                  <Text style={[styles.resetHint, { color: theme.textMuted }]}>
-                    {resetStep === 'email'
-                      ? 'Scrie adresa contului și îți trimitem un cod de șase cifre.'
+                        ? 'Verifică codul'
+                        : 'Salvează parola nouă'
+                  }
+                  onPress={
+                    resetStep === 'email'
+                      ? handleRequestReset
                       : resetStep === 'code'
-                        ? `Am trimis un cod la ${email.trim()}. Verifică și în spam.`
-                        : 'Minimum 10 caractere, cu cel puțin o literă și o cifră.'}
-                  </Text>
-
-                  {resetStep === 'email' && (
-                    <TextInput
-                      value={email}
-                      onChangeText={setEmail}
-                      placeholder="exemplu@email.ro"
-                      placeholderTextColor={theme.textMuted}
-                      accessibilityLabel="Adresa de email pentru resetare"
-                      autoCapitalize="none"
-                      keyboardType="email-address"
-                      style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
-                    />
-                  )}
-
-                  {resetStep === 'code' && (
-                    <TextInput
-                      value={resetCode}
-                      onChangeText={setResetCode}
-                      placeholder="123456"
-                      placeholderTextColor={theme.textMuted}
-                      accessibilityLabel="Codul primit pe email"
-                      keyboardType="number-pad"
-                      maxLength={6}
-                      style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
-                    />
-                  )}
-
-                  {resetStep === 'password' && (
-                    <TextInput
-                      value={newPassword}
-                      onChangeText={setNewPassword}
-                      placeholder="••••••••••"
-                      placeholderTextColor={theme.textMuted}
-                      accessibilityLabel="Parola nouă"
-                      secureTextEntry
-                      style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
-                    />
-                  )}
-
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      resetStep === 'email'
-                        ? 'Trimite codul pe email'
+                        ? handleVerifyCode
+                        : handleSetNewPassword
+                  }
+                  style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color={theme.primaryText} size="small" />
+                  ) : (
+                    <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>
+                      {resetStep === 'email'
+                        ? 'Trimite codul'
                         : resetStep === 'code'
                           ? 'Verifică codul'
-                          : 'Salvează parola nouă'
-                    }
-                    onPress={
-                      resetStep === 'email'
-                        ? handleRequestReset
-                        : resetStep === 'code'
-                          ? handleVerifyCode
-                          : handleSetNewPassword
-                    }
-                    style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <ActivityIndicator color={theme.primaryText} size="small" />
-                    ) : (
-                      <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>
-                        {resetStep === 'email'
-                          ? 'Trimite codul'
-                          : resetStep === 'code'
-                            ? 'Verifică codul'
-                            : 'Salvează parola'}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel="Renunță la resetarea parolei"
-                    onPress={leaveReset}
-                    style={styles.resetBackBtn}
-                    disabled={loading}
-                  >
-                    <Text style={[styles.resetBackText, { color: theme.textMuted }]}>
-                      ← Înapoi la autentificare
+                          : 'Salvează parola'}
                     </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Renunță la resetarea parolei"
+                  onPress={leaveReset}
+                  style={styles.resetBackBtn}
+                  disabled={loading}
+                >
+                  <Text style={[styles.resetBackText, { color: theme.textMuted }]}>
+                    ← Înapoi la autentificare
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
               /* Unauthenticated Form */
               <View style={styles.formSection}>
                 <View style={styles.tabSwitch}>
@@ -457,7 +488,10 @@ export function AuthModal({
                     accessibilityRole="button"
                     style={[
                       styles.tabItem,
-                      mode === 'signin' && [styles.tabItemActive, { borderBottomColor: theme.primary }],
+                      mode === 'signin' && [
+                        styles.tabItemActive,
+                        { borderBottomColor: theme.primary },
+                      ],
                     ]}
                     onPress={() => setMode('signin')}
                   >
@@ -474,7 +508,10 @@ export function AuthModal({
                     accessibilityRole="button"
                     style={[
                       styles.tabItem,
-                      mode === 'signup' && [styles.tabItemActive, { borderBottomColor: theme.primary }],
+                      mode === 'signup' && [
+                        styles.tabItemActive,
+                        { borderBottomColor: theme.primary },
+                      ],
                     ]}
                     onPress={() => setMode('signup')}
                   >
@@ -494,7 +531,11 @@ export function AuthModal({
                   <TextInput
                     style={[
                       styles.input,
-                      { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border },
+                      {
+                        backgroundColor: theme.inputBg,
+                        color: theme.text,
+                        borderColor: theme.border,
+                      },
                     ]}
                     placeholder="exemplu@email.ro"
                     placeholderTextColor={theme.textMuted}
@@ -510,7 +551,11 @@ export function AuthModal({
                   <TextInput
                     style={[
                       styles.input,
-                      { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border },
+                      {
+                        backgroundColor: theme.inputBg,
+                        color: theme.text,
+                        borderColor: theme.border,
+                      },
                     ]}
                     placeholder="••••••••"
                     placeholderTextColor={theme.textMuted}
@@ -519,6 +564,10 @@ export function AuthModal({
                     onChangeText={setPassword}
                   />
                 </View>
+
+                {mode === 'signup' && (
+                  <SignUpConsent consent={consent} onChange={setConsent} isDark={isDark} />
+                )}
 
                 <TouchableOpacity
                   accessibilityRole="button"
@@ -553,7 +602,6 @@ export function AuthModal({
                   </TouchableOpacity>
                 )}
               </View>
-              )
             )}
 
             {/* Close Button */}

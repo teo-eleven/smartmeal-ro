@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { cloudSyncService } from '../supabase';
 import { localAuthSimulation } from '../localAuthSimulation';
 
+const CONSENT = { isAtLeast16: true, healthDataConsent: true };
+
 /**
  * Drives the real service rather than a mock of it.
  *
@@ -20,7 +22,7 @@ describe('parcursul de cont, prin serviciul real', () => {
   });
 
   test('cont nou, deconectare, reconectare', async () => {
-    const created = await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde');
+    const created = await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde', CONSENT);
     expect(created.error).toBeNull();
     expect(await cloudSyncService.currentEmail()).toBe('a@b.ro');
 
@@ -32,7 +34,7 @@ describe('parcursul de cont, prin serviciul real', () => {
   });
 
   test('resetarea parolei chiar schimbă parola', async () => {
-    await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde');
+    await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde', CONSENT);
     await cloudSyncService.signOut();
 
     const asked = await cloudSyncService.requestPasswordReset('a@b.ro');
@@ -57,7 +59,7 @@ describe('parcursul de cont, prin serviciul real', () => {
   });
 
   test('un cod greșit nu schimbă nimic', async () => {
-    await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde');
+    await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde', CONSENT);
 
     const verified = await cloudSyncService.verifyPasswordResetCode('a@b.ro', '000000');
 
@@ -71,7 +73,7 @@ describe('parcursul de cont, prin serviciul real', () => {
   });
 
   test('ștergerea contului îl face de neconectat', async () => {
-    await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde');
+    await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde', CONSENT);
 
     const deleted = await cloudSyncService.deleteAccount();
 

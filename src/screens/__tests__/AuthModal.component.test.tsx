@@ -27,6 +27,20 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+const AGE = 'Am cel puțin 16 ani';
+const HEALTH = 'Sunt de acord ca alergiile și dieta mea să fie păstrate în cont';
+
+function tickBothConsents() {
+  fireEvent.press(screen.getByLabelText(AGE));
+  fireEvent.press(screen.getByLabelText(HEALTH));
+}
+
+function fillSignUp() {
+  fireEvent.press(screen.getByText('Creează cont'));
+  fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
+  fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
+}
+
 /** The screen in front of every cloud sync: whatever it says is what the user believes. */
 describe('AuthModal', () => {
   test('cere ambele câmpuri înainte să atingă serverul', async () => {
@@ -79,6 +93,7 @@ describe('AuthModal', () => {
     fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
     // Has to satisfy the policy now, or it never reaches the server.
     fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
+    tickBothConsents();
     fireEvent.press(screen.getByText('Înregistrare'));
 
     await waitFor(() => expect(screen.getByText(/Verifică email-ul/i)).toBeTruthy());
@@ -93,7 +108,9 @@ describe('AuthModal', () => {
     fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'parola');
     fireEvent.press(screen.getByText('Conectare'));
 
-    await waitFor(() => expect(screen.getByText(/problemă la comunicarea cu serverul/i)).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText(/problemă la comunicarea cu serverul/i)).toBeTruthy()
+    );
   });
 
   test('deconectarea anunță aplicația', async () => {
@@ -156,7 +173,9 @@ describe('AuthModal', () => {
   });
 
   test('neconectat, nu apare niciun buton de sincronizare', () => {
-    render(<AuthModal {...baseProps} onDownloadTriggered={jest.fn()} onSyncTriggered={jest.fn()} />);
+    render(
+      <AuthModal {...baseProps} onDownloadTriggered={jest.fn()} onSyncTriggered={jest.fn()} />
+    );
 
     expect(screen.queryByLabelText('Adu planul din cloud')).toBeNull();
     expect(screen.queryByLabelText('Urcă planul în cloud')).toBeNull();
@@ -245,7 +264,10 @@ describe('resetarea parolei', () => {
   });
 
   test('un cod prea scurt nu ajunge la server', async () => {
-    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({ success: true, error: null });
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
     openReset();
     fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
     fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
@@ -259,7 +281,10 @@ describe('resetarea parolei', () => {
   });
 
   test('un cod greșit nu deschide pasul parolei', async () => {
-    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({ success: true, error: null });
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
     (cloudSyncService.verifyPasswordResetCode as jest.Mock).mockResolvedValue({
       success: false,
       error: 'Codul nu este valid sau a expirat. Cere altul.',
@@ -278,8 +303,14 @@ describe('resetarea parolei', () => {
   });
 
   test('o parolă slabă este refuzată înainte de server', async () => {
-    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({ success: true, error: null });
-    (cloudSyncService.verifyPasswordResetCode as jest.Mock).mockResolvedValue({ success: true, error: null });
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+    (cloudSyncService.verifyPasswordResetCode as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
     openReset();
     fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
     fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
@@ -296,9 +327,18 @@ describe('resetarea parolei', () => {
   });
 
   test('parcursul complet schimbă parola și conectează utilizatorul', async () => {
-    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({ success: true, error: null });
-    (cloudSyncService.verifyPasswordResetCode as jest.Mock).mockResolvedValue({ success: true, error: null });
-    (cloudSyncService.updatePassword as jest.Mock).mockResolvedValue({ success: true, error: null });
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+    (cloudSyncService.verifyPasswordResetCode as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+    (cloudSyncService.updatePassword as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
     openReset();
     fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
     fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
@@ -330,5 +370,76 @@ describe('resetarea parolei', () => {
 
     await waitFor(() => expect(screen.getByText(/cel puțin 10 caractere/i)).toBeTruthy());
     expect(cloudSyncService.signUpWithEmail).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * An account stores allergies, which are health data. Two things have to be true before one
+ * is opened: the person is old enough to agree on their own (16 in Romania, GDPR art. 8),
+ * and they have actually agreed (art. 9) — typing an allergy into a field is not consent.
+ */
+describe('AuthModal, acordul la cont nou', () => {
+  test('bifele apar doar la cont nou, nu la conectare', () => {
+    render(<AuthModal {...baseProps} />);
+    expect(screen.queryByLabelText(AGE)).toBeNull();
+
+    fireEvent.press(screen.getByText('Creează cont'));
+
+    expect(screen.getByLabelText(AGE)).toBeTruthy();
+    expect(screen.getByLabelText(HEALTH)).toBeTruthy();
+  });
+
+  test('pornesc nebifate, iar cititorul de ecran le anunță ca atare', () => {
+    render(<AuthModal {...baseProps} />);
+    fireEvent.press(screen.getByText('Creează cont'));
+
+    const age = screen.getByLabelText(AGE);
+    expect(age.props.accessibilityRole).toBe('checkbox');
+    expect(age.props.accessibilityState.checked).toBe(false);
+
+    fireEvent.press(age);
+
+    expect(screen.getByLabelText(AGE).props.accessibilityState.checked).toBe(true);
+  });
+
+  test('fără declarația de vârstă, nimic nu pleacă spre server', async () => {
+    render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    fireEvent.press(screen.getByLabelText(HEALTH));
+
+    fireEvent.press(screen.getByText('Înregistrare'));
+
+    await waitFor(() => expect(screen.getByText(/trebuie să ai cel puțin 16 ani/i)).toBeTruthy());
+    expect(cloudSyncService.signUpWithEmail).not.toHaveBeenCalled();
+  });
+
+  test('fără acordul pentru datele de sănătate, nimic nu pleacă spre server', async () => {
+    render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    fireEvent.press(screen.getByLabelText(AGE));
+
+    fireEvent.press(screen.getByText('Înregistrare'));
+
+    await waitFor(() => expect(screen.getByText(/acordul pentru alergii/i)).toBeTruthy());
+    expect(cloudSyncService.signUpWithEmail).not.toHaveBeenCalled();
+  });
+
+  test('cu ambele bife, acordul pleacă odată cu contul', async () => {
+    (cloudSyncService.signUpWithEmail as jest.Mock).mockResolvedValue({
+      user: { email: 'nou@b.ro' },
+      error: null,
+    });
+    render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    tickBothConsents();
+
+    fireEvent.press(screen.getByText('Înregistrare'));
+
+    await waitFor(() =>
+      expect(cloudSyncService.signUpWithEmail).toHaveBeenCalledWith('nou@b.ro', 'Muntele7Verde', {
+        isAtLeast16: true,
+        healthDataConsent: true,
+      })
+    );
   });
 });

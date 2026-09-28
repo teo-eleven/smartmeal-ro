@@ -7,8 +7,16 @@ import {
 import { localAuthSimulation } from './localAuthSimulation';
 import { secureSessionStore } from './secureSessionStore';
 import { env } from '../../config/env';
-import { MealPlan, GroceryListItem, ReminderSettings, UserPreferences } from '../types';
+import { PRIVACY_POLICY_VERSION } from '../../config/legal';
+import {
+  MealPlan,
+  GroceryListItem,
+  ReminderSettings,
+  SignUpConsent,
+  UserPreferences,
+} from '../types';
 import { parseReminderSettings } from '../utils/preferencesValidation';
+import { describeMissingConsent } from '../utils/signUpConsent';
 import { isWellFormedPlan } from './storage';
 
 let supabaseClientInstance: SupabaseClient | null = null;
@@ -39,6 +47,14 @@ export function getSupabaseClient(): SupabaseClient | null {
     console.warn('[Supabase] Failed to initialize Supabase client:', e);
     return null;
   }
+}
+
+/** A row of user_consents, as written by the sign-up trigger in migration 0005. */
+export interface RecordedConsent {
+  age_confirmed_16: boolean;
+  health_data_consent: boolean;
+  privacy_policy_version: string | null;
+  consented_at: string | null;
 }
 
 /** What a cloud row turns into once it has been checked rather than merely cast. */
@@ -125,8 +141,16 @@ export const cloudSyncService = {
 
   async signUpWithEmail(
     email: string,
-    password: string
+    password: string,
+    consent: SignUpConsent
   ): Promise<{ user: User | null; error: string | null }> {
+    // The screen checks this too. Checking again here means no other path can open an
+    // account holding health data without it.
+    const missing = describeMissingConsent(consent);
+    if (missing) {
+      return { user: null, error: missing };
+    }
+
     if (localAuthSimulation.isActive()) {
       const { email: created, error } = await localAuthSimulation.signUp(email, password);
       return { user: created ? ({ email: created } as User) : null, error };
@@ -137,7 +161,21 @@ export const cloudSyncService = {
       return { user: null, error: 'Sincronizarea Cloud nu este configurată pe acest server.' };
     }
     try {
-      const { data, error } = await client.auth.signUp({ email, password });
+      // Sign-up metadata is the only channel before the account exists. It stays editable by
+      // its owner, so it is not the record: migration 0005 copies it into user_consents at
+      // creation, stamped with the server's clock, where the user can read but never change
+      // it. No time is sent from here for the same reason.
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            age_confirmed_16: true,
+            health_data_consent: true,
+            privacy_policy_version: PRIVACY_POLICY_VERSION,
+          },
+        },
+      });
       if (error) {
         return { user: null, error: error.message };
       }
@@ -299,6 +337,35 @@ export const cloudSyncService = {
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Eroare la schimbarea parolei.';
       return { success: false, error: message };
+    }
+  },
+
+  /**
+   * The consent recorded when the account was opened, from the table only the sign-up
+   * trigger writes. Null when there is no record, never a guessed one.
+   */
+  async loadConsent(userId: string): Promise<RecordedConsent | null> {
+    const client = getSupabaseClient();
+    if (!client) return null;
+
+    try {
+      const { data, error } = await client
+        .from('user_consents')
+        .select('age_confirmed_16, health_data_consent, privacy_policy_version, consented_at')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error || !isPlainObject(data)) return null;
+      return {
+        age_confirmed_16: data.age_confirmed_16 === true,
+        health_data_consent: data.health_data_consent === true,
+        privacy_policy_version:
+          typeof data.privacy_policy_version === 'string' ? data.privacy_policy_version : null,
+        consented_at: typeof data.consented_at === 'string' ? data.consented_at : null,
+      };
+    } catch (e) {
+      console.warn('[Supabase] Could not read the consent record:', e);
+      return null;
     }
   },
 

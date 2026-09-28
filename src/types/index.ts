@@ -142,6 +142,16 @@ export interface ReminderSettings {
   emailFrequencyDays: number;
 }
 
+/**
+ * What someone has to affirm before an account is opened. An account stores allergies, which
+ * are health data: GDPR art. 9 needs explicit consent for that, and art. 8 puts the age at
+ * which someone can give it on their own at 16 in Romania.
+ */
+export interface SignUpConsent {
+  isAtLeast16: boolean;
+  healthDataConsent: boolean;
+}
+
 export const DEFAULT_REMINDERS: ReminderSettings = {
   cookingEnabled: false,
   cookingTime: '17:30',
