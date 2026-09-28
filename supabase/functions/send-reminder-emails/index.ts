@@ -33,7 +33,7 @@
 // two or three days, because the query only returns those whose window has passed.
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { signUnsubscribe, timingSafeEqual } from '../_shared/unsubscribeToken.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
