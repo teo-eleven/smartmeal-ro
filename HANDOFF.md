@@ -11,8 +11,8 @@ completă pentru App Store și Google Play, imaginile de aplicație, politica de
 ## Starea, rulată la închidere
 
 ```
-TESTE 94 suite / 808 teste · TYPECHECK 0 · LINT 0 · EXPO-DOCTOR 18/18
-COVERAGE 87,39 / 76,72 / 87,27 / 88,59 — praguri 87/76/87/88, toate trecute
+TESTE 101 suite / 853 teste · TYPECHECK 0 · LINT 0 · EXPO-DOCTOR 18/18
+COVERAGE 87,69 / 77,22 / 87,71 / 88,93 — praguri 87/76/87/88, toate trecute
 SQL 5/5 migrații și 6/6 funcții PL/pgSQL trec parserul Postgres (sintaxă, nu schemă)
          identic la fiecare rulare (vezi „Poarta de acoperire" mai jos)
 DENO 4/4 funcții edge compilează · 9/9 teste (npx deno, fără instalare)
@@ -77,6 +77,30 @@ la `NSUserDefaults` · App Transport Security fără excepții · Android cu o s
 - **Berea 0.0%** rămânea în coș, ascunsă, după închiderea secțiunii 18+. Mutată la sucuri.
 - **Resetarea parolei fără internet** spunea „cod trimis". `supabase-js` întoarce eroarea
   de rețea în loc s-o arunce, iar codul nu se uita la ea.
+
+### Testarea ca utilizator (2026-09-28)
+
+Aplicația a fost parcursă cap-coadă într-un browser controlat de un script (Playwright), la
+lățimi de telefon de 360 și 390 px, apăsând fiecare buton. Toate capturile au fost verificate
+vizual. Au ieșit 19 probleme, toate reparate, fiecare cu testul ei:
+
+- **Funcționale:** fereastra de cont redeschisă peste plan după cont nou; contul marcat
+  conectat înainte de confirmarea emailului; „Sesiune expirată” fals la sincronizare;
+  formularul care păstra parola și bifele după deconectare; „Mese (5)” care număra zile.
+- **Magazin / legal:** „prețuri reale / oficial” (de fapt estimate); caloriile prezentate ca
+  aport zilnic; un „scor de nutriție” forțat să nu scadă sub 65 și afirmații de sănătate
+  fixe; lipsa linkului spre politica de confidențialitate; erori de la server în engleză.
+- **Pe telefon:** antet tăiat, magazine ieșite din card, etichete suprapuse pe carduri,
+  prețul și „+” ieșite din card pe ecranul de rețetă la 360 px.
+- **Accesibilitate:** dialoguri și carduri construite ca buton-în-buton, deci butoanele din
+  ele nu puteau fi atinse cu cititorul de ecran.
+- **Web:** mementouri de telefon oferite pe web, unde nu pot suna.
+
+Două reguli automate păzesc de-acum: nicio interfață nu mai poate pretinde prețuri „reale” /
+„oficiale”, și orice element apăsabil trebuie să aibă rol pentru cititorul de ecran.
+
+Scripturile de test din browser nu sunt în repo. Au rulat pe serverul de dezvoltare, iar
+unele pași depind de simularea locală de conturi.
 
 ### A treia parte: blocaje de lansare găsite și închise
 
