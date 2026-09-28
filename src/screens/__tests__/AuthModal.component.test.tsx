@@ -5,6 +5,7 @@ import { cloudSyncService } from '../../services/supabase';
 
 jest.mock('../../services/supabase', () => ({
   cloudSyncService: {
+    isConfigured: jest.fn(() => true),
     signInWithEmail: jest.fn(),
     signUpWithEmail: jest.fn(),
     signOut: jest.fn(),

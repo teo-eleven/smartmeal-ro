@@ -10,8 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { cloudSyncService } from '../services/supabase';
-import { DataExportButton } from '../components/DataExportButton';
-import { ReminderSettingsPanel } from '../components/ReminderSettingsPanel';
+import { AccountPanel } from '../components/AccountPanel';
 import { SignUpConsent } from '../components/SignUpConsent';
 import { useAppStore } from '../store/useAppStore';
 import { SignUpConsent as Consent } from '../types';
@@ -55,7 +54,6 @@ export function AuthModal({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [consent, setConsent] = useState<Consent>(NO_CONSENT);
   const { reminders, updateReminders } = useAppStore();
 
@@ -159,11 +157,9 @@ export function AuthModal({
       const { success, error } = await cloudSyncService.deleteAccount();
       if (!success) {
         setErrorMessage(error ?? 'Contul nu a putut fi șters.');
-        setConfirmingDelete(false);
         return;
       }
       onUserChanged(null);
-      setConfirmingDelete(false);
       setSuccessMessage('Contul și datele lui au fost șterse.');
     } finally {
       setLoading(false);
@@ -289,125 +285,20 @@ export function AuthModal({
 
             {/* Authenticated State */}
             {userEmail ? (
-              <View style={styles.userSection}>
-                <View
-                  style={[
-                    styles.userBadge,
-                    { borderColor: theme.border, backgroundColor: theme.inputBg },
-                  ]}
-                >
-                  <Text style={[styles.userLabel, { color: theme.textMuted }]}>
-                    Autentificat ca:
-                  </Text>
-                  <Text style={[styles.userEmailText, { color: theme.text }]}>{userEmail}</Text>
-                  {lastSyncedAt && (
-                    <Text style={[styles.syncTimeText, { color: theme.primary }]}>
-                      ✓ Sincronizat: {lastSyncedAt}
-                    </Text>
-                  )}
-                </View>
-
-                {onSyncTriggered && (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel="Urcă planul în cloud"
-                    style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
-                    onPress={onSyncTriggered}
-                    disabled={isSyncing}
-                  >
-                    {isSyncing ? (
-                      <ActivityIndicator color={theme.primaryText} size="small" />
-                    ) : (
-                      <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>
-                        ⬆ Urcă planul de aici
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                )}
-
-                {onDownloadTriggered && (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel="Adu planul din cloud"
-                    style={[styles.secondaryBtn, { borderColor: theme.border }]}
-                    onPress={onDownloadTriggered}
-                    disabled={isSyncing}
-                  >
-                    <Text style={[styles.secondaryBtnText, { color: theme.text }]}>
-                      ⬇ Adu planul de pe alt dispozitiv
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  style={[styles.secondaryBtn, { borderColor: theme.border }]}
-                  onPress={handleSignOut}
-                  disabled={loading}
-                >
-                  <Text style={[styles.secondaryBtnText, { color: '#ef4444' }]}>
-                    Deconectare cont
-                  </Text>
-                </TouchableOpacity>
-
-                <ReminderSettingsPanel
-                  reminders={reminders}
-                  onChange={updateReminders}
-                  hasAccount={Boolean(userEmail)}
-                  isDark={isDark}
-                />
-
-                <DataExportButton isDark={isDark} />
-
-                {/* Required by both stores, and the account holds declared allergies, which
-                    is special-category data under GDPR. Asked for twice because it cannot
-                    be undone. */}
-                {confirmingDelete ? (
-                  <View style={styles.deleteConfirmRow}>
-                    <Text style={[styles.deleteWarning, { color: theme.textMuted }]}>
-                      Se șterg definitiv contul, planul din cloud și preferințele salvate pe el.
-                      Acțiunea nu poate fi anulată.
-                    </Text>
-                    <View style={styles.deleteActions}>
-                      <TouchableOpacity
-                        accessibilityRole="button"
-                        accessibilityLabel="Renunță la ștergerea contului"
-                        onPress={() => setConfirmingDelete(false)}
-                        style={[styles.deleteBtn, { borderColor: theme.border }]}
-                        disabled={loading}
-                      >
-                        <Text style={[styles.deleteBtnText, { color: theme.text }]}>Renunț</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        accessibilityRole="button"
-                        accessibilityLabel="Confirmă ștergerea definitivă a contului"
-                        onPress={handleDeleteAccount}
-                        style={[
-                          styles.deleteBtn,
-                          { backgroundColor: '#ef4444', borderColor: '#ef4444' },
-                        ]}
-                        disabled={loading}
-                      >
-                        <Text style={[styles.deleteBtnText, { color: '#ffffff' }]}>
-                          Șterge definitiv
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel="Șterge contul"
-                    onPress={() => setConfirmingDelete(true)}
-                    style={styles.deleteLink}
-                    disabled={loading}
-                  >
-                    <Text style={[styles.deleteLinkText, { color: theme.textMuted }]}>
-                      Șterge contul și datele mele
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+              <AccountPanel
+                userEmail={userEmail}
+                isDark={isDark}
+                isCloudAvailable={cloudSyncService.isConfigured()}
+                isSyncing={isSyncing}
+                lastSyncedAt={lastSyncedAt}
+                isBusy={loading}
+                onSync={onSyncTriggered}
+                onDownload={onDownloadTriggered}
+                onSignOut={handleSignOut}
+                onDeleteAccount={handleDeleteAccount}
+                reminders={reminders}
+                onChangeReminders={updateReminders}
+              />
             ) : resetStep !== 'off' ? (
               /* Password reset: address, then the emailed code, then the new password. */
               <View style={styles.formSection}>
@@ -657,19 +548,6 @@ const styles = StyleSheet.create({
   resetHint: { fontSize: 12, fontWeight: '500', lineHeight: 18, marginBottom: 14 },
   resetBackBtn: { paddingVertical: 12, alignItems: 'center' },
   resetBackText: { fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
-  deleteLink: { paddingVertical: 12, alignItems: 'center' },
-  deleteLinkText: { fontSize: 12, fontWeight: '600', textDecorationLine: 'underline' },
-  deleteConfirmRow: { marginTop: 10 },
-  deleteWarning: { fontSize: 11, fontWeight: '500', lineHeight: 16, marginBottom: 10 },
-  deleteActions: { flexDirection: 'row', gap: 10 },
-  deleteBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 11,
-    alignItems: 'center',
-  },
-  deleteBtnText: { fontSize: 12, fontWeight: '800' },
   backdrop: {
     flex: 1,
     justifyContent: 'center',
@@ -724,29 +602,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  userSection: {
-    gap: 12,
-    marginBottom: 12,
-  },
-  userBadge: {
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  userLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  userEmailText: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  syncTimeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 6,
-  },
   formSection: {
     gap: 14,
   },
@@ -794,17 +649,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 15,
     fontWeight: '700',
-  },
-  secondaryBtn: {
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  secondaryBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
   closeBtn: {
     marginTop: 18,

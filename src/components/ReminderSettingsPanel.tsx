@@ -9,6 +9,8 @@ interface ReminderSettingsPanelProps {
   /** Email reminders come from the server, so they need an account to mean anything. */
   hasAccount: boolean;
   isDark: boolean;
+  /** Inside a section that already has its own heading: no card, no title of its own. */
+  embedded?: boolean;
 }
 
 const DAY_LABELS = ['Lu', 'Ma', 'Mi', 'Jo', 'Vi', 'Sâ', 'Du'];
@@ -28,6 +30,7 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
   onChange,
   hasAccount,
   isDark,
+  embedded = false,
 }) => {
   const theme = getAppTheme(isDark);
 
@@ -62,8 +65,8 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
   );
 
   return (
-    <View style={[styles.panel, { borderColor: theme.border }]}>
-      <Text style={[styles.title, { color: theme.text }]}>Mementouri</Text>
+    <View style={embedded ? undefined : [styles.panel, { borderColor: theme.border }]}>
+      {!embedded && <Text style={[styles.title, { color: theme.text }]}>Mementouri</Text>}
       <Text style={[styles.hint, { color: theme.textMuted }]}>
         Sună pe telefon, și fără internet. Dacă ai cont, alegerile te urmează pe alt telefon.
       </Text>
