@@ -1,4 +1,9 @@
-import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
+import {
+  createClient,
+  isAuthRetryableFetchError,
+  SupabaseClient,
+  User,
+} from '@supabase/supabase-js';
 import { localAuthSimulation } from './localAuthSimulation';
 import { secureSessionStore } from './secureSessionStore';
 import { env } from '../../config/env';
@@ -91,7 +96,10 @@ export const cloudSyncService = {
     }
   },
 
-  async signInWithEmail(email: string, password: string): Promise<{ user: User | null; error: string | null }> {
+  async signInWithEmail(
+    email: string,
+    password: string
+  ): Promise<{ user: User | null; error: string | null }> {
     // With no project configured, the sign-in gate would be a screen nobody can get past.
     // The simulation refuses to run in a production build; see localAuthSimulation.
     if (localAuthSimulation.isActive()) {
@@ -115,7 +123,10 @@ export const cloudSyncService = {
     }
   },
 
-  async signUpWithEmail(email: string, password: string): Promise<{ user: User | null; error: string | null }> {
+  async signUpWithEmail(
+    email: string,
+    password: string
+  ): Promise<{ user: User | null; error: string | null }> {
     if (localAuthSimulation.isActive()) {
       const { email: created, error } = await localAuthSimulation.signUp(email, password);
       return { user: created ? ({ email: created } as User) : null, error };
@@ -210,7 +221,15 @@ export const cloudSyncService = {
     }
 
     try {
-      await client.auth.resetPasswordForEmail(email.trim());
+      // supabase-js hands a network failure back in `error` instead of throwing it, so the
+      // catch below never saw one and an offline user was told a code was on its way.
+      const { error } = await client.auth.resetPasswordForEmail(email.trim());
+      if (isAuthRetryableFetchError(error)) {
+        return {
+          success: false,
+          error: 'Nu am putut trimite codul. Verifică conexiunea la internet și încearcă din nou.',
+        };
+      }
       return { success: true, error: null };
     } catch (e: unknown) {
       // Network failures are worth reporting; a rejected address is not, for the reason above.
@@ -373,20 +392,18 @@ export const cloudSyncService = {
       return { success: false, error: 'Cloud neconfigurat. Modul offline activ.' };
     }
     try {
-      const { error } = await client
-        .from('user_meal_plans')
-        .upsert(
-          {
-            user_id: userId,
-            plan_data: plan,
-            grocery_items: groceryItems,
-            // Diet and allergies travel with the plan; an allergy that lives on one device
-            // only is exactly the gap this closes.
-            ...(preferences ? { preferences } : {}),
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'user_id' }
-        );
+      const { error } = await client.from('user_meal_plans').upsert(
+        {
+          user_id: userId,
+          plan_data: plan,
+          grocery_items: groceryItems,
+          // Diet and allergies travel with the plan; an allergy that lives on one device
+          // only is exactly the gap this closes.
+          ...(preferences ? { preferences } : {}),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      );
 
       if (error) {
         return { success: false, error: error.message };
