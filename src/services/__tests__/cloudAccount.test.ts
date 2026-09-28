@@ -64,12 +64,13 @@ describe('conectare și cont nou', () => {
   test('o parolă greșită ajunge la ecran ca mesaj, nu ca excepție', async () => {
     auth.signInWithPassword.mockResolvedValue({
       data: { user: null },
-      error: { message: 'Invalid login credentials' },
+      error: { code: 'invalid_credentials', message: 'Invalid login credentials' },
     });
 
     const result = await cloudSyncService.signInWithEmail('a@b.ro', 'gresita');
 
-    expect(result).toEqual({ user: null, error: 'Invalid login credentials' });
+    // Translated by error code, not passed through in English.
+    expect(result).toEqual({ user: null, error: 'Adresa sau parola nu sunt corecte.' });
   });
 
   test('o excepție din client nu scapă din serviciu', async () => {
@@ -77,7 +78,10 @@ describe('conectare și cont nou', () => {
 
     const result = await cloudSyncService.signInWithEmail('a@b.ro', 'Muntele7Verde');
 
-    expect(result).toEqual({ user: null, error: 'socket hang up' });
+    // Romanian, with the raw English detail left to the log.
+    expect(result.user).toBeNull();
+    expect(result.error).toMatch(/Verifică conexiunea/);
+    expect(result.error).not.toContain('socket hang up');
   });
 
   test('cont nou cu sesiune deschisă: nu mai e nimic de confirmat', async () => {
@@ -104,18 +108,23 @@ describe('conectare și cont nou', () => {
   });
 
   test('refuzul serverului la cont nou se transmite', async () => {
-    auth.signUp.mockResolvedValue({ data: { user: null }, error: { message: 'Weak password' } });
+    auth.signUp.mockResolvedValue({
+      data: { user: null },
+      error: { code: 'user_already_exists', message: 'User already registered' },
+    });
 
     expect(await cloudSyncService.signUpWithEmail('c@d.ro', 'x', CONSENT)).toEqual({
       user: null,
-      error: 'Weak password',
+      error: 'Există deja un cont cu adresa asta. Conectează-te sau resetează parola.',
     });
   });
 
   test('o excepție la cont nou nu scapă din serviciu', async () => {
     auth.signUp.mockRejectedValue(new Error('timeout'));
 
-    expect((await cloudSyncService.signUpWithEmail('c@d.ro', 'x', CONSENT)).error).toBe('timeout');
+    const { error } = await cloudSyncService.signUpWithEmail('c@d.ro', 'x', CONSENT);
+    expect(error).toMatch(/Verifică conexiunea/);
+    expect(error).not.toContain('timeout');
   });
 
   /**
@@ -264,7 +273,9 @@ describe('ștergerea contului', () => {
 
     const result = await cloudSyncService.deleteAccount();
 
-    expect(result).toEqual({ success: false, error: 'Network request failed' });
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/Verifică conexiunea/);
+    expect(result.error).not.toContain('Network request failed');
     expect(auth.signOut).not.toHaveBeenCalled();
   });
 });
@@ -347,11 +358,14 @@ describe('resetarea parolei', () => {
   });
 
   test('refuzul parolei noi se transmite', async () => {
-    auth.updateUser.mockResolvedValue({ data: {}, error: { message: 'Password too short' } });
+    auth.updateUser.mockResolvedValue({
+      data: {},
+      error: { code: 'same_password', message: 'New password should be different' },
+    });
 
     expect(await cloudSyncService.updatePassword('scurta')).toEqual({
       success: false,
-      error: 'Password too short',
+      error: 'Parola nouă trebuie să fie diferită de cea veche.',
     });
   });
 });
@@ -413,13 +427,15 @@ describe('mementourile din cont', () => {
     );
   });
 
-  test('refuzul la salvare se transmite', async () => {
+  test('refuzul la salvare se transmite, în română, fără detaliile serverului', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     upsert.mockResolvedValue({ error: { message: 'RLS' } });
 
     expect(await cloudSyncService.saveReminders('u1', DEFAULT_REMINDERS)).toEqual({
       success: false,
-      error: 'RLS',
+      error: 'Nu am putut salva în cloud. Încearcă din nou.',
     });
+    warn.mockRestore();
   });
 });
 
@@ -444,12 +460,14 @@ describe('salvarea planului', () => {
     expect(upsert.mock.calls[0][0]).not.toHaveProperty('preferences');
   });
 
-  test('refuzul la salvare se transmite', async () => {
+  test('refuzul la salvare se transmite, în română, fără detaliile serverului', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     upsert.mockResolvedValue({ error: { message: 'too large' } });
 
     expect(await cloudSyncService.saveMealPlan('u1', null, [])).toEqual({
       success: false,
-      error: 'too large',
+      error: 'Nu am putut salva în cloud. Încearcă din nou.',
     });
+    warn.mockRestore();
   });
 });

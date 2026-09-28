@@ -46,6 +46,7 @@ import { parseReminderSettings, parseUserPreferences } from '../utils/preference
 import { reminderScheduler } from '../services/reminderScheduler';
 import { storageService } from '../services/storage';
 import { cloudSyncService } from '../services/supabase';
+import { describeFailure } from '../services/authErrors';
 import { areDietsCompatible, isRecipeMatchingDiets } from '../utils/dietCompatibility';
 
 export type ActiveView = 'onboarding' | 'generating' | 'meals' | 'grocery';
@@ -1145,7 +1146,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (e: unknown) {
       // A rejected call used to escape this action entirely, surfacing as an unhandled
       // rejection with nothing shown to the user.
-      const message = e instanceof Error ? e.message : 'Eroare neașteptată la sincronizare.';
+      const message = describeFailure(e, 'Eroare neașteptată la sincronizare.');
       set({
         activeNotice: {
           id: Date.now().toString(),
@@ -1227,7 +1228,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       set({ pendingCloudPlan: pending, confirmRequest: 'apply_cloud_plan' });
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare neașteptată la descărcare.';
+      const message = describeFailure(e, 'Eroare neașteptată la descărcare.');
       set({
         activeNotice: {
           id: Date.now().toString(),

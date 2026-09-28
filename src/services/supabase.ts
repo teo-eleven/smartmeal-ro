@@ -17,6 +17,13 @@ import {
 } from '../types';
 import { parseReminderSettings } from '../utils/preferencesValidation';
 import { describeMissingConsent } from '../utils/signUpConsent';
+import { describeAuthError, describeFailure } from './authErrors';
+
+/**
+ * Database errors come back in English and describe the server ("new row violates row-level
+ * security policy"). The user gets this; the detail goes to the log.
+ */
+const CLOUD_SAVE_FAILED = 'Nu am putut salva în cloud. Încearcă din nou.';
 import { isWellFormedPlan } from './storage';
 
 let supabaseClientInstance: SupabaseClient | null = null;
@@ -137,11 +144,11 @@ export const cloudSyncService = {
     try {
       const { data, error } = await client.auth.signInWithPassword({ email, password });
       if (error) {
-        return { user: null, error: error.message };
+        return { user: null, error: describeAuthError(error) };
       }
       return { user: data.user, error: null };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare neașteptată la autentificare.';
+      const message = describeFailure(e, 'Eroare neașteptată la autentificare.');
       return { user: null, error: message };
     }
   },
@@ -186,14 +193,14 @@ export const cloudSyncService = {
         },
       });
       if (error) {
-        return { user: null, error: error.message };
+        return { user: null, error: describeAuthError(error) };
       }
       // With "Confirm email" on, Supabase creates the user but opens no session until the
       // address is confirmed. Reporting that is what stops the app from treating an account
       // it cannot use yet as signed in.
       return { user: data.user, error: null, needsConfirmation: !data.session };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare neașteptată la înregistrare.';
+      const message = describeFailure(e, 'Eroare neașteptată la înregistrare.');
       return { user: null, error: message };
     }
   },
@@ -246,7 +253,7 @@ export const cloudSyncService = {
       await client.auth.signOut();
       return { success: true, error: null };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare la ștergerea contului.';
+      const message = describeFailure(e, 'Eroare la ștergerea contului.');
       return { success: false, error: message };
     }
   },
@@ -283,7 +290,7 @@ export const cloudSyncService = {
       return { success: true, error: null };
     } catch (e: unknown) {
       // Network failures are worth reporting; a rejected address is not, for the reason above.
-      const message = e instanceof Error ? e.message : 'Eroare la trimiterea codului.';
+      const message = describeFailure(e, 'Eroare la trimiterea codului.');
       return { success: false, error: message };
     }
   },
@@ -318,7 +325,7 @@ export const cloudSyncService = {
       }
       return { success: true, error: null };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare la verificarea codului.';
+      const message = describeFailure(e, 'Eroare la verificarea codului.');
       return { success: false, error: message };
     }
   },
@@ -343,11 +350,11 @@ export const cloudSyncService = {
     try {
       const { error } = await client.auth.updateUser({ password: newPassword });
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: describeAuthError(error) };
       }
       return { success: true, error: null };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare la schimbarea parolei.';
+      const message = describeFailure(e, 'Eroare la schimbarea parolei.');
       return { success: false, error: message };
     }
   },
@@ -437,10 +444,13 @@ export const cloudSyncService = {
         { onConflict: 'user_id' }
       );
 
-      if (error) return { success: false, error: error.message };
+      if (error) {
+        console.warn('[Supabase] Could not save the reminder settings:', error.message);
+        return { success: false, error: CLOUD_SAVE_FAILED };
+      }
       return { success: true, error: null };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare la salvarea mementourilor.';
+      const message = describeFailure(e, 'Eroare la salvarea mementourilor.');
       return { success: false, error: message };
     }
   },
@@ -485,11 +495,12 @@ export const cloudSyncService = {
       );
 
       if (error) {
-        return { success: false, error: error.message };
+        console.warn('[Supabase] Could not save the plan:', error.message);
+        return { success: false, error: CLOUD_SAVE_FAILED };
       }
       return { success: true, error: null };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare la salvarea în cloud.';
+      const message = describeFailure(e, 'Eroare la salvarea în cloud.');
       return { success: false, error: message };
     }
   },
@@ -507,7 +518,8 @@ export const cloudSyncService = {
         .maybeSingle();
 
       if (error) {
-        return { ...EMPTY_CLOUD_PLAN, error: error.message };
+        console.warn('[Supabase] Could not read the plan:', error.message);
+        return { ...EMPTY_CLOUD_PLAN, error: 'Nu am putut citi planul din cloud.' };
       }
       if (!data) {
         return EMPTY_CLOUD_PLAN;
@@ -531,7 +543,7 @@ export const cloudSyncService = {
         error: null,
       };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare la încărcarea din cloud.';
+      const message = describeFailure(e, 'Eroare la încărcarea din cloud.');
       return { ...EMPTY_CLOUD_PLAN, error: message };
     }
   },
