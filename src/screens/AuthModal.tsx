@@ -177,7 +177,7 @@ export function AuthModal({
     setErrorMessage(null);
     setSuccessMessage(null);
     if (resetCode.trim().length < 6) {
-      setErrorMessage('Codul are șase cifre.');
+      setErrorMessage('Codul din email are cel puțin 6 cifre.');
       return;
     }
 
@@ -392,7 +392,7 @@ export function AuthModal({
                 </Text>
                 <Text style={[styles.resetHint, { color: theme.textMuted }]}>
                   {resetStep === 'email'
-                    ? 'Scrie adresa contului și îți trimitem un cod de șase cifre.'
+                    ? 'Scrie adresa contului și îți trimitem un cod pe email.'
                     : resetStep === 'code'
                       ? `Am trimis un cod la ${email.trim()}. Verifică și în spam.`
                       : 'Minimum 10 caractere, cu cel puțin o literă și o cifră.'}
@@ -419,7 +419,9 @@ export function AuthModal({
                     placeholderTextColor={theme.textMuted}
                     accessibilityLabel="Codul primit pe email"
                     keyboardType="number-pad"
-                    maxLength={6}
+                    // Supabase sends 6 to 10 digits, depending on the project's OTP length
+                    // setting. Stopping at 6 made the rest of a real code untypable.
+                    maxLength={10}
                     style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
                   />
                 )}

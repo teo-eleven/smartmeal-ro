@@ -1,0 +1,32 @@
+<!--
+  Supabase → Authentication → Email Templates → "Confirm signup".
+  Subject: Confirmă adresa de email — SmartMeal RO
+
+  A link is right here, unlike the reset: confirming needs no screen in the app. The link
+  confirms the address on Supabase's side and then goes to the Site URL (Authentication →
+  URL Configuration), which must be the app's public web address, not localhost.
+-->
+<h2 style="font-family: sans-serif; margin: 0 0 12px">Bun venit în SmartMeal RO</h2>
+<p style="font-family: sans-serif">Mai e un pas: confirmă că adresa {{ .Email }} e a ta.</p>
+<p style="margin: 20px 0">
+  <a
+    href="{{ .ConfirmationURL }}"
+    style="
+      font-family: sans-serif;
+      background: #16a34a;
+      color: #ffffff;
+      padding: 12px 18px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: bold;
+    "
+  >
+    Confirmă adresa
+  </a>
+</p>
+<p style="font-family: sans-serif; color: #555; font-size: 13px">
+  Apoi întoarce-te în aplicație și conectează-te cu adresa și parola alese.
+</p>
+<p style="font-family: sans-serif; color: #555; font-size: 13px">
+  Dacă nu tu ți-ai făcut cont, ignoră emailul. Fără confirmare, contul nu poate fi folosit.
+</p>

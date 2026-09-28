@@ -1,0 +1,33 @@
+<!--
+  Supabase → Authentication → Email Templates → "Reset Password".
+  Subject: Codul tău pentru resetarea parolei — SmartMeal RO
+
+  It must use {{ .Token }}, the code, and not {{ .ConfirmationURL }}, the link. The app asks
+  for the code (AuthModal → verifyOtp type 'recovery'); the default template sends a link,
+  and with it nobody could reset a password.
+
+  A code also survives mail scanners, which open links on their own and can use up a
+  one-time link before the person ever sees it.
+-->
+<h2 style="font-family: sans-serif; margin: 0 0 12px">Resetarea parolei</h2>
+<p style="font-family: sans-serif">
+  Ai cerut să-ți schimbi parola în SmartMeal RO. Scrie codul de mai jos în aplicație:
+</p>
+<p
+  style="
+    font-family: monospace;
+    font-size: 28px;
+    font-weight: bold;
+    letter-spacing: 6px;
+    margin: 20px 0;
+  "
+>
+  {{ .Token }}
+</p>
+<p style="font-family: sans-serif; color: #555; font-size: 13px">
+  Codul poate fi folosit o singură dată și expiră în scurt timp.
+</p>
+<p style="font-family: sans-serif; color: #555; font-size: 13px">
+  Dacă nu tu ai cerut asta, ignoră emailul. Parola ta rămâne neschimbată și nimeni nu poate intra în
+  cont fără acest cod.
+</p>

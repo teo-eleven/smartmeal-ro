@@ -276,8 +276,50 @@ describe('resetarea parolei', () => {
     fireEvent.changeText(screen.getByLabelText('Codul primit pe email'), '123');
     fireEvent.press(screen.getByLabelText('Verifică codul'));
 
-    await waitFor(() => expect(screen.getByText(/șase cifre/i)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/cel puțin 6 cifre/i)).toBeTruthy());
     expect(cloudSyncService.verifyPasswordResetCode).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Supabase sends codes of 6 to 10 digits depending on a project setting, and its docs now
+   * show 8. The field used to stop at 6, so the last digits of a real code could not be
+   * typed and nobody could reset a password. The keyboard enforces maxLength natively, which
+   * changeText in a test does not, so the limit itself is what this checks.
+   */
+  test('câmpul de cod primește un cod de până la 10 cifre', async () => {
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+    openReset();
+    fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
+    fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
+
+    const field = await waitFor(() => screen.getByLabelText('Codul primit pe email'));
+
+    expect(field.props.maxLength).toBe(10);
+  });
+
+  test('un cod de 8 cifre ajunge întreg la verificare', async () => {
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+    (cloudSyncService.verifyPasswordResetCode as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+    openReset();
+    fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
+    fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
+    await waitFor(() => screen.getByLabelText('Codul primit pe email'));
+
+    fireEvent.changeText(screen.getByLabelText('Codul primit pe email'), '12345678');
+    fireEvent.press(screen.getByLabelText('Verifică codul'));
+
+    await waitFor(() =>
+      expect(cloudSyncService.verifyPasswordResetCode).toHaveBeenCalledWith('a@b.ro', '12345678')
+    );
   });
 
   test('un cod greșit nu deschide pasul parolei', async () => {

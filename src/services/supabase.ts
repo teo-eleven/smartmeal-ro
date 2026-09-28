@@ -240,7 +240,7 @@ export const cloudSyncService = {
   },
 
   /**
-   * Starts a password reset by emailing a six-digit code.
+   * Starts a password reset by emailing a code (6 to 10 digits, per the project setting).
    *
    * Supabase calls this a "recovery OTP". The code is what the user types back in, and it is
    * the only way to prove they reach the mailbox — so the reply is deliberately identical
