@@ -141,7 +141,22 @@ function AppShell() {
         {...glass('root')}
       >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-        <OnboardingWizard isDark={isDark} onPlanGenerated={() => setActiveView('meals')} />
+        <OnboardingWizard
+          isDark={isDark}
+          onPlanGenerated={() => setActiveView('meals')}
+          onOpenAccount={() => setAuthModalVisible(true)}
+        />
+        <AuthModal
+          visible={authModalVisible}
+          onClose={() => setAuthModalVisible(false)}
+          isDark={isDark}
+          userEmail={userEmail}
+          onUserChanged={setUserEmail}
+          onSyncTriggered={syncWithCloud}
+          onDownloadTriggered={syncFromCloud}
+          isSyncing={isSyncing}
+          lastSyncedAt={lastSyncedAt}
+        />
         <UndoBanner
           visible={Boolean(lastDiscardedPlan)}
           message="Planul săptămânal a fost șters."

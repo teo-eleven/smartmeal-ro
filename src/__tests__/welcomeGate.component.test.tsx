@@ -186,3 +186,21 @@ describe('fila de mese', () => {
     expect(screen.getByText(`🍽️ Mese (${days} zile)`)).toBeTruthy();
   });
 });
+
+/**
+ * The questionnaire is nine steps long, and had no way to the account: someone who signed
+ * in by mistake, or wanted to sign out, had to finish it first.
+ */
+describe('contul din configurator', () => {
+  test('se poate deschide de la primul pas', async () => {
+    await AsyncStorage.clear();
+    useAppStore.getState().resetOnboarding();
+    useAppStore.setState({ authStatus: 'guest', isHydrated: true, activeNotice: null });
+    render(<App />);
+    expect(screen.getByText(/Pasul 1 din 9/)).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Contul meu'));
+
+    expect(screen.getByText('Sincronizare Cloud & Cont')).toBeTruthy();
+  });
+});

@@ -25,6 +25,11 @@ import { AllergenSelector } from '../../components/AllergenSelector';
 interface OnboardingWizardProps {
   isDark: boolean;
   onPlanGenerated: () => void;
+  /**
+   * Opens the account window. Nine steps is long to wait before being able to sign out or
+   * check which account is signed in.
+   */
+  onOpenAccount?: () => void;
 }
 
 interface StepMeta {
@@ -128,7 +133,7 @@ const FOOD_TIER_OPTIONS: { id: FoodTier; label: string; icon: string; priceEst: 
   },
 ];
 
-export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPlanGenerated }) => {
+export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPlanGenerated, onOpenAccount }) => {
   const {
     currentStep,
     maxVisitedStep,
@@ -202,6 +207,17 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 <View style={[styles.brandBadge, { backgroundColor: theme.surfaceTertiary, borderColor: theme.border, borderWidth: 1 }]}>
                   <Text style={[styles.brandBadgeText, { color: theme.text }]}>RO 🇷🇴</Text>
                 </View>
+                {onOpenAccount && (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Contul meu"
+                  onPress={onOpenAccount}
+                  style={[styles.accountBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.accountBtnText, { color: theme.text }]}>👤 Cont</Text>
+                </TouchableOpacity>
+              )}
               </View>
 
               <View style={styles.desktopStepInfo}>
@@ -301,9 +317,22 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
               <Text style={[styles.logoText, { color: theme.text }]}>SmartMeal</Text>
             )}
 
-            <Text style={[styles.stepIndicator, { color: theme.textMuted }]}>
-              Pasul {currentStep} din {totalSteps}
-            </Text>
+            <View style={styles.topRowRight}>
+              <Text style={[styles.stepIndicator, { color: theme.textMuted }]}>
+                Pasul {currentStep} din {totalSteps}
+              </Text>
+              {onOpenAccount && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Contul meu"
+                onPress={onOpenAccount}
+                style={[styles.accountBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.accountBtnText, { color: theme.text }]}>👤 Cont</Text>
+              </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           {/* Progress Bar */}
@@ -2075,5 +2104,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  topRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  accountBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  accountBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 });
