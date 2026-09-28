@@ -18,51 +18,69 @@ export const AllergenSelector: React.FC<AllergenSelectorProps> = ({
   const theme = getAppTheme(isDark);
 
   return (
-    <View style={styles.grid}>
-      {ALLERGEN_CATALOG.map((allergen) => {
-        const isAvoided = avoidedAllergens.includes(allergen.id);
+    <View>
+      <View style={styles.grid}>
+        {ALLERGEN_CATALOG.map((allergen) => {
+          const isAvoided = avoidedAllergens.includes(allergen.id);
 
-        return (
-          <TouchableOpacity
-            key={allergen.id}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: isAvoided }}
-            accessibilityLabel={`Evită ${allergen.label}. ${allergen.description}`}
-            onPress={() => onToggleAllergen(allergen.id)}
-            activeOpacity={0.7}
-            style={[
-              styles.chip,
-              {
-                backgroundColor: isAvoided ? '#ef4444' : theme.btnBg,
-                borderColor: isAvoided ? '#ef4444' : theme.border,
-              },
-            ]}
-          >
-            <Text style={styles.icon}>{allergen.icon}</Text>
-            <View style={styles.labelGroup}>
-              <Text
-                style={[styles.label, { color: isAvoided ? '#ffffff' : theme.text }]}
-                numberOfLines={1}
-              >
-                {allergen.label}
-              </Text>
-              <Text
-                style={[
-                  styles.description,
-                  { color: isAvoided ? 'rgba(255,255,255,0.85)' : theme.textMuted },
-                ]}
-                numberOfLines={1}
-              >
-                {allergen.description}
-              </Text>
-            </View>
-            {isAvoided && <Text style={styles.cross}>✕</Text>}
-          </TouchableOpacity>
-        );
-      })}
+          return (
+            <TouchableOpacity
+              key={allergen.id}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: isAvoided }}
+              accessibilityLabel={`Evită ${allergen.label}. ${allergen.description}`}
+              onPress={() => onToggleAllergen(allergen.id)}
+              activeOpacity={0.7}
+              style={[
+                styles.chip,
+                {
+                  backgroundColor: isAvoided ? '#ef4444' : theme.btnBg,
+                  borderColor: isAvoided ? '#ef4444' : theme.border,
+                },
+              ]}
+            >
+              <Text style={styles.icon}>{allergen.icon}</Text>
+              <View style={styles.labelGroup}>
+                <Text
+                  style={[styles.label, { color: isAvoided ? '#ffffff' : theme.text }]}
+                  numberOfLines={1}
+                >
+                  {allergen.label}
+                </Text>
+                <Text
+                  style={[
+                    styles.description,
+                    { color: isAvoided ? 'rgba(255,255,255,0.85)' : theme.textMuted },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {allergen.description}
+                </Text>
+              </View>
+              {isAvoided && <Text style={styles.cross}>✕</Text>}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* The filter reads our recipe catalogue, not the pack in the shop. Recipes change
+          between brands and "may contain" traces are never in a recipe, so the filter can
+          narrow the risk but not remove it. */}
+      <Text
+        accessibilityRole="text"
+        accessibilityLabel={ALLERGEN_WARNING}
+        style={[styles.warning, { color: theme.textMuted, borderColor: theme.border }]}
+      >
+        ⚠️ {ALLERGEN_WARNING}
+      </Text>
     </View>
   );
 };
+
+const ALLERGEN_WARNING =
+  'Verifică întotdeauna eticheta produsului. Filtrul exclude rețetele după ingredientele lor, ' +
+  'dar rețetele diferă între mărci și urmele („poate conține") nu apar în ele. ' +
+  'Nu înlocuiește sfatul medicului.';
 
 const styles = StyleSheet.create({
   grid: {
@@ -102,5 +120,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
     color: '#ffffff',
+  },
+  warning: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 12,
+    padding: 10,
+    borderWidth: 1,
+    borderRadius: 10,
   },
 });
