@@ -71,6 +71,21 @@ export function AuthModal({
     overlayBg: isDark ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.45)',
   };
 
+  // Any edit clears the last error. One left on screen after the person has fixed the field
+  // it was about reads as a second, new error.
+  const editEmail = (value: string) => {
+    setErrorMessage(null);
+    setEmail(value);
+  };
+  const editPassword = (value: string) => {
+    setErrorMessage(null);
+    setPassword(value);
+  };
+  const editConsent = (value: Consent) => {
+    setErrorMessage(null);
+    setConsent(value);
+  };
+
   const handleAuth = async () => {
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -414,7 +429,7 @@ export function AuthModal({
                 {resetStep === 'email' && (
                   <TextInput
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={editEmail}
                     placeholder="exemplu@email.ro"
                     placeholderTextColor={theme.textMuted}
                     accessibilityLabel="Adresa de email pentru resetare"
@@ -557,7 +572,7 @@ export function AuthModal({
                     autoCapitalize="none"
                     keyboardType="email-address"
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={editEmail}
                   />
                 </View>
 
@@ -576,12 +591,12 @@ export function AuthModal({
                     placeholderTextColor={theme.textMuted}
                     secureTextEntry
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={editPassword}
                   />
                 </View>
 
                 {mode === 'signup' && (
-                  <SignUpConsent consent={consent} onChange={setConsent} isDark={isDark} />
+                  <SignUpConsent consent={consent} onChange={editConsent} isDark={isDark} />
                 )}
 
                 <TouchableOpacity

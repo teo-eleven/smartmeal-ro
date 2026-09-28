@@ -525,3 +525,31 @@ describe('AuthModal, acordul la cont nou', () => {
     );
   });
 });
+
+/** An error that stays on screen after the person has fixed it reads as a second error. */
+describe('AuthModal, mesajul de eroare', () => {
+  test('dispare când bifezi căsuța care lipsea', async () => {
+    render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    fireEvent.press(screen.getByText('Înregistrare'));
+    await waitFor(() => expect(screen.getByText(/trebuie să ai cel puțin 16 ani/i)).toBeTruthy());
+
+    fireEvent.press(screen.getByLabelText(AGE));
+
+    expect(screen.queryByText(/trebuie să ai cel puțin 16 ani/i)).toBeNull();
+  });
+
+  test('dispare când corectezi parola', async () => {
+    render(<AuthModal {...baseProps} />);
+    fireEvent.press(screen.getByText('Creează cont'));
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), '123');
+    fireEvent.press(screen.getByText('Înregistrare'));
+    await waitFor(() => expect(screen.getByText(/10 caractere/i)).toBeTruthy());
+
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
+
+    expect(screen.queryByText(/10 caractere/i)).toBeNull();
+  });
+});
+
