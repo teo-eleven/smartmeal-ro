@@ -352,7 +352,7 @@ function AppShell() {
                     },
                   ]}
                 >
-                  🍽️ Mese ({currentPlan?.days.length ?? 0})
+                  🍽️ Mese ({currentPlan?.days.length ?? 0} zile)
                 </Text>
               </TouchableOpacity>
 

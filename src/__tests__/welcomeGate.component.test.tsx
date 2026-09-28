@@ -170,3 +170,19 @@ describe('sesiunea de 30 de zile', () => {
     expect(raw).not.toContain('Muntele7Verde');
   });
 });
+
+/**
+ * The tab counted days and called them meals. With a dessert added, a five-day week showed
+ * "Mese (5)" over six dishes. The wide layout already said "zile"; the phone now does too.
+ */
+describe('fila de mese', () => {
+  test('numără zilele și spune că sunt zile', async () => {
+    await AsyncStorage.clear();
+    useAppStore.setState({ authStatus: 'guest', isHydrated: true, activeNotice: null });
+    useAppStore.getState().quickStart();
+    render(<App />);
+
+    const days = useAppStore.getState().currentPlan!.days.length;
+    expect(screen.getByText(`🍽️ Mese (${days} zile)`)).toBeTruthy();
+  });
+});
