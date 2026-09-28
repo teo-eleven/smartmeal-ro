@@ -72,6 +72,20 @@ describe('environment validation', () => {
     expect(loadConfig().isCloudSyncConfigured).toBe(true);
   });
 
+  /** Apple requires the privacy policy to be reachable from inside the app (5.1.1(i)). */
+  test('adresa politicii de confidențialitate e citită doar dacă e https', () => {
+    delete process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL;
+    expect(loadConfig().privacyPolicyUrl).toBeNull();
+
+    jest.resetModules();
+    process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = 'http://site.ro/privacy';
+    expect(loadConfig().privacyPolicyUrl).toBeNull();
+
+    jest.resetModules();
+    process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = 'https://site.ro/privacy';
+    expect(loadConfig().privacyPolicyUrl).toBe('https://site.ro/privacy');
+  });
+
   test('the config object cannot be mutated at runtime', () => {
     const config = loadConfig();
     expect(Object.isFrozen(config)).toBe(true);

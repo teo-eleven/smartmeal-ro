@@ -4,6 +4,7 @@ const GOOD = {
   EXPO_PUBLIC_APP_ENV: 'production',
   EXPO_PUBLIC_SUPABASE_URL: 'https://abcd.supabase.co',
   EXPO_PUBLIC_SUPABASE_ANON_KEY: 'anon-public-key',
+  EXPO_PUBLIC_PRIVACY_POLICY_URL: 'https://smartmeal.ro/privacy',
 };
 
 /**
@@ -27,6 +28,20 @@ describe('garda build-ului de producție', () => {
     expect(() => assertProductionEnv({ ...GOOD, EXPO_PUBLIC_SUPABASE_ANON_KEY: ' ' })).toThrow(
       /EXPO_PUBLIC_SUPABASE_ANON_KEY/
     );
+  });
+
+  /**
+   * Apple requires the privacy policy to be reachable inside the app; both stores require
+   * the link. A build without it would ship a sign-up screen agreeing to a policy nobody
+   * can open.
+   */
+  test('fără adresa politicii de confidențialitate, build-ul de producție se oprește', () => {
+    expect(() =>
+      assertProductionEnv({ ...GOOD, EXPO_PUBLIC_PRIVACY_POLICY_URL: '' })
+    ).toThrow(/EXPO_PUBLIC_PRIVACY_POLICY_URL/);
+    expect(() =>
+      assertProductionEnv({ ...GOOD, EXPO_PUBLIC_PRIVACY_POLICY_URL: 'http://x.ro/p' })
+    ).toThrow(/EXPO_PUBLIC_PRIVACY_POLICY_URL/);
   });
 
   test('o adresă http, nu https, oprește build-ul', () => {

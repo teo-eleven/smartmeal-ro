@@ -154,6 +154,10 @@ eas env:set --environment production --visibility plaintext \
   --name EXPO_PUBLIC_SUPABASE_URL --value https://<ref>.supabase.co
 eas env:set --environment production --visibility plaintext \
   --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <cheia anon>
+# Adresa la care ai publicat PRIVACY.md (§3). Apple cere ca politica să poată fi deschisă
+# din aplicație; linkul apare pe ecranul de start și lângă bifa de acord.
+eas env:set --environment production --visibility plaintext \
+  --name EXPO_PUBLIC_PRIVACY_POLICY_URL --value https://<domeniul-tau>/privacy
 eas env:list --environment production   # verifică
 
 eas build --platform android --profile production

@@ -3,6 +3,7 @@ import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-na
 import { getAppTheme } from '../styles/theme';
 import { localAuthSimulation } from '../services/localAuthSimulation';
 import { SESSION_DAYS } from '../services/localAuthSimulation';
+import { PrivacyPolicyLink } from '../components/PrivacyPolicyLink';
 
 interface WelcomeGateProps {
   onOpenAuth: () => void;
@@ -32,7 +33,7 @@ export const WelcomeGate: React.FC<WelcomeGateProps> = ({
         <Text style={styles.mark}>🍽️</Text>
         <Text style={[styles.title, { color: theme.text }]}>SmartMeal RO</Text>
         <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-          Meniul săptămânii și lista de cumpărături, calculate pe prețurile din magazinul tău.
+          Meniul săptămânii și lista de cumpărături, cu prețuri estimate la magazinul tău.
         </Text>
 
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -76,6 +77,11 @@ export const WelcomeGate: React.FC<WelcomeGateProps> = ({
           Fără cont, aplicația merge la fel — planul rămâne doar pe telefonul ăsta.
         </Text>
 
+        {/* Apple requires the policy to be reachable in the app, account or not (5.1.1(i)). */}
+        <View style={styles.policy}>
+          <PrivacyPolicyLink isDark={isDark} />
+        </View>
+
         {localAuthSimulation.isActive() && (
           <View style={[styles.simBanner, { borderColor: theme.border }]}>
             <Text style={[styles.simText, { color: theme.textMuted }]}>
@@ -93,6 +99,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { flex: 1, justifyContent: 'center', paddingHorizontal: 28, maxWidth: 480, width: '100%', alignSelf: 'center' },
   mark: { fontSize: 46, textAlign: 'center', marginBottom: 10 },
+  policy: { alignItems: 'center', marginTop: 8 },
   title: { fontSize: 26, fontWeight: '900', textAlign: 'center', letterSpacing: -0.5 },
   subtitle: { fontSize: 14, fontWeight: '500', textAlign: 'center', lineHeight: 20, marginTop: 8 },
   card: { borderWidth: 1, borderRadius: 16, padding: 16, marginTop: 26 },

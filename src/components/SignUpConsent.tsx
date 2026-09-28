@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SignUpConsent as Consent } from '../types';
 import { getAppTheme } from '../styles/theme';
+import { PrivacyPolicyLink } from './PrivacyPolicyLink';
 
 interface SignUpConsentProps {
   consent: Consent;
@@ -69,6 +70,8 @@ export const SignUpConsent: React.FC<SignUpConsentProps> = ({ consent, onChange,
           </TouchableOpacity>
         );
       })}
+      {/* Informed consent: what is agreed to has to be readable where it is agreed to. */}
+      <PrivacyPolicyLink isDark={isDark} />
     </View>
   );
 };
