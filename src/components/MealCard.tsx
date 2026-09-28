@@ -170,13 +170,11 @@ export const MealCard: React.FC<MealCardProps> = ({
 
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%', flex: 1, height: '100%' }}>
-      <TouchableOpacity
-        accessibilityRole="button"
-        accessibilityLabel={`${recipe.title}. Vezi rețeta.`}
-        activeOpacity={0.92}
-        onPress={onPressRecipe}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+      {/* A container, not a button. The whole card used to be one button with five buttons
+          inside it: VoiceOver read it as a single element, so the portion stepper, "cook
+          double" and "Schimbă" were out of reach, and on the web it was invalid HTML. The
+          picture now opens the recipe, as does "Vezi Rețeta" below. */}
+      <View
         {...glass('card')}
         style={[
           styles.card,
@@ -191,7 +189,15 @@ export const MealCard: React.FC<MealCardProps> = ({
         ]}
       >
         {/* Visual Hero Image Container */}
-        <View style={styles.imageContainer}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={`${recipe.title}. Vezi rețeta.`}
+          activeOpacity={0.92}
+          onPress={onPressRecipe}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          style={styles.imageContainer}
+        >
           <RecipeVisual recipe={recipe} isDark={isDark} style={styles.image} />
 
           {/* Smooth Bottom Gradient for Contrast */}
@@ -216,7 +222,7 @@ export const MealCard: React.FC<MealCardProps> = ({
           </View>
 
           {/* Bottom Info Floating on Image */}
-        </View>
+        </TouchableOpacity>
 
         {/* Content Body */}
         <View style={styles.contentBody}>
@@ -400,7 +406,7 @@ export const MealCard: React.FC<MealCardProps> = ({
             </View>
           </View>
         </View>
-      </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 };

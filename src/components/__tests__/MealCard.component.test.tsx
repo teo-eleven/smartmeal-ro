@@ -215,3 +215,59 @@ describe('MealCard, eticheta de timp', () => {
     expect(screen.getAllByText(/⏱.*\d+ min/)).toHaveLength(1);
   });
 });
+
+/**
+ * The whole card used to be one button with five buttons inside it. VoiceOver reads a
+ * button as a single element, so the portion stepper, "cook double" and "Schimbă" could
+ * not be reached with a screen reader; on the web it was also invalid HTML.
+ */
+describe('MealCard, butoane imbricate', () => {
+  function render_() {
+    const meal = buildMeal();
+    const onPressRecipe = jest.fn();
+    render(
+      <MealCard
+        day={buildDay(meal)}
+        meal={meal}
+        onPressRecipe={onPressRecipe}
+        onSwapMeal={jest.fn()}
+        onChangeServings={jest.fn()}
+        isDark={false}
+      />
+    );
+    return onPressRecipe;
+  }
+
+  type Node = { type: unknown; props?: { accessibilityRole?: string }; parent: Node | null };
+
+  // Only host (native) elements count. Walking up also passes the React wrapper of the same
+  // TouchableOpacity, which carries the same role and would read as a button around itself.
+  function insideAnotherButton(el: unknown): boolean {
+    let node = (el as Node).parent;
+    while (node) {
+      if (typeof node.type === 'string' && node.props?.accessibilityRole === 'button') return true;
+      node = node.parent;
+    }
+    return false;
+  }
+
+  test('niciun buton al cardului nu stă în interiorul altui buton', () => {
+    render_();
+
+    ['Scade o porție', 'Adaugă o porție'].forEach((label) =>
+      expect(insideAnotherButton(screen.getByLabelText(label))).toBe(false)
+    );
+    // getByRole returns the button itself; getByText would return the label inside it,
+    // whose parent is its own button.
+    expect(insideAnotherButton(screen.getByRole('button', { name: /Schimbă/ }))).toBe(false);
+  });
+
+  test('atingerea imaginii deschide în continuare rețeta', () => {
+    const onPressRecipe = render_();
+
+    fireEvent.press(screen.getByLabelText(`${recipe.title}. Vezi rețeta.`));
+
+    expect(onPressRecipe).toHaveBeenCalled();
+  });
+});
+
