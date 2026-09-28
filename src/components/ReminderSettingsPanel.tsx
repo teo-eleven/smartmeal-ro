@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ReminderSettings } from '../types';
 import { getAppTheme } from '../styles/theme';
+import { reminderScheduler } from '../services/reminderScheduler';
 
 interface ReminderSettingsPanelProps {
   reminders: ReminderSettings;
@@ -33,6 +34,11 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
   embedded = false,
 }) => {
   const theme = getAppTheme(isDark);
+  // A browser cannot ring. The phone reminders are shown off and disabled there instead of
+  // "Pornit" for a reminder that will never come; email is sent by the server and works.
+  const canRing = reminderScheduler.isSupported();
+  const cookingOn = reminders.cookingEnabled && canRing;
+  const shoppingOn = reminders.shoppingEnabled && canRing;
 
   const renderTimes = (times: string[], selected: string, onPick: (t: string) => void, what: string) => (
     <View style={styles.chipRow}>
@@ -71,12 +77,20 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
         Sună pe telefon, și fără internet. Dacă ai cont, alegerile te urmează pe alt telefon.
       </Text>
 
+      {!canRing && (
+        <Text style={[styles.hint, { color: theme.text }]}>
+          Mementourile de gătit și de cumpărături sună doar în aplicația de pe telefon. Aici poți
+          porni mementourile pe email.
+        </Text>
+      )}
+
       <TouchableOpacity
         accessibilityRole="switch"
-        accessibilityState={{ checked: reminders.cookingEnabled }}
+        accessibilityState={{ checked: cookingOn, disabled: !canRing }}
+        disabled={!canRing}
         accessibilityLabel="Memento pentru gătit"
         onPress={() => onChange({ cookingEnabled: !reminders.cookingEnabled })}
-        style={[styles.toggleRow, { borderColor: theme.border }]}
+        style={[styles.toggleRow, { borderColor: theme.border }, !canRing && styles.unavailable]}
         activeOpacity={0.8}
       >
         <View style={styles.toggleText}>
@@ -89,31 +103,32 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
           style={[
             styles.pill,
             {
-              backgroundColor: reminders.cookingEnabled ? theme.primary : theme.btnBg,
-              borderColor: reminders.cookingEnabled ? theme.primary : theme.border,
+              backgroundColor: cookingOn ? theme.primary : theme.btnBg,
+              borderColor: cookingOn ? theme.primary : theme.border,
             },
           ]}
         >
           <Text
             style={[
               styles.pillText,
-              { color: reminders.cookingEnabled ? theme.primaryText : theme.textMuted },
+              { color: cookingOn ? theme.primaryText : theme.textMuted },
             ]}
           >
-            {reminders.cookingEnabled ? 'Pornit' : 'Oprit'}
+            {cookingOn ? 'Pornit' : 'Oprit'}
           </Text>
         </View>
       </TouchableOpacity>
 
-      {reminders.cookingEnabled &&
+      {cookingOn &&
         renderTimes(COOKING_TIMES, reminders.cookingTime, (t) => onChange({ cookingTime: t }), 'Gătesc')}
 
       <TouchableOpacity
         accessibilityRole="switch"
-        accessibilityState={{ checked: reminders.shoppingEnabled }}
+        accessibilityState={{ checked: shoppingOn, disabled: !canRing }}
+        disabled={!canRing}
         accessibilityLabel="Memento pentru cumpărături"
         onPress={() => onChange({ shoppingEnabled: !reminders.shoppingEnabled })}
-        style={[styles.toggleRow, { borderColor: theme.border }]}
+        style={[styles.toggleRow, { borderColor: theme.border }, !canRing && styles.unavailable]}
         activeOpacity={0.8}
       >
         <View style={styles.toggleText}>
@@ -126,18 +141,18 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
           style={[
             styles.pill,
             {
-              backgroundColor: reminders.shoppingEnabled ? theme.primary : theme.btnBg,
-              borderColor: reminders.shoppingEnabled ? theme.primary : theme.border,
+              backgroundColor: shoppingOn ? theme.primary : theme.btnBg,
+              borderColor: shoppingOn ? theme.primary : theme.border,
             },
           ]}
         >
           <Text
             style={[
               styles.pillText,
-              { color: reminders.shoppingEnabled ? theme.primaryText : theme.textMuted },
+              { color: shoppingOn ? theme.primaryText : theme.textMuted },
             ]}
           >
-            {reminders.shoppingEnabled ? 'Pornit' : 'Oprit'}
+            {shoppingOn ? 'Pornit' : 'Oprit'}
           </Text>
         </View>
       </TouchableOpacity>
@@ -215,7 +230,7 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
         </>
       )}
 
-      {reminders.shoppingEnabled && (
+      {shoppingOn && (
         <>
           <View style={styles.chipRow}>
             {DAY_LABELS.map((label, index) => {
@@ -261,6 +276,8 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
 
 const styles = StyleSheet.create({
   panel: { borderWidth: 1, borderRadius: 16, padding: 14, marginTop: 14 },
+  // Visibly out of reach, not just unresponsive.
+  unavailable: { opacity: 0.45 },
   title: { fontSize: 15, fontWeight: '900' },
   hint: { fontSize: 11, fontWeight: '500', lineHeight: 16, marginTop: 4, marginBottom: 12 },
   toggleRow: {

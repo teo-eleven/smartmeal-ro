@@ -78,3 +78,41 @@ describe('panoul de mementouri', () => {
     expect(onChange).toHaveBeenCalledWith({ emailFrequencyDays: 2 });
   });
 });
+
+/**
+ * On the web the phone reminders cannot ring. Showing them as working switches promised a
+ * reminder that would never come; the email one is sent by the server and works anywhere.
+ */
+describe('panoul de mementouri pe web', () => {
+  const scheduler = jest.requireActual('../../services/reminderScheduler').reminderScheduler;
+  let spy: jest.SpyInstance;
+  beforeEach(() => {
+    spy = jest.spyOn(scheduler, 'isSupported').mockReturnValue(false);
+  });
+  afterEach(() => spy.mockRestore());
+
+  test('spune că mementourile de pe telefon sună doar în aplicația de telefon', () => {
+    show();
+
+    expect(screen.getByText(/doar în aplicația de pe telefon/i)).toBeTruthy();
+  });
+
+  test('cele de pe telefon sunt dezactivate, iar apăsarea nu schimbă nimic', () => {
+    const onChange = show();
+
+    const cooking = screen.getByLabelText('Memento pentru gătit');
+    expect(cooking.props.accessibilityState.disabled).toBe(true);
+    fireEvent.press(cooking);
+
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  test('cel pe email rămâne disponibil', () => {
+    const onChange = show();
+
+    fireEvent.press(screen.getByLabelText('Mementouri pe email'));
+
+    expect(onChange).toHaveBeenCalledWith({ emailEnabled: true });
+  });
+});
+

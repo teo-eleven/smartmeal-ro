@@ -31,6 +31,15 @@ function toExpoWeekday(mondayBased: number): number {
 
 export const reminderScheduler = {
   /**
+   * False in a browser, which cannot schedule the app's notifications. Web is recognised by
+   * having a DOM rather than by importing Platform, which would drag react-native into the
+   * Node test project; secureSessionStore does the same.
+   */
+  isSupported(): boolean {
+    return typeof document === 'undefined';
+  },
+
+  /**
    * Asks for permission, once. Returns false when the user declines, which is a normal
    * answer and not an error: the app keeps working, it just stays quiet.
    */
@@ -72,6 +81,8 @@ export const reminderScheduler = {
     settings: ReminderSettings = DEFAULT_REMINDERS,
     plan: MealPlan | null
   ): Promise<number> {
+    // Trying anyway logged "not available on web" on every change, for nothing.
+    if (!this.isSupported()) return 0;
     await this.cancelAll();
 
     if (!settings.cookingEnabled && !settings.shoppingEnabled) return 0;
