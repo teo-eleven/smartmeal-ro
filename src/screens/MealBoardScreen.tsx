@@ -880,10 +880,13 @@ const styles = StyleSheet.create({
     gap: 18,
   },
   toolbarSection: {
-    flex: 1,
     width: '100%',
   },
+  // flex: 1 only where the sections sit side by side. Stacked on a phone, it gave each one a
+  // basis of 0 on the web, so the card stopped growing with its content and the second row
+  // of supermarkets hung out below it.
   toolbarSectionDesktop: {
+    flex: 1,
     minWidth: 250,
   },
   toolbarDividerV: {
