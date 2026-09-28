@@ -30,3 +30,7 @@ coverage/
 .vscode/
 .idea/
 *.swp
+
+# Written by `deno check` during local verification. Supabase does not read it at deploy,
+# so committing it would suggest a pin that is not applied.
+deno.lock
