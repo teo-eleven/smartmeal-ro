@@ -181,6 +181,21 @@ export interface AppState {
   loadRemindersFromCloud: () => Promise<void>;
 }
 
+/**
+ * Without a Supabase project there is no cloud to sync with, only the local account
+ * simulation. Saying "session expired" there sent someone who was signed in round a loop
+ * with no exit; this says what is actually true.
+ */
+function syncUnavailableNotice() {
+  return {
+    id: Date.now().toString(),
+    title: 'Sincronizare indisponibilă',
+    message:
+      'Sincronizarea între telefoane nu e disponibilă pe această versiune. Planul tău e salvat pe acest dispozitiv.',
+    type: 'info' as const,
+  };
+}
+
 const DEFAULT_PREFERENCES: UserPreferences = {
   supermarketId: 'lidl',
   peopleCount: 2,
@@ -1087,6 +1102,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   syncWithCloud: async () => {
     const { userEmail, currentPlan, groceryItems, preferences } = get();
     if (!userEmail) return;
+    if (!cloudSyncService.isConfigured()) {
+      set({ activeNotice: syncUnavailableNotice() });
+      return;
+    }
 
     set({ isSyncing: true });
     try {
@@ -1147,6 +1166,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   syncFromCloud: async () => {
     const { userEmail } = get();
     if (!userEmail) return;
+    if (!cloudSyncService.isConfigured()) {
+      set({ activeNotice: syncUnavailableNotice() });
+      return;
+    }
 
     set({ isSyncing: true });
     try {
