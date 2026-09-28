@@ -2,7 +2,11 @@ import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 import { RecipeVisual } from '../RecipeVisual';
 import { RECIPES, RECIPES_MAP } from '../../data/recipes';
-import { getRecipeHighlights } from '../../utils/recipeVisual';
+import {
+  getArchetypePalette,
+  getRecipeArchetype,
+  getRecipeHighlights,
+} from '../../utils/recipeVisual';
 
 /** Two recipes that used to be treated differently: one once owned a photograph. */
 const oncePhotographed = RECIPES_MAP['snitele_pui_cuptor'];
@@ -38,11 +42,16 @@ describe('RecipeVisual', () => {
     getRecipeHighlights(withoutPhoto, 3).forEach((name) => expect(label).toContain(name));
   });
 
-  test('shows the cooking time on the card', () => {
+  /**
+   * Every screen that shows this picture lays its own badges over it, time included, in the
+   * same bottom corners. Drawing corners here as well put "20 min" on the card twice and a
+   * second label under the first; on the 74 px week cards they ran into the title.
+   */
+  test('leaves the corner badges to the card that holds it', () => {
     const recipe = RECIPES_MAP[withoutPhoto.id];
     render(<RecipeVisual recipe={recipe} isDark />);
-    const total = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
-    expect(screen.getByText(`⏱ ${total} min`)).toBeTruthy();
+    expect(screen.queryByText(/⏱ \d+ min/)).toBeNull();
+    expect(screen.queryByText(getArchetypePalette(getRecipeArchetype(recipe)).labelRo)).toBeNull();
   });
 
   test('the compact variant keeps the name but drops the ingredient line', () => {

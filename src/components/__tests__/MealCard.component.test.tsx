@@ -196,3 +196,22 @@ describe('MealCard variants', () => {
       expect(screen.getByText(recipe.title)).toBeTruthy();
   });
 });
+
+/** The picture drew its own time in the corner and the card drew another over it. */
+describe('MealCard, eticheta de timp', () => {
+  test('timpul de gătit apare o singură dată', () => {
+    const meal = buildMeal();
+    render(
+      <MealCard
+        day={buildDay(meal)}
+        meal={meal}
+        onPressRecipe={jest.fn()}
+        onSwapMeal={jest.fn()}
+        onChangeServings={jest.fn()}
+        isDark={false}
+      />
+    );
+
+    expect(screen.getAllByText(/⏱.*\d+ min/)).toHaveLength(1);
+  });
+});

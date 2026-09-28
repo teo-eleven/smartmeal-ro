@@ -197,12 +197,13 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               {recipe.title}
             </Text>
             <Text style={[styles.headerSubtitle, { color: theme.primary }]}>
-              ⏱️ {totalTime} min • ~{formattedCostPerServing} lei/porție ({preferences.supermarketId.toUpperCase()})
+              ⏱️ {totalTime} min • ~{formattedCostPerServing} lei/porție
             </Text>
           </View>
 
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityLabel="Înlocuiește rețeta"
             onPress={onSwap}
             style={[styles.swapHeaderBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
             activeOpacity={0.7}
@@ -259,7 +260,9 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
                 {/* Price transparent indicator */}
                 <View style={[styles.priceBox, { backgroundColor: theme.primaryLight, borderColor: theme.primary }]}>
-                  <View>
+                  {/* flex: 1 lets the text wrap. Without it the block kept its full width and
+                      pushed the price itself off the card on a 360 px phone. */}
+                  <View style={styles.rowText}>
                     <Text style={[styles.priceBoxLabel, { color: theme.primary }]}>COST TOTAL ESTIMAT ({activeServings} PORȚII)</Text>
                     <Text style={[styles.priceBoxSub, { color: theme.textMuted }]}>
                       Prețuri estimate la {SUPERMARKETS[preferences.supermarketId]?.name ?? preferences.supermarketId}
@@ -274,7 +277,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
               {/* Servings Stepper */}
               <View style={[styles.stepperCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                <View>
+                <View style={styles.rowText}>
                   <Text style={[styles.stepperLabel, { color: theme.text }]}>Porții calculate</Text>
                   <Text style={[styles.stepperSubtext, { color: theme.primary }]}>
                     Ingredientele se scalează automat
@@ -284,6 +287,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 <View style={styles.stepperControls}>
                   <TouchableOpacity
                     accessibilityRole="button"
+                    accessibilityLabel="Scade o porție"
                     onPress={() => setActiveServings((s) => Math.max(1, s - 1))}
                     style={[styles.stepBtn, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
                     activeOpacity={0.7}
@@ -297,6 +301,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
                   <TouchableOpacity
                     accessibilityRole="button"
+                    accessibilityLabel="Adaugă o porție"
                     onPress={() => setActiveServings((s) => Math.min(12, s + 1))}
                     style={[styles.stepBtn, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
                     activeOpacity={0.7}
@@ -792,6 +797,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 14,
+  },
+  rowText: {
+    flex: 1,
+    paddingRight: 10,
   },
   priceBox: {
     flexDirection: 'row',

@@ -58,16 +58,10 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
     </View>
   );
 
-  const corners = (
-    <>
-      <View style={styles.cornerLeft}>
-        <Text style={styles.cornerText}>{palette.labelRo}</Text>
-      </View>
-      <View style={styles.cornerRight}>
-        <Text style={styles.cornerText}>⏱ {minutes} min</Text>
-      </View>
-    </>
-  );
+  // No corner badges here. Every screen that shows this picture lays its own over it, time
+  // included, in the same corners: drawing them here too put the time on a card twice, one
+  // label under another, and on the 74 px week cards they ran into the title. The kind of
+  // dish and the time stay in the accessibility label.
 
   // No backdrop exists for this archetype, so the gradient carries the card on its own.
   if (!backdrop) {
@@ -80,7 +74,6 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
           style={StyleSheet.absoluteFill}
         />
         {content}
-        {corners}
       </View>
     );
   }
@@ -104,7 +97,6 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
         style={StyleSheet.absoluteFill}
       />
       {content}
-      {corners}
     </ImageBackground>
   );
 };
@@ -150,29 +142,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.1,
     textAlign: 'center',
-  },
-  cornerLeft: {
-    position: 'absolute',
-    left: 10,
-    bottom: 10,
-    backgroundColor: 'rgba(0,0,0,0.42)',
-    borderRadius: 7,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  cornerRight: {
-    position: 'absolute',
-    right: 10,
-    bottom: 10,
-    backgroundColor: 'rgba(0,0,0,0.42)',
-    borderRadius: 7,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  cornerText: {
-    color: 'rgba(255,255,255,0.92)',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.2,
   },
 });

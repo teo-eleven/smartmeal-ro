@@ -216,7 +216,18 @@ export const MealCard: React.FC<MealCardProps> = ({
           </View>
 
           {/* Bottom Info Floating on Image */}
-          <View style={styles.imageBottomRow}>
+        </View>
+
+        {/* Content Body */}
+        <View style={styles.contentBody}>
+          {/* Under the picture, not on it. Laid over the image, four chips did not fit a
+              phone's width: the row ran off the edge, and allowed to wrap, its second line
+              covered the ingredient line. Here the row wraps into space of its own. Time first,
+              as the thing people look for. */}
+          <View style={styles.chipsRow}>
+            <View style={[styles.pillBadge, { backgroundColor: theme.btnBg, borderColor: theme.border }]}>
+              <Text style={[styles.pillText, { color: theme.text }]}>⏱️ {totalCookingTime} min</Text>
+            </View>
             {recipe.tier && (
               <View style={[styles.pillBadge, { backgroundColor: getTierBadgeBg(recipe.tier) }]}>
                 <Text style={styles.pillText}>{getTierLabel(recipe.tier)}</Text>
@@ -227,17 +238,11 @@ export const MealCard: React.FC<MealCardProps> = ({
                 <Text style={styles.pillText}>{recipe.storeBadgeLabel}</Text>
               </View>
             )}
-            <View style={[styles.pillBadge, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
-              <Text style={styles.pillText}>{primaryMood}</Text>
-            </View>
-            <View style={[styles.pillBadge, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
-              <Text style={styles.pillText}>⏱️ {totalCookingTime} min</Text>
+            <View style={[styles.pillBadge, { backgroundColor: theme.btnBg, borderColor: theme.border }]}>
+              <Text style={[styles.pillText, { color: theme.text }]}>{primaryMood}</Text>
             </View>
           </View>
-        </View>
 
-        {/* Content Body */}
-        <View style={styles.contentBody}>
           {/* The dish name is set over the visual just above; repeating it here said the
               same thing twice in the space of two lines. */}
           <Text style={[styles.description, { color: theme.textMuted }]} numberOfLines={2}>
@@ -474,13 +479,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
   },
-  imageBottomRow: {
-    position: 'absolute',
-    bottom: 12,
-    left: 14,
-    right: 14,
+  chipsRow: {
     flexDirection: 'row',
-    gap: 8,
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 10,
   },
   pillBadge: {
     borderRadius: 20,
