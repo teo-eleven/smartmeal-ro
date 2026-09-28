@@ -80,13 +80,27 @@ describe('conectare și cont nou', () => {
     expect(result).toEqual({ user: null, error: 'socket hang up' });
   });
 
-  test('contul nou reușit întoarce utilizatorul', async () => {
-    auth.signUp.mockResolvedValue({ data: { user: { id: 'u2' } }, error: null });
+  test('cont nou cu sesiune deschisă: nu mai e nimic de confirmat', async () => {
+    auth.signUp.mockResolvedValue({
+      data: { user: { id: 'u2' }, session: { access_token: 't' } },
+      error: null,
+    });
 
     expect(await cloudSyncService.signUpWithEmail('c@d.ro', 'Muntele7Verde', CONSENT)).toEqual({
       user: { id: 'u2' },
       error: null,
+      needsConfirmation: false,
     });
+  });
+
+  /** With "Confirm email" on, Supabase returns the user but no session until confirmation. */
+  test('cont nou fără sesiune: trebuie confirmat emailul', async () => {
+    auth.signUp.mockResolvedValue({ data: { user: { id: 'u2' }, session: null }, error: null });
+
+    const result = await cloudSyncService.signUpWithEmail('c@d.ro', 'Muntele7Verde', CONSENT);
+
+    expect(result.needsConfirmation).toBe(true);
+    expect(result.error).toBeNull();
   });
 
   test('refuzul serverului la cont nou se transmite', async () => {

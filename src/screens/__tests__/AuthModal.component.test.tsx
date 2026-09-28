@@ -82,22 +82,62 @@ describe('AuthModal', () => {
     expect(cloudSyncService.signInWithEmail).toHaveBeenCalledWith('a@b.ro', 'parola');
   });
 
-  test('înregistrarea folosește alt apel și spune să confirmi emailul', async () => {
+  /**
+   * With "Confirm email" on, Supabase creates the account but opens no session until the
+   * address is confirmed. Treating that as signed in let someone into the app with an
+   * account that could do nothing in the cloud.
+   */
+  test('când serverul cere confirmare, nu te consideră conectat și îți spune ce urmează', async () => {
     (cloudSyncService.signUpWithEmail as jest.Mock).mockResolvedValue({
       user: { email: 'nou@b.ro' },
       error: null,
+      needsConfirmation: true,
     });
-    render(<AuthModal {...baseProps} />);
+    const onUserChanged = jest.fn();
+    const onClose = jest.fn();
+    render(<AuthModal {...baseProps} onUserChanged={onUserChanged} onClose={onClose} />);
 
     fireEvent.press(screen.getByText('Creează cont'));
     fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
-    // Has to satisfy the policy now, or it never reaches the server.
     fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
     tickBothConsents();
     fireEvent.press(screen.getByText('Înregistrare'));
 
-    await waitFor(() => expect(screen.getByText(/Verifică email-ul/i)).toBeTruthy());
-    expect(cloudSyncService.signUpWithEmail).toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText(/Verifică emailul/i)).toBeTruthy());
+    expect(onUserChanged).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    // Back on the sign-in tab, with the address kept, ready for after the confirmation.
+    expect(screen.getByText('Conectare')).toBeTruthy();
+  });
+
+  /**
+   * Without a confirmation step the account is open straight away. The window has to close
+   * as it does after signing in; left open, it came back over the plan on its own.
+   */
+  test('cont nou fără confirmare: te conectează și închide fereastra', async () => {
+    jest.useFakeTimers();
+    try {
+      (cloudSyncService.signUpWithEmail as jest.Mock).mockResolvedValue({
+        user: { email: 'nou@b.ro' },
+        error: null,
+        needsConfirmation: false,
+      });
+      const onUserChanged = jest.fn();
+      const onClose = jest.fn();
+      render(<AuthModal {...baseProps} onUserChanged={onUserChanged} onClose={onClose} />);
+
+      fireEvent.press(screen.getByText('Creează cont'));
+      fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
+      fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
+      tickBothConsents();
+      fireEvent.press(screen.getByText('Înregistrare'));
+
+      await waitFor(() => expect(onUserChanged).toHaveBeenCalledWith('nou@b.ro'));
+      jest.advanceTimersByTime(1000);
+      expect(onClose).toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   test('o excepție de rețea devine un mesaj, nu un ecran alb', async () => {

@@ -104,16 +104,29 @@ export function AuthModal({
           setErrorMessage(missing);
           return;
         }
-        const { user, error } = await cloudSyncService.signUpWithEmail(
+        const { user, error, needsConfirmation } = await cloudSyncService.signUpWithEmail(
           email.trim(),
           password,
           consent
         );
         if (error) {
           setErrorMessage(error);
+        } else if (needsConfirmation) {
+          // No session until the address is confirmed, so nobody is signed in yet. The
+          // sign-in tab is where they come back to, with the address already filled in.
+          setMode('signin');
+          setPassword('');
+          setSuccessMessage(
+            'Cont creat. Verifică emailul și apasă linkul de confirmare, apoi conectează-te aici.'
+          );
         } else {
           onUserChanged(user?.email || email.trim());
-          setSuccessMessage('Cont creat cu succes! Verifică email-ul pentru confirmare.');
+          setSuccessMessage('Cont creat. Te-ai conectat.');
+          // Closed the same way as after signing in. Left open, the window came back on its
+          // own over the plan once the main screen mounted.
+          setTimeout(() => {
+            onClose();
+          }, 800);
         }
       }
     } catch {

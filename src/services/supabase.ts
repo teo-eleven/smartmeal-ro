@@ -49,6 +49,13 @@ export function getSupabaseClient(): SupabaseClient | null {
   }
 }
 
+export interface SignUpResult {
+  user: User | null;
+  error: string | null;
+  /** Set on success: true when the address must be confirmed before anyone can sign in. */
+  needsConfirmation?: boolean;
+}
+
 /** A row of user_consents, as written by the sign-up trigger in migration 0005. */
 export interface RecordedConsent {
   age_confirmed_16: boolean;
@@ -143,7 +150,7 @@ export const cloudSyncService = {
     email: string,
     password: string,
     consent: SignUpConsent
-  ): Promise<{ user: User | null; error: string | null }> {
+  ): Promise<SignUpResult> {
     // The screen checks this too. Checking again here means no other path can open an
     // account holding health data without it.
     const missing = describeMissingConsent(consent);
@@ -153,7 +160,9 @@ export const cloudSyncService = {
 
     if (localAuthSimulation.isActive()) {
       const { email: created, error } = await localAuthSimulation.signUp(email, password);
-      return { user: created ? ({ email: created } as User) : null, error };
+      if (!created) return { user: null, error };
+      // The simulation has no inbox, so there is nothing to confirm.
+      return { user: { email: created } as User, error: null, needsConfirmation: false };
     }
 
     const client = getSupabaseClient();
@@ -179,7 +188,10 @@ export const cloudSyncService = {
       if (error) {
         return { user: null, error: error.message };
       }
-      return { user: data.user, error: null };
+      // With "Confirm email" on, Supabase creates the user but opens no session until the
+      // address is confirmed. Reporting that is what stops the app from treating an account
+      // it cannot use yet as signed in.
+      return { user: data.user, error: null, needsConfirmation: !data.session };
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Eroare neașteptată la înregistrare.';
       return { user: null, error: message };
