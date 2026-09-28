@@ -3,6 +3,7 @@
 // Deno TypeScript environment
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { checkEntitlement } from '../_shared/entitlement.ts';
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || '';
 const GEMINI_MODEL = 'gemini-1.5-flash';
@@ -15,6 +16,8 @@ const UPSTREAM_TIMEOUT_MS = 7000;
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+/** RevenueCat's secret key: asks whether the caller's subscription is active. */
+const REVENUECAT_SECRET_KEY = Deno.env.get('REVENUECAT_SECRET_KEY') || '';
 
 interface RequestPayload {
   action: 'suggest_swap' | 'generate_plan';
@@ -179,6 +182,22 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ error: 'unauthenticated', fallbackToLocal: true }),
       { status: 401, headers: { ...cors, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Gemini costs money per call, and the app's own paywall runs on a device its user
+  // controls. So the subscription is checked here, before the call is even counted. Fails
+  // closed: if RevenueCat cannot be asked, no paid call is made. The client falls back to
+  // its own local suggestion either way.
+  const entitlement = await checkEntitlement(userId, REVENUECAT_SECRET_KEY);
+  if (entitlement !== 'active') {
+    const failed = entitlement === 'error';
+    return new Response(
+      JSON.stringify({
+        error: failed ? 'subscription_check_failed' : 'subscription_required',
+        fallbackToLocal: true,
+      }),
+      { status: failed ? 503 : 403, headers: { ...cors, 'Content-Type': 'application/json' } }
     );
   }
 
