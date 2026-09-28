@@ -71,7 +71,7 @@ function AppShell() {
   // The phone's setting is the default; an explicit choice overrides it.
   const isDark = themeMode === 'system' ? colorScheme === 'dark' : themeMode === 'dark';
 
-  const { isDesktop, contentMaxWidth } = useResponsive();
+  const { isDesktop, isMobile, contentMaxWidth } = useResponsive();
 
   const viewFadeAnim = useRef(new Animated.Value(1)).current;
   const viewSlideAnim = useRef(new Animated.Value(0)).current;
@@ -195,6 +195,9 @@ function AppShell() {
           {...glass('card')}
           style={[
             styles.topBar,
+            // On a phone the row held about 426 px of header in 390 (360 on many Samsungs),
+            // and "+ Plan Nou" was cut off at the edge.
+            isMobile && styles.topBarPhone,
             {
               backgroundColor: theme.card,
               borderColor: theme.border,
@@ -202,12 +205,14 @@ function AppShell() {
             },
           ]}
         >
-          <View style={styles.brandContainer}>
+          <View style={[styles.brandContainer, isMobile && styles.brandContainerPhone]}>
             <View style={styles.brandRow}>
               <Text style={[styles.brandTitle, { color: theme.text }]}>SmartMeal</Text>
-              <View style={[styles.brandBadge, { backgroundColor: theme.surfaceTertiary, borderColor: theme.border, borderWidth: 1 }]}>
-                <Text style={[styles.brandBadgeText, { color: theme.text }]}>RO 🇷🇴</Text>
-              </View>
+              {!isMobile && (
+                <View style={[styles.brandBadge, { backgroundColor: theme.surfaceTertiary, borderColor: theme.border, borderWidth: 1 }]}>
+                  <Text style={[styles.brandBadgeText, { color: theme.text }]}>RO 🇷🇴</Text>
+                </View>
+              )}
             </View>
             <Text style={[styles.brandSubtitle, { color: theme.textMuted }]}>
               {market ? `${market.name} • ${currentPlan?.peopleCount} pers` : 'Meniu activ'}
@@ -290,6 +295,7 @@ function AppShell() {
 
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel="Contul meu"
               onPress={() => setAuthModalVisible(true)}
               {...glass('pill')}
               style={[
@@ -307,7 +313,8 @@ function AppShell() {
                   { color: userEmail ? theme.text : theme.textMuted },
                 ]}
               >
-                {userEmail ? '☁️ Sincron' : '☁️ Cloud'}
+                {/* It opens the account window, which is what the label now says. */}
+                👤 Cont
               </Text>
             </TouchableOpacity>
 
@@ -482,6 +489,14 @@ const styles = StyleSheet.create({
   },
   brandContainer: {
     minWidth: 140,
+  },
+  brandContainerPhone: {
+    minWidth: 0,
+    flexShrink: 1,
+  },
+  topBarPhone: {
+    paddingHorizontal: 16,
+    gap: 8,
   },
   desktopTabsDock: {
     flexDirection: 'row',
