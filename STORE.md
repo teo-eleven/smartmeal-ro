@@ -113,19 +113,32 @@ Console (25 USD, o dată).
 
 Răspunde exact așa — corespunde cu ce face codul:
 
-| Întrebare                    | Răspuns                                                                                                   |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Colectați date?              | Da                                                                                                        |
-| Ce tip                       | **Contact Info → Email Address** și **Health & Fitness → Health** (alergiile și restricțiile alimentare)  |
-| Legate de identitate?        | Da, dacă utilizatorul își face cont                                                                       |
-| Folosite pentru urmărire?    | **Nu**                                                                                                    |
-| Folosite pentru publicitate? | **Nu**                                                                                                    |
-| Partajate cu terți?          | Doar procesatori: Supabase (găzduire) și Google Gemini (sugestii AI, fără date de identificare)           |
-| Ștergerea contului           | Da, din aplicație: ecranul de cont → „Șterge contul și datele mele"                                       |
-| Notificări                   | Locale, programate pe telefon. Nu există push de pe server, deci nu se colectează token-uri de notificare |
+| Întrebare                    | Răspuns                                                                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Colectați date?              | Da                                                                                                                                                                 |
+| Ce tip                       | **Contact Info → Email Address** și **Health & Fitness → Health** (alergiile și restricțiile alimentare)                                                           |
+| Legate de identitate?        | Da, dacă utilizatorul își face cont                                                                                                                                |
+| Folosite pentru urmărire?    | **Nu**                                                                                                                                                             |
+| Folosite pentru publicitate? | **Nu**                                                                                                                                                             |
+| Partajate cu terți?          | Doar procesatori: Supabase (găzduire), Google Gemini (sugestii AI, fără date de identificare) și Resend (livrarea mementourilor pe email, numai dacă sunt pornite) |
+| Ștergerea contului           | Da, din aplicație: ecranul de cont → „Șterge contul și datele mele"                                                                                                |
+| Notificări                   | Locale, programate pe telefon. Nu există push de pe server, deci nu se colectează token-uri de notificare                                                          |
 
-Google Play cere în plus o **adresă web** de la care se poate cere ștergerea contului. Pune un
-formular sau adresa de email din politică.
+Google Play cere în plus o **adresă web** de la care se poate cere ștergerea contului fără
+reinstalarea aplicației, cu numele aplicației exact ca în listare. Pagina e gata:
+`public/delete-account.html`, servită la `https://domeniul-tau.ro/delete-account.html`.
+
+- [ ] completează `CONTACT_EMAIL` în pagină — aceeași adresă ca în `PRIVACY.md`. Până atunci
+      pagina arată doar ruta din aplicație și spune că adresa lipsește
+- [ ] pune URL-ul în Play Console → **Data safety** → Account deletion
+
+Ruta pe email e acceptată explicit de Google. N-am făcut formular cu autentificare pe web:
+ar fi încă o suprafață de login de securizat și încă o pagină pe care o poate copia cineva
+care vrea să fure parole, iar butonul din aplicație șterge deja pe loc.
+
+**Ce se promite pe pagină trebuie să fie adevărat:** ștergerea completă în cel mult 30 de
+zile. Când vine un email, ștergi contul din Supabase → Authentication → Users; tabelele au
+`on delete cascade`, deci planurile și mementourile pleacă odată cu el.
 
 ## 6. Găzduirea versiunii web
 
@@ -152,3 +165,138 @@ npm run typecheck && npm run lint && npm test
 
 Toate trei trebuie să iasă curate. Pragurile de acoperire sunt în `jest.config.js`; dacă pică,
 adaugă teste, nu coborî pragul.
+
+## 8. Clasificarea de vârstă
+
+Verificată pe 2026-09-28 pe documentația Apple (App Store Connect → Age ratings values and
+definitions) și pe criteriile PEGI. **Apple a schimbat sistemul**: treptele sunt acum 4+, 9+,
+13+, 16+, 18+. Vechile 12+ și 17+ se aplică doar sub OS 26. Recitește pagina înainte de
+completare, fiindcă regulile se mai schimbă.
+
+Ce contează la noi: **secțiunea de băuturi alcoolice** (9 produse cu alcool, cu mărci și
+prețuri, ascunse după un comutator „18+"), plus **caloriile și macronutrienții** afișați la
+fiecare rețetă.
+
+### Apple — ce bifezi
+
+| Întrebare din chestionar                              | Răspuns        | De ce                                                                              | Treaptă |
+| ----------------------------------------------------- | -------------- | ---------------------------------------------------------------------------------- | ------- |
+| Alcohol, Tobacco, or Drug Use or References           | **Infrequent** | 9 produse, ascunse implicit; apar doar la cerere                                   | **13+** |
+| Health or Wellness Topics                             | **Da**         | calorii, macronutrienți, diete (vegan, keto etc.)                                  | 9+      |
+| Medical or Treatment Information                      | **None**       | filtrăm rețete; nu dăm diagnostic, tratament sau dozaj                             | —       |
+| Unrestricted Web Access                               | **Nu**         | nu există browser în aplicație                                                     | —       |
+| User-Generated Content                                | **Nu**         | nimic nu se publică între utilizatori                                              | —       |
+| Messaging and Chat                                    | **Nu**         |                                                                                    | —       |
+| Advertising                                           | **Nu**         |                                                                                    | —       |
+| Gambling / Simulated Gambling / Loot Boxes            | **Nu**         |                                                                                    | —       |
+| Contests                                              | **None**       |                                                                                    | —       |
+| Age Assurance                                         | **Nu**         | comutatorul „18+" e o declarație, nu o verificare — nu-l prezenta drept verificare | —       |
+| Parental Controls                                     | **Nu**         |                                                                                    | —       |
+| Toate celelalte (violență, sex, limbaj, horror, arme) | **None**       |                                                                                    | —       |
+
+**Rezultat: 13+.** Treapta finală e cea mai mare dintre cele atinse. Fără secțiunea de
+alcool ar fi **9+**, din cauza caloriilor.
+
+⚠️ „Infrequent" e o apreciere, nu o regulă. Dacă cel care face review-ul consideră că un raft
+întreg de bere și vin e „Frequent", aplicația urcă la **18+**. Nu răspunde „None" ca să scapi
+de treaptă: o declarație falsă e motiv de respingere la guideline 2.3.6.
+
+### Google Play — chestionarul IARC → PEGI în România
+
+Google nu-ți dă o treaptă direct. Completezi chestionarul IARC, iar el emite eticheta pentru
+fiecare țară; în România aceasta e PEGI.
+
+| Ce declari                                                          | Răspuns                                                                                                                                                                                                         |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tipul aplicației                                                    | **All other app types**. Opțiunile sunt doar Game / Social or communication / All other app types. „Reference, News, or Educational" e altceva: e categorie de magazin, pentru Wikipedia sau aplicații de vreme |
+| Referințe la alcool, tutun sau droguri                              | **Da, alcool**                                                                                                                                                                                                  |
+| Vânzare sau facilitarea vânzării de alcool                          | **Nu**. Aplicația face listă de cumpărături, nu vinde și nu trimite spre un magazin online                                                                                                                      |
+| Violență, sex, limbaj, jocuri de noroc                              | **Nu**                                                                                                                                                                                                          |
+| Interacțiune între utilizatori, conținut generat, partajare locație | **Nu**                                                                                                                                                                                                          |
+| Cumpărături digitale                                                | **Nu**                                                                                                                                                                                                          |
+
+**Rezultat așteptat: PEGI 16.** Criteriul PEGI e categoric: **PEGI 12 nu permite deloc
+referințe la alcool sau tutun**, iar descriptorul pentru alcool/droguri înseamnă întotdeauna
+PEGI 16 sau 18. Fără secțiunea de alcool: **PEGI 3**.
+
+### Regula care ține pe amândouă
+
+Apple: „apps that encourage minors to consume [alcohol] will be rejected". Google: „depicting
+or encouraging the use or sale of alcohol **to minors** is not allowed". Cu o clasificare de
+13+ la Apple și 16+ la Google, aplicația e deschisă pentru minori. Comutatorul „18+" se
+bifează dintr-un deget și nu verifică nimic. **Asta e riscul real**, mai mult decât
+treapta în sine.
+
+### Decizia: secțiunea rămâne (2026-09-28)
+
+|                             | Apple                     | Google (PEGI) | Risc de politică               |
+| --------------------------- | ------------------------- | ------------- | ------------------------------ |
+| **Păstrată — asta am ales** | 13+ (sau 18+ după review) | 16            | comutatorul nu verifică vârsta |
+| Scoasă, variantă de rezervă | 9+                        | 3             | niciunul                       |
+
+Ca să treacă review-ul cu ea înăuntru:
+
+- **Pune în „Notes for Review"** (App Store Connect) și în răspunsul la chestionarul Google:
+  „Secțiunea de băuturi alcoolice e ascunsă implicit și apare doar dacă utilizatorul o
+  activează dintr-un comutator marcat 18+. Aplicația nu vinde alcool și nu trimite spre magazine online;
+  produsele intră doar pe lista de cumpărături." Toate trei afirmațiile sunt adevărate în cod.
+- **Nu declara „Age Assurance"** la Apple — comutatorul nu e o verificare, iar o declarație
+  falsă cântărește mai mult decât treapta.
+- Dacă ești respins la **Apple 1.4.3** (alcool și minori) sau la politica Google de conținut
+  restricționat, varianta de rezervă e o schimbare de o linie: nu mai randa categoria
+  `drink_alcoholic` în `OnboardingWizard`. Testul din `src/data/__tests__/retailProducts.test.ts`
+  garantează că nimic din categoria aceea nu rămâne atunci în coș.
+
+Berea Cooler 0.0% a fost mutată la băuturi răcoritoare. Stătea sub eticheta de alcool, deci
+era ascunsă de comutator, dar având `isAlcoholic: false` nu era scoasă din coș odată cu el.
+
+## 9. Capturi de ecran și grafică
+
+Nu le pot face eu. Cer un simulator sau un telefon real, iar capturile se fac cu **date
+reale** din aplicație, nu machete — Apple respinge capturile care nu arată aplicația
+(guideline 2.3.3).
+
+### Apple
+
+| Dispozitiv  | Dimensiune (portret) | Obligatoriu?                                                                                   |
+| ----------- | -------------------- | ---------------------------------------------------------------------------------------------- |
+| iPhone 6.9" | 1320 × 2868          | **da**, între 1 și 10 capturi, JPG sau PNG                                                     |
+| iPad 13"    | 2064 × 2752          | **da**, obligatoriu dacă aplicația rulează pe iPad — iar `app.json` are `supportsTablet: true` |
+
+Apple scalează singur capturile pentru ecranele mai mici. Deschide pagina „Screenshot
+specifications" din App Store Connect Help înainte de upload: acolo e lista completă de
+dimensiuni acceptate pentru fiecare ecran. Simulatoarele potrivite sunt
+**iPhone 16 Pro Max** și **iPad Pro 13" (M4)**; captura se face cu ⌘S.
+
+⚠️ `supportsTablet: true` înseamnă că recenzentul va testa **și pe iPad**. Dacă aplicația
+arată întinsă sau goală pe iPad, e respinsă (guideline 4.0). Ori o verifici pe simulatorul
+de iPad, ori pui `supportsTablet: false` și nu mai ai nevoie nici de capturile de iPad.
+
+### Google Play
+
+| Ce                    | Dimensiune                                                                                                                                                                             | Obligatoriu?                                  |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Capturi telefon       | minim 2 ca să publici; **minim 4, la cel puțin 1080 × 1920, portret 9:16**, ca aplicația să poată fi recomandată. Latura lungă nu poate depăși dublul celei scurte. PNG/JPG, max. 8 MB | **da** — fă direct 4                          |
+| Grafică de prezentare | **1024 × 500**, PNG sau JPG, fără transparență                                                                                                                                         | **da**                                        |
+| Icon                  | 512 × 512, PNG pe 32 de biți                                                                                                                                                           | **da** (din `assets/icon.png`, redimensionat) |
+
+### Ce să prinzi, în ordine (primele 3 se văd fără derulare)
+
+1. **Meniul săptămânal generat**, cu costul total în antet: „planul săptămânii în buget"
+2. **Lista de cumpărături**, grupată pe raioane, cu câteva produse bifate
+3. **Comparația între magazine**: același coș, prețuri diferite
+4. **Alergiile**, cu avertismentul vizibil — arată că filtrul e luat în serios
+5. **Cămara**: bifezi ce ai acasă, iar coșul scade
+6. **Mementourile**
+
+Nu pune secțiunea de alcool în capturi, indiferent ce decizi la §8. O captură cu bere într-o
+aplicație clasificată 13+ e exact lucrul pe care îl caută recenzentul.
+
+Grafica de prezentare de 1024×500 e o imagine de marcă, nu o captură. O poți face din
+`assets/icon.png` pe fundalul verde `#16a34a`, cu textul „Mese pe o săptămână, în bugetul
+tău". Imaginile din `assets/` sunt generate, așa că înlocuiește-le când ai identitate vizuală
+și refă și graficul.
+
+## 10. Textele listării
+
+Sunt în `STORE_LISTING.md`, gata de copiat, cu limitele de caractere verificate.

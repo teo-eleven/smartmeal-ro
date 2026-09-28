@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ro">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Ștergerea contului — SmartMeal RO</title>
+    <!--
+    Google Play requires a public web page, named after the app as it appears on the store
+    listing, from which someone can request deletion without reinstalling the app. It accepts
+    an email route, which is what this is.
+
+    Deliberately not a sign-in form: a second login surface on the web is one more thing to
+    secure and one more page a phishing copy could imitate, and the in-app button already
+    deletes with the user's own token (supabase/functions/delete-account).
+
+    Fill CONTACT_EMAIL once, with the same address as in PRIVACY.md.
+  -->
+    <style>
+      :root {
+        --bg: #ffffff;
+        --text: #111111;
+        --muted: #555555;
+        --card: #f4f4f5;
+        --border: #e4e4e7;
+        --accent: #16a34a;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0b0b0c;
+          --text: #f4f4f5;
+          --muted: #a1a1aa;
+          --card: #18181b;
+          --border: #27272a;
+          --accent: #4ade80;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.55 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+      main {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 32px 16px 48px;
+      }
+      h1 {
+        font-size: 26px;
+        line-height: 1.2;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 18px;
+        margin: 28px 0 8px;
+      }
+      p,
+      li {
+        color: var(--text);
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin: 12px 0;
+      }
+      ol {
+        padding-left: 20px;
+      }
+      a {
+        color: var(--accent);
+      }
+      .button {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 12px 18px;
+        border-radius: 12px;
+        background: var(--accent);
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 700;
+      }
+      code {
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Ștergerea contului SmartMeal RO</h1>
+      <p class="muted">
+        Aplicația SmartMeal RO, planificator de mese pentru supermarketurile din România.
+      </p>
+
+      <h2>Varianta cea mai rapidă: din aplicație</h2>
+      <div class="card">
+        <ol>
+          <li>Deschide SmartMeal RO și intră în cont.</li>
+          <li>Mergi la ecranul de cont.</li>
+          <li>Apasă <strong>„Șterge contul și datele mele"</strong> și confirmă.</li>
+        </ol>
+        <p class="muted">Ștergerea se face pe loc.</p>
+      </div>
+
+      <h2>Fără aplicație: prin email</h2>
+      <div class="card">
+        <p>
+          Scrie-ne de pe <strong>adresa cu care ți-ai făcut contul</strong>, cu subiectul „Ștergere
+          cont". O cerere venită de pe altă adresă nu o putem verifica, deci nu o putem executa.
+        </p>
+        <a class="button" id="mail" href="#">Trimite cererea de ștergere</a>
+        <p class="muted" id="address"></p>
+        <p class="muted">Confirmăm ștergerea în cel mult 30 de zile, de obicei mult mai repede.</p>
+      </div>
+
+      <h2>Ce se șterge</h2>
+      <ul>
+        <li>contul și adresa de email;</li>
+        <li>planurile de mese, lista de cumpărături și preferințele salvate;</li>
+        <li>alergiile și restricțiile alimentare declarate;</li>
+        <li>alegerile privind mementourile.</li>
+      </ul>
+      <p>
+        Nu păstrăm nimic din cele de mai sus după ștergere și nu „înghețăm" contul — îl ștergem.
+        Datele rămase doar pe telefonul tău se șterg odată cu aplicația.
+      </p>
+
+      <p class="muted">Detalii complete în politica de confidențialitate.</p>
+    </main>
+
+    <script>
+      // One place to fill. The page still explains the in-app route if this is left empty.
+      var CONTACT_EMAIL = '';
+
+      var link = document.getElementById('mail');
+      var shown = document.getElementById('address');
+      if (CONTACT_EMAIL) {
+        link.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent('Ștergere cont');
+        shown.textContent = 'Adresa: ' + CONTACT_EMAIL;
+      } else {
+        link.style.display = 'none';
+        shown.textContent = 'Adresa de contact nu a fost încă completată.';
+      }
+    </script>
+  </body>
+</html>

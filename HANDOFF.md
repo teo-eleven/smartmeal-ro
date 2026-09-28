@@ -1,6 +1,6 @@
 # HANDOFF.md
 
-**Sesiune:** 2026-09-25 · `main` · pregătită pentru magazine, în limita a ce se poate face din cod
+**Sesiune:** 2026-09-28 · `main` · pregătită pentru magazine, în limita a ce se poate face din cod
 
 ## Unde am rămas
 
@@ -11,8 +11,10 @@ completă pentru App Store și Google Play, imaginile de aplicație, politica de
 ## Starea, rulată la închidere
 
 ```
-TESTE 89 suite / 738 teste · TYPECHECK 0 · LINT 0
-COVERAGE 87,47 / 68,85 / 87,99 / 88,97 — toate pragurile trecute
+TESTE 91 suite / 782 teste · TYPECHECK 0 · LINT 0
+COVERAGE 87,41 / 76,6 / 87,14 / 88,61 — praguri 87/76/87/88, toate trecute
+         identic la fiecare rulare (vezi „Poarta de acoperire" mai jos)
+WEB EXPORT include public/delete-account.html
 BUNDLE 0 chei, 0 cârlige de depanare
 GIT curat
 ```
@@ -31,6 +33,7 @@ la `NSUserDefaults` · App Transport Security fără excepții · Android cu o s
 `INTERNET`, și locația, camera, microfonul și contactele blocate explicit.
 
 **Securitate, client:**
+
 - Token-urile de sesiune au trecut din AsyncStorage în Keychain / Keystore. Stăteau în clar
   într-un fișier inclus în backup-urile iCloud și iTunes. Sunt împărțite în bucăți, fiindcă
   platforma refuză valori peste 2 KB.
@@ -38,6 +41,7 @@ la `NSUserDefaults` · App Transport Security fără excepții · Android cu o s
 - Error boundary: o excepție dintr-un buton nu mai lasă ecran alb.
 
 **Securitate, server — partea care contează cel mai mult:**
+
 - Funcția Gemini era un **proxy deschis**. Cheia `anon` e publică prin design și satisfăcea
   `verify_jwt`, iar limita de rată trăia într-un `Map` din izolat, cu cheia pe
   `X-Forwarded-For`, pe care o setează apelantul. Acum cere tokenul real al utilizatorului și
@@ -51,6 +55,36 @@ la `NSUserDefaults` · App Transport Security fără excepții · Android cu o s
 
 **Documente:** `PRIVACY.md` (prima variantă, de completat cu datele operatorului) și
 `STORE.md` (tot drumul, în ordine, cu răspunsurile exacte pentru formularele magazinelor).
+
+## Sesiunea 2026-09-28: pregătirea pentru formularele magazinelor
+
+- **Clasificarea de vârstă**, verificată pe documentația Apple și PEGI: `STORE.md` §8. Apple
+  are acum trepte noi (4+/9+/13+/16+/18+). Cu secțiunea de alcool: **Apple 13+, PEGI 16**.
+  **Decizie: secțiunea rămâne.** Varianta de rezervă, dacă e respinsă, e scrisă acolo.
+- **Textele listării**: `STORE_LISTING.md`, cu limitele numărate. Fără nume de lanțuri în
+  cuvintele-cheie (Apple 2.3.7).
+- **Pagina de ștergere a contului** cerută de Google: `public/delete-account.html`. Trebuie
+  completat `CONTACT_EMAIL` în ea.
+- **Avertisment la alergeni**: „Verifică întotdeauna eticheta produsului". Lipsea complet.
+- **Manifestul iOS** declara că nu colectăm nimic, iar formularul spunea email + sănătate.
+  Acum spun același lucru.
+- **Berea 0.0%** rămânea în coș, ascunsă, după închiderea secțiunii 18+. Mutată la sucuri.
+- **Resetarea parolei fără internet** spunea „cod trimis". `supabase-js` întoarce eroarea
+  de rețea în loc s-o arunce, iar codul nu se uita la ea.
+
+### Poarta de acoperire
+
+**Măsura la întâmplare.** Aceeași suită dădea 87,5% sau 82,7%, după care worker termina
+primul. Cauza: proiectul `logic` instrumenta cu `ts-jest`, iar `components` cu babel.
+Același fișier ieșea cu alt număr de instrucțiuni în fiecare (`useAppStore`: 1626 față de
+1936), iar Istanbul le combina în ordinea sosirii. Acum ambele folosesc același transform
+babel. Cifrele sunt identice între rulări, dar **mai mici**, fiindcă babel numără altfel.
+Pragurile 87/88/87 nu le-am coborât: am închis golul cu 41 de teste noi (29 pe `supabase.ts`,
+5 pe ecranul principal, 7 pe filtre). `supabase.ts`, codul care se ocupă de conturi, a
+urcat de la ~33% la 85%.
+
+⚠️ `preserveEnvVars` din `jest.config.js` e esențial. Fără el, babel coace valorile din
+`.env` în cod, iar testele pentru `config/env.ts` văd `8081` oricât ar seta.
 
 ## Găsit reparând ecranele slabe
 
@@ -66,7 +100,7 @@ prima zi.
   pași care se deblochează unul după altul. Răspunsul la primul pas e identic indiferent dacă
   adresa are cont — altfel endpointul devine o metodă de a afla cine e înregistrat.
 - **Politică de parolă**: 10 caractere, literă și cifră, plus refuzul celor din listele
-  scurse. Verificată pe telefon *și* de setat în Supabase (vezi `STORE.md` §1).
+  scurse. Verificată pe telefon _și_ de setat în Supabase (vezi `STORE.md` §1).
 - **Mementouri**: unul pe fiecare zi de gătit, cu numele felului din plan, și unul săptămânal
   pentru cumpărături. Programate **local**, deci merg fără internet și nu colectează niciun
   token de notificare. Migrația **0003** ține alegerea, nu mementoul, ca să urmeze contul pe
@@ -76,7 +110,7 @@ prima zi.
   Sesiunea e de 30 de zile, dar **asta se setează în proiectul Supabase**
   (Authentication → Sessions), nu din cod; dacă serverul expiră tokenul mai devreme, omul e
   scos afară oricât ar spune aplicația altceva. Vezi `STORE.md` §1.
-- **Simularea locală de conturi** (`localAuthSimulation`): pornește doar când *nu* există
+- **Simularea locală de conturi** (`localAuthSimulation`): pornește doar când _nu_ există
   Supabase configurat **și** mediul nu e `production`. Ține o amprentă, nu parola. Codul de
   resetare e fix, `123456`, ca să poți parcurge fluxul fără email.
 - **Mementouri pe email, la 2–7 zile** (implicit 3): comutatorul apare doar cu cont, fiindcă
@@ -127,7 +161,7 @@ cârligul de depanare care expunea tot magazinul (0 în bundle, verificat).
 
 ## Întrebări pentru tine
 
-1. Îți trebuie un formular web de ștergere a contului, pentru cerința Google Play, sau e
-   suficientă adresa de email din politică?
-2. Cel mai slab fișier rămas e `OnboardingWizard` la 72%, iar restul sunt servicii care cer
-   Supabase real ca să fie testate cinstit. Mai insistăm sau ne oprim aici cu testele?
+1. `app.json` are `supportsTablet: true`, deci Apple cere capturi de iPad și va testa pe
+   iPad. Aplicația a fost verificată pe iPad? Dacă nu, `false` e mai sigur la prima urcare.
+2. Marja la funcții e mică (87,14 față de 87). Orice funcție nouă fără test pică poarta, și e
+   intenționat, dar să știi de ce pică.
