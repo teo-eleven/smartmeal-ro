@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getAppTheme } from '../styles/theme';
 
 interface ConfirmDialogProps {
@@ -37,58 +30,60 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <TouchableWithoutFeedback onPress={onCancel}>
-        <View style={styles.backdrop}>
-          <TouchableWithoutFeedback onPress={() => undefined}>
-            <View
-              accessibilityViewIsModal
-              style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
+      <View style={styles.backdrop}>
+        {/* The backdrop sits behind the card rather than around it. Wrapped around it, a
+            screen reader read the whole dialog as one pressable element and the buttons
+            inside were out of reach. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Închide fereastra"
+          onPress={onCancel}
+          style={StyleSheet.absoluteFill}
+        />
+        <View
+          accessibilityViewIsModal
+          style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
+        >
+          <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+          <Text style={[styles.message, { color: theme.textMuted }]}>{message}</Text>
+
+          <View style={styles.actions}>
+            {/* Cancel comes first so the safe choice is the one under the thumb. */}
+            <TouchableOpacity
+              onPress={onCancel}
+              accessibilityRole="button"
+              accessibilityLabel={cancelLabel}
+              style={[styles.button, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
+              activeOpacity={0.7}
             >
-              <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
-              <Text style={[styles.message, { color: theme.textMuted }]}>{message}</Text>
+              <Text style={[styles.buttonText, { color: theme.text }]}>{cancelLabel}</Text>
+            </TouchableOpacity>
 
-              <View style={styles.actions}>
-                {/* Cancel comes first so the safe choice is the one under the thumb. */}
-                <TouchableOpacity
-                  onPress={onCancel}
-                  accessibilityRole="button"
-                  accessibilityLabel={cancelLabel}
-                  style={[
-                    styles.button,
-                    { backgroundColor: theme.btnBg, borderColor: theme.border },
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.buttonText, { color: theme.text }]}>{cancelLabel}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={onConfirm}
-                  accessibilityRole="button"
-                  accessibilityLabel={confirmLabel}
-                  style={[
-                    styles.button,
-                    {
-                      backgroundColor: isDestructive ? '#ef4444' : theme.primary,
-                      borderColor: isDestructive ? '#ef4444' : theme.primary,
-                    },
-                  ]}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.buttonText,
-                      { color: isDestructive ? '#ffffff' : theme.primaryText },
-                    ]}
-                  >
-                    {confirmLabel}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableWithoutFeedback>
+            <TouchableOpacity
+              onPress={onConfirm}
+              accessibilityRole="button"
+              accessibilityLabel={confirmLabel}
+              style={[
+                styles.button,
+                {
+                  backgroundColor: isDestructive ? '#ef4444' : theme.primary,
+                  borderColor: isDestructive ? '#ef4444' : theme.primary,
+                },
+              ]}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.buttonText,
+                  { color: isDestructive ? '#ffffff' : theme.primaryText },
+                ]}
+              >
+                {confirmLabel}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 };

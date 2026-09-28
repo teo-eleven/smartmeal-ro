@@ -42,3 +42,35 @@ describe('ConfirmDialog', () => {
     expect(screen.queryByText(baseProps.title)).toBeNull();
   });
 });
+
+/**
+ * The backdrop used to wrap the card. To a screen reader that made the whole dialog one
+ * pressable element, with the buttons inside it out of reach. It is now its own element
+ * behind the card, announced as what it does.
+ */
+describe('ConfirmDialog, fundalul', () => {
+  // The card is accessibilityViewIsModal, so on iOS a screen reader stays inside it and
+  // never lands on the backdrop, which is the intent. The label and role serve web and
+  // Android, hence the hidden-elements query.
+  test('e un buton separat, cu etichetă, care anulează', () => {
+    const onCancel = jest.fn();
+    render(<ConfirmDialog {...baseProps} onCancel={onCancel} />);
+
+    const backdrop = screen.getByLabelText('Închide fereastra', { includeHiddenElements: true });
+    expect(backdrop.props.accessibilityRole).toBe('button');
+    fireEvent.press(backdrop);
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  test('butoanele din card rămân atingibile separat', () => {
+    const onConfirm = jest.fn();
+    render(<ConfirmDialog {...baseProps} onConfirm={onConfirm} />);
+
+    fireEvent.press(screen.getByText('Șterge și începe din nou'));
+
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(baseProps.onCancel).not.toHaveBeenCalled();
+  });
+});
+

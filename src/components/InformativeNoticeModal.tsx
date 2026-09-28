@@ -1,13 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  Animated,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+import { Animated, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SystemNotice } from '../store/useAppStore';
 import { glass } from '../styles/glass';
 
@@ -78,61 +70,76 @@ export const InformativeNoticeModal: React.FC<InformativeNoticeModalProps> = ({
 
   return (
     <Modal visible={!!notice} transparent animationType="none" onRequestClose={onDismiss}>
-      <TouchableWithoutFeedback onPress={onDismiss}>
-        <View style={styles.backdrop}>
-          <TouchableWithoutFeedback>
-            <Animated.View
-              {...glass('modal')}
-              style={[
-                styles.card,
-                {
-                  backgroundColor: isDark ? 'rgba(28, 28, 30, 0.96)' : 'rgba(255, 255, 255, 0.96)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.1)',
-                  opacity: fadeAnim,
-                  transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-                },
-              ]}
+      <View style={styles.backdrop}>
+        {/* Behind the card, not around it: wrapped around it, a screen reader read the whole
+            notice as one pressable element and "Am înțeles" was out of reach. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Închide fereastra"
+          onPress={onDismiss}
+          style={StyleSheet.absoluteFill}
+        />
+        <Animated.View
+          accessibilityViewIsModal
+          {...glass('modal')}
+          style={[
+            styles.card,
+            {
+              backgroundColor: isDark ? 'rgba(28, 28, 30, 0.96)' : 'rgba(255, 255, 255, 0.96)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.1)',
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+            },
+          ]}
+        >
+          {/* Apple Grabber Pill */}
+          <View
+            style={[
+              styles.grabber,
+              { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' },
+            ]}
+          />
+
+          <View style={styles.headerRow}>
+            <View
+              style={[styles.iconCircle, { backgroundColor: badge.bg, borderColor: badge.color }]}
             >
-              {/* Apple Grabber Pill */}
-              <View style={[styles.grabber, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
-
-              <View style={styles.headerRow}>
-                <View style={[styles.iconCircle, { backgroundColor: badge.bg, borderColor: badge.color }]}>
-                  <Text style={styles.iconText}>{badge.icon}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.title, { color: isDark ? '#ffffff' : '#000000' }]}>
-                    {notice.title}
-                  </Text>
-                  <Text style={[styles.typeSubtitle, { color: badge.color }]}>
-                    SmartMeal RO Notificare
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={[styles.message, { color: isDark ? '#8e8e93' : '#3a3a3c' }]}>
-                {notice.message}
+              <Text style={styles.iconText}>{badge.icon}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.title, { color: isDark ? '#ffffff' : '#000000' }]}>
+                {notice.title}
               </Text>
+              <Text style={[styles.typeSubtitle, { color: badge.color }]}>
+                SmartMeal RO Notificare
+              </Text>
+            </View>
+          </View>
 
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={onDismiss}
-                {...glass('btn-primary')}
-                style={[
-                  styles.dismissBtn,
-                  {
-                    backgroundColor: isDark ? '#ffffff' : '#000000',
-                    borderColor: isDark ? '#ffffff' : '#000000',
-                  },
-                ]}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.dismissBtnText, { color: isDark ? '#000000' : '#ffffff' }]}>Am înțeles</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
+          <Text style={[styles.message, { color: isDark ? '#8e8e93' : '#3a3a3c' }]}>
+            {notice.message}
+          </Text>
+
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Am înțeles"
+            onPress={onDismiss}
+            {...glass('btn-primary')}
+            style={[
+              styles.dismissBtn,
+              {
+                backgroundColor: isDark ? '#ffffff' : '#000000',
+                borderColor: isDark ? '#ffffff' : '#000000',
+              },
+            ]}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.dismissBtnText, { color: isDark ? '#000000' : '#ffffff' }]}>
+              Am înțeles
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
     </Modal>
   );
 };
