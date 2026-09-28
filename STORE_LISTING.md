@@ -81,7 +81,7 @@ ORGANIZARE
 • Mementouri pentru zilele de gătit și pentru ziua de cumpărături
 
 CONTUL
-Îți poți face cont ca să-ți regăsești meniul pe alt telefon. Contul se șterge oricând, din aplicație, împreună cu toate datele lui.
+Îți poți face cont ca să-ți regăsești meniul pe alt telefon. Din aplicație îți descarci oricând o copie a datelor, sau ștergi contul împreună cu tot ce conține.
 
 MAGAZINE
 Lidl, Kaufland, Carrefour, Mega Image, Auchan, Penny, Profi și Sezamo.

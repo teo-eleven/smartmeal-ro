@@ -1,6 +1,6 @@
 # Politica de confidențialitate — SmartMeal RO
 
-**Ultima actualizare:** 25 septembrie 2026
+**Ultima actualizare:** 28 septembrie 2026 (versiunea `2026-09-28`)
 **Operator:** *[completează: nume / firmă, adresă, email de contact]*
 
 Aceasta este o primă variantă, scrisă pe ce face aplicația azi. **Citește-o și
@@ -42,8 +42,14 @@ doar o amprentă criptografică a ei.
 
 **Alergiile și restricțiile alimentare declarate sunt date privind sănătatea**, categorie
 specială conform art. 9 GDPR. Le prelucrăm exclusiv ca să nu-ți propunem mâncare pe care nu o
-poți mânca, **pe baza consimțământului tău explicit**, exprimat prin introducerea lor în
-aplicație. Nu sunt folosite în niciun alt scop și nu sunt transmise nimănui în scop comercial.
+poți mânca. Nu sunt folosite în niciun alt scop și nu sunt transmise nimănui în scop
+comercial.
+
+- **Fără cont**, rămân doar pe telefonul tău și nu ajung niciodată la noi.
+- **Cu cont**, le păstrăm pe baza **consimțământului tău explicit**, pe care îl dai bifând
+  căsuța dedicată la crearea contului. Împreună cu contul păstrăm data acordului și
+  versiunea acestei politici pe care ai acceptat-o.
+- Îți retragi acordul ștergând contul, din același ecran, oricând.
 
 ## Ce NU colectăm
 
@@ -63,8 +69,9 @@ adresa ta de email sau vreun identificator al contului.
 
 Mementourile de pe telefon sunt programate **local**, pe dispozitiv: nu colectăm niciun token
 de notificare și nu trece nimic prin serverele noastre pentru ele. Mementourile pe email sunt
-oprite din start; se trimit numai după ce le pornești tu, se opresc din același loc, iar
-fiecare email spune unde se opresc.
+oprite din start și se trimit numai după ce le pornești tu. Fiecare email are un link de
+dezabonare care le oprește dintr-o apăsare, fără să intri în aplicație, iar clientul tău de
+email îți arată și propriul buton „Dezabonare".
 
 ## Cât păstrăm datele
 
@@ -77,6 +84,9 @@ Ai dreptul de acces, rectificare, ștergere, restricționare, opoziție și port
 
 - **Ștergerea contului și a datelor** se face direct din aplicație: ecranul de cont →
   „Șterge contul și datele mele". Ștergerea e definitivă și imediată.
+- **O copie a datelor tale** (acces și portabilitate) o descarci direct din aplicație:
+  ecranul de cont → „Descarcă datele mele". Primești un fișier JSON în care e separat ce
+  păstrăm noi în cont de ce există doar pe telefonul tău.
 - Pentru orice altceva, scrie-ne la *[completează adresa de email]*. Răspundem în cel mult
   30 de zile.
 - Poți depune plângere la **ANSPDCP** (Autoritatea Națională de Supraveghere a Prelucrării
@@ -84,7 +94,10 @@ Ai dreptul de acces, rectificare, ștergere, restricționare, opoziție și port
 
 ## Copii
 
-Aplicația nu se adresează copiilor sub 16 ani și nu colectăm cu bună știință datele lor.
+Contul se poate crea doar după ce confirmi că ai cel puțin 16 ani, vârsta de la care, în
+România, îți poți da singur acordul pentru prelucrarea datelor (art. 8 GDPR). Confirmarea e o
+declarație, nu o verificare a actelor. Dacă aflăm că un cont aparține cuiva sub 16 ani, îl
+ștergem.
 
 ## Securitate
 
@@ -98,4 +111,5 @@ Niciun sistem nu e perfect sigur. Dacă descoperi o problemă de securitate, scr
 
 ## Modificări
 
-Dacă schimbăm ceva important, actualizăm data de sus și te anunțăm în aplicație.
+Dacă schimbăm ceva important, actualizăm data și versiunea de sus și le scriem pe email
+celor care au cont, înainte ca schimbarea să se aplice.

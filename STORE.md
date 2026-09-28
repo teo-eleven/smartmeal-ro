@@ -12,7 +12,9 @@ nu sunt protejate.
 - [ ] `supabase login` și `supabase link --project-ref <ref>`
 - [ ] `supabase db push` — rulează migrațiile **0001** (tabela planurilor, RLS, limite de
       mărime), **0002** (limita de rată partajată pentru AI), **0003** (mementourile) și
-      **0004** (mementourile pe email: frecvența și ultima trimitere)
+      **0004** (mementourile pe email: frecvența și ultima trimitere) și
+      **0005** (acordul de la crearea contului, înghețat într-o tabelă pe care utilizatorul
+      n-o poate modifica)
 - [ ] în Supabase → Authentication → Email: activează **Confirm email** și verifică șablonul
       de recuperare a parolei. Codul de șase cifre din email e ce tastează utilizatorul
       înapoi în aplicație
@@ -47,8 +49,16 @@ preferința omului există deja.
 - [ ] `supabase secrets set CRON_SECRET=<un șir lung, aleator>` — funcția refuză orice apel
       care nu vine cu el în antetul `x-cron-secret`. Generează-l cu
       `openssl rand -base64 32`, nu din cap
+- [ ] `supabase secrets set UNSUBSCRIBE_SECRET=<alt șir lung, aleator>` — **alt** șir decât
+      `CRON_SECRET`, tot cu `openssl rand -base64 32`. Semnează linkurile de dezabonare.
+      **Fără el funcția nu trimite nimic**: un email recurent fără link de dezabonare ar
+      contrazice politica de confidențialitate
 - [ ] `supabase functions deploy send-reminder-emails --no-verify-jwt` (o cheamă cron-ul, nu
       un utilizator; poarta e `x-cron-secret`)
+- [ ] `supabase functions deploy unsubscribe-reminders --no-verify-jwt` (îl apasă cine citește
+      emailul, fără să fie logat; poarta e semnătura din link)
+- [ ] completează `ENDPOINT` în `public/unsubscribe.html` cu
+      `https://<ref>.supabase.co/functions/v1/unsubscribe-reminders`
 - [ ] programează-o zilnic, din SQL editor:
 
 ```sql
@@ -69,6 +79,15 @@ email nu consumă intervalul.
 
 - [ ] trimite-ți primul email ție, cu contul tău, și citește-l cap-coadă — inclusiv varianta
       text — înainte de a-l lăsa să plece către utilizatori reali
+- [ ] în același email apasă **linkul de dezabonare** și apoi butonul „Dezabonare" al
+      clientului de email (Gmail îl afișează lângă expeditor). Ambele trebuie să oprească
+      emailurile; verifică în tabela `user_reminders` că `email_enabled` a devenit `false`
+
+**Dezabonarea, pe scurt.** Linkul din email duce la `unsubscribe.html` pe domeniul tău, unde
+omul apasă un buton. Pagina nu stă în funcția edge, fiindcă Supabase transformă răspunsurile
+HTML în text simplu pe `*.supabase.co` dacă proiectul nu are domeniu propriu. Nimic nu se
+dezabonează la simpla deschidere a linkului: filtrele antispam deschid automat linkurile și ar
+dezabona oameni fără voia lor.
 
 ## 2. Configurația aplicației — gata
 
@@ -161,9 +180,13 @@ de mai sus e ce o protejează — nu sări peste ea.
 
 ```bash
 npm run typecheck && npm run lint && npm test
+
+# Funcțiile edge rulează pe Deno, nu în Jest. Deno nu trebuie instalat: vine din npm.
+for f in supabase/functions/*/index.ts; do npx --yes deno check "$f" || exit 1; done
+npx --yes deno test supabase/functions/_shared/
 ```
 
-Toate trei trebuie să iasă curate. Pragurile de acoperire sunt în `jest.config.js`; dacă pică,
+Toate trebuie să iasă curate. Pragurile de acoperire sunt în `jest.config.js`; dacă pică,
 adaugă teste, nu coborî pragul.
 
 ## 8. Clasificarea de vârstă

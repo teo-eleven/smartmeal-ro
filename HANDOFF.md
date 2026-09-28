@@ -11,17 +11,19 @@ completă pentru App Store și Google Play, imaginile de aplicație, politica de
 ## Starea, rulată la închidere
 
 ```
-TESTE 91 suite / 782 teste · TYPECHECK 0 · LINT 0
-COVERAGE 87,41 / 76,6 / 87,14 / 88,61 — praguri 87/76/87/88, toate trecute
+TESTE 93 suite / 800 teste · TYPECHECK 0 · LINT 0
+COVERAGE 87,36 / 76,72 / 87,3 / 88,55 — praguri 87/76/87/88, toate trecute
+SQL 5/5 migrații și 6/6 funcții PL/pgSQL trec parserul Postgres (sintaxă, nu schemă)
          identic la fiecare rulare (vezi „Poarta de acoperire" mai jos)
-WEB EXPORT include public/delete-account.html
+DENO 4/4 funcții edge compilează · 9/9 teste (npx deno, fără instalare)
+WEB EXPORT include public/delete-account.html și public/unsubscribe.html
 BUNDLE 0 chei, 0 cârlige de depanare
 GIT curat
 ```
 
 ## Următorul pas exact
 
-**`STORE.md`, secțiunea 1.** Rulează `supabase db push` și publică cele trei funcții edge.
+**`STORE.md`, secțiunea 1.** Rulează `supabase db push` și publică cele patru funcții edge.
 Până atunci butonul de ștergere a contului există în aplicație dar nu are ce apela, iar fără
 migrația 0001 nu există RLS.
 
@@ -72,6 +74,29 @@ la `NSUserDefaults` · App Transport Security fără excepții · Android cu o s
 - **Resetarea parolei fără internet** spunea „cod trimis". `supabase-js` întoarce eroarea
   de rețea în loc s-o arunce, iar codul nu se uita la ea.
 
+### A doua parte a zilei: ce lipsea legal și în spate
+
+- **Vârsta și acordul la cont nou.** Politica spunea „nu pentru sub 16 ani”, dar nimic nu
+  întreba. Acum sunt două bife obligatorii, nebifate din start: vârsta (art. 8 GDPR) și
+  acordul pentru alergii (art. 9). Serviciul refuză contul fără ele chiar dacă ecranul e
+  ocolit. Acordul e înghețat la crearea contului în tabela `user_consents` (migrația 0005),
+  cu ora serverului, iar utilizatorul o poate doar citi. Prima variantă îl ținea în
+  `user_metadata`; review-ul de securitate a observat că utilizatorul își poate rescrie
+  singur acel câmp, deci nu dovedea nimic.
+- **Dezabonare dintr-o apăsare**, cu link semnat HMAC și antet RFC 8058. Funcția nouă e
+  `unsubscribe-reminders`, pagina e `public/unsubscribe.html`. Pașii de lansare sunt în
+  `STORE.md` §1b; trebuie completat `ENDPOINT` în pagină.
+- **„Descarcă datele mele”** în ecranul de cont: un JSON cu „ce e în cont” separat de „ce e
+  doar pe telefon”.
+- **Funcțiile edge, compilate pentru prima dată.** Nu le verificase nimeni până acum.
+  Compilează toate patru.
+- `send-reminder-emails`: subiectul e limitat la 60 de caractere, `CRON_SECRET` se compară în
+  timp constant, iar o marcare eșuată apare acum în log.
+- `ts-jest` e scos, iar README-ul nu mai pretinde „100% teste”.
+
+⚠️ `AuthModal.tsx` are **788 de rânduri** (limita e 800). Următoarea modificare acolo începe
+prin mutarea panoului de cont într-un fișier separat.
+
 ### Poarta de acoperire
 
 **Măsura la întâmplare.** Aceeași suită dădea 87,5% sau 82,7%, după care worker termina
@@ -121,7 +146,7 @@ prima zi.
 
 ## Ce e blocat — doar de tine
 
-1. **`supabase db push`** (acum patru migrații) și publicarea celor trei funcții edge.
+1. **`supabase db push`** (acum cinci migrații) și publicarea celor patru funcții edge.
    Pentru emailuri mai trebuie un cont Resend cu domeniu verificat și cron-ul zilnic —
    `STORE.md` §1b, cu tot ce se copiază de-a gata.
    Plus, în Supabase → Authentication: activează confirmarea emailului, verifică șablonul de
