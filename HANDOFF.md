@@ -11,8 +11,8 @@ completă pentru App Store și Google Play, imaginile de aplicație, politica de
 ## Starea, rulată la închidere
 
 ```
-TESTE 93 suite / 800 teste · TYPECHECK 0 · LINT 0
-COVERAGE 87,36 / 76,72 / 87,3 / 88,55 — praguri 87/76/87/88, toate trecute
+TESTE 94 suite / 808 teste · TYPECHECK 0 · LINT 0 · EXPO-DOCTOR 18/18
+COVERAGE 87,39 / 76,72 / 87,27 / 88,59 — praguri 87/76/87/88, toate trecute
 SQL 5/5 migrații și 6/6 funcții PL/pgSQL trec parserul Postgres (sintaxă, nu schemă)
          identic la fiecare rulare (vezi „Poarta de acoperire" mai jos)
 DENO 4/4 funcții edge compilează · 9/9 teste (npx deno, fără instalare)
@@ -23,7 +23,11 @@ GIT curat
 
 ## Următorul pas exact
 
-**`STORE.md`, secțiunea 1.** Rulează `supabase db push` și publică cele patru funcții edge.
+**`STORE.md` §0, „Ordinea lansării”.** Codul e gata. Tot ce a rămas cere conturile, banii
+sau datele tale, iar testul închis Google (12 testeri, 14 zile) e pasul care dictează
+calendarul, deci pornește-l imediat după primul build.
+
+Rulează `supabase db push` și publică cele patru funcții edge.
 Până atunci butonul de ștergere a contului există în aplicație dar nu are ce apela, iar fără
 migrația 0001 nu există RLS.
 
@@ -73,6 +77,22 @@ la `NSUserDefaults` · App Transport Security fără excepții · Android cu o s
 - **Berea 0.0%** rămânea în coș, ascunsă, după închiderea secțiunii 18+. Mutată la sucuri.
 - **Resetarea parolei fără internet** spunea „cod trimis". `supabase-js` întoarce eroarea
   de rețea în loc s-o arunce, iar codul nu se uita la ea.
+
+### A treia parte: blocaje de lansare găsite și închise
+
+- **Ecranul de cont la fiecare pornire.** „Continuă fără cont” se salva pe dispozitiv, așa că
+  după o singură apăsare poarta dispărea definitiv și un refresh ducea direct în
+  configurator. Acum alegerea ține doar o sesiune.
+- **Resetarea parolei ar fi fost imposibilă**, din două motive:
+  - câmpul oprea codul la 6 cifre, deși Supabase trimite 6–10 după setarea proiectului
+    (documentația arată acum 8);
+  - șablonul implicit trimite un link, iar aplicația cere un cod. Șabloanele corecte sunt
+    în `supabase/templates/`.
+- **Un build de producție ar fi ieșit fără Supabase.** `.env` nu ajunge la EAS. Acum
+  `app.config.js` oprește build-ul și spune exact ce comandă `eas env:set` lipsește.
+- `supabase-js` e fixat la 2.117.2 în funcțiile edge.
+- `STORE.md` §0 (ordinea lansării) și §11 (conturi, cont demo, trader DSA, testul Google),
+  verificate azi pe documentația Apple, Google și Expo.
 
 ### A doua parte a zilei: ce lipsea legal și în spate
 

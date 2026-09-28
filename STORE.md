@@ -2,6 +2,24 @@
 
 Tot ce trebuie făcut, în ordine. Ce e bifat e gata în repo; ce nu, cere o acțiune de la tine.
 
+## 0. Ordinea lansării — citește asta întâi
+
+Codul e gata. Ce a rămas cere conturile, banii sau datele tale, iar un pas durează **cel
+puțin 14 zile** și nu poate fi grăbit. Ordinea de mai jos îl pornește cât mai devreme.
+
+| Pas | Ce | Cât durează | Unde |
+| --- | --- | --- | --- |
+| 1 | Conturi de dezvoltator: Apple (99 USD/an), Google Play (25 USD o dată) | 1–3 zile (verificarea identității) | §11 |
+| 2 | Supabase: migrații, funcții, șabloane de email, setări | ~1 oră | §1 |
+| 3 | Completezi datele operatorului în `PRIVACY.md`, `delete-account.html`, `unsubscribe.html` și le publici pe domeniul tău | ~1 oră | §3, §6 |
+| 4 | Variabilele EAS și primul build de producție | ~1 oră + build | §4 |
+| 5 | **Google: test închis cu 12 testeri, 14 zile consecutive** | **minim 14 zile** | §11 |
+| 6 | Apple: TestFlight, statut de trader DSA, cont demo pentru recenzie, trimitere | 1–3 zile de review | §11 |
+| 7 | Google: ceri accesul la producție după cele 14 zile, apoi trimiți | câteva zile | §11 |
+
+**Pe iOS poți ajunge în magazin în ~1 săptămână. Pe Android, nu mai devreme de ~3
+săptămâni**, din cauza pasului 5. Pornește testul închis imediat după primul build.
+
 ---
 
 ## 1. Backend — înainte de orice build
@@ -11,13 +29,22 @@ nu sunt protejate.
 
 - [ ] `supabase login` și `supabase link --project-ref <ref>`
 - [ ] `supabase db push` — rulează migrațiile **0001** (tabela planurilor, RLS, limite de
-      mărime), **0002** (limita de rată partajată pentru AI), **0003** (mementourile) și
+      mărime), **0002** (limita de rată partajată pentru AI), **0003** (mementourile),
       **0004** (mementourile pe email: frecvența și ultima trimitere) și
       **0005** (acordul de la crearea contului, înghețat într-o tabelă pe care utilizatorul
       n-o poate modifica)
-- [ ] în Supabase → Authentication → Email: activează **Confirm email** și verifică șablonul
-      de recuperare a parolei. Codul de șase cifre din email e ce tastează utilizatorul
-      înapoi în aplicație
+- [ ] Authentication → Sign In / Providers → Email: activează **Confirm email**
+- [ ] Authentication → **Email Templates**, lipește șabloanele din repo:
+      - **Reset Password** ← `supabase/templates/recovery.html`. **Obligatoriu.** Șablonul
+        implicit trimite un *link*, iar aplicația cere un *cod* (`{{ .Token }}`). Cu șablonul
+        implicit, nimeni nu-și poate reseta parola.
+      - **Confirm signup** ← `supabase/templates/confirmation.html`
+      - subiectele sunt scrise în comentariul din capul fiecărui fișier
+- [ ] lungimea codului (Email OTP Length) poate rămâne cum e: aplicația acceptă între 6 și
+      10 cifre
+- [ ] Authentication → URL Configuration → **Site URL** = adresa publică a site-ului tău, nu
+      `localhost`. Linkul de confirmare a contului acolo duce după confirmare
+- [ ] **trimite-ți singur o resetare** și parcurge-o cap-coadă în aplicație înainte de lansare
 - [ ] Authentication → Policies: ridică lungimea minimă a parolei la **10** (aplicația o
       verifică deja pe telefon, dar serverul trebuie să fie de acord)
 - [ ] `supabase secrets set GEMINI_API_KEY=<cheia>`
@@ -119,14 +146,23 @@ dezabona oameni fără voia lor.
 ```bash
 npm install -g eas-cli
 eas login
-eas build:configure
+eas init            # leagă proiectul de contul tău Expo
+
+# .env nu ajunge la EAS (e în .gitignore). Cheile de producție se pun aici, o singură dată.
+# Cheia anon e publică prin design; service_role nu se pune NICIODATĂ aici.
+eas env:set --environment production --visibility plaintext \
+  --name EXPO_PUBLIC_SUPABASE_URL --value https://<ref>.supabase.co
+eas env:set --environment production --visibility plaintext \
+  --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <cheia anon>
+eas env:list --environment production   # verifică
 
 eas build --platform android --profile production
 eas build --platform ios --profile production
 ```
 
-Pentru iOS îți trebuie cont Apple Developer (99 USD/an). Pentru Android, cont Google Play
-Console (25 USD, o dată).
+**Build-ul de producție se oprește singur dacă lipsesc cheile** (`app.config.js`). Altfel
+aplicația ar ieși cu ecranul de cont afișat și logarea imposibilă, adică primul lucru pe care
+l-ar încerca recenzentul. Mesajul de eroare spune exact ce comandă lipsește.
 
 ## 5. Ce declari în formularele magazinelor
 
@@ -323,3 +359,64 @@ tău". Imaginile din `assets/` sunt generate, așa că înlocuiește-le când ai
 ## 10. Textele listării
 
 Sunt în `STORE_LISTING.md`, gata de copiat, cu limitele de caractere verificate.
+
+## 11. Conturile și trimiterea
+
+Verificat pe 2026-09-28 în documentația Apple și Google. Regulile de aici se schimbă des,
+așa că recitește paginile citate înainte de fiecare pas.
+
+### Conturile de dezvoltator
+
+- [ ] **Apple Developer Program**, 99 USD/an: developer.apple.com/programs. Ca persoană
+      fizică, numele tău apare ca vânzător în App Store
+- [ ] **Google Play Console**, 25 USD o dată: play.google.com/console. Verificarea identității
+      poate dura câteva zile
+
+### Contul demo pentru recenzie (ambele magazine)
+
+Recenzenții testează și partea de cont. Fără credențiale, Apple respinge la guideline 2.1.
+
+- [ ] după ce Supabase e configurat, fă-ți din aplicație un cont **de producție** doar pentru
+      recenzie, de exemplu `review@domeniul-tau.ro`, confirmă-i emailul și generează-i un
+      plan ca să nu arate gol
+- [ ] **Apple:** App Store Connect → aplicația → App Review Information → bifezi
+      *Sign-in required*, pui adresa și parola
+- [ ] **Google:** Play Console → App content → **App access** → declari că unele funcții cer
+      logare și pui aceleași credențiale
+- [ ] **Notes for Review** (Apple), text de copiat:
+
+```
+The app works fully without an account: tap "Continuă fără cont" on the first screen.
+An account adds sync between devices, email reminders and data export; use the demo
+credentials above to review it. Password reset sends a numeric code by email.
+The alcoholic drinks section is hidden by default and appears only if the user turns
+on a switch marked 18+. The app does not sell alcohol and links to no store; products
+only go on the user's own shopping list. Prices are estimates.
+```
+
+### Apple
+
+- [ ] App Store Connect → Business → **statutul de trader (Digital Services Act)**. Fără el,
+      aplicația **nu apare în UE, deci nici în România**. Dacă ești trader, adresa, telefonul
+      și emailul tău devin **publice** pe pagina aplicației. Alege în cunoștință de cauză
+- [ ] build-ul de producție ajunge în TestFlight; instalează-l pe telefonul tău și parcurge
+      poarta, un cont nou, resetarea parolei și ștergerea contului
+- [ ] completezi listarea (`STORE_LISTING.md`), capturile (§9), clasificarea (§8) și
+      confidențialitatea (§5), apoi *Submit for Review*
+
+### Google Play — testul închis obligatoriu
+
+Conturile personale create după 13 noiembrie 2023 **nu pot publica direct**. Întâi rulează un
+test închis cu **cel puțin 12 testeri, înscriși fără întrerupere 14 zile**. Abia apoi poți
+cere accesul la producție.
+
+- [ ] Testing → **Closed testing** → creezi un track și încarci build-ul `.aab`
+- [ ] adaugi testerii prin adresele lor Gmail, iar fiecare acceptă invitația din linkul primit
+- [ ] **12 oameni care rămân înscriși 14 zile la rând.** Cine iese și intră din nou o ia de
+      la capăt. Ia câțiva în plus, pentru siguranță
+- [ ] după 14 zile: Dashboard → **Apply for production**. Google întreabă ce ai aflat din
+      test, așa că notează-ți pe parcurs ce ți-au raportat testerii
+- [ ] după aprobare: Production → încarci același build și trimiți
+
+`eas.json` trimite build-urile Android pe track-ul `internal`, util pentru testele tale. Testul
+închis de mai sus e **alt** track (Closed testing) și îl alegi în Play Console.
