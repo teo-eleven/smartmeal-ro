@@ -1,7 +1,7 @@
 # SmartMeal RO 🇷🇴
 
 > **Planificator săptămânal de mese și generator de liste inteligente de cumpărături pentru România.**  
-> Inspirat de conceptul vizual *Mise*, adaptat 100% pentru piața românească (Lidl, Kaufland, Carrefour, Mega Image, prețuri în LEI/RON, rețete verificate și împărțire pe raioane fizice de supermarket).
+> Inspirat de conceptul vizual _Mise_, adaptat 100% pentru piața românească (Lidl, Kaufland, Carrefour, Mega Image, prețuri în LEI/RON, rețete verificate și împărțire pe raioane fizice de supermarket).
 
 ---
 
@@ -42,7 +42,8 @@
 - **Storage**: `@react-native-async-storage/async-storage`
 - **Backend & Cloud Sync**: Supabase (PostgreSQL, Auth, Edge Functions)
 - **AI Engine**: Google Gemini Flash (Structured JSON via Supabase Edge Function sau API Proxy)
-- **Testare**: Jest + `ts-jest` (100% teste unitare și de integrare end-to-end)
+- **Testare**: Jest, cu babel în două proiecte (logica în Node, componentele cu preset-ul
+  React Native). Pragurile de acoperire sunt în `jest.config.js`.
 - **Linting & Stil**: ESLint + Prettier + TypeScript strict mode
 
 ---
@@ -50,26 +51,34 @@
 ## 🚀 Rulare și Dezvoltare Locală
 
 ### 1. Instalare dependențe
+
 ```bash
 npm install
 ```
 
 ### 2. Configurare variabile de mediu
+
 Copiază fișierul `.env.example` în `.env`:
+
 ```bash
 cp .env.example .env
 ```
+
 Configurația de bază funcționează complet offline chiar și fără chei externe. Opțional, poți adăuga:
+
 - `EXPO_PUBLIC_GEMINI_API_KEY`: Cheia Google Gemini pentru sugestii AI.
 - `EXPO_PUBLIC_SUPABASE_URL` și `EXPO_PUBLIC_SUPABASE_ANON_KEY`: Pentru sincronizare cloud.
 
 ### 3. Pornire aplicație Web (Port 8081)
+
 ```bash
 npm run web
 ```
+
 Aplicația se va deschide pe: `http://localhost:8081`.
 
 ### 4. Rulare Teste Automate
+
 ```bash
 npm test                 # toate testele (logică + componente)
 npm run test:components  # doar testele de componente
@@ -81,6 +90,7 @@ cu preset-ul `react-native`, care are nevoie de resolverul propriu pentru module
 platformei.
 
 ### 5. Verificare TypeScript și Linting
+
 ```bash
 npm run lint
 npm run typecheck
@@ -91,22 +101,24 @@ npm run typecheck
 ## 📱 Export pentru iOS & Android
 
 **Aplicația nu poate fi încă trimisă în magazine.** Identificatorii de pachet există:
+
 - **iOS Bundle Identifier**: `ro.smartmeal.app`
 - **Android Package**: `ro.smartmeal.app`
 
 Dar lipsesc fișiere obligatorii, iar `eas build` nu are ce citi fără ele:
 
-| Lipsește | De ce e obligatoriu |
-| --- | --- |
-| `assets/icon.png` (1024×1024) | fără el se livrează iconița implicită Expo |
-| `assets/splash.png` | ecranul de pornire |
-| `assets/adaptive-icon.png` | cerut de Android |
-| `eas.json` | `eas build` nu pornește fără profiluri |
-| `ios.buildNumber`, `android.versionCode` | cerute la fiecare urcare |
-| politică de confidențialitate (URL public) | cerută de ambele magazine |
-| `ios.privacyManifests` | cerut de Apple din mai 2024 pentru AsyncStorage |
+| Lipsește                                   | De ce e obligatoriu                             |
+| ------------------------------------------ | ----------------------------------------------- |
+| `assets/icon.png` (1024×1024)              | fără el se livrează iconița implicită Expo      |
+| `assets/splash.png`                        | ecranul de pornire                              |
+| `assets/adaptive-icon.png`                 | cerut de Android                                |
+| `eas.json`                                 | `eas build` nu pornește fără profiluri          |
+| `ios.buildNumber`, `android.versionCode`   | cerute la fiecare urcare                        |
+| politică de confidențialitate (URL public) | cerută de ambele magazine                       |
+| `ios.privacyManifests`                     | cerut de Apple din mai 2024 pentru AsyncStorage |
 
 După ce există toate, comenzile sunt:
+
 ```bash
 npx eas-cli build --platform android
 npx eas-cli build --platform ios
@@ -140,4 +152,5 @@ smartmeal-ro/
 ---
 
 ## 📄 Licență
+
 MIT © 2026 SmartMeal RO.
