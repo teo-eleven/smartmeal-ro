@@ -134,3 +134,69 @@ describe('QuickFiltersModal', () => {
     expect(onApplyFilters).not.toHaveBeenCalled();
   });
 });
+
+describe('QuickFiltersModal, zilele și persoanele', () => {
+  test('adaugă o zi de gătit', () => {
+    const { onApplyFilters } = setup();
+
+    fireEvent.press(screen.getByText('Sâm'));
+    apply();
+
+    expect(onApplyFilters.mock.calls[0][0].cookingDays).toContain('saturday');
+  });
+
+  test('scoate o zi de gătit', () => {
+    const { onApplyFilters } = setup();
+
+    fireEvent.press(screen.getByText('Lun'));
+    apply();
+
+    expect(onApplyFilters.mock.calls[0][0].cookingDays).not.toContain('monday');
+  });
+
+  /** A week with no cooking days has no plan to build; the last day stays put. */
+  test('nu te lasă fără nicio zi de gătit', () => {
+    const { onApplyFilters } = setup({ cookingDays: ['monday'] });
+
+    fireEvent.press(screen.getByText('Lun'));
+    apply();
+
+    expect(onApplyFilters.mock.calls[0][0].cookingDays).toEqual(['monday']);
+  });
+
+  test('scoate o preferință de gust deja aleasă', () => {
+    const { onApplyFilters } = setup({ moodTags: ['high_protein', 'speedy'] });
+
+    fireEvent.press(screen.getByText('Proteic'));
+    apply();
+
+    expect(onApplyFilters.mock.calls[0][0].moodTags).not.toContain('high_protein');
+  });
+
+  test('„+" adaugă o persoană', () => {
+    const { onApplyFilters } = setup({ peopleCount: 2 });
+
+    fireEvent.press(screen.getByText('+'));
+    apply();
+
+    expect(onApplyFilters.mock.calls[0][0].peopleCount).toBe(3);
+  });
+
+  test('numărul de persoane nu coboară sub 1', () => {
+    const { onApplyFilters } = setup({ peopleCount: 1 });
+
+    fireEvent.press(screen.getByText('−'));
+    apply();
+
+    expect(onApplyFilters.mock.calls[0][0].peopleCount).toBe(1);
+  });
+
+  test('numărul de persoane nu urcă peste 8', () => {
+    const { onApplyFilters } = setup({ peopleCount: 8 });
+
+    fireEvent.press(screen.getByText('+'));
+    apply();
+
+    expect(onApplyFilters.mock.calls[0][0].peopleCount).toBe(8);
+  });
+});
