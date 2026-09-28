@@ -4,7 +4,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from '../../App';
 import { useAppStore } from '../store/useAppStore';
 import { localAuthSimulation } from '../services/localAuthSimulation';
-import { storageService } from '../services/storage';
 
 /**
  * The first screen of a fresh install. An account is what carries the week to a second
@@ -47,7 +46,12 @@ describe('poarta de la prima pornire', () => {
     expect(screen.queryByLabelText('Continuă fără cont')).toBeNull();
   });
 
-  test('alegerea de a continua fără cont se ține minte', async () => {
+  /**
+   * "Without an account" lasts until the app is closed or the page is refreshed, not forever.
+   * Remembering it meant that one tap during testing hid the sign-in screen for good, and a
+   * refresh went straight into the planner with no way back to creating an account.
+   */
+  test('după refresh, cine nu e conectat vede din nou ecranul de cont', async () => {
     render(<App />);
     fireEvent.press(screen.getByLabelText('Continuă fără cont'));
 
@@ -56,7 +60,21 @@ describe('poarta de la prima pornire', () => {
       await useAppStore.getState().hydrateStorage();
     });
 
-    expect(useAppStore.getState().authStatus).toBe('guest');
+    expect(useAppStore.getState().authStatus).toBe('checking');
+  });
+
+  test('un telefon care ținea minte alegerea veche vede și el ecranul de cont', async () => {
+    // What an earlier build left behind when someone tapped "Continuă fără cont".
+    await AsyncStorage.setItem('@smartmeal_guest_choice', 'yes');
+
+    await act(async () => {
+      useAppStore.setState({ authStatus: 'checking', isHydrated: false });
+      await useAppStore.getState().hydrateStorage();
+    });
+    render(<App />);
+
+    expect(screen.getByLabelText('Conectează-te sau creează cont')).toBeTruthy();
+    expect(screen.getByLabelText('Continuă fără cont')).toBeTruthy();
   });
 
   test('cine e deja conectat nu mai vede poarta', async () => {
@@ -150,12 +168,5 @@ describe('sesiunea de 30 de zile', () => {
 
     const raw = (await AsyncStorage.getItem('@smartmeal_sim_accounts')) ?? '';
     expect(raw).not.toContain('Muntele7Verde');
-  });
-
-  test('alegerea de invitat e păstrată separat de sesiune', async () => {
-    await storageService.saveGuestChoice(true);
-
-    expect(await storageService.loadGuestChoice()).toBe(true);
-    expect(await localAuthSimulation.currentEmail()).toBeNull();
   });
 });

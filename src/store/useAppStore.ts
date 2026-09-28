@@ -777,7 +777,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Read the session before anything renders, so the gate never flashes in front of
       // somebody who signed in three weeks ago and is still within their thirty days.
       const signedInEmail = await cloudSyncService.currentEmail();
-      const choseGuest = await storageService.loadGuestChoice();
 
       // Storage is untrusted, and on web it is localStorage: editable by hand, by another
       // tab, or by an extension. Everything is whitelisted against its catalog before any of
@@ -981,7 +980,10 @@ export const useAppStore = create<AppState>((set, get) => ({
             : state.themeMode,
         reminders: storedReminders,
         userEmail: signedInEmail ?? state.userEmail,
-        authStatus: signedInEmail ? 'signedIn' : choseGuest ? 'guest' : 'checking',
+        // Not signed in means the gate, on every start. "Without an account" is chosen per
+        // session and never stored: remembering it hid the sign-in screen for good after one
+        // tap, and a refresh then went straight into the planner.
+        authStatus: signedInEmail ? 'signedIn' : 'checking',
         activeNotice:
           (repairedPrefsNotice?.type === 'warning' ? repairedPrefsNotice : null) ??
           planSafetyNotice ??
@@ -1067,7 +1069,6 @@ export const useAppStore = create<AppState>((set, get) => ({
    * account -- and because a meal planner genuinely is useful without one.
    */
   continueAsGuest: () => {
-    void storageService.saveGuestChoice(true);
     set({ authStatus: 'guest' });
   },
 
