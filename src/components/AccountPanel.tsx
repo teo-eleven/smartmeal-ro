@@ -21,6 +21,11 @@ interface AccountPanelProps {
   onDeleteAccount: () => Promise<void>;
   reminders: ReminderSettings;
   onChangeReminders: (patch: Partial<ReminderSettings>) => void;
+  /**
+   * Wide screens: two columns, reminders on the right. One 440 px column as tall as the
+   * window was cut off on any shorter one.
+   */
+  wide?: boolean;
 }
 
 const Section: React.FC<{ title: string; isDark: boolean; children: React.ReactNode }> = ({
@@ -55,6 +60,7 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
   onDeleteAccount,
   reminders,
   onChangeReminders,
+  wide = false,
 }) => {
   const theme = getAppTheme(isDark);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -64,126 +70,156 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
     setConfirmingDelete(false);
   };
 
-  return (
-    <View>
-      <Section title="CONTUL TĂU" isDark={isDark}>
-        <View style={styles.accountRow}>
-          <Text style={[styles.email, { color: theme.text }]} numberOfLines={1}>
-            {userEmail}
-          </Text>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Deconectare cont"
-            onPress={onSignOut}
-            disabled={isBusy}
-            style={[styles.smallBtn, { borderColor: theme.border }]}
-          >
-            <Text style={[styles.smallBtnText, { color: '#ef4444' }]}>Deconectare</Text>
-          </TouchableOpacity>
-        </View>
-      </Section>
-
-      <Section title="SINCRONIZARE" isDark={isDark}>
-        <Text style={[styles.note, { color: theme.textMuted }]}>
-          {!isCloudAvailable
-            ? 'Sincronizarea între telefoane nu e disponibilă pe această versiune. Planul tău e salvat pe acest dispozitiv.'
-            : lastSyncedAt
-              ? `Ultima sincronizare: ${lastSyncedAt}`
-              : 'Planul și lista, aceleași pe toate telefoanele tale.'}
+  const accountSection = (
+    <Section title="CONTUL TĂU" isDark={isDark}>
+      <View style={styles.accountRow}>
+        <Text style={[styles.email, { color: theme.text }]} numberOfLines={1}>
+          {userEmail}
         </Text>
-        <View style={styles.syncRow}>
-          {onSync && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Urcă planul în cloud"
-              onPress={onSync}
-              disabled={isSyncing}
-              style={[styles.syncBtn, { backgroundColor: theme.primary }]}
-            >
-              {isSyncing ? (
-                <ActivityIndicator color={theme.primaryText} size="small" />
-              ) : (
-                <Text style={[styles.syncBtnText, { color: theme.primaryText }]}>⬆ Urcă</Text>
-              )}
-            </TouchableOpacity>
-          )}
-          {onDownload && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Adu planul din cloud"
-              onPress={onDownload}
-              disabled={isSyncing}
-              style={[styles.syncBtn, styles.syncBtnOutline, { borderColor: theme.border }]}
-            >
-              <Text style={[styles.syncBtnText, { color: theme.text }]}>⬇ Adu</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </Section>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Deconectare cont"
+          onPress={onSignOut}
+          disabled={isBusy}
+          style={[styles.smallBtn, { borderColor: theme.border }]}
+        >
+          <Text style={[styles.smallBtnText, { color: '#ef4444' }]}>Deconectare</Text>
+        </TouchableOpacity>
+      </View>
+    </Section>
+  );
 
-      <Section title="MEMENTOURI" isDark={isDark}>
-        <ReminderSettingsPanel
-          reminders={reminders}
-          onChange={onChangeReminders}
-          hasAccount
-          isDark={isDark}
-          embedded
-        />
-      </Section>
-
-      <Section title="DATELE TALE" isDark={isDark}>
-        <DataExportButton isDark={isDark} />
-        <PrivacyPolicyLink isDark={isDark} />
-
-        {/* Required by both stores, and the account holds declared allergies, which is
-            special-category data under GDPR. Asked for twice because it cannot be undone. */}
-        {confirmingDelete ? (
-          <View style={styles.deleteConfirm}>
-            <Text style={[styles.note, { color: theme.textMuted }]}>
-              Se șterg definitiv contul, planul din cloud și preferințele salvate pe el. Acțiunea nu
-              poate fi anulată.
-            </Text>
-            <View style={styles.syncRow}>
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel="Renunță la ștergerea contului"
-                onPress={() => setConfirmingDelete(false)}
-                disabled={isBusy}
-                style={[styles.syncBtn, styles.syncBtnOutline, { borderColor: theme.border }]}
-              >
-                <Text style={[styles.syncBtnText, { color: theme.text }]}>Renunț</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel="Confirmă ștergerea definitivă a contului"
-                onPress={() => void confirmDelete()}
-                disabled={isBusy}
-                style={[styles.syncBtn, { backgroundColor: '#ef4444' }]}
-              >
-                <Text style={[styles.syncBtnText, { color: '#ffffff' }]}>Șterge definitiv</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
+  const syncSection = (
+    <Section title="SINCRONIZARE" isDark={isDark}>
+      <Text style={[styles.note, { color: theme.textMuted }]}>
+        {!isCloudAvailable
+          ? 'Sincronizarea între telefoane nu e disponibilă pe această versiune. Planul tău e salvat pe acest dispozitiv.'
+          : lastSyncedAt
+            ? `Ultima sincronizare: ${lastSyncedAt}`
+            : 'Planul și lista, aceleași pe toate telefoanele tale.'}
+      </Text>
+      <View style={styles.syncRow}>
+        {onSync && (
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Șterge contul"
-            onPress={() => setConfirmingDelete(true)}
-            disabled={isBusy}
-            style={styles.deleteLink}
+            accessibilityLabel="Urcă planul în cloud"
+            onPress={onSync}
+            disabled={isSyncing}
+            style={[styles.syncBtn, { backgroundColor: theme.primary }]}
           >
-            <Text style={[styles.deleteLinkText, { color: theme.textMuted }]}>
-              Șterge contul și datele mele
-            </Text>
+            {isSyncing ? (
+              <ActivityIndicator color={theme.primaryText} size="small" />
+            ) : (
+              <Text style={[styles.syncBtnText, { color: theme.primaryText }]}>⬆ Urcă</Text>
+            )}
           </TouchableOpacity>
         )}
-      </Section>
+        {onDownload && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Adu planul din cloud"
+            onPress={onDownload}
+            disabled={isSyncing}
+            style={[styles.syncBtn, styles.syncBtnOutline, { borderColor: theme.border }]}
+          >
+            <Text style={[styles.syncBtnText, { color: theme.text }]}>⬇ Adu</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </Section>
+  );
+
+  const remindersSection = (
+    <Section title="MEMENTOURI" isDark={isDark}>
+      <ReminderSettingsPanel
+        reminders={reminders}
+        onChange={onChangeReminders}
+        hasAccount
+        isDark={isDark}
+        embedded
+      />
+    </Section>
+  );
+
+  const dataSection = (
+    <Section title="DATELE TALE" isDark={isDark}>
+      <DataExportButton isDark={isDark} />
+      <PrivacyPolicyLink isDark={isDark} />
+
+      {/* Required by both stores, and the account holds declared allergies, which is
+          special-category data under GDPR. Asked for twice because it cannot be undone. */}
+      {confirmingDelete ? (
+        <View style={styles.deleteConfirm}>
+          <Text style={[styles.note, { color: theme.textMuted }]}>
+            Se șterg definitiv contul, planul din cloud și preferințele salvate pe el. Acțiunea nu
+            poate fi anulată.
+          </Text>
+          <View style={styles.syncRow}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Renunță la ștergerea contului"
+              onPress={() => setConfirmingDelete(false)}
+              disabled={isBusy}
+              style={[styles.syncBtn, styles.syncBtnOutline, { borderColor: theme.border }]}
+            >
+              <Text style={[styles.syncBtnText, { color: theme.text }]}>Renunț</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Confirmă ștergerea definitivă a contului"
+              onPress={() => void confirmDelete()}
+              disabled={isBusy}
+              style={[styles.syncBtn, { backgroundColor: '#ef4444' }]}
+            >
+              <Text style={[styles.syncBtnText, { color: '#ffffff' }]}>Șterge definitiv</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Șterge contul"
+          onPress={() => setConfirmingDelete(true)}
+          disabled={isBusy}
+          style={styles.deleteLink}
+        >
+          <Text style={[styles.deleteLinkText, { color: theme.textMuted }]}>
+            Șterge contul și datele mele
+          </Text>
+        </TouchableOpacity>
+      )}
+    </Section>
+  );
+
+  if (wide) {
+    return (
+      <View style={styles.columns}>
+        <View testID="account-column-left" style={styles.column}>
+          {accountSection}
+          {syncSection}
+          {dataSection}
+        </View>
+        <View testID="account-column-right" style={styles.column}>
+          {remindersSection}
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View>
+      {accountSection}
+      {syncSection}
+      {remindersSection}
+      {dataSection}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   section: { borderTopWidth: 1, paddingTop: 14, marginTop: 14 },
+  columns: { flexDirection: 'row', gap: 28, alignItems: 'flex-start' },
+  column: { flex: 1, minWidth: 0 },
   sectionTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 0.8, marginBottom: 10 },
   accountRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   email: { flex: 1, fontSize: 15, fontWeight: '700' },

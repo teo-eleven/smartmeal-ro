@@ -583,3 +583,24 @@ describe('AuthModal, formularul după conectare', () => {
   });
 });
 
+/**
+ * The account window was taller than a phone screen and did not scroll: the title was cut
+ * off at the top and "Închide" and "Șterge contul" fell below the bottom edge, out of reach.
+ */
+describe('AuthModal, fereastra de cont', () => {
+  test('are un buton de închidere sus, mereu la îndemână', () => {
+    const onClose = jest.fn();
+    render(<AuthModal {...baseProps} userEmail="a@b.ro" onClose={onClose} />);
+
+    fireEvent.press(screen.getByLabelText('Închide fereastra de cont'));
+
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  test('conținutul se poate derula', () => {
+    render(<AuthModal {...baseProps} userEmail="a@b.ro" />);
+
+    expect(screen.getByTestId('account-scroll')).toBeTruthy();
+  });
+});
+

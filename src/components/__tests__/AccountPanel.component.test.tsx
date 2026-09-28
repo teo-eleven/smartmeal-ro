@@ -101,3 +101,35 @@ describe('panoul de cont', () => {
     expect(screen.getByLabelText('Descarcă datele mele')).toBeTruthy();
   });
 });
+
+/**
+ * On a wide screen the panel was one 440 px column as tall as the window, cut off on any
+ * shorter one. Wide, it now puts the reminders in a second column beside the rest.
+ */
+describe('panoul de cont pe ecran lat', () => {
+  function columnOf(text: string): string | undefined {
+    let node = screen.getByText(text) as unknown as { props?: { testID?: string }; parent: unknown };
+    while (node) {
+      if (node.props?.testID?.startsWith('account-column')) return node.props.testID;
+      node = node.parent as typeof node;
+    }
+    return undefined;
+  }
+
+  test('mementourile stau în coloana din dreapta, restul în stânga', () => {
+    show({ wide: true });
+
+    expect(columnOf('MEMENTOURI')).toBe('account-column-right');
+    expect(columnOf('CONTUL TĂU')).toBe('account-column-left');
+    expect(columnOf('SINCRONIZARE')).toBe('account-column-left');
+    expect(columnOf('DATELE TALE')).toBe('account-column-left');
+  });
+
+  test('pe telefon rămâne o singură coloană, în aceeași ordine', () => {
+    show({ wide: false });
+
+    expect(screen.queryByTestId('account-column-right')).toBeNull();
+    expect(screen.getByText('MEMENTOURI')).toBeTruthy();
+  });
+});
+

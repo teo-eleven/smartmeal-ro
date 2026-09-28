@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Modal,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -19,6 +20,7 @@ import { describeMissingConsent } from '../utils/signUpConsent';
 
 const NO_CONSENT: Consent = { isAtLeast16: false, healthDataConsent: false };
 import { getAppTheme } from '../styles/theme';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface AuthModalProps {
   visible: boolean;
@@ -58,6 +60,7 @@ export function AuthModal({
   const { reminders, updateReminders } = useAppStore();
 
   const appTheme = getAppTheme(isDark);
+  const { isMobile, height: windowHeight } = useResponsive();
   const theme = {
     card: appTheme.card,
     text: appTheme.text,
@@ -270,286 +273,331 @@ export function AuthModal({
     }
   };
 
+  // The signed-in account was one 440 px card as tall as the screen that did not scroll: on
+  // a phone its title was cut off at the top and "Închide" fell below the bottom edge. Now a
+  // phone gets the whole screen, a wide screen a wide two-column panel, and both scroll
+  // inside a height that fits. The sign-in forms stay a narrow card; they are short.
+  const isAccount = Boolean(userEmail);
+  const isFullScreen = isAccount && isMobile;
+  const isWide = isAccount && !isMobile;
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={[styles.backdrop, { backgroundColor: theme.overlayBg }]}>
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            {/* Header */}
-            <View style={styles.header}>
-              <View>
-                <Text style={[styles.title, { color: theme.text }]}>Sincronizare Cloud & Cont</Text>
-                <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-                  Păstrează planul alimentar și lista de cumpărături pe toate dispozitivele tale.
-                </Text>
-              </View>
-            </View>
-
-            {/* Error or Success alerts */}
-            {errorMessage && (
-              <View style={styles.errorBox}>
-                <Text style={styles.errorText}>{errorMessage}</Text>
-              </View>
-            )}
-            {successMessage && (
-              <View style={styles.successBox}>
-                <Text style={styles.successText}>{successMessage}</Text>
-              </View>
-            )}
-
-            {/* Authenticated State */}
-            {userEmail ? (
-              <AccountPanel
-                userEmail={userEmail}
-                isDark={isDark}
-                isCloudAvailable={cloudSyncService.isConfigured()}
-                isSyncing={isSyncing}
-                lastSyncedAt={lastSyncedAt}
-                isBusy={loading}
-                onSync={onSyncTriggered}
-                onDownload={onDownloadTriggered}
-                onSignOut={handleSignOut}
-                onDeleteAccount={handleDeleteAccount}
-                reminders={reminders}
-                onChangeReminders={updateReminders}
-              />
-            ) : resetStep !== 'off' ? (
-              /* Password reset: address, then the emailed code, then the new password. */
-              <View style={styles.formSection}>
-                <Text style={[styles.resetTitle, { color: theme.text }]}>
-                  {resetStep === 'email'
-                    ? 'Ți-ai uitat parola?'
-                    : resetStep === 'code'
-                      ? 'Codul din email'
-                      : 'Alege o parolă nouă'}
-                </Text>
-                <Text style={[styles.resetHint, { color: theme.textMuted }]}>
-                  {resetStep === 'email'
-                    ? 'Scrie adresa contului și îți trimitem un cod pe email.'
-                    : resetStep === 'code'
-                      ? `Am trimis un cod la ${email.trim()}. Verifică și în spam.`
-                      : 'Minimum 10 caractere, cu cel puțin o literă și o cifră.'}
-                </Text>
-
-                {resetStep === 'email' && (
-                  <TextInput
-                    value={email}
-                    onChangeText={editEmail}
-                    placeholder="exemplu@email.ro"
-                    placeholderTextColor={theme.textMuted}
-                    accessibilityLabel="Adresa de email pentru resetare"
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
-                  />
+      <View
+        style={[
+          styles.backdrop,
+          isFullScreen && styles.backdropFull,
+          { backgroundColor: theme.overlayBg },
+        ]}
+      >
+        <SafeAreaView
+          style={[
+            styles.modalContainer,
+            isWide && styles.modalContainerWide,
+            isFullScreen && styles.modalContainerFull,
+          ]}
+        >
+          <View
+            style={[
+              styles.card,
+              isFullScreen ? styles.cardFull : { maxHeight: windowHeight - 32 },
+              { backgroundColor: theme.card, borderColor: theme.border },
+            ]}
+          >
+            <ScrollView
+              testID="account-scroll"
+              contentContainerStyle={styles.cardContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Header */}
+              <View style={styles.header}>
+                <View style={styles.headerText}>
+                  <Text style={[styles.title, { color: theme.text }]}>
+                    Sincronizare Cloud & Cont
+                  </Text>
+                  <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+                    Păstrează planul alimentar și lista de cumpărături pe toate dispozitivele tale.
+                  </Text>
+                </View>
+                {isAccount && (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Închide fereastra de cont"
+                    onPress={onClose}
+                    style={[styles.headerClose, { borderColor: theme.border }]}
+                  >
+                    <Text style={[styles.headerCloseText, { color: theme.text }]}>✕</Text>
+                  </TouchableOpacity>
                 )}
+              </View>
 
-                {resetStep === 'code' && (
-                  <TextInput
-                    value={resetCode}
-                    onChangeText={setResetCode}
-                    placeholder="123456"
-                    placeholderTextColor={theme.textMuted}
-                    accessibilityLabel="Codul primit pe email"
-                    keyboardType="number-pad"
-                    // Supabase sends 6 to 10 digits, depending on the project's OTP length
-                    // setting. Stopping at 6 made the rest of a real code untypable.
-                    maxLength={10}
-                    style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
-                  />
-                )}
+              {/* Error or Success alerts */}
+              {errorMessage && (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>{errorMessage}</Text>
+                </View>
+              )}
+              {successMessage && (
+                <View style={styles.successBox}>
+                  <Text style={styles.successText}>{successMessage}</Text>
+                </View>
+              )}
 
-                {resetStep === 'password' && (
-                  <TextInput
-                    value={newPassword}
-                    onChangeText={setNewPassword}
-                    placeholder="••••••••••"
-                    placeholderTextColor={theme.textMuted}
-                    accessibilityLabel="Parola nouă"
-                    secureTextEntry
-                    style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
-                  />
-                )}
-
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    resetStep === 'email'
-                      ? 'Trimite codul pe email'
+              {/* Authenticated State */}
+              {userEmail ? (
+                <AccountPanel
+                  userEmail={userEmail}
+                  isDark={isDark}
+                  isCloudAvailable={cloudSyncService.isConfigured()}
+                  isSyncing={isSyncing}
+                  lastSyncedAt={lastSyncedAt}
+                  isBusy={loading}
+                  onSync={onSyncTriggered}
+                  onDownload={onDownloadTriggered}
+                  onSignOut={handleSignOut}
+                  onDeleteAccount={handleDeleteAccount}
+                  reminders={reminders}
+                  onChangeReminders={updateReminders}
+                  wide={isWide}
+                />
+              ) : resetStep !== 'off' ? (
+                /* Password reset: address, then the emailed code, then the new password. */
+                <View style={styles.formSection}>
+                  <Text style={[styles.resetTitle, { color: theme.text }]}>
+                    {resetStep === 'email'
+                      ? 'Ți-ai uitat parola?'
                       : resetStep === 'code'
-                        ? 'Verifică codul'
-                        : 'Salvează parola nouă'
-                  }
-                  onPress={
-                    resetStep === 'email'
-                      ? handleRequestReset
+                        ? 'Codul din email'
+                        : 'Alege o parolă nouă'}
+                  </Text>
+                  <Text style={[styles.resetHint, { color: theme.textMuted }]}>
+                    {resetStep === 'email'
+                      ? 'Scrie adresa contului și îți trimitem un cod pe email.'
                       : resetStep === 'code'
-                        ? handleVerifyCode
-                        : handleSetNewPassword
-                  }
-                  style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator color={theme.primaryText} size="small" />
-                  ) : (
-                    <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>
-                      {resetStep === 'email'
-                        ? 'Trimite codul'
+                        ? `Am trimis un cod la ${email.trim()}. Verifică și în spam.`
+                        : 'Minimum 10 caractere, cu cel puțin o literă și o cifră.'}
+                  </Text>
+
+                  {resetStep === 'email' && (
+                    <TextInput
+                      value={email}
+                      onChangeText={editEmail}
+                      placeholder="exemplu@email.ro"
+                      placeholderTextColor={theme.textMuted}
+                      accessibilityLabel="Adresa de email pentru resetare"
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
+                    />
+                  )}
+
+                  {resetStep === 'code' && (
+                    <TextInput
+                      value={resetCode}
+                      onChangeText={setResetCode}
+                      placeholder="123456"
+                      placeholderTextColor={theme.textMuted}
+                      accessibilityLabel="Codul primit pe email"
+                      keyboardType="number-pad"
+                      // Supabase sends 6 to 10 digits, depending on the project's OTP length
+                      // setting. Stopping at 6 made the rest of a real code untypable.
+                      maxLength={10}
+                      style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
+                    />
+                  )}
+
+                  {resetStep === 'password' && (
+                    <TextInput
+                      value={newPassword}
+                      onChangeText={setNewPassword}
+                      placeholder="••••••••••"
+                      placeholderTextColor={theme.textMuted}
+                      accessibilityLabel="Parola nouă"
+                      secureTextEntry
+                      style={[styles.input, { color: theme.text, backgroundColor: theme.inputBg }]}
+                    />
+                  )}
+
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      resetStep === 'email'
+                        ? 'Trimite codul pe email'
                         : resetStep === 'code'
                           ? 'Verifică codul'
-                          : 'Salvează parola'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel="Renunță la resetarea parolei"
-                  onPress={leaveReset}
-                  style={styles.resetBackBtn}
-                  disabled={loading}
-                >
-                  <Text style={[styles.resetBackText, { color: theme.textMuted }]}>
-                    ← Înapoi la autentificare
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              /* Unauthenticated Form */
-              <View style={styles.formSection}>
-                <View style={styles.tabSwitch}>
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    style={[
-                      styles.tabItem,
-                      mode === 'signin' && [
-                        styles.tabItemActive,
-                        { borderBottomColor: theme.primary },
-                      ],
-                    ]}
-                    onPress={() => setMode('signin')}
+                          : 'Salvează parola nouă'
+                    }
+                    onPress={
+                      resetStep === 'email'
+                        ? handleRequestReset
+                        : resetStep === 'code'
+                          ? handleVerifyCode
+                          : handleSetNewPassword
+                    }
+                    style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
+                    disabled={loading}
                   >
-                    <Text
-                      style={[
-                        styles.tabText,
-                        { color: mode === 'signin' ? theme.primary : theme.textMuted },
-                      ]}
-                    >
-                      Autentificare
-                    </Text>
+                    {loading ? (
+                      <ActivityIndicator color={theme.primaryText} size="small" />
+                    ) : (
+                      <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>
+                        {resetStep === 'email'
+                          ? 'Trimite codul'
+                          : resetStep === 'code'
+                            ? 'Verifică codul'
+                            : 'Salvează parola'}
+                      </Text>
+                    )}
                   </TouchableOpacity>
+
                   <TouchableOpacity
                     accessibilityRole="button"
-                    style={[
-                      styles.tabItem,
-                      mode === 'signup' && [
-                        styles.tabItemActive,
-                        { borderBottomColor: theme.primary },
-                      ],
-                    ]}
-                    onPress={() => setMode('signup')}
-                  >
-                    <Text
-                      style={[
-                        styles.tabText,
-                        { color: mode === 'signup' ? theme.primary : theme.textMuted },
-                      ]}
-                    >
-                      Creează cont
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.label, { color: theme.text }]}>Email</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: theme.inputBg,
-                        color: theme.text,
-                        borderColor: theme.border,
-                      },
-                    ]}
-                    placeholder="exemplu@email.ro"
-                    placeholderTextColor={theme.textMuted}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    value={email}
-                    onChangeText={editEmail}
-                  />
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={[styles.label, { color: theme.text }]}>Parolă</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: theme.inputBg,
-                        color: theme.text,
-                        borderColor: theme.border,
-                      },
-                    ]}
-                    placeholder="••••••••"
-                    placeholderTextColor={theme.textMuted}
-                    secureTextEntry
-                    value={password}
-                    onChangeText={editPassword}
-                  />
-                </View>
-
-                {mode === 'signup' && (
-                  <SignUpConsent consent={consent} onChange={editConsent} isDark={isDark} />
-                )}
-
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
-                  onPress={handleAuth}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator color={theme.primaryText} size="small" />
-                  ) : (
-                    <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>
-                      {mode === 'signin' ? 'Conectare' : 'Înregistrare'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-
-                {mode === 'signin' && (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel="Am uitat parola"
-                    onPress={() => {
-                      setErrorMessage(null);
-                      setSuccessMessage(null);
-                      setResetStep('email');
-                    }}
+                    accessibilityLabel="Renunță la resetarea parolei"
+                    onPress={leaveReset}
                     style={styles.resetBackBtn}
                     disabled={loading}
                   >
                     <Text style={[styles.resetBackText, { color: theme.textMuted }]}>
-                      Am uitat parola
+                      ← Înapoi la autentificare
                     </Text>
                   </TouchableOpacity>
-                )}
-              </View>
-            )}
+                </View>
+              ) : (
+                /* Unauthenticated Form */
+                <View style={styles.formSection}>
+                  <View style={styles.tabSwitch}>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      style={[
+                        styles.tabItem,
+                        mode === 'signin' && [
+                          styles.tabItemActive,
+                          { borderBottomColor: theme.primary },
+                        ],
+                      ]}
+                      onPress={() => setMode('signin')}
+                    >
+                      <Text
+                        style={[
+                          styles.tabText,
+                          { color: mode === 'signin' ? theme.primary : theme.textMuted },
+                        ]}
+                      >
+                        Autentificare
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      style={[
+                        styles.tabItem,
+                        mode === 'signup' && [
+                          styles.tabItemActive,
+                          { borderBottomColor: theme.primary },
+                        ],
+                      ]}
+                      onPress={() => setMode('signup')}
+                    >
+                      <Text
+                        style={[
+                          styles.tabText,
+                          { color: mode === 'signup' ? theme.primary : theme.textMuted },
+                        ]}
+                      >
+                        Creează cont
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
 
-            {/* Close Button */}
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={userEmail ? 'Închide' : 'Continuă fără cont'}
-              style={styles.closeBtn}
-              onPress={onClose}
-            >
-              <Text style={[styles.closeBtnText, { color: theme.textMuted }]}>
-                {userEmail ? 'Închide' : 'Continuă fără cont (Mod Oaspete)'}
-              </Text>
-            </TouchableOpacity>
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.label, { color: theme.text }]}>Email</Text>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        {
+                          backgroundColor: theme.inputBg,
+                          color: theme.text,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                      placeholder="exemplu@email.ro"
+                      placeholderTextColor={theme.textMuted}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      value={email}
+                      onChangeText={editEmail}
+                    />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.label, { color: theme.text }]}>Parolă</Text>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        {
+                          backgroundColor: theme.inputBg,
+                          color: theme.text,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                      placeholder="••••••••"
+                      placeholderTextColor={theme.textMuted}
+                      secureTextEntry
+                      value={password}
+                      onChangeText={editPassword}
+                    />
+                  </View>
+
+                  {mode === 'signup' && (
+                    <SignUpConsent consent={consent} onChange={editConsent} isDark={isDark} />
+                  )}
+
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
+                    onPress={handleAuth}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color={theme.primaryText} size="small" />
+                    ) : (
+                      <Text style={[styles.primaryBtnText, { color: theme.primaryText }]}>
+                        {mode === 'signin' ? 'Conectare' : 'Înregistrare'}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+
+                  {mode === 'signin' && (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel="Am uitat parola"
+                      onPress={() => {
+                        setErrorMessage(null);
+                        setSuccessMessage(null);
+                        setResetStep('email');
+                      }}
+                      style={styles.resetBackBtn}
+                      disabled={loading}
+                    >
+                      <Text style={[styles.resetBackText, { color: theme.textMuted }]}>
+                        Am uitat parola
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+
+              {/* Close Button */}
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={userEmail ? 'Închide' : 'Continuă fără cont'}
+                style={styles.closeBtn}
+                onPress={onClose}
+              >
+                <Text style={[styles.closeBtnText, { color: theme.textMuted }]}>
+                  {userEmail ? 'Închide' : 'Continuă fără cont (Mod Oaspete)'}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </SafeAreaView>
       </View>
@@ -568,21 +616,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
   },
+  backdropFull: {
+    padding: 0,
+  },
   modalContainer: {
     width: '100%',
     maxWidth: 440,
   },
+  modalContainerWide: {
+    maxWidth: 880,
+  },
+  modalContainerFull: {
+    maxWidth: '100%',
+    height: '100%',
+  },
   card: {
     borderRadius: 20,
     borderWidth: 1,
-    padding: 24,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 8,
   },
+  cardFull: {
+    flex: 1,
+    borderRadius: 0,
+    borderWidth: 0,
+  },
+  cardContent: {
+    padding: 24,
+  },
   header: {
     marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  headerText: {
+    flex: 1,
+  },
+  headerClose: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCloseText: {
+    fontSize: 16,
+    fontWeight: '700',
   },
   title: {
     fontSize: 20,
