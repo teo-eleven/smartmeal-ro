@@ -527,14 +527,17 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
               <View style={[styles.toolbarDividerV, { backgroundColor: theme.border }]} />
             )}
 
-            {/* Section 3: Supermarkets with Official Prices */}
+            {/* Section 3: which chain the estimate is priced at. Not "real" or "official":
+                the prices are estimates from usual shelf prices, and the app has no link with
+                any chain. */}
             <View style={[styles.toolbarSection, isLargeScreen && styles.toolbarSectionDesktop]}>
               <View style={styles.mealsPerDayHeader}>
                 <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>
-                  Prețuri reale magazin:
+                  Prețuri estimate la:
                 </Text>
                 <Text style={[styles.mealsPerDaySubtitle, { color: theme.primary }]}>
-                  {preferences.supermarketId.toUpperCase()} (Oficial)
+                  {SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId)?.name ??
+                    preferences.supermarketId}
                 </Text>
               </View>
 

@@ -358,7 +358,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
 
               <Text style={[styles.questionTitle, { color: theme.text }]}>Alege magazinul tău</Text>
               <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Vom planifica meniul și coșul săptămânal în funcție de produsele și prețurile lui oficiale.
+                Calculăm meniul și coșul săptămânal pe prețurile estimate ale magazinului ales.
               </Text>
 
               <View style={[styles.supermarketGrid, isLargeScreen && styles.supermarketGridDesktop]}>
@@ -960,7 +960,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 🍿 Ronțăieli & 🥤 Băuturi de Magazin
               </Text>
               <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Alege gustările pentru meci/film și băuturile preferate direct din catalogul oficial al magazinului.
+                Alege gustările pentru meci/film și băuturile preferate, cu prețuri estimate la magazinul ales.
               </Text>
 
               {/* Supermarket Banner */}
@@ -968,10 +968,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 <Text style={styles.retailBannerIcon}>🛒</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.retailBannerTitle, { color: theme.primary }]}>
-                    Catalog oficial {SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId)?.name || 'Supermarket'}
+                    Produse la {SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId)?.name || 'magazinul ales'}
                   </Text>
                   <Text style={[styles.retailBannerSubtitle, { color: theme.textMuted }]}>
-                    Prețuri reale extrase direct din revistele și rafturile {SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId)?.name}.
+                    Prețuri estimate după prețurile obișnuite la raft. La casă pot diferi.
                   </Text>
                 </View>
               </View>

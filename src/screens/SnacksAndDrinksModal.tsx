@@ -82,7 +82,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
               <Text style={styles.badgeIcon}>🏷️</Text>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.badgeTitle, { color: theme.primary }]}>
-                  Prețuri din revista oficială {supermarket?.name}
+                  Prețuri estimate la {supermarket?.name}
                 </Text>
                 <Text style={[styles.badgeDesc, { color: theme.textMuted }]}>
                   Produsele adăugate apar direct în lista ta de cumpărături cu ambalajul exact.

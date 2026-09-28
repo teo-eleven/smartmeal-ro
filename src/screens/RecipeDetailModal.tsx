@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SUPERMARKETS } from '../data/supermarkets';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Appliance, Recipe, SupermarketId } from '../types';
 import { INGREDIENTS } from '../data/ingredients';
@@ -261,9 +262,9 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   <View>
                     <Text style={[styles.priceBoxLabel, { color: theme.primary }]}>COST TOTAL ESTIMAT ({activeServings} PORȚII)</Text>
                     <Text style={[styles.priceBoxSub, { color: theme.textMuted }]}>
-                      Prețuri reale {preferences.supermarketId.toUpperCase()}
+                      Prețuri estimate la {SUPERMARKETS[preferences.supermarketId]?.name ?? preferences.supermarketId}
                       {recipe.availableSupermarkets && recipe.availableSupermarkets.length > 0
-                        ? ` • Exclusiv: ${recipe.availableSupermarkets.map((s) => s.toUpperCase()).join(', ')}`
+                        ? ` • Doar la: ${recipe.availableSupermarkets.map((s) => SUPERMARKETS[s]?.name ?? s).join(', ')}`
                         : ' • Disponibil în toate magazinele'}
                     </Text>
                   </View>
