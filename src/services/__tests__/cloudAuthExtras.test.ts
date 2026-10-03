@@ -407,6 +407,32 @@ describe('dispozitivele', () => {
     expect(devices[0].name).toHaveLength(60);
   });
 
+  /** Written by whichever device holds a session: it must not pass for another one. */
+  test('numele cu caractere invizibile sau care întorc textul e curățat', async () => {
+    is.mockResolvedValue({
+      data: [
+        {
+          device_id: 'a',
+          device_name: 'iPhone\u202E enohP\u200B',
+          platform: 'ios',
+          last_seen_at: '2026-10-01T10:00:00Z',
+        },
+        {
+          device_id: 'b',
+          device_name: '😀'.repeat(61),
+          platform: 'web',
+          last_seen_at: '2026-10-01T09:00:00Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { devices } = await listDevices();
+
+    expect(devices[0].name).toBe('iPhone enohP');
+    expect(devices[1].name).toBe('😀'.repeat(60));
+  });
+
   test('rândurile stricate sau deconectate sunt lăsate deoparte', async () => {
     is.mockResolvedValue({
       data: [

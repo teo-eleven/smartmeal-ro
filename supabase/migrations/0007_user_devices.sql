@@ -62,7 +62,12 @@ declare
   max_devices constant int := 20;
   caller uuid := auth.uid();
   caller_session uuid := nullif(auth.jwt() ->> 'session_id', '')::uuid;
-  clean_name text := nullif(left(btrim(coalesce(p_name, '')), 60), '');
+  -- Control, zero-width and direction-override characters go before the cut: a name that
+  -- renders as another device's could get its owner to sign out the wrong one.
+  clean_name text := nullif(left(btrim(regexp_replace(
+    coalesce(p_name, ''),
+    E'[[:cntrl:]\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]', '', 'g'
+  )), 60), '');
 begin
   if caller is null then
     raise exception 'not signed in' using errcode = '42501';

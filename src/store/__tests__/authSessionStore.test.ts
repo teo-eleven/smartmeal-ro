@@ -127,6 +127,54 @@ describe('ce știe aplicația despre contul conectat', () => {
     expect(useAuthSessionStore.getState().displayName).toBeNull();
   });
 
+  /** It must be the owner's face that will open the lock, and the sensor must work. */
+  test('pornirea din Cont cere întâi Face ID', async () => {
+    await useAuthSessionStore.getState().setBiometricEnabled(email, true);
+
+    expect(authenticate).toHaveBeenCalledTimes(1);
+    expect((await readAccountSecurity(email)).biometricEnabled).toBe(true);
+  });
+
+  test('Face ID anulat: rămâne oprit, fără mesaj', async () => {
+    authenticate.mockResolvedValue({ success: false, cancelled: true, error: null });
+
+    const result = await useAuthSessionStore.getState().setBiometricEnabled(email, true);
+
+    expect(result).toEqual({ error: null });
+    expect((await readAccountSecurity(email)).biometricEnabled).toBe(false);
+  });
+
+  test('Face ID nereușit: rămâne oprit, cu motivul', async () => {
+    authenticate.mockResolvedValue({
+      success: false,
+      cancelled: false,
+      error: 'Nu te-am recunoscut',
+    });
+
+    const result = await useAuthSessionStore.getState().setBiometricEnabled(email, true);
+
+    expect(result.error).toBe('Nu te-am recunoscut');
+    expect(useAuthSessionStore.getState().biometricEnabled).toBe(false);
+  });
+
+  test('oprirea nu cere Face ID', async () => {
+    await useAuthSessionStore.getState().setBiometricEnabled(email, false);
+
+    expect(authenticate).not.toHaveBeenCalled();
+  });
+
+  test('„Da” la întrebare, fără Face ID confirmat, o lasă oprită și nu mai întreabă', async () => {
+    authenticate.mockResolvedValue({ success: false, cancelled: true, error: null });
+    await useAuthSessionStore.getState().refresh(email);
+
+    await useAuthSessionStore.getState().answerBiometricOffer(email, true);
+
+    expect(await readAccountSecurity(email)).toMatchObject({
+      biometricEnabled: false,
+      biometricAsked: true,
+    });
+  });
+
   test('numele schimbat în Cont se vede imediat', () => {
     useAuthSessionStore.getState().setDisplayName('Ana Maria');
 

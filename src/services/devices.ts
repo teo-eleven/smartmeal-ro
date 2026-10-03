@@ -5,6 +5,7 @@ import { currentOs } from './platformOs';
 import { signedInContext } from './authContext';
 import { warnSafely } from './authErrors';
 import { describeDevice, devicePlatform, DevicePlatform } from '../utils/deviceLabel';
+import { cleanVisibleText, cutToCharacters } from '../utils/displayName';
 
 /**
  * The devices signed in to the account, for Cont → Dispozitive (migration 0007).
@@ -129,7 +130,9 @@ export function parseDeviceRow(row: unknown, currentId: string): DeviceInfo | nu
   if (typeof r.device_id !== 'string' || typeof r.device_name !== 'string') return null;
   if (typeof r.last_seen_at !== 'string' || Number.isNaN(Date.parse(r.last_seen_at))) return null;
   if (r.revoked_at) return null;
-  const name = r.device_name.trim().slice(0, NAME_MAX);
+  // Written by whichever device holds a session, so it is cleaned like a typed name: a
+  // direction override or an invisible character could make one device pass for another.
+  const name = cutToCharacters(cleanVisibleText(r.device_name), NAME_MAX);
   return {
     deviceId: r.device_id,
     name: name || 'Dispozitiv',

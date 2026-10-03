@@ -33,7 +33,12 @@ interface AuthSessionState {
   shouldOfferBiometric: boolean;
   refresh: (email: string) => Promise<void>;
   answerBiometricOffer: (email: string, accepted: boolean) => Promise<void>;
-  setBiometricEnabled: (email: string, enabled: boolean) => Promise<void>;
+  /**
+   * Turning it on asks for Face ID first, so it is the owner's face that will open the lock
+   * and the sensor is known to work. Turning it off asks nothing. Resolves with the reason
+   * when it stayed off (null after a cancel, or on success).
+   */
+  setBiometricEnabled: (email: string, enabled: boolean) => Promise<{ error: string | null }>;
   setDisplayName: (name: string) => void;
   unlockWithBiometrics: (email: string) => Promise<BiometricResult>;
   clear: () => void;
@@ -78,14 +83,22 @@ export const useAuthSessionStore = create<AuthSessionState>((set) => ({
   },
 
   answerBiometricOffer: async (email, accepted) => {
-    if (accepted) await saveBiometricEnabled(email, true);
+    // "Da" is confirmed with Face ID itself. Cancelled or failed, it counts as asked and
+    // stays off; it can be turned on later in Cont.
+    const confirmed = accepted && (await authenticateWithBiometrics()).success;
+    if (confirmed) await saveBiometricEnabled(email, true);
     else await markBiometricAsked(email);
-    set({ biometricEnabled: accepted, shouldOfferBiometric: false });
+    set({ biometricEnabled: confirmed, shouldOfferBiometric: false });
   },
 
   setBiometricEnabled: async (email, enabled) => {
+    if (enabled) {
+      const check = await authenticateWithBiometrics();
+      if (!check.success) return { error: check.cancelled ? null : check.error };
+    }
     await saveBiometricEnabled(email, enabled);
     set({ biometricEnabled: enabled, shouldOfferBiometric: false });
+    return { error: null };
   },
 
   setDisplayName: (name) => set({ displayName: name }),

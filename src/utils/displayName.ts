@@ -14,11 +14,24 @@ const MISSING = 'Scrie cum te numești.';
  */
 const INVISIBLE = /[\p{Cc}\p{Cf}]/gu;
 
+/**
+ * Text as a person sees it: whitespace folded to single spaces, invisible and direction
+ * characters gone. For names shown to the account's owner, whoever typed them.
+ */
+export function cleanVisibleText(raw: string): string {
+  return raw.replace(/\s+/g, ' ').replace(INVISIBLE, '').replace(/ {2,}/g, ' ').trim();
+}
+
+/** Cut to `max` characters as the database counts them, never through an emoji. */
+export function cutToCharacters(text: string, max: number): string {
+  return [...text].slice(0, max).join('');
+}
+
 export function normalizeDisplayName(raw: unknown): { name: string | null; error: string | null } {
   if (typeof raw !== 'string') return { name: null, error: MISSING };
 
   // Whitespace first, so a line break between two words becomes a space and not nothing.
-  const name = raw.replace(/\s+/g, ' ').replace(INVISIBLE, '').replace(/ {2,}/g, ' ').trim();
+  const name = cleanVisibleText(raw);
   if (!name) return { name: null, error: MISSING };
   // Refused rather than cut: a name quietly shortened is a name the person did not type.
   // Counted in characters as the database counts them, so an emoji is one, not two.

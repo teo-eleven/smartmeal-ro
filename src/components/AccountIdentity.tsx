@@ -22,6 +22,21 @@ export function AccountIdentity({ email, isDark }: { email: string; isDark: bool
   const [draft, setDraft] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
+
+  const toggleBiometric = async () => {
+    if (isSwitching) return;
+    setIsSwitching(true);
+    setError(null);
+    try {
+      const result = await setBiometricEnabled(email, !biometricEnabled);
+      if (result.error) setError(result.error);
+    } catch {
+      setError('Setarea nu a putut fi salvată. Încearcă din nou.');
+    } finally {
+      setIsSwitching(false);
+    }
+  };
 
   const save = async () => {
     if (draft === null || isSaving) return;
@@ -97,9 +112,10 @@ export function AccountIdentity({ email, isDark }: { email: string; isDark: bool
       {isBiometricAvailable && (
         <TouchableOpacity
           accessibilityRole="switch"
-          accessibilityState={{ checked: biometricEnabled }}
+          accessibilityState={{ checked: biometricEnabled, disabled: isSwitching }}
           accessibilityLabel={`Deblochează cu ${biometricLabel}`}
-          onPress={() => void setBiometricEnabled(email, !biometricEnabled)}
+          onPress={() => void toggleBiometric()}
+          disabled={isSwitching}
           style={[styles.toggleRow, { borderColor: theme.border }]}
           activeOpacity={0.8}
         >

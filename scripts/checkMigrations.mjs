@@ -255,6 +255,18 @@ await expectError(
 );
 await db.exec(`${as(U1, S3)} select public.register_device('${D2}', 'Laptop (web)', 'web');`);
 
+// A name that would render as another device's is cleaned before it is stored.
+await db.exec(
+  `${as(U1, S3)} select public.register_device('${D2}', E'Chrome\\u202E caM ep\\u200B', 'web');`
+);
+await db.exec('reset role');
+r = await db.query(`select device_name from public.user_devices where device_id = '${D2}'`);
+check(
+  'control and direction characters are stripped from device names',
+  r.rows[0].device_name === 'Chrome caM ep',
+  JSON.stringify(r.rows[0].device_name)
+);
+
 // One session moving to another device id leaves one row, not two.
 await db.exec(
   `${as(U1, S3)} select public.register_device('dddddddd-0000-0000-0000-0000000000ff', 'Laptop nou', 'web');`
