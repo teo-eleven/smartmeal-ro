@@ -1,6 +1,7 @@
 import { useAppStore } from '../useAppStore';
 import { cloudSyncService, getSupabaseClient } from '../../services/supabase';
 import { registerThisDevice } from '../../services/devices';
+import { signingOutOnPurpose } from '../../services/signOutIntent';
 import {
   DEVICE_CHECK_INTERVAL_MS,
   resetDeviceSessionForTests,
@@ -55,6 +56,38 @@ describe('verificarea dispozitivului', () => {
     expect(cloudSyncService.signOut).toHaveBeenCalled();
     expect(useAppStore.getState().userEmail).toBeNull();
     expect(useAppStore.getState().activeNotice?.message).toMatch(/alt dispozitiv/);
+  });
+
+  /** They did not choose to leave the account, so they land on sign-in, not as a guest. */
+  test('după deconectarea de pe alt dispozitiv apare ecranul de conectare', async () => {
+    register.mockResolvedValue('revoked');
+
+    await verifyDeviceSession({ now: NOW });
+
+    expect(useAppStore.getState().authStatus).toBe('checking');
+  });
+
+  test('un răspuns pentru contul vechi nu deconectează contul nou', async () => {
+    let answer: (value: string) => void = () => undefined;
+    register.mockReturnValue(new Promise((resolve) => (answer = resolve)));
+
+    const pending = verifyDeviceSession({ now: NOW });
+    useAppStore.setState({ userEmail: 'ion@b.ro' });
+    answer('revoked');
+    await pending;
+
+    expect(useAppStore.getState().userEmail).toBe('ion@b.ro');
+    expect(cloudSyncService.signOut).not.toHaveBeenCalled();
+  });
+
+  test('o verificare în curs pentru alt cont nu o înghite pe cea a contului nou', async () => {
+    register.mockReturnValueOnce(new Promise(() => undefined)).mockResolvedValue('ok');
+
+    void verifyDeviceSession({ now: NOW, force: true });
+    useAppStore.setState({ userEmail: 'ion@b.ro' });
+    await verifyDeviceSession({ now: NOW, force: true });
+
+    expect(register).toHaveBeenCalledTimes(2);
   });
 
   test('și din ecranul de blocare', async () => {
@@ -135,10 +168,36 @@ describe('sesiunea încheiată de server', () => {
     expect(useAppStore.getState().userEmail).toBe('ana@b.ro');
   });
 
-  test('după o deconectare voită nu apare niciun mesaj', () => {
+  /**
+   * The real order: supabase-js fires SIGNED_OUT inside signOut(), while the app still shows
+   * the account. "Deconectare" and deleting the account must not read as an expiry.
+   */
+  test('o deconectare voită nu e raportată ca sesiune expirată', async () => {
     const { emit } = fakeClient();
     watchSessionEnd();
-    useAppStore.getState().setUserEmail(null);
+
+    await signingOutOnPurpose(async () => {
+      emit('SIGNED_OUT');
+    });
+
+    expect(useAppStore.getState().activeNotice).toBeNull();
+    expect(useAppStore.getState().userEmail).toBe('ana@b.ro');
+  });
+
+  test('după deconectarea voită, ascultarea merge din nou ca înainte', async () => {
+    const { emit } = fakeClient();
+    watchSessionEnd();
+    await signingOutOnPurpose(async () => undefined);
+
+    emit('SIGNED_OUT');
+
+    expect(useAppStore.getState().userEmail).toBeNull();
+  });
+
+  test('deja deconectat: niciun mesaj în plus', () => {
+    const { emit } = fakeClient();
+    watchSessionEnd();
+    useAppStore.setState({ userEmail: null, authStatus: 'guest' });
 
     emit('SIGNED_OUT');
 

@@ -1,6 +1,7 @@
 import {
   REAUTH_INTERVAL_DAYS,
   checkReauth,
+  forgetThisRunForTests,
   forgetAccountSecurity,
   isReauthDue,
   markBiometricAsked,
@@ -66,6 +67,8 @@ describe('cât de des se cere reverificarea', () => {
 describe('ce se ține minte pentru fiecare cont', () => {
   beforeEach(() => {
     mockVault.clear();
+    // Each test starts as a fresh start of the app.
+    forgetThisRunForTests();
   });
 
   test('un cont nou nu are nimic salvat și biometria e oprită', async () => {
@@ -179,6 +182,8 @@ describe('ce se ține minte pentru fiecare cont', () => {
 describe('verificarea de la pornire', () => {
   beforeEach(() => {
     mockVault.clear();
+    // Each test starts as a fresh start of the app.
+    forgetThisRunForTests();
   });
 
   test('o conectare recentă nu blochează', async () => {
@@ -202,6 +207,7 @@ describe('verificarea de la pornire', () => {
     await markVerified(EMAIL, NOW - DAY);
     const [key] = [...mockVault.keys()];
     mockVault.set(key, '{"lastFullAuthAt":"x"}');
+    forgetThisRunForTests();
 
     expect(await checkReauth(EMAIL, NOW)).toBe('due');
     expect(mockVault.get(key)).toBe('{"lastFullAuthAt":"x"}');
@@ -211,16 +217,27 @@ describe('verificarea de la pornire', () => {
     await markVerified(EMAIL, NOW - DAY);
     const [key] = [...mockVault.keys()];
     mockVault.set(key, 'garbage');
+    forgetThisRunForTests();
 
     expect(await checkReauth(EMAIL, NOW)).toBe('due');
   });
 
   test('un keychain care nu se deschide blochează', async () => {
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-    await markVerified(EMAIL, NOW - DAY);
     mockVault.set('__broken__', '1');
 
-    expect(await checkReauth(EMAIL, NOW)).toBe('due');
+    expect(await checkReauth('blocat@exemplu.ro', NOW)).toBe('due');
+  });
+
+  /** Otherwise a correct password could never lift the lock on such a phone. */
+  test('cu keychain-ul stricat, o verificare făcută acum deblochează până la repornire', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    mockVault.set('__broken__', '1');
+
+    await markVerified('stricat@exemplu.ro', NOW);
+
+    expect(await checkReauth('stricat@exemplu.ro', NOW + DAY)).toBe('ok');
+    expect(await checkReauth('stricat@exemplu.ro', NOW + 31 * DAY)).toBe('due');
   });
 
   test('un cont conectat înainte de actualizare primește o lună de acum', async () => {

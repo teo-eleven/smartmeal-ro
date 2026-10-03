@@ -144,8 +144,11 @@ function AppShell() {
   // Nothing renders until the stored session has been read, so the gate cannot flash in
   // front of somebody who signed in three weeks ago.
   // Until the re-verification screen exists, a locked account goes back through sign-in:
-  // the lock must never fall through to the plan.
-  if (!isHydrated || authStatus === 'checking' || authStatus === 'locked') {
+  // the lock must never fall through to the plan. The window below is given no address while
+  // locked, so it offers the sign-in form rather than the account panel (sync, deletion)
+  // to somebody not yet verified.
+  const isLocked = authStatus === 'locked';
+  if (!isHydrated || authStatus === 'checking' || isLocked) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
@@ -160,7 +163,7 @@ function AppShell() {
           visible={authModalVisible}
           onClose={() => setAuthModalVisible(false)}
           isDark={isDark}
-          userEmail={userEmail}
+          userEmail={isLocked ? null : userEmail}
           onUserChanged={setUserEmail}
           onSyncTriggered={syncWithCloud}
           onDownloadTriggered={syncFromCloud}

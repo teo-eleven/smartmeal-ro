@@ -40,7 +40,9 @@ const eq = jest.fn(() => ({ maybeSingle }));
 const select = jest.fn(() => ({ eq }));
 const from = jest.fn(() => ({ select, upsert }));
 
-(createClient as jest.Mock).mockReturnValue({ auth, from });
+const rpc = jest.fn(async () => ({ error: null }));
+
+(createClient as jest.Mock).mockReturnValue({ auth, from, rpc });
 
 const CONSENT: SignUpConsent = { isAtLeast16: true, healthDataConsent: true };
 
@@ -222,6 +224,22 @@ describe('conectare și cont nou', () => {
 
   /** Other devices are signed out from Cont → Dispozitive, one by one, on purpose. */
   test('„Deconectare” deconectează doar dispozitivul ăsta', async () => {
+    await cloudSyncService.signOut();
+
+    expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
+  /** Otherwise the device list would go on showing it as signed in. */
+  test('înainte de deconectare, dispozitivul se scoate din listă', async () => {
+    await cloudSyncService.signOut();
+
+    expect(rpc).toHaveBeenCalledWith('forget_this_device');
+    expect(rpc.mock.invocationCallOrder[0]).toBeLessThan(auth.signOut.mock.invocationCallOrder[0]);
+  });
+
+  test('dacă scoaterea din listă eșuează, deconectarea se face oricum', async () => {
+    rpc.mockRejectedValueOnce(new Error('offline'));
+
     await cloudSyncService.signOut();
 
     expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' });

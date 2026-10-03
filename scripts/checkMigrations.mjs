@@ -236,6 +236,25 @@ check(
   r.rows[0].active === true && r.rows[0].session_id === S3
 );
 
+// Signing out on this device removes its own row and nothing else.
+await db.exec(`${as(U1, S3)} select public.forget_this_device();`);
+await db.exec('reset role');
+r = await db.query(
+  `select (select count(*) from public.user_devices where session_id = '${S3}')::int as own,
+          (select count(*) from public.user_devices where user_id = '${U1}')::int as total`
+);
+check(
+  'forget_this_device removes only the caller’s own row',
+  r.rows[0].own === 0 && r.rows[0].total === 1,
+  JSON.stringify(r.rows[0])
+);
+await expectError(
+  'anon cannot call forget_this_device',
+  `reset role; select set_config('request.jwt.claims', '', false); set role anon; select public.forget_this_device()`,
+  /permission denied/
+);
+await db.exec(`${as(U1, S3)} select public.register_device('${D2}', 'Laptop (web)', 'web');`);
+
 // One session moving to another device id leaves one row, not two.
 await db.exec(
   `${as(U1, S3)} select public.register_device('dddddddd-0000-0000-0000-0000000000ff', 'Laptop nou', 'web');`

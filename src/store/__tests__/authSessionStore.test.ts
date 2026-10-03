@@ -106,6 +106,27 @@ describe('ce știe aplicația despre contul conectat', () => {
     expect((await readAccountSecurity(email)).biometricEnabled).toBe(false);
   });
 
+  test('ce sosește după deconectare nu e afișat', async () => {
+    let answer: (value: string) => void = () => undefined;
+    displayName.mockReturnValue(new Promise((resolve) => (answer = resolve)));
+
+    const pending = useAuthSessionStore.getState().refresh(email);
+    useAppStore.setState({ userEmail: null });
+    useAuthSessionStore.getState().clear();
+    answer('Ana');
+    await pending;
+
+    expect(useAuthSessionStore.getState().displayName).toBeNull();
+  });
+
+  test('o eroare la citire lasă starea cum era și nu scapă', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    displayName.mockRejectedValue(new Error('boom'));
+
+    await expect(useAuthSessionStore.getState().refresh(email)).resolves.toBeUndefined();
+    expect(useAuthSessionStore.getState().displayName).toBeNull();
+  });
+
   test('numele schimbat în Cont se vede imediat', () => {
     useAuthSessionStore.getState().setDisplayName('Ana Maria');
 

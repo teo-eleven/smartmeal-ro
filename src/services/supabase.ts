@@ -21,6 +21,7 @@ import { normalizeDisplayName } from '../utils/displayName';
 import { describeAuthError, describeFailure } from './authErrors';
 import { forgetAccountSecurity, recordVerification } from './reauth';
 import { localDeviceSimulation } from './localDeviceSimulation';
+import { signingOutOnPurpose } from './signOutIntent';
 
 /**
  * Database errors come back in English and describe the server ("new row violates row-level
@@ -234,6 +235,10 @@ export const cloudSyncService = {
    * reach the client; the function identifies the caller from their own token.
    */
   async deleteAccount(): Promise<{ success: boolean; error: string | null }> {
+    return signingOutOnPurpose(() => this.deleteAccountNow());
+  },
+
+  async deleteAccountNow(): Promise<{ success: boolean; error: string | null }> {
     if (localAuthSimulation.isActive()) {
       const email = await localAuthSimulation.currentEmail();
       await localAuthSimulation.deleteAccount();
@@ -486,22 +491,34 @@ export const cloudSyncService = {
     }
   },
 
+  /**
+   * Signs this device out, and takes it off the account's device list first so the list
+   * never shows it as signed in afterwards (migration 0007, forget_this_device).
+   */
   async signOut(): Promise<void> {
-    if (localAuthSimulation.isActive()) {
-      await localAuthSimulation.signOut();
-      return;
-    }
+    await signingOutOnPurpose(async () => {
+      if (localAuthSimulation.isActive()) {
+        const email = await localAuthSimulation.currentEmail();
+        const sessionId = await localAuthSimulation.currentSessionId();
+        if (email && sessionId) await localDeviceSimulation.forgetSession(email, sessionId);
+        await localAuthSimulation.signOut();
+        return;
+      }
 
-    const client = getSupabaseClient();
-    if (!client) return;
-    try {
-      // This device only. Supabase's default ends every session of the account, which made
-      // "Deconectare" on a phone sign the laptop out too; other devices are signed out from
-      // Cont → Dispozitive instead.
-      await client.auth.signOut({ scope: 'local' });
-    } catch (e) {
-      console.warn('[Supabase] Error during sign out:', e);
-    }
+      const client = getSupabaseClient();
+      if (!client) return;
+      try {
+        // Best effort: a list entry left behind is tidied by the 20-device cap, while a
+        // sign-out that failed because of it would leave somebody signed in.
+        await client.rpc('forget_this_device').then(undefined, () => undefined);
+        // This device only. Supabase's default ends every session of the account, which made
+        // "Deconectare" on a phone sign the laptop out too; other devices are signed out from
+        // Cont → Dispozitive instead.
+        await client.auth.signOut({ scope: 'local' });
+      } catch (e) {
+        console.warn('[Supabase] Error during sign out:', e);
+      }
+    });
   },
 
   async saveMealPlan(

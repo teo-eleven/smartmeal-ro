@@ -125,8 +125,22 @@ function update(email: string, change: Partial<AccountSecurity>): Promise<void> 
   return next;
 }
 
+/**
+ * Verifications made while the app is running, by account key. The keychain is the record;
+ * this only covers a keychain that cannot be read back, where a correct password would
+ * otherwise leave the lock in place for good. It is gone at the next start, so it never
+ * extends the month on its own.
+ */
+const verifiedThisRun = new Map<string, number>();
+
+/** Tests only: what a restart of the app does to verifiedThisRun. */
+export function forgetThisRunForTests(): void {
+  verifiedThisRun.clear();
+}
+
 /** A password, an emailed code, a new account, or biometrics at the lock: the month restarts. */
 export async function markVerified(email: string, now: number = Date.now()): Promise<void> {
+  verifiedThisRun.set(keyFor(email), now);
   await update(email, { lastFullAuthAt: now });
 }
 
@@ -153,6 +167,7 @@ export async function markBiometricAsked(email: string): Promise<void> {
 }
 
 export async function forgetAccountSecurity(email: string): Promise<void> {
+  verifiedThisRun.delete(keyFor(email));
   await secureSessionStore.removeItem(keyFor(email));
 }
 
@@ -165,9 +180,16 @@ export async function forgetAccountSecurity(email: string): Promise<void> {
 export async function checkReauth(email: string, now: number = Date.now()): Promise<'ok' | 'due'> {
   const stored = await readStored(email);
   if (stored.status === 'absent') {
-    await markVerified(email, now);
+    // A keychain that reads but will not write would lock this account for good if this
+    // answered 'due': no verification could ever be saved to lift it. Let it through, and
+    // say so in the log.
+    await markVerified(email, now).catch((e) =>
+      warnSafely('Data verificării nu a putut fi salvată.', e)
+    );
     return 'ok';
   }
+  const inMemory = verifiedThisRun.get(keyFor(email)) ?? null;
+  if (inMemory !== null && !isReauthDue(inMemory, now)) return 'ok';
   if (stored.status === 'unusable') return 'due';
   return isReauthDue(stored.value.lastFullAuthAt, now) ? 'due' : 'ok';
 }

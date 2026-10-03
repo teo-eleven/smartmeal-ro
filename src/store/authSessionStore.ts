@@ -7,7 +7,9 @@ import {
   biometricLabel,
   isBiometricAvailable,
 } from '../services/biometric';
+import { warnSafely } from '../services/authErrors';
 import {
+  AccountSecurity,
   markBiometricAsked,
   markVerified,
   readAccountSecurity,
@@ -51,12 +53,21 @@ export const useAuthSessionStore = create<AuthSessionState>((set) => ({
   ...SIGNED_OUT,
 
   refresh: async (email) => {
-    const [name, security, available, label] = await Promise.all([
-      getDisplayName(),
-      readAccountSecurity(email),
-      isBiometricAvailable(),
-      biometricLabel(),
-    ]);
+    let answers: [string | null, AccountSecurity, boolean, string];
+    try {
+      answers = await Promise.all([
+        getDisplayName(),
+        readAccountSecurity(email),
+        isBiometricAvailable(),
+        biometricLabel(),
+      ]);
+    } catch (e) {
+      warnSafely('Datele contului nu au putut fi citite.', e);
+      return;
+    }
+    // Signed out, or into another account, while this was being read: not ours to show.
+    if (useAppStore.getState().userEmail !== email) return;
+    const [name, security, available, label] = answers;
     set({
       displayName: name,
       biometricLabel: label,
@@ -90,7 +101,7 @@ export const useAuthSessionStore = create<AuthSessionState>((set) => ({
     const result = await authenticateWithBiometrics();
     if (result.success) {
       await markVerified(email);
-      useAppStore.getState().unlock();
+      await useAppStore.getState().unlock();
     }
     return result;
   },

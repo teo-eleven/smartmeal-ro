@@ -280,4 +280,17 @@ describe('numele, codul pe email și dispozitivele, prin serviciile reale', () =
       biometricAsked: false,
     });
   });
+
+  /** forget_this_device, simulated: the list must not show a device that signed itself out. */
+  test('„Deconectare” scoate dispozitivul ăsta din listă', async () => {
+    await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde', CONSENT);
+    await registerThisDevice();
+    const id = await getDeviceId();
+
+    await cloudSyncService.signOut();
+
+    const rows = await localDeviceSimulation.list('a@b.ro');
+    expect(rows.map((r) => r.device_id)).not.toContain(id);
+    expect(rows).toHaveLength(1);
+  });
 });

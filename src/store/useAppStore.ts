@@ -87,9 +87,15 @@ export interface AppState {
    * still valid, but the app waits for Face ID, the password or an emailed code.
    */
   authStatus: 'checking' | 'signedIn' | 'guest' | 'locked';
-  continueAsGuest: () => void;
-  /** The way out of `locked`, once the person has been verified again. Nothing otherwise. */
-  unlock: () => void;
+  continueAsGuest: () => Promise<void>;
+  /**
+   * The only way out of `locked`: it opens the app if, and only if, the keychain holds a
+   * verification inside the month (services/reauth.ts). Every sign-in service records one,
+   * so a real sign-in unlocks and nothing else does.
+   */
+  unlock: () => Promise<void>;
+  /** Locks a signed-in app that has been open, or in the background, past the month. */
+  recheckLock: () => Promise<void>;
   isSyncing: boolean;
   lastSyncedAt: string | null;
 
@@ -798,7 +804,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Read the session before anything renders, so the gate never flashes in front of
       // somebody who signed in three weeks ago and is still within their thirty days.
       const signedInEmail = await cloudSyncService.currentEmail();
-      const isLocked = signedInEmail ? (await checkReauth(signedInEmail)) === 'due' : false;
+      // checkReauth does not throw; if it ever did, the safe answer is the lock.
+      const isLocked = signedInEmail
+        ? await checkReauth(signedInEmail).then(
+            (verdict) => verdict === 'due',
+            () => true
+          )
+        : false;
 
       // Storage is untrusted, and on web it is localStorage: editable by hand, by another
       // tab, or by an extension. Everything is whitelisted against its catalog before any of
@@ -1090,23 +1102,47 @@ export const useAppStore = create<AppState>((set, get) => ({
    * guideline 5.1.1(i) requires an app whose core works offline to be usable without an
    * account -- and because a meal planner genuinely is useful without one.
    */
-  continueAsGuest: () => {
+  continueAsGuest: async () => {
     // From the monthly lock, "without an account" means without this one: the session is
     // ended rather than left open behind a guest screen, which would be a way round the lock.
+    // Awaited, so a quick sign-in afterwards cannot be undone by this sign-out landing late.
     if (get().authStatus === 'locked') {
-      void cloudSyncService.signOut();
+      await cloudSyncService.signOut();
       get().setUserEmail(null);
       return;
     }
     set({ authStatus: 'guest' });
   },
 
-  unlock: () => {
-    if (get().authStatus === 'locked') set({ authStatus: 'signedIn' });
+  unlock: async () => {
+    const { authStatus, userEmail } = get();
+    if (authStatus !== 'locked' || !userEmail) return;
+    const verdict = await checkReauth(userEmail);
+    // Still the same locked account once the keychain has answered.
+    if (verdict === 'ok' && get().authStatus === 'locked' && get().userEmail === userEmail) {
+      set({ authStatus: 'signedIn' });
+    }
+  },
+
+  recheckLock: async () => {
+    const { authStatus, userEmail } = get();
+    if (authStatus !== 'signedIn' || !userEmail) return;
+    const verdict = await checkReauth(userEmail);
+    if (verdict === 'due' && get().authStatus === 'signedIn' && get().userEmail === userEmail) {
+      set({ authStatus: 'locked' });
+    }
   },
 
   setUserEmail: (email: string | null) => {
-    set({ userEmail: email, authStatus: email ? 'signedIn' : 'guest' });
+    // At the lock, a sign-in does not open the app by itself: unlock checks that it was
+    // recorded as a verification. Anything else calling this with an address cannot be a
+    // way past the lock.
+    if (email && get().authStatus === 'locked') {
+      set({ userEmail: email });
+      void get().unlock();
+    } else {
+      set({ userEmail: email, authStatus: email ? 'signedIn' : 'guest' });
+    }
 
     if (email) {
       // A second phone starts from what the account already knows.
@@ -1118,8 +1154,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   syncWithCloud: async () => {
-    const { userEmail, currentPlan, groceryItems, preferences } = get();
-    if (!userEmail) return;
+    const { userEmail, currentPlan, groceryItems, preferences, authStatus } = get();
+    // Not from behind the monthly lock: the account has not been verified yet.
+    if (!userEmail || authStatus === 'locked') return;
     if (!cloudSyncService.isConfigured()) {
       set({ activeNotice: syncUnavailableNotice() });
       return;
@@ -1182,8 +1219,8 @@ export const useAppStore = create<AppState>((set, get) => ({
    * user saying so -- the fetched plan waits in `pendingCloudPlan` until they confirm.
    */
   syncFromCloud: async () => {
-    const { userEmail } = get();
-    if (!userEmail) return;
+    const { userEmail, authStatus } = get();
+    if (!userEmail || authStatus === 'locked') return;
     if (!cloudSyncService.isConfigured()) {
       set({ activeNotice: syncUnavailableNotice() });
       return;

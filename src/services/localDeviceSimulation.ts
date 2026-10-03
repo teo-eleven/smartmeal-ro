@@ -104,6 +104,15 @@ export const localDeviceSimulation = {
     return true;
   },
 
+  /** forget_this_device: "Deconectare" takes this sign-in's row off the list. */
+  async forgetSession(email: string, sessionId: string): Promise<void> {
+    const rows = await this.list(email);
+    await writeRows(
+      email,
+      rows.filter((r) => r.session_id !== sessionId)
+    );
+  },
+
   /** What the server's cascade does when the account is deleted. */
   async forget(email: string): Promise<void> {
     const all = await readAll();

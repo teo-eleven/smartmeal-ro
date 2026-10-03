@@ -12,7 +12,7 @@
 -- code rather than wording that someone may rephrase:
 --   SM001 session ended   SM002 no such device   SM003 cannot revoke the current device
 --
--- Nobody writes this table directly. Both writers are functions below that take the user
+-- Nobody writes this table directly. The writers are functions below that take the user
 -- and the session from the caller's JWT, never from arguments, so a device cannot record
 -- itself under somebody else's account or claim somebody else's session.
 
@@ -34,7 +34,7 @@ create table if not exists public.user_devices (
 );
 
 comment on table public.user_devices is
-  'Written only by register_device and revoke_device. Readable by its owner.';
+  'Written only by register_device, revoke_device and forget_this_device. Readable by its owner.';
 
 alter table public.user_devices enable row level security;
 
@@ -160,7 +160,29 @@ begin
 end;
 $$;
 
+-- "Deconectare" on this device: its row goes with its session, so the list never shows a
+-- device as signed in after it signed itself out. Called just before the client's own
+-- signOut({ scope: 'local' }); the session is the caller's, read from the JWT.
+create or replace function public.forget_this_device()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  caller uuid := auth.uid();
+  caller_session uuid := nullif(auth.jwt() ->> 'session_id', '')::uuid;
+begin
+  if caller is null or caller_session is null then
+    return;
+  end if;
+  delete from public.user_devices where user_id = caller and session_id = caller_session;
+end;
+$$;
+
 revoke all on function public.register_device(uuid, text, text) from public, anon, authenticated;
+revoke all on function public.forget_this_device() from public, anon, authenticated;
+grant execute on function public.forget_this_device() to authenticated;
 revoke all on function public.revoke_device(uuid) from public, anon, authenticated;
 grant execute on function public.register_device(uuid, text, text) to authenticated;
 grant execute on function public.revoke_device(uuid) to authenticated;
