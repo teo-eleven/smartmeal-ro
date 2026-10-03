@@ -117,6 +117,7 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
   };
 
   const showError = (message: string) => setErrorMessage(message);
+  const showSuccess = (message: string) => setSuccessMessage(message);
 
   const signIn = async () => {
     const { user, error } = await cloudSyncService.signInWithEmail(email.trim(), password);
@@ -303,6 +304,10 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
     successMessage,
     run,
     showError,
+    showSuccess,
+    clearMessages,
+    /** For the other ways in (an emailed code): the same finish as a password sign-in. */
+    completeSignIn: finishSignIn,
     handleAuth,
     handleSignOut,
     handleDeleteAccount,

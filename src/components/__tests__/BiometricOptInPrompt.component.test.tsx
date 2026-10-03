@@ -1,0 +1,59 @@
+import React from 'react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { BiometricOptInPrompt } from '../BiometricOptInPrompt';
+import { useAppStore } from '../../store/useAppStore';
+import { useAuthSessionStore } from '../../store/authSessionStore';
+
+const answer = jest.fn(async () => undefined);
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  useAppStore.setState({ authStatus: 'signedIn', userEmail: 'ana@b.ro' });
+  useAuthSessionStore.setState({
+    shouldOfferBiometric: true,
+    biometricLabel: 'Face ID',
+    answerBiometricOffer: answer,
+  });
+});
+
+/** "Folosești Face ID data viitoare?" — once, after signing in, where it can work. */
+describe('întrebarea despre Face ID', () => {
+  test('apare după conectare, cu numele biometriei de pe telefon', () => {
+    render(<BiometricOptInPrompt isDark={false} />);
+
+    expect(screen.getByText('Folosești Face ID data viitoare?')).toBeTruthy();
+  });
+
+  test('„Da” o pornește pentru contul conectat', async () => {
+    render(<BiometricOptInPrompt isDark={false} />);
+
+    fireEvent.press(screen.getByLabelText('Da, folosește Face ID'));
+
+    await waitFor(() => expect(answer).toHaveBeenCalledWith('ana@b.ro', true));
+  });
+
+  test('„Nu acum” o lasă oprită', async () => {
+    render(<BiometricOptInPrompt isDark={false} />);
+
+    fireEvent.press(screen.getByLabelText('Nu acum'));
+
+    await waitFor(() => expect(answer).toHaveBeenCalledWith('ana@b.ro', false));
+  });
+
+  test('nu apare dacă nu e de pus', () => {
+    useAuthSessionStore.setState({ shouldOfferBiometric: false });
+
+    render(<BiometricOptInPrompt isDark={false} />);
+
+    expect(screen.queryByText(/data viitoare/)).toBeNull();
+  });
+
+  /** Behind the lock the person has not been verified; the offer waits until they are. */
+  test('nu apare în ecranul de blocare', () => {
+    useAppStore.setState({ authStatus: 'locked' });
+
+    render(<BiometricOptInPrompt isDark={false} />);
+
+    expect(screen.queryByText(/data viitoare/)).toBeNull();
+  });
+});

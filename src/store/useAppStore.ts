@@ -96,6 +96,8 @@ export interface AppState {
   unlock: () => Promise<void>;
   /** Locks a signed-in app that has been open, or in the background, past the month. */
   recheckLock: () => Promise<void>;
+  /** "Deconectează-te" at the monthly lock: ends the session and goes back to the login. */
+  signOutToLogin: () => Promise<void>;
   isSyncing: boolean;
   lastSyncedAt: string | null;
 
@@ -1131,6 +1133,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (verdict === 'due' && get().authStatus === 'signedIn' && get().userEmail === userEmail) {
       set({ authStatus: 'locked' });
     }
+  },
+
+  signOutToLogin: async () => {
+    await cloudSyncService.signOut();
+    get().setUserEmail(null);
+    set({ authStatus: 'checking' });
   },
 
   setUserEmail: (email: string | null) => {

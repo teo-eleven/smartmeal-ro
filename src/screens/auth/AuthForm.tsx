@@ -5,21 +5,29 @@ import { DISPLAY_NAME_MAX } from '../../utils/displayName';
 import { AuthFormState, AuthMode } from './useAuthForm';
 import { AuthTheme, authStyles as styles } from './authStyles';
 
-const TAB_LABELS: Record<AuthMode, string> = {
+const DEFAULT_TAB_LABELS: Record<AuthMode, string> = {
   signin: 'Autentificare',
   signup: 'Creează cont',
 };
 
 /** Sign in or open an account: the two tabs, the fields, the consent, and the way to a reset. */
+interface AuthFormProps {
+  form: AuthFormState;
+  theme: AuthTheme;
+  isDark: boolean;
+  /** The full-screen login says "Conectare" and "Cont nou"; the account window keeps its own. */
+  tabLabels?: Record<AuthMode, string>;
+  /** When given, the sign-in tab offers an emailed code instead of the password. */
+  onUseCode?: () => void;
+}
+
 export function AuthForm({
   form,
   theme,
   isDark,
-}: {
-  form: AuthFormState;
-  theme: AuthTheme;
-  isDark: boolean;
-}) {
+  tabLabels = DEFAULT_TAB_LABELS,
+  onUseCode,
+}: AuthFormProps) {
   const inputStyle = [
     styles.input,
     { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border },
@@ -32,6 +40,8 @@ export function AuthForm({
           <TouchableOpacity
             key={tab}
             accessibilityRole="button"
+            accessibilityLabel={`Fila ${tabLabels[tab]}`}
+            accessibilityState={{ selected: form.mode === tab }}
             style={[
               styles.tabItem,
               form.mode === tab && [styles.tabItemActive, { borderBottomColor: theme.primary }],
@@ -44,7 +54,7 @@ export function AuthForm({
                 { color: form.mode === tab ? theme.primary : theme.textMuted },
               ]}
             >
-              {TAB_LABELS[tab]}
+              {tabLabels[tab]}
             </Text>
           </TouchableOpacity>
         ))}
@@ -106,6 +116,7 @@ export function AuthForm({
 
       <TouchableOpacity
         accessibilityRole="button"
+        accessibilityLabel={form.mode === 'signin' ? 'Conectează-te cu parola' : 'Creează contul'}
         style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
         onPress={form.handleAuth}
         disabled={form.loading}
@@ -118,6 +129,20 @@ export function AuthForm({
           </Text>
         )}
       </TouchableOpacity>
+
+      {form.mode === 'signin' && onUseCode && (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Primește un cod pe email"
+          onPress={onUseCode}
+          style={styles.resetBackBtn}
+          disabled={form.loading}
+        >
+          <Text style={[styles.resetBackText, { color: theme.primary }]}>
+            Primește un cod pe email
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {form.mode === 'signin' && (
         <TouchableOpacity

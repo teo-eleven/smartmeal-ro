@@ -20,7 +20,8 @@ import { GeneratingPlanModal } from './src/screens/onboarding/GeneratingPlanModa
 import { MealBoardScreen } from './src/screens/MealBoardScreen';
 import { GroceryScreen } from './src/screens/GroceryScreen';
 import { AuthModal } from './src/screens/AuthModal';
-import { WelcomeGate } from './src/screens/WelcomeGate';
+import { AuthGate, isGateShowing } from './src/screens/AuthGate';
+import { BiometricOptInPrompt } from './src/components/BiometricOptInPrompt';
 import { InformativeNoticeModal } from './src/components/InformativeNoticeModal';
 import { ConfirmDialog } from './src/components/ConfirmDialog';
 import { SUPERMARKETS } from './src/data/supermarkets';
@@ -46,7 +47,6 @@ function AppShell() {
 
   const {
     authStatus,
-    continueAsGuest,
     isHydrated,
     themeMode,
     cycleThemeMode,
@@ -140,38 +140,10 @@ function AppShell() {
   // Apple iOS Black & White Minimalist Theme Tokens
   const theme = getAppTheme(isDark);
 
-  // If in onboarding wizard
-  // Nothing renders until the stored session has been read, so the gate cannot flash in
-  // front of somebody who signed in three weeks ago.
-  // Until the re-verification screen exists, a locked account goes back through sign-in:
-  // the lock must never fall through to the plan. The window below is given no address while
-  // locked, so it offers the sign-in form rather than the account panel (sync, deletion)
-  // to somebody not yet verified.
-  const isLocked = authStatus === 'locked';
-  if (!isHydrated || authStatus === 'checking' || isLocked) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-        {isHydrated && (
-          <WelcomeGate
-            onOpenAuth={() => setAuthModalVisible(true)}
-            onContinueAsGuest={continueAsGuest}
-            isDark={isDark}
-          />
-        )}
-        <AuthModal
-          visible={authModalVisible}
-          onClose={() => setAuthModalVisible(false)}
-          isDark={isDark}
-          userEmail={isLocked ? null : userEmail}
-          onUserChanged={setUserEmail}
-          onSyncTriggered={syncWithCloud}
-          onDownloadTriggered={syncFromCloud}
-          isSyncing={isSyncing}
-          lastSyncedAt={lastSyncedAt}
-        />
-      </SafeAreaView>
-    );
+  // Nothing of the app shows until there is someone to show it to: a spinner while the
+  // stored session is read, the login for nobody, the re-verification past the month.
+  if (isGateShowing(isHydrated, authStatus)) {
+    return <AuthGate isDark={isDark} />;
   }
 
   if (activeView === 'onboarding') {
@@ -672,9 +644,13 @@ const styles = StyleSheet.create({
  */
 export default function App() {
   const colorScheme = useColorScheme();
+  const themeMode = useAppStore((s) => s.themeMode);
+  const isDark = themeMode === 'system' ? colorScheme === 'dark' : themeMode === 'dark';
   return (
     <ErrorBoundary isDark={colorScheme === 'dark'}>
       <AppShell />
+      {/* Over whichever screen follows a sign-in: the questionnaire, the paywall or the plan. */}
+      <BiometricOptInPrompt isDark={isDark} />
     </ErrorBoundary>
   );
 }
