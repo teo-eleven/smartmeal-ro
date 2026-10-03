@@ -219,6 +219,13 @@ describe('conectare și cont nou', () => {
     await expect(cloudSyncService.signOut()).resolves.toBeUndefined();
     warn.mockRestore();
   });
+
+  /** Other devices are signed out from Cont → Dispozitive, one by one, on purpose. */
+  test('„Deconectare” deconectează doar dispozitivul ăsta', async () => {
+    await cloudSyncService.signOut();
+
+    expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
 });
 
 /**

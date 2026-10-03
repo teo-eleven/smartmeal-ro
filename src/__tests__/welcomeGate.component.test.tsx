@@ -33,6 +33,16 @@ describe('poarta de la prima pornire', () => {
     expect(screen.queryByText(/Pasul 1 din 9/i)).toBeNull();
   });
 
+  /** Past the thirty days the session is still valid, and the plan must still not show. */
+  test('un cont blocat la 30 de zile nu ajunge la plan', () => {
+    useAppStore.setState({ authStatus: 'locked', userEmail: 'ana@b.ro' });
+
+    render(<App />);
+
+    expect(screen.getByLabelText('Conectează-te sau creează cont')).toBeTruthy();
+    expect(screen.queryByText(/Pasul 1 din 9/i)).toBeNull();
+  });
+
   test('oferă și calea fără cont', () => {
     render(<App />);
 

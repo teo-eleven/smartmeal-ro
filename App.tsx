@@ -25,6 +25,7 @@ import { InformativeNoticeModal } from './src/components/InformativeNoticeModal'
 import { ConfirmDialog } from './src/components/ConfirmDialog';
 import { SUPERMARKETS } from './src/data/supermarkets';
 import { useResponsive } from './src/hooks/useResponsive';
+import { useAccountSession } from './src/hooks/useAccountSession';
 import { injectEmeraldGlassStyles, getAppTheme } from './src/styles/theme';
 import { glass } from './src/styles/glass';
 import { UndoBanner } from './src/components/UndoBanner';
@@ -104,6 +105,8 @@ function AppShell() {
     return () => listener.remove();
   }, [isHydrated]);
 
+  useAccountSession(isHydrated, userEmail);
+
   // The subscription follows the account: on sign-in it is linked to the account's id, so a
   // second phone signed in to it is unlocked too; on sign-out it is unlinked.
   const previousEmail = useRef(userEmail);
@@ -140,7 +143,9 @@ function AppShell() {
   // If in onboarding wizard
   // Nothing renders until the stored session has been read, so the gate cannot flash in
   // front of somebody who signed in three weeks ago.
-  if (!isHydrated || authStatus === 'checking') {
+  // Until the re-verification screen exists, a locked account goes back through sign-in:
+  // the lock must never fall through to the plan.
+  if (!isHydrated || authStatus === 'checking' || authStatus === 'locked') {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />

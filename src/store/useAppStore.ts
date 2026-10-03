@@ -46,6 +46,7 @@ import { parseReminderSettings, parseUserPreferences } from '../utils/preference
 import { reminderScheduler } from '../services/reminderScheduler';
 import { storageService } from '../services/storage';
 import { cloudSyncService } from '../services/supabase';
+import { checkReauth } from '../services/reauth';
 import { describeFailure } from '../services/authErrors';
 import { areDietsCompatible, isRecipeMatchingDiets } from '../utils/dietCompatibility';
 
@@ -81,10 +82,14 @@ export interface AppState {
    *
    * `checking` until the stored session has been read, so the gate never flashes in front of
    * somebody who is already signed in. `guest` is a deliberate choice the user made, not an
-   * absence of one -- the app works fully without an account.
+   * absence of one -- the app works fully without an account. `locked` is a signed-in
+   * account last verified more than thirty days ago (services/reauth.ts): the session is
+   * still valid, but the app waits for Face ID, the password or an emailed code.
    */
-  authStatus: 'checking' | 'signedIn' | 'guest';
+  authStatus: 'checking' | 'signedIn' | 'guest' | 'locked';
   continueAsGuest: () => void;
+  /** The way out of `locked`, once the person has been verified again. Nothing otherwise. */
+  unlock: () => void;
   isSyncing: boolean;
   lastSyncedAt: string | null;
 
@@ -793,6 +798,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Read the session before anything renders, so the gate never flashes in front of
       // somebody who signed in three weeks ago and is still within their thirty days.
       const signedInEmail = await cloudSyncService.currentEmail();
+      const isLocked = signedInEmail ? (await checkReauth(signedInEmail)) === 'due' : false;
 
       // Storage is untrusted, and on web it is localStorage: editable by hand, by another
       // tab, or by an extension. Everything is whitelisted against its catalog before any of
@@ -999,7 +1005,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         // Not signed in means the gate, on every start. "Without an account" is chosen per
         // session and never stored: remembering it hid the sign-in screen for good after one
         // tap, and a refresh then went straight into the planner.
-        authStatus: signedInEmail ? 'signedIn' : 'checking',
+        authStatus: signedInEmail ? (isLocked ? 'locked' : 'signedIn') : 'checking',
         activeNotice:
           (repairedPrefsNotice?.type === 'warning' ? repairedPrefsNotice : null) ??
           planSafetyNotice ??
@@ -1085,7 +1091,18 @@ export const useAppStore = create<AppState>((set, get) => ({
    * account -- and because a meal planner genuinely is useful without one.
    */
   continueAsGuest: () => {
+    // From the monthly lock, "without an account" means without this one: the session is
+    // ended rather than left open behind a guest screen, which would be a way round the lock.
+    if (get().authStatus === 'locked') {
+      void cloudSyncService.signOut();
+      get().setUserEmail(null);
+      return;
+    }
     set({ authStatus: 'guest' });
+  },
+
+  unlock: () => {
+    if (get().authStatus === 'locked') set({ authStatus: 'signedIn' });
   },
 
   setUserEmail: (email: string | null) => {

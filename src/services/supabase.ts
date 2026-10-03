@@ -495,7 +495,10 @@ export const cloudSyncService = {
     const client = getSupabaseClient();
     if (!client) return;
     try {
-      await client.auth.signOut();
+      // This device only. Supabase's default ends every session of the account, which made
+      // "Deconectare" on a phone sign the laptop out too; other devices are signed out from
+      // Cont → Dispozitive instead.
+      await client.auth.signOut({ scope: 'local' });
     } catch (e) {
       console.warn('[Supabase] Error during sign out:', e);
     }
