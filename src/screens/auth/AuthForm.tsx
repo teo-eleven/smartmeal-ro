@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SignUpConsent } from '../../components/SignUpConsent';
+import { DISPLAY_NAME_MAX } from '../../utils/displayName';
 import { AuthFormState, AuthMode } from './useAuthForm';
 import { AuthTheme, authStyles as styles } from './authStyles';
 
@@ -48,6 +49,24 @@ export function AuthForm({
           </TouchableOpacity>
         ))}
       </View>
+
+      {form.mode === 'signup' && (
+        <View style={styles.inputGroup}>
+          <Text style={[styles.label, { color: theme.text }]}>Cum te numești?</Text>
+          <TextInput
+            style={inputStyle}
+            placeholder="Prenumele tău"
+            placeholderTextColor={theme.textMuted}
+            accessibilityLabel="Cum te numești?"
+            autoCapitalize="words"
+            autoComplete="given-name"
+            textContentType="givenName"
+            maxLength={DISPLAY_NAME_MAX}
+            value={form.displayName}
+            onChangeText={form.editDisplayName}
+          />
+        </View>
+      )}
 
       <View style={styles.inputGroup}>
         <Text style={[styles.label, { color: theme.text }]}>Email</Text>

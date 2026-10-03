@@ -29,6 +29,7 @@ beforeEach(() => {
 });
 
 const AGE = 'Am cel puțin 16 ani';
+const NAME = 'Cum te numești?';
 const HEALTH = 'Sunt de acord ca alergiile și dieta mea să fie păstrate în cont';
 
 function tickBothConsents() {
@@ -38,6 +39,7 @@ function tickBothConsents() {
 
 function fillSignUp() {
   fireEvent.press(screen.getByText('Creează cont'));
+  fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
   fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
   fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
 }
@@ -99,6 +101,8 @@ describe('AuthModal', () => {
     render(<AuthModal {...baseProps} onUserChanged={onUserChanged} onClose={onClose} />);
 
     fireEvent.press(screen.getByText('Creează cont'));
+
+    fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
     fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
     fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
     tickBothConsents();
@@ -128,6 +132,8 @@ describe('AuthModal', () => {
       render(<AuthModal {...baseProps} onUserChanged={onUserChanged} onClose={onClose} />);
 
       fireEvent.press(screen.getByText('Creează cont'));
+
+      fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
       fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
       fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
       tickBothConsents();
@@ -447,6 +453,7 @@ describe('resetarea parolei', () => {
   test('înregistrarea refuză o parolă slabă înainte de server', async () => {
     render(<AuthModal {...baseProps} />);
     fireEvent.press(screen.getByText('Creează cont'));
+    fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
     fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
     fireEvent.changeText(screen.getByPlaceholderText('••••••••'), '123456');
     fireEvent.press(screen.getByText('Înregistrare'));
@@ -519,10 +526,12 @@ describe('AuthModal, acordul la cont nou', () => {
     fireEvent.press(screen.getByText('Înregistrare'));
 
     await waitFor(() =>
-      expect(cloudSyncService.signUpWithEmail).toHaveBeenCalledWith('nou@b.ro', 'Muntele7Verde', {
-        isAtLeast16: true,
-        healthDataConsent: true,
-      })
+      expect(cloudSyncService.signUpWithEmail).toHaveBeenCalledWith(
+        'nou@b.ro',
+        'Muntele7Verde',
+        { isAtLeast16: true, healthDataConsent: true },
+        'Ana'
+      )
     );
   });
 });
@@ -543,6 +552,7 @@ describe('AuthModal, mesajul de eroare', () => {
   test('dispare când corectezi parola', async () => {
     render(<AuthModal {...baseProps} />);
     fireEvent.press(screen.getByText('Creează cont'));
+    fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
     fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
     fireEvent.changeText(screen.getByPlaceholderText('••••••••'), '123');
     fireEvent.press(screen.getByText('Înregistrare'));
@@ -580,6 +590,7 @@ describe('AuthModal, formularul după conectare', () => {
     expect(screen.getByPlaceholderText('••••••••').props.value).toBe('');
     fireEvent.press(screen.getByText('Creează cont'));
     expect(screen.getByLabelText(AGE).props.accessibilityState.checked).toBe(false);
+    expect(screen.getByLabelText(NAME).props.value).toBe('');
   });
 });
 
@@ -604,3 +615,55 @@ describe('AuthModal, fereastra de cont', () => {
   });
 });
 
+/** "Cum te numești?" — asked once, when the account is opened, and kept in the profile. */
+describe('AuthModal, numele la cont nou', () => {
+  test('câmpul apare doar la cont nou', () => {
+    render(<AuthModal {...baseProps} />);
+    expect(screen.queryByLabelText(NAME)).toBeNull();
+
+    fireEvent.press(screen.getByText('Creează cont'));
+
+    expect(screen.getByLabelText(NAME)).toBeTruthy();
+  });
+
+  test('fără nume, nimic nu pleacă spre server', async () => {
+    render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    fireEvent.changeText(screen.getByLabelText(NAME), '   ');
+    tickBothConsents();
+
+    fireEvent.press(screen.getByText('Înregistrare'));
+
+    await waitFor(() => expect(screen.getByText('Scrie cum te numești.')).toBeTruthy());
+    expect(cloudSyncService.signUpWithEmail).not.toHaveBeenCalled();
+  });
+
+  test('numele pleacă curățat de spații în plus', async () => {
+    (cloudSyncService.signUpWithEmail as jest.Mock).mockResolvedValue({
+      user: { email: 'nou@b.ro' },
+      error: null,
+    });
+    render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    fireEvent.changeText(screen.getByLabelText(NAME), '  Ana   Maria ');
+    tickBothConsents();
+
+    fireEvent.press(screen.getByText('Înregistrare'));
+
+    await waitFor(() =>
+      expect((cloudSyncService.signUpWithEmail as jest.Mock).mock.calls[0][3]).toBe('Ana Maria')
+    );
+  });
+
+  test('eroarea despre nume dispare când îl scrii', async () => {
+    render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    fireEvent.changeText(screen.getByLabelText(NAME), '');
+    fireEvent.press(screen.getByText('Înregistrare'));
+    await waitFor(() => expect(screen.getByText('Scrie cum te numești.')).toBeTruthy());
+
+    fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
+
+    expect(screen.queryByText('Scrie cum te numești.')).toBeNull();
+  });
+});

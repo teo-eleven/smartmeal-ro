@@ -3,6 +3,7 @@ import { cloudSyncService } from '../../services/supabase';
 import { SignUpConsent as Consent } from '../../types';
 import { describeWeakPassword } from '../../utils/passwordPolicy';
 import { describeMissingConsent } from '../../utils/signUpConsent';
+import { normalizeDisplayName } from '../../utils/displayName';
 
 const NO_CONSENT: Consent = { isAtLeast16: false, healthDataConsent: false };
 /** Long enough to read "Te-ai conectat", short enough not to wait for it. */
@@ -32,6 +33,7 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
   const [newPassword, setNewPassword] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
   const clearForm = () => {
     setEmail('');
     setPassword('');
+    setDisplayName('');
     setConsent(NO_CONSENT);
     setMode('signin');
   };
@@ -57,6 +60,10 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
   const editEmail = (value: string) => {
     setErrorMessage(null);
     setEmail(value);
+  };
+  const editDisplayName = (value: string) => {
+    setErrorMessage(null);
+    setDisplayName(value);
   };
   const editPassword = (value: string) => {
     setErrorMessage(null);
@@ -86,6 +93,12 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
   };
 
   const signUp = async () => {
+    // Checked in the order the fields stand: the name, then the password, then the consent.
+    const named = normalizeDisplayName(displayName);
+    if (!named.name) {
+      setErrorMessage(named.error);
+      return;
+    }
     const weak = describeWeakPassword(password);
     if (weak) {
       setErrorMessage(weak);
@@ -99,7 +112,8 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
     const { user, error, needsConfirmation } = await cloudSyncService.signUpWithEmail(
       email.trim(),
       password,
-      consent
+      consent,
+      named.name
     );
     if (error) {
       setErrorMessage(error);
@@ -219,8 +233,10 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
     setMode,
     email,
     password,
+    displayName,
     consent,
     editEmail,
+    editDisplayName,
     editPassword,
     editConsent,
     resetStep,
