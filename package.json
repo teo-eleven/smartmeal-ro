@@ -8,6 +8,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "test": "jest",
+    "test:sql": "node scripts/checkMigrations.mjs",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "typecheck": "tsc --noEmit",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@electric-sql/pglite": "^0.2.17",
     "@testing-library/react-native": "12.9.0",
     "@types/jest": "^29.5.14",
     "@types/react": "~18.3.12",
