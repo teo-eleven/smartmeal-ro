@@ -667,3 +667,32 @@ describe('AuthModal, numele la cont nou', () => {
     expect(screen.queryByText('Scrie cum te numești.')).toBeNull();
   });
 });
+
+/**
+ * The full-screen login is replaced the moment somebody signs in. The delayed close must die
+ * with it, not fire into a screen that is gone.
+ */
+describe('AuthModal, închiderea după conectare', () => {
+  test('dacă fereastra dispare înainte, închiderea întârziată nu mai rulează', async () => {
+    jest.useFakeTimers();
+    try {
+      (cloudSyncService.signInWithEmail as jest.Mock).mockResolvedValue({
+        user: { email: 'a@b.ro' },
+        error: null,
+      });
+      const onClose = jest.fn();
+      const { unmount } = render(<AuthModal {...baseProps} onClose={onClose} />);
+      fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'a@b.ro');
+      fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
+      fireEvent.press(screen.getByText('Conectare'));
+      await waitFor(() => expect(baseProps.onUserChanged).toHaveBeenCalledWith('a@b.ro'));
+
+      unmount();
+      jest.advanceTimersByTime(1000);
+
+      expect(onClose).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cloudSyncService } from '../../services/supabase';
 import { SignUpConsent as Consent } from '../../types';
 import { describeWeakPassword } from '../../utils/passwordPolicy';
@@ -19,6 +19,8 @@ interface AuthFormOptions {
   onSignedIn: () => void;
 }
 
+const SIGNED_OUT_MESSAGE = 'Te-ai deconectat.';
+
 /**
  * The state and actions of the sign-in forms: password sign-in, a new account, and the
  * password reset. Shared by the account window and the full-screen login, so both validate
@@ -38,6 +40,19 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [consent, setConsent] = useState<Consent>(NO_CONSENT);
+
+  // The delayed close runs after the screen may have gone: the full-screen login is replaced
+  // the moment somebody signs in. It is cancelled with the screen, and calls the latest
+  // callback rather than the one from the render that started it.
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onSignedInRef = useRef(onSignedIn);
+  onSignedInRef.current = onSignedIn;
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    []
+  );
 
   const clearMessages = () => {
     setErrorMessage(null);
@@ -80,8 +95,28 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
     setSuccessMessage(message);
     // Closed a moment later. Left open, the window came back on its own over the plan once
     // the main screen mounted.
-    setTimeout(onSignedIn, CLOSE_AFTER_MS);
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => {
+      closeTimer.current = null;
+      onSignedInRef.current();
+    }, CLOSE_AFTER_MS);
   };
+
+  /**
+   * Every action that talks to the server goes through here: the old messages go, the button
+   * spins, and it stops spinning however the action ends.
+   */
+  const run = async (action: () => Promise<void>) => {
+    clearMessages();
+    setLoading(true);
+    try {
+      await action();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showError = (message: string) => setErrorMessage(message);
 
   const signIn = async () => {
     const { user, error } = await cloudSyncService.signInWithEmail(email.trim(), password);
@@ -228,6 +263,25 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
     }
   };
 
+  const handleSignOut = () =>
+    run(async () => {
+      await cloudSyncService.signOut();
+      onUserChanged(null);
+      clearForm();
+      setSuccessMessage(SIGNED_OUT_MESSAGE);
+    });
+
+  const handleDeleteAccount = () =>
+    run(async () => {
+      const { success, error } = await cloudSyncService.deleteAccount();
+      if (!success) {
+        setErrorMessage(error ?? 'Contul nu a putut fi șters.');
+        return;
+      }
+      onUserChanged(null);
+      setSuccessMessage('Contul și datele lui au fost șterse.');
+    });
+
   return {
     mode,
     setMode,
@@ -245,13 +299,13 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
     newPassword,
     setNewPassword,
     loading,
-    setLoading,
     errorMessage,
-    setErrorMessage,
     successMessage,
-    setSuccessMessage,
-    clearForm,
+    run,
+    showError,
     handleAuth,
+    handleSignOut,
+    handleDeleteAccount,
     startReset,
     leaveReset,
     handleRequestReset,

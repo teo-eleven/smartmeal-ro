@@ -50,35 +50,6 @@ export function AuthModal({
   const theme = getAuthTheme(isDark);
   const { isMobile, height: windowHeight } = useResponsive();
 
-  const handleDeleteAccount = async () => {
-    form.setErrorMessage(null);
-    form.setSuccessMessage(null);
-    form.setLoading(true);
-    try {
-      const { success, error } = await cloudSyncService.deleteAccount();
-      if (!success) {
-        form.setErrorMessage(error ?? 'Contul nu a putut fi șters.');
-        return;
-      }
-      onUserChanged(null);
-      form.setSuccessMessage('Contul și datele lui au fost șterse.');
-    } finally {
-      form.setLoading(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    form.setLoading(true);
-    try {
-      await cloudSyncService.signOut();
-      onUserChanged(null);
-      form.clearForm();
-      form.setSuccessMessage('Te-ai deconectat.');
-    } finally {
-      form.setLoading(false);
-    }
-  };
-
   // The signed-in account was one 440 px card as tall as the screen that did not scroll: on
   // a phone its title was cut off at the top and "Închide" fell below the bottom edge. Now a
   // phone gets the whole screen, a wide screen a wide two-column panel, and both scroll
@@ -150,8 +121,8 @@ export function AuthModal({
                   isBusy={form.loading}
                   onSync={onSyncTriggered}
                   onDownload={onDownloadTriggered}
-                  onSignOut={handleSignOut}
-                  onDeleteAccount={handleDeleteAccount}
+                  onSignOut={form.handleSignOut}
+                  onDeleteAccount={form.handleDeleteAccount}
                   reminders={reminders}
                   onChangeReminders={updateReminders}
                   wide={isWide}

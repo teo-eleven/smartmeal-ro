@@ -61,7 +61,9 @@ export function AuthForm({
             autoCapitalize="words"
             autoComplete="given-name"
             textContentType="givenName"
-            maxLength={DISPLAY_NAME_MAX}
+            // Loose on purpose: the check counts characters as the database does, and says so
+            // when a name is too long; this only stops a runaway paste.
+            maxLength={DISPLAY_NAME_MAX * 2}
             value={form.displayName}
             onChangeText={form.editDisplayName}
           />
@@ -76,6 +78,8 @@ export function AuthForm({
           placeholderTextColor={theme.textMuted}
           autoCapitalize="none"
           keyboardType="email-address"
+          autoComplete="email"
+          textContentType="emailAddress"
           value={form.email}
           onChangeText={form.editEmail}
         />
@@ -88,6 +92,9 @@ export function AuthForm({
           placeholder="••••••••"
           placeholderTextColor={theme.textMuted}
           secureTextEntry
+          // Lets password managers offer the saved one, or a new strong one on Creează cont.
+          autoComplete={form.mode === 'signup' ? 'new-password' : 'current-password'}
+          textContentType={form.mode === 'signup' ? 'newPassword' : 'password'}
           value={form.password}
           onChangeText={form.editPassword}
         />
