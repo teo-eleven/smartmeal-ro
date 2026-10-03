@@ -4,7 +4,7 @@ import {
   forgetAccountSecurity,
   isReauthDue,
   markBiometricAsked,
-  markFullAuth,
+  markVerified,
   readAccountSecurity,
   setBiometricEnabled,
 } from '../reauth';
@@ -14,6 +14,10 @@ const mockVault = new Map<string, string>();
 jest.mock('../secureSessionStore', () => ({
   secureSessionStore: {
     getItem: async (key: string) => mockVault.get(key) ?? null,
+    getItemOrThrow: async (key: string) => {
+      if (mockVault.get('__broken__')) throw new Error('keychain locked');
+      return mockVault.get(key) ?? null;
+    },
     setItem: async (key: string, value: string) => {
       mockVault.set(key, value);
     },
@@ -73,19 +77,19 @@ describe('ce se ține minte pentru fiecare cont', () => {
   });
 
   test('conectarea completă salvează momentul', async () => {
-    await markFullAuth(EMAIL, NOW);
+    await markVerified(EMAIL, NOW);
 
     expect((await readAccountSecurity(EMAIL)).lastFullAuthAt).toBe(NOW);
   });
 
   test('adresa e aceeași indiferent de majuscule și spații', async () => {
-    await markFullAuth('  Ana@Exemplu.RO ', NOW);
+    await markVerified('  Ana@Exemplu.RO ', NOW);
 
     expect((await readAccountSecurity(EMAIL)).lastFullAuthAt).toBe(NOW);
   });
 
   test('conturile diferite nu se amestecă', async () => {
-    await markFullAuth(EMAIL, NOW);
+    await markVerified(EMAIL, NOW);
 
     expect((await readAccountSecurity('altcineva@exemplu.ro')).lastFullAuthAt).toBeNull();
   });
@@ -109,9 +113,9 @@ describe('ce se ține minte pentru fiecare cont', () => {
   });
 
   test('o schimbare nu le șterge pe celelalte', async () => {
-    await markFullAuth(EMAIL, NOW);
+    await markVerified(EMAIL, NOW);
     await setBiometricEnabled(EMAIL, true);
-    await markFullAuth(EMAIL, NOW + DAY);
+    await markVerified(EMAIL, NOW + DAY);
 
     expect(await readAccountSecurity(EMAIL)).toEqual({
       lastFullAuthAt: NOW + DAY,
@@ -121,7 +125,7 @@ describe('ce se ține minte pentru fiecare cont', () => {
   });
 
   test('o valoare stricată în memorie e tratată ca nimic salvat, nu ca eroare', async () => {
-    await markFullAuth(EMAIL, NOW);
+    await markVerified(EMAIL, NOW);
     const [key] = [...mockVault.keys()];
     mockVault.set(key, '{"lastFullAuthAt":"ieri","biometricEnabled":"da"}');
 
@@ -133,7 +137,7 @@ describe('ce se ține minte pentru fiecare cont', () => {
   });
 
   test('o valoare care nu e JSON e tratată la fel', async () => {
-    await markFullAuth(EMAIL, NOW);
+    await markVerified(EMAIL, NOW);
     const [key] = [...mockVault.keys()];
     mockVault.set(key, 'nu e json');
 
@@ -141,15 +145,29 @@ describe('ce se ține minte pentru fiecare cont', () => {
   });
 
   test('cheia din keychain nu conține adresa de email', async () => {
-    await markFullAuth(EMAIL, NOW);
+    await markVerified(EMAIL, NOW);
 
     const [key] = [...mockVault.keys()];
     expect(key).not.toMatch(/ana|exemplu/);
     expect(key).toMatch(/^[A-Za-z0-9._-]+$/);
   });
 
+  test('două schimbări în același moment nu se pierd una pe alta', async () => {
+    await Promise.all([
+      markVerified(EMAIL, NOW),
+      setBiometricEnabled(EMAIL, true),
+      markBiometricAsked(EMAIL),
+    ]);
+
+    expect(await readAccountSecurity(EMAIL)).toEqual({
+      lastFullAuthAt: NOW,
+      biometricEnabled: true,
+      biometricAsked: true,
+    });
+  });
+
   test('ștergerea contului uită tot', async () => {
-    await markFullAuth(EMAIL, NOW);
+    await markVerified(EMAIL, NOW);
     await setBiometricEnabled(EMAIL, true);
 
     await forgetAccountSecurity(EMAIL);
@@ -164,13 +182,13 @@ describe('verificarea de la pornire', () => {
   });
 
   test('o conectare recentă nu blochează', async () => {
-    await markFullAuth(EMAIL, NOW - 3 * DAY);
+    await markVerified(EMAIL, NOW - 3 * DAY);
 
     expect(await checkReauth(EMAIL, NOW)).toBe('ok');
   });
 
   test('după 30 de zile aplicația se blochează', async () => {
-    await markFullAuth(EMAIL, NOW - 31 * DAY);
+    await markVerified(EMAIL, NOW - 31 * DAY);
 
     expect(await checkReauth(EMAIL, NOW)).toBe('due');
   });
@@ -179,6 +197,32 @@ describe('verificarea de la pornire', () => {
    * Somebody signed in before this version shipped has no date saved. Locking them out on
    * the first start after the update would punish them for an upgrade; the month starts now.
    */
+  /** A damaged record must never be a way past the lock. */
+  test('o înregistrare stricată blochează, nu dă o lună nouă', async () => {
+    await markVerified(EMAIL, NOW - DAY);
+    const [key] = [...mockVault.keys()];
+    mockVault.set(key, '{"lastFullAuthAt":"x"}');
+
+    expect(await checkReauth(EMAIL, NOW)).toBe('due');
+    expect(mockVault.get(key)).toBe('{"lastFullAuthAt":"x"}');
+  });
+
+  test('un text care nu e JSON blochează la fel', async () => {
+    await markVerified(EMAIL, NOW - DAY);
+    const [key] = [...mockVault.keys()];
+    mockVault.set(key, 'garbage');
+
+    expect(await checkReauth(EMAIL, NOW)).toBe('due');
+  });
+
+  test('un keychain care nu se deschide blochează', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    await markVerified(EMAIL, NOW - DAY);
+    mockVault.set('__broken__', '1');
+
+    expect(await checkReauth(EMAIL, NOW)).toBe('due');
+  });
+
   test('un cont conectat înainte de actualizare primește o lună de acum', async () => {
     expect(await checkReauth(EMAIL, NOW)).toBe('ok');
     expect((await readAccountSecurity(EMAIL)).lastFullAuthAt).toBe(NOW);

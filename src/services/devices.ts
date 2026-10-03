@@ -1,8 +1,9 @@
-import { cloudSyncService, getSupabaseClient } from './supabase';
 import { localAuthSimulation } from './localAuthSimulation';
 import { localDeviceSimulation } from './localDeviceSimulation';
 import { secureSessionStore } from './secureSessionStore';
 import { currentOs } from './platformOs';
+import { signedInContext } from './authContext';
+import { warnSafely } from './authErrors';
 import { describeDevice, devicePlatform, DevicePlatform } from '../utils/deviceLabel';
 
 /**
@@ -11,7 +12,8 @@ import { describeDevice, devicePlatform, DevicePlatform } from '../utils/deviceL
  * Each install keeps a random id in the keychain and records itself, with the session it
  * holds, through register_device. Signing another device out goes through revoke_device,
  * which ends that session on the server. The device itself finds out the next time it checks
- * in: register_device refuses a session that has ended, and the app then signs it out.
+ * in: register_device refuses a session that has ended (SM001), and the app then signs out.
+ * The local simulation follows the same rules; see localDeviceSimulation.
  */
 export interface DeviceInfo {
   deviceId: string;
@@ -23,8 +25,16 @@ export interface DeviceInfo {
 
 export type RegisterOutcome = 'ok' | 'revoked' | 'skipped';
 
+/** The SQLSTATEs migration 0007 raises; matched by code, never by wording. */
+export const DEVICE_ERRORS = {
+  sessionEnded: 'SM001',
+  noSuchDevice: 'SM002',
+  isCurrentDevice: 'SM003',
+} as const;
+
 const DEVICE_ID_KEY = 'smartmeal.device_id';
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const NAME_MAX = 60;
 const LIST_FAILED = 'Nu am putut încărca dispozitivele. Încearcă din nou.';
 const REVOKE_FAILED = 'Nu am putut deconecta dispozitivul. Încearcă din nou.';
 const IS_CURRENT = 'Pentru dispozitivul ăsta folosește „Deconectare”.';
@@ -44,12 +54,28 @@ function newUuid(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-export async function getDeviceId(): Promise<string> {
+/**
+ * Shared while in flight: at first start the device is registered and listed at once, and
+ * two callers each finding no id would each make one, leaving one of them with an id that
+ * was never saved.
+ */
+let deviceIdInFlight: Promise<string> | null = null;
+
+async function loadOrCreateDeviceId(): Promise<string> {
   const stored = await secureSessionStore.getItem(DEVICE_ID_KEY);
   if (stored && UUID_V4.test(stored)) return stored;
   const created = newUuid();
   await secureSessionStore.setItem(DEVICE_ID_KEY, created);
   return created;
+}
+
+export function getDeviceId(): Promise<string> {
+  if (!deviceIdInFlight) {
+    deviceIdInFlight = loadOrCreateDeviceId().finally(() => {
+      deviceIdInFlight = null;
+    });
+  }
+  return deviceIdInFlight;
 }
 
 function thisDevice(): { name: string; platform: DevicePlatform } {
@@ -64,86 +90,93 @@ function thisDevice(): { name: string; platform: DevicePlatform } {
  * because a device list that could not be updated is no reason to stop somebody cooking.
  */
 export async function registerThisDevice(): Promise<RegisterOutcome> {
-  const deviceId = await getDeviceId();
-  const { name, platform } = thisDevice();
-
-  if (localAuthSimulation.isActive()) {
-    const email = await localAuthSimulation.currentEmail();
-    if (!email) return 'skipped';
-    await localDeviceSimulation.register(email, { deviceId, name, platform });
-    return 'ok';
-  }
-
-  const client = getSupabaseClient();
-  if (!client || !(await cloudSyncService.getCurrentUser())) return 'skipped';
-
   try {
-    const { error } = await client.rpc('register_device', {
+    const context = await signedInContext();
+    if (!context) return 'skipped';
+    const deviceId = await getDeviceId();
+    const { name, platform } = thisDevice();
+
+    if (context.kind === 'simulation') {
+      const sessionId = (await localAuthSimulation.currentSessionId()) ?? '';
+      const outcome = await localDeviceSimulation.register(context.email, {
+        deviceId,
+        name,
+        platform,
+        sessionId,
+      });
+      return outcome === 'ok' ? 'ok' : 'revoked';
+    }
+
+    const { error } = await context.client.rpc('register_device', {
       p_device_id: deviceId,
       p_name: name,
       p_platform: platform,
     });
     if (!error) return 'ok';
-    if (error.message === 'session ended') return 'revoked';
-    console.warn('[SmartMeal] Dispozitivul nu a putut fi înregistrat.', error);
+    if (error.code === DEVICE_ERRORS.sessionEnded) return 'revoked';
+    warnSafely('Dispozitivul nu a putut fi înregistrat.', error);
     return 'skipped';
   } catch (e) {
-    console.warn('[SmartMeal] Dispozitivul nu a putut fi înregistrat.', e);
+    warnSafely('Dispozitivul nu a putut fi înregistrat.', e);
     return 'skipped';
   }
 }
 
-function parseRow(row: unknown, currentId: string): DeviceInfo | null {
+/** One parser for the server's rows and the simulation's, which share the table's shape. */
+export function parseDeviceRow(row: unknown, currentId: string): DeviceInfo | null {
   if (typeof row !== 'object' || row === null) return null;
   const r = row as Record<string, unknown>;
   if (typeof r.device_id !== 'string' || typeof r.device_name !== 'string') return null;
-  if (typeof r.last_seen_at !== 'string' || r.revoked_at) return null;
+  if (typeof r.last_seen_at !== 'string' || Number.isNaN(Date.parse(r.last_seen_at))) return null;
+  if (r.revoked_at) return null;
+  const name = r.device_name.trim().slice(0, NAME_MAX);
   return {
     deviceId: r.device_id,
-    name: r.device_name,
+    name: name || 'Dispozitiv',
     platform: devicePlatform(typeof r.platform === 'string' ? r.platform : undefined),
     lastSeenAt: r.last_seen_at,
     isCurrent: r.device_id === currentId,
   };
 }
 
-/** This device first, then the others by when they were last used. */
+/**
+ * This device first, then the others by when they were last used. By time, not by text:
+ * PostgREST writes timestamps with varying fractions and offsets, which do not sort as text.
+ */
 function ordered(devices: DeviceInfo[]): DeviceInfo[] {
   return [...devices].sort(
-    (a, b) => Number(b.isCurrent) - Number(a.isCurrent) || b.lastSeenAt.localeCompare(a.lastSeenAt)
+    (a, b) =>
+      Number(b.isCurrent) - Number(a.isCurrent) ||
+      Date.parse(b.lastSeenAt) - Date.parse(a.lastSeenAt)
   );
 }
 
-export async function listDevices(): Promise<{ devices: DeviceInfo[]; error: string | null }> {
-  const currentId = await getDeviceId();
+async function fetchRows(): Promise<unknown[] | null> {
+  const context = await signedInContext();
+  if (!context) return [];
+  if (context.kind === 'simulation') return localDeviceSimulation.list(context.email);
 
-  if (localAuthSimulation.isActive()) {
-    const email = await localAuthSimulation.currentEmail();
-    const devices = email ? await localDeviceSimulation.list(email) : [];
-    return {
-      devices: ordered(devices.map((d) => ({ ...d, isCurrent: d.deviceId === currentId }))),
-      error: null,
-    };
+  const { data, error } = await context.client
+    .from('user_devices')
+    .select('device_id, device_name, platform, last_seen_at, revoked_at')
+    .is('revoked_at', null);
+  if (error || !Array.isArray(data)) {
+    warnSafely('Dispozitivele nu au putut fi citite.', error);
+    return null;
   }
+  return data;
+}
 
-  const client = getSupabaseClient();
-  if (!client) return { devices: [], error: LIST_FAILED };
-
+export async function listDevices(): Promise<{ devices: DeviceInfo[]; error: string | null }> {
   try {
-    const { data, error } = await client
-      .from('user_devices')
-      .select('device_id, device_name, platform, last_seen_at, revoked_at')
-      .is('revoked_at', null);
-    if (error || !Array.isArray(data)) {
-      console.warn('[SmartMeal] Dispozitivele nu au putut fi citite.', error);
-      return { devices: [], error: LIST_FAILED };
-    }
-    const devices = data
-      .map((row) => parseRow(row, currentId))
+    const [rows, currentId] = await Promise.all([fetchRows(), getDeviceId()]);
+    if (!rows) return { devices: [], error: LIST_FAILED };
+    const devices = rows
+      .map((row) => parseDeviceRow(row, currentId))
       .filter((d): d is DeviceInfo => d !== null);
     return { devices: ordered(devices), error: null };
   } catch (e) {
-    console.warn('[SmartMeal] Dispozitivele nu au putut fi citite.', e);
+    warnSafely('Dispozitivele nu au putut fi citite.', e);
     return { devices: [], error: LIST_FAILED };
   }
 }
@@ -151,27 +184,24 @@ export async function listDevices(): Promise<{ devices: DeviceInfo[]; error: str
 export async function revokeDevice(
   deviceId: string
 ): Promise<{ success: boolean; error: string | null }> {
-  if (deviceId === (await getDeviceId())) return { success: false, error: IS_CURRENT };
-
-  if (localAuthSimulation.isActive()) {
-    const email = await localAuthSimulation.currentEmail();
-    const done = email ? await localDeviceSimulation.revoke(email, deviceId) : false;
-    return done ? { success: true, error: null } : { success: false, error: ALREADY_GONE };
-  }
-
-  const client = getSupabaseClient();
-  if (!client) return { success: false, error: REVOKE_FAILED };
-
   try {
-    const { error } = await client.rpc('revoke_device', { p_device_id: deviceId });
+    if (deviceId === (await getDeviceId())) return { success: false, error: IS_CURRENT };
+    const context = await signedInContext();
+    if (!context) return { success: false, error: REVOKE_FAILED };
+
+    if (context.kind === 'simulation') {
+      const done = await localDeviceSimulation.revoke(context.email, deviceId);
+      return done ? { success: true, error: null } : { success: false, error: ALREADY_GONE };
+    }
+
+    const { error } = await context.client.rpc('revoke_device', { p_device_id: deviceId });
     if (!error) return { success: true, error: null };
-    if (error.message === 'no such device') return { success: false, error: ALREADY_GONE };
-    if (error.message === 'cannot revoke the current device')
-      return { success: false, error: IS_CURRENT };
-    console.warn('[SmartMeal] Dispozitivul nu a putut fi deconectat.', error);
+    if (error.code === DEVICE_ERRORS.noSuchDevice) return { success: false, error: ALREADY_GONE };
+    if (error.code === DEVICE_ERRORS.isCurrentDevice) return { success: false, error: IS_CURRENT };
+    warnSafely('Dispozitivul nu a putut fi deconectat.', error);
     return { success: false, error: REVOKE_FAILED };
   } catch (e) {
-    console.warn('[SmartMeal] Dispozitivul nu a putut fi deconectat.', e);
+    warnSafely('Dispozitivul nu a putut fi deconectat.', e);
     return { success: false, error: REVOKE_FAILED };
   }
 }

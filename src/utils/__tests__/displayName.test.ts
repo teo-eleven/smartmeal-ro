@@ -14,6 +14,27 @@ describe('numele afișat', () => {
     expect(normalizeDisplayName('   ')).toEqual({ name: null, error: 'Scrie cum te numești.' });
   });
 
+  test('un rând nou între cuvinte devine spațiu, nu le lipește', () => {
+    expect(normalizeDisplayName('Ana\nPop\tIon')).toEqual({ name: 'Ana Pop Ion', error: null });
+  });
+
+  test('caracterele invizibile și cele care întorc textul sunt scoase', () => {
+    expect(normalizeDisplayName('A\u200bna \u202ePop\u202c')).toEqual({
+      name: 'Ana Pop',
+      error: null,
+    });
+  });
+
+  test('un nume făcut doar din caractere invizibile e gol', () => {
+    expect(normalizeDisplayName('\u200b\u200b').error).toBe('Scrie cum te numești.');
+  });
+
+  test('un emoji se numără ca un caracter, ca în baza de date', () => {
+    const name = '😀'.repeat(DISPLAY_NAME_MAX);
+
+    expect(normalizeDisplayName(name).name).toBe(name);
+  });
+
   test('caracterele de control sunt scoase, nu păstrate în baza de date', () => {
     expect(normalizeDisplayName('Ana\u0000\u0007 Pop')).toEqual({ name: 'Ana Pop', error: null });
   });

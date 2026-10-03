@@ -2,6 +2,7 @@ import { isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { getSupabaseClient } from './supabase';
 import { localAuthSimulation } from './localAuthSimulation';
 import { describeAuthError, describeFailure } from './authErrors';
+import { recordVerification } from './reauth';
 
 /**
  * Signing in with a code emailed to the address, instead of the password.
@@ -15,14 +16,16 @@ import { describeAuthError, describeFailure } from './authErrors';
  */
 export const LOGIN_CODE_INVALID = 'Codul nu este valid sau a expirat. Cere altul.';
 const NOT_AVAILABLE = 'Conectarea cu cod nu este disponibilă offline.';
+const VERIFY_NETWORK = 'Nu am putut verifica codul. Verifică conexiunea la internet.';
 const NETWORK = 'Nu am putut trimite codul. Verifică conexiunea la internet și încearcă din nou.';
 
-/** Errors worth showing. Anything else — notably "no such user" — is answered as success. */
-const SHOWN_ON_REQUEST = new Set([
-  'over_email_send_rate_limit',
-  'over_request_rate_limit',
-  'email_address_invalid',
-]);
+/**
+ * Errors worth showing. Anything else — notably "no such user" — is answered as success.
+ * The per-address email limit is answered as success too: it only trips for an address a
+ * code was really sent to, so showing it would tell a repeat caller the account exists. The
+ * per-device request limit says nothing about the address and is shown.
+ */
+const SHOWN_ON_REQUEST = new Set(['over_request_rate_limit', 'email_address_invalid']);
 
 /** Supabase sends 6 digits by default and up to 10 if the project says so. */
 export function isCodeShaped(code: string): boolean {
@@ -59,8 +62,10 @@ export async function verifyLoginCode(
   if (!isCodeShaped(code)) return { email: null, error: LOGIN_CODE_INVALID };
 
   if (localAuthSimulation.isActive()) {
-    const result = await localAuthSimulation.signInWithCode(email, code);
-    return result.email ? result : { email: null, error: LOGIN_CODE_INVALID };
+    const { email: signedIn } = await localAuthSimulation.signInWithCode(email, code);
+    if (!signedIn) return { email: null, error: LOGIN_CODE_INVALID };
+    await recordVerification(signedIn);
+    return { email: signedIn, error: null };
   }
 
   const client = getSupabaseClient();
@@ -73,10 +78,12 @@ export async function verifyLoginCode(
       type: 'email',
     });
     if (isAuthRetryableFetchError(error)) {
-      return { email: null, error: 'Nu am putut verifica codul. Verifică conexiunea la internet.' };
+      return { email: null, error: VERIFY_NETWORK };
     }
     if (error || !data.user) return { email: null, error: LOGIN_CODE_INVALID };
-    return { email: data.user.email ?? email.trim().toLowerCase(), error: null };
+    const signedIn = data.user.email ?? email.trim().toLowerCase();
+    await recordVerification(signedIn);
+    return { email: signedIn, error: null };
   } catch (e: unknown) {
     return { email: null, error: describeFailure(e, 'Eroare la verificarea codului.') };
   }

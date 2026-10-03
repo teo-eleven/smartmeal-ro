@@ -2,7 +2,13 @@ import { AuthRetryableFetchError, createClient } from '@supabase/supabase-js';
 import { cloudSyncService } from '../supabase';
 import { LOGIN_CODE_INVALID, isCodeShaped, requestLoginCode, verifyLoginCode } from '../authCode';
 import { getDisplayName, updateDisplayName } from '../profile';
-import { getDeviceId, listDevices, registerThisDevice, revokeDevice } from '../devices';
+import {
+  DEVICE_ERRORS,
+  getDeviceId,
+  listDevices,
+  registerThisDevice,
+  revokeDevice,
+} from '../devices';
 import { SignUpConsent } from '../../types';
 
 jest.mock('@supabase/supabase-js', () => ({
@@ -32,7 +38,8 @@ const auth = {
   verifyOtp: jest.fn(),
 };
 const maybeSingle = jest.fn();
-const updateEq = jest.fn();
+const updateSelect = jest.fn();
+const updateEq = jest.fn(() => ({ select: updateSelect }));
 const is = jest.fn();
 const update = jest.fn(() => ({ eq: updateEq }));
 const select = jest.fn(() => ({ eq: () => ({ maybeSingle }), is }));
@@ -46,6 +53,10 @@ const USER = { id: 'u1', email: 'ana@b.ro' };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // clearAllMocks keeps an earlier test's answers; every answer a test relies on is reset.
+  [auth.signUp, auth.signInWithOtp, auth.verifyOtp, maybeSingle, updateSelect, is, rpc].forEach(
+    (mock) => mock.mockReset()
+  );
   jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   auth.getUser.mockResolvedValue({ data: { user: USER } });
 });
@@ -87,15 +98,24 @@ describe('cererea codului de conectare', () => {
     expect(await requestLoginCode('nimeni@b.ro')).toEqual({ success: true, error: null });
   });
 
-  test('prea multe emailuri se spun pe față', async () => {
+  /** It only trips for an address a code was really sent to; showing it would reveal one. */
+  test('limita de emailuri pe adresă primește același răspuns', async () => {
     auth.signInWithOtp.mockResolvedValue({
       error: { code: 'over_email_send_rate_limit', message: 'rate limit' },
+    });
+
+    expect(await requestLoginCode('ana@b.ro')).toEqual({ success: true, error: null });
+  });
+
+  test('prea multe cereri de pe același dispozitiv se spun pe față', async () => {
+    auth.signInWithOtp.mockResolvedValue({
+      error: { code: 'over_request_rate_limit', message: 'rate limit' },
     });
 
     const result = await requestLoginCode('ana@b.ro');
 
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/Prea multe emailuri/);
+    expect(result.error).toMatch(/Prea multe încercări/);
   });
 
   test('fără internet nu se pretinde că a plecat codul', async () => {
@@ -203,7 +223,7 @@ describe('numele din profil', () => {
   });
 
   test('schimbarea numelui scrie doar coloana display_name', async () => {
-    updateEq.mockResolvedValue({ error: null });
+    updateSelect.mockResolvedValue({ data: [{ user_id: 'u1' }], error: null });
 
     expect(await updateDisplayName(' Ana  Maria ')).toEqual({ name: 'Ana Maria', error: null });
     expect(update).toHaveBeenCalledWith({ display_name: 'Ana Maria' });
@@ -211,13 +231,30 @@ describe('numele din profil', () => {
   });
 
   test('o eroare la salvare are mesaj în română', async () => {
-    updateEq.mockResolvedValue({
+    updateSelect.mockResolvedValue({
+      data: null,
       error: { message: 'new row violates row-level security policy' },
     });
     expect((await updateDisplayName('Ana')).error).toMatch(/Nu am putut salva/);
 
-    updateEq.mockRejectedValue(new Error('boom'));
+    updateSelect.mockRejectedValue(new Error('boom'));
     expect((await updateDisplayName('Ana')).error).toMatch(/Nu am putut salva/);
+  });
+
+  /** No profile row, or one the policy hid: PostgREST says nothing, so the count decides. */
+  test('o actualizare care n-a atins niciun rând nu e raportată ca salvată', async () => {
+    updateSelect.mockResolvedValue({ data: [], error: null });
+
+    expect(await updateDisplayName('Ana')).toEqual({
+      name: null,
+      error: 'Nu am putut salva numele. Încearcă din nou.',
+    });
+  });
+
+  test('numele citit de pe server trece prin aceleași reguli', async () => {
+    maybeSingle.mockResolvedValue({ data: { display_name: '  Ana\u200b  ' }, error: null });
+
+    expect(await getDisplayName()).toBe('Ana');
   });
 
   test('fără cont conectat nu se poate schimba', async () => {
@@ -240,9 +277,25 @@ describe('dispozitivele', () => {
   });
 
   test('o sesiune încheiată de pe alt dispozitiv înseamnă „revocat”', async () => {
-    rpc.mockResolvedValue({ error: { code: '42501', message: 'session ended' } });
+    rpc.mockResolvedValue({
+      error: { code: DEVICE_ERRORS.sessionEnded, message: 'session ended' },
+    });
 
     expect(await registerThisDevice()).toBe('revoked');
+  });
+
+  /** Matched by code: the same words under another code are not a sign-out. */
+  test('doar codul SM001 deconectează, nu și textul', async () => {
+    rpc.mockResolvedValue({ error: { code: '42501', message: 'session ended' } });
+
+    expect(await registerThisDevice()).toBe('skipped');
+  });
+
+  test('pornite deodată, înregistrarea și lista folosesc același id', async () => {
+    const [first, second, third] = await Promise.all([getDeviceId(), getDeviceId(), getDeviceId()]);
+
+    expect(new Set([first, second, third]).size).toBe(1);
+    expect(await getDeviceId()).toBe(first);
   });
 
   test('alte erori nu deconectează pe nimeni', async () => {
@@ -300,6 +353,58 @@ describe('dispozitivele', () => {
       ['a', false],
     ]);
     expect(is).toHaveBeenCalledWith('revoked_at', null);
+  });
+
+  /** PostgREST trims fractions and keeps offsets: as text these would sort wrongly. */
+  test('ordinea după timp, nu după text, cu fracțiuni și fusuri orare diferite', async () => {
+    is.mockResolvedValue({
+      data: [
+        {
+          device_id: 'x',
+          device_name: 'X',
+          platform: 'web',
+          last_seen_at: '2026-10-03T17:00:00.12+00:00',
+        },
+        {
+          device_id: 'y',
+          device_name: 'Y',
+          platform: 'web',
+          last_seen_at: '2026-10-03T19:30:00+03:00',
+        },
+        {
+          device_id: 'z',
+          device_name: 'Z',
+          platform: 'web',
+          last_seen_at: '2026-10-03T17:00:00.123456+00:00',
+        },
+      ],
+      error: null,
+    });
+
+    const { devices } = await listDevices();
+
+    // y is 16:30 UTC, the oldest; z is a fraction of a second after x.
+    expect(devices.map((d) => d.deviceId)).toEqual(['z', 'x', 'y']);
+  });
+
+  test('un nume foarte lung e tăiat, o dată care nu e dată e lăsată deoparte', async () => {
+    is.mockResolvedValue({
+      data: [
+        {
+          device_id: 'a',
+          device_name: 'a'.repeat(500),
+          platform: 'web',
+          last_seen_at: '2026-10-01T10:00:00Z',
+        },
+        { device_id: 'b', device_name: 'B', platform: 'web', last_seen_at: 'ieri' },
+      ],
+      error: null,
+    });
+
+    const { devices } = await listDevices();
+
+    expect(devices.map((d) => d.deviceId)).toEqual(['a']);
+    expect(devices[0].name).toHaveLength(60);
   });
 
   test('rândurile stricate sau deconectate sunt lăsate deoparte', async () => {
@@ -360,11 +465,11 @@ describe('dispozitivele', () => {
   });
 
   test.each([
-    ['no such device', /deja deconectat/],
-    ['cannot revoke the current device', /Deconectare/],
-    ['something else', /Nu am putut deconecta/],
-  ])('răspunsul serverului „%s” are mesaj în română', async (message, expected) => {
-    rpc.mockResolvedValue({ error: { message } });
+    [DEVICE_ERRORS.noSuchDevice, /deja deconectat/],
+    [DEVICE_ERRORS.isCurrentDevice, /Deconectare/],
+    ['XX000', /Nu am putut deconecta/],
+  ])('codul %s de la server are mesaj în română', async (code, expected) => {
+    rpc.mockResolvedValue({ error: { code, message: 'irrelevant' } });
 
     expect((await revokeDevice('alt-id')).error).toMatch(expected);
   });

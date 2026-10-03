@@ -76,7 +76,13 @@
     },
     "plugins": [
       "expo-asset",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "SmartMeal folosește Face ID ca să confirme că ești tu când redeschizi contul, fără să mai scrii parola."
+        }
+      ]
     ],
     "description": "Planificator de mese săptămânale pentru supermarketurile din România, cu listă de cumpărături și buget.",
     "primaryColor": "#16a34a",

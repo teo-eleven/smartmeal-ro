@@ -93,6 +93,14 @@ export const secureSessionStore = {
     }
   },
 
+  /**
+   * Like getItem, but a keychain that will not open throws instead of reading as empty. For
+   * callers where "nothing stored" and "could not read" must lead to different answers.
+   */
+  async getItemOrThrow(key: string): Promise<string | null> {
+    return isWeb ? AsyncStorage.getItem(key) : secureGet(key);
+  },
+
   async setItem(key: string, value: string): Promise<void> {
     if (isWeb) return AsyncStorage.setItem(key, value);
     try {

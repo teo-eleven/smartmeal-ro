@@ -8,16 +8,21 @@ export const DISPLAY_NAME_MAX = 60;
 
 const MISSING = 'Scrie cum te numești.';
 
-// eslint-disable-next-line no-control-regex
-const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/g;
+/**
+ * Control and format characters: newlines and tabs (already folded into spaces by then),
+ * zero-width spaces, and the direction overrides that can make a name render as other text.
+ */
+const INVISIBLE = /[\p{Cc}\p{Cf}]/gu;
 
 export function normalizeDisplayName(raw: unknown): { name: string | null; error: string | null } {
   if (typeof raw !== 'string') return { name: null, error: MISSING };
 
-  const name = raw.replace(CONTROL_CHARACTERS, '').replace(/\s+/g, ' ').trim();
+  // Whitespace first, so a line break between two words becomes a space and not nothing.
+  const name = raw.replace(/\s+/g, ' ').replace(INVISIBLE, '').replace(/ {2,}/g, ' ').trim();
   if (!name) return { name: null, error: MISSING };
   // Refused rather than cut: a name quietly shortened is a name the person did not type.
-  if (name.length > DISPLAY_NAME_MAX) {
+  // Counted in characters as the database counts them, so an emoji is one, not two.
+  if ([...name].length > DISPLAY_NAME_MAX) {
     return { name: null, error: `Numele poate avea cel mult ${DISPLAY_NAME_MAX} de caractere.` };
   }
   return { name, error: null };

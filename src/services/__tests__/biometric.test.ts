@@ -2,6 +2,8 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { authenticateWithBiometrics, biometricLabel, isBiometricAvailable } from '../biometric';
 import { currentOs } from '../platformOs';
 
+jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
 jest.mock('../platformOs', () => ({ currentOs: jest.fn(() => 'ios') }));
 
 const mocked = LocalAuthentication as jest.Mocked<typeof LocalAuthentication>;
@@ -100,6 +102,15 @@ describe('confirmarea cu Face ID sau amprenta', () => {
     expect(result.error).toMatch(/parol/);
   });
 
+  test.each(['not_enrolled', 'passcode_not_set', 'not_available'])(
+    'biometria scoasă din setări (%s) trimite la parolă',
+    async (code) => {
+      mocked.authenticateAsync.mockResolvedValue({ success: false, error: code });
+
+      expect((await authenticateWithBiometrics()).error).toMatch(/nu mai e configurată/);
+    }
+  );
+
   test('alt eșec are un mesaj în română', async () => {
     mocked.authenticateAsync.mockResolvedValue({ success: false, error: 'authentication_failed' });
 
@@ -123,6 +134,7 @@ describe('confirmarea cu Face ID sau amprenta', () => {
         promptMessage: expect.stringMatching(/ești tu/),
         cancelLabel: 'Folosește parola',
         disableDeviceFallback: true,
+        biometricsSecurityLevel: 'strong',
       })
     );
   });

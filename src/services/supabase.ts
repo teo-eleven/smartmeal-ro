@@ -19,6 +19,8 @@ import { parseReminderSettings } from '../utils/preferencesValidation';
 import { describeMissingConsent } from '../utils/signUpConsent';
 import { normalizeDisplayName } from '../utils/displayName';
 import { describeAuthError, describeFailure } from './authErrors';
+import { forgetAccountSecurity, recordVerification } from './reauth';
+import { localDeviceSimulation } from './localDeviceSimulation';
 
 /**
  * Database errors come back in English and describe the server ("new row violates row-level
@@ -135,6 +137,7 @@ export const cloudSyncService = {
     // The simulation refuses to run in a production build; see localAuthSimulation.
     if (localAuthSimulation.isActive()) {
       const { email: signedIn, error } = await localAuthSimulation.signIn(email, password);
+      await recordVerification(signedIn);
       return { user: signedIn ? ({ email: signedIn } as User) : null, error };
     }
 
@@ -147,6 +150,7 @@ export const cloudSyncService = {
       if (error) {
         return { user: null, error: describeAuthError(error) };
       }
+      await recordVerification(data.user?.email);
       return { user: data.user, error: null };
     } catch (e: unknown) {
       const message = describeFailure(e, 'Eroare neașteptată la autentificare.');
@@ -180,6 +184,7 @@ export const cloudSyncService = {
       );
       if (!created) return { user: null, error };
       // The simulation has no inbox, so there is nothing to confirm.
+      await recordVerification(created);
       return { user: { email: created } as User, error: null, needsConfirmation: false };
     }
 
@@ -211,6 +216,8 @@ export const cloudSyncService = {
       // With "Confirm email" on, Supabase creates the user but opens no session until the
       // address is confirmed. Reporting that is what stops the app from treating an account
       // it cannot use yet as signed in.
+      // No session yet means nobody is signed in; the count starts at the first sign-in.
+      if (data.session) await recordVerification(data.user?.email);
       return { user: data.user, error: null, needsConfirmation: !data.session };
     } catch (e: unknown) {
       const message = describeFailure(e, 'Eroare neașteptată la înregistrare.');
@@ -228,7 +235,13 @@ export const cloudSyncService = {
    */
   async deleteAccount(): Promise<{ success: boolean; error: string | null }> {
     if (localAuthSimulation.isActive()) {
+      const email = await localAuthSimulation.currentEmail();
       await localAuthSimulation.deleteAccount();
+      // The server cascades devices with the account; the simulation has to say so.
+      if (email) {
+        await localDeviceSimulation.forget(email);
+        await forgetAccountSecurity(email);
+      }
       return { success: true, error: null };
     }
 
@@ -263,7 +276,9 @@ export const cloudSyncService = {
 
       // The session is dead once the user is gone; clear it locally so the app does not go
       // on believing someone is signed in.
+      const email = session.user?.email;
       await client.auth.signOut();
+      if (email) await forgetAccountSecurity(email);
       return { success: true, error: null };
     } catch (e: unknown) {
       const message = describeFailure(e, 'Eroare la ștergerea contului.');
@@ -350,6 +365,8 @@ export const cloudSyncService = {
   ): Promise<{ success: boolean; error: string | null }> {
     if (localAuthSimulation.isActive()) {
       const done = await localAuthSimulation.resetPassword(emailForSimulation ?? '', newPassword);
+      // A reset ends signed in, so it is a verification like any other.
+      if (done) await recordVerification(emailForSimulation?.trim().toLowerCase());
       return done
         ? { success: true, error: null }
         : { success: false, error: 'Nu există un cont cu adresa aceasta.' };
@@ -361,10 +378,11 @@ export const cloudSyncService = {
     }
 
     try {
-      const { error } = await client.auth.updateUser({ password: newPassword });
+      const { data, error } = await client.auth.updateUser({ password: newPassword });
       if (error) {
         return { success: false, error: describeAuthError(error) };
       }
+      await recordVerification(data?.user?.email);
       return { success: true, error: null };
     } catch (e: unknown) {
       const message = describeFailure(e, 'Eroare la schimbarea parolei.');

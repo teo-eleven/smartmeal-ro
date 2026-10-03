@@ -21,12 +21,13 @@ function check(label, ok, detail = '') {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}${detail ? `  (${detail})` : ''}`);
 }
 
-async function expectError(label, sql, pattern) {
+async function expectError(label, sql, pattern, code) {
   try {
     await db.exec(sql);
     check(label, false, 'no error raised');
   } catch (e) {
-    check(label, pattern.test(e.message), e.message);
+    const codeOk = code === undefined || e.code === code;
+    check(label, pattern.test(e.message) && codeOk, `${e.code}: ${e.message}`);
   }
 }
 
@@ -167,7 +168,8 @@ await expectError(
 await expectError(
   'a session that does not exist cannot register',
   `${as(U1, 'aaaaaaaa-0000-0000-0000-00000000dead')} select public.register_device('${D1}', 'x', 'ios')`,
-  /session ended/
+  /session ended/,
+  'SM001'
 );
 await expectError(
   'anon cannot register',
@@ -177,12 +179,14 @@ await expectError(
 await expectError(
   'cannot revoke the current device',
   `${as(U1, S1)} select public.revoke_device('${D1}')`,
-  /current device/
+  /current device/,
+  'SM003'
 );
 await expectError(
   'another user cannot revoke it',
   `${as(U2, S3)} select public.revoke_device('${D2}')`,
-  /no such device/
+  /no such device/,
+  'SM002'
 );
 
 await db.exec(`${as(U1, S1)} select public.revoke_device('${D2}');`);
@@ -201,17 +205,20 @@ check("revoke leaves the caller's own session", r.rows[0].own_session === 1);
 await expectError(
   'the revoked session cannot check back in',
   `${as(U1, S2)} select public.register_device('${D2}', 'Laptop (web)', 'web')`,
-  /session ended/
+  /session ended/,
+  'SM001'
 );
 await expectError(
   'nor reappear under a new device id',
   `${as(U1, S2)} select public.register_device(gen_random_uuid(), 'Laptop (web)', 'web')`,
-  /session ended/
+  /session ended/,
+  'SM001'
 );
 await expectError(
   'revoking twice is refused',
   `${as(U1, S1)} select public.revoke_device('${D2}')`,
-  /no such device/
+  /no such device/,
+  'SM002'
 );
 await db.exec('reset role');
 r = await db.query(

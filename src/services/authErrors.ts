@@ -41,3 +41,16 @@ export function describeFailure(e: unknown, whatFailed: string): string {
   console.warn(`[SmartMeal] ${whatFailed}`, e);
   return `${whatFailed} Verifică conexiunea la internet și încearcă din nou.`;
 }
+
+/**
+ * Logs a failure without the rest of the error object. Supabase and PostgREST errors can
+ * carry request details, hints and row fragments — an address, a name — and a log is not
+ * the place for them. The code and the message are enough to find the cause.
+ */
+export function warnSafely(whatFailed: string, e: unknown): void {
+  const fields = typeof e === 'object' && e !== null ? (e as Record<string, unknown>) : {};
+  console.warn(`[SmartMeal] ${whatFailed}`, {
+    code: typeof fields.code === 'string' ? fields.code : undefined,
+    message: typeof fields.message === 'string' ? fields.message : String(e),
+  });
+}

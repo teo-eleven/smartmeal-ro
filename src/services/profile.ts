@@ -1,5 +1,6 @@
-import { cloudSyncService, getSupabaseClient } from './supabase';
 import { localAuthSimulation } from './localAuthSimulation';
+import { signedInContext } from './authContext';
+import { warnSafely } from './authErrors';
 import { normalizeDisplayName } from '../utils/displayName';
 
 /**
@@ -11,30 +12,26 @@ const NOT_SIGNED_IN = 'Conectează-te ca să-ți poți schimba numele.';
 
 /** Null when nobody is signed in, the account has no name yet, or the read failed. */
 export async function getDisplayName(): Promise<string | null> {
-  if (localAuthSimulation.isActive()) {
-    const email = await localAuthSimulation.currentEmail();
-    return email ? localAuthSimulation.displayNameOf(email) : null;
-  }
-
-  const client = getSupabaseClient();
-  const user = client ? await cloudSyncService.getCurrentUser() : null;
-  if (!client || !user) return null;
-
   try {
-    const { data, error } = await client
+    const context = await signedInContext();
+    if (!context) return null;
+    if (context.kind === 'simulation') return localAuthSimulation.displayNameOf(context.email);
+
+    const { data, error } = await context.client
       .from('profiles')
       .select('display_name')
-      .eq('user_id', user.id)
+      .eq('user_id', context.user.id)
       .maybeSingle();
     if (error) {
-      console.warn('[SmartMeal] Numele nu a putut fi citit.', error);
+      warnSafely('Numele nu a putut fi citit.', error);
       return null;
     }
-    // The row comes from the network; only a string is a name.
-    const name: unknown = (data as { display_name?: unknown } | null)?.display_name;
-    return typeof name === 'string' && name.trim() ? name : null;
+    // From the network: held to the same rules as a name typed into the form.
+    const raw =
+      typeof data === 'object' && data !== null ? Reflect.get(data, 'display_name') : null;
+    return normalizeDisplayName(raw).name;
   } catch (e) {
-    console.warn('[SmartMeal] Numele nu a putut fi citit.', e);
+    warnSafely('Numele nu a putut fi citit.', e);
     return null;
   }
 }
@@ -45,28 +42,28 @@ export async function updateDisplayName(
   const { name, error } = normalizeDisplayName(raw);
   if (!name) return { name: null, error };
 
-  if (localAuthSimulation.isActive()) {
-    const email = await localAuthSimulation.currentEmail();
-    const saved = email ? await localAuthSimulation.setDisplayName(email, name) : false;
-    return saved ? { name, error: null } : { name: null, error: NOT_SIGNED_IN };
-  }
-
-  const client = getSupabaseClient();
-  const user = client ? await cloudSyncService.getCurrentUser() : null;
-  if (!client || !user) return { name: null, error: NOT_SIGNED_IN };
-
   try {
-    const { error: saveError } = await client
+    const context = await signedInContext();
+    if (!context) return { name: null, error: NOT_SIGNED_IN };
+    if (context.kind === 'simulation') {
+      const saved = await localAuthSimulation.setDisplayName(context.email, name);
+      return saved ? { name, error: null } : { name: null, error: NOT_SIGNED_IN };
+    }
+
+    // Asking for the updated row back: an update that matched nothing — no profile row, or
+    // one the policy hid — is not an error to PostgREST, and must not show as saved.
+    const { data, error: saveError } = await context.client
       .from('profiles')
       .update({ display_name: name })
-      .eq('user_id', user.id);
-    if (saveError) {
-      console.warn('[SmartMeal] Numele nu a putut fi salvat.', saveError);
+      .eq('user_id', context.user.id)
+      .select('user_id');
+    if (saveError || !Array.isArray(data) || data.length !== 1) {
+      warnSafely('Numele nu a putut fi salvat.', saveError ?? { message: 'no row updated' });
       return { name: null, error: SAVE_FAILED };
     }
     return { name, error: null };
   } catch (e) {
-    console.warn('[SmartMeal] Numele nu a putut fi salvat.', e);
+    warnSafely('Numele nu a putut fi salvat.', e);
     return { name: null, error: SAVE_FAILED };
   }
 }

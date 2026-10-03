@@ -5,8 +5,12 @@
 -- here with the id of the session it holds. Signing a device out deletes that session, which
 -- takes its refresh tokens with it (auth.refresh_tokens.session_id cascades): the device's
 -- next token refresh fails and supabase-js signs it out. Its current access token stays
--- valid until it expires, at most an hour; the app also reads revoked_at when it starts and
--- when it comes back to the foreground, to sign out sooner.
+-- valid until it expires, at most an hour; the app also calls register_device when it starts
+-- and when it comes back to the foreground, and signs out when that is refused (SM001).
+--
+-- The errors the app acts on carry their own SQLSTATE, so src/services/devices.ts matches a
+-- code rather than wording that someone may rephrase:
+--   SM001 session ended   SM002 no such device   SM003 cannot revoke the current device
 --
 -- Nobody writes this table directly. Both writers are functions below that take the user
 -- and the session from the caller's JWT, never from arguments, so a device cannot record
@@ -72,7 +76,7 @@ begin
   if caller_session is null or not exists (
     select 1 from auth.sessions s where s.id = caller_session and s.user_id = caller
   ) then
-    raise exception 'session ended' using errcode = '42501';
+    raise exception 'session ended' using errcode = 'SM001';
   end if;
 
   -- This session now belongs to this device; any other row claiming it is stale.
@@ -140,12 +144,12 @@ begin
   for update;
 
   if not found then
-    raise exception 'no such device' using errcode = 'P0002';
+    raise exception 'no such device' using errcode = 'SM002';
   end if;
   -- "Deconectare" in the same panel signs this device out properly; revoking the session
   -- in use would leave the app holding tokens that fail at an arbitrary moment.
   if target_session = current_session then
-    raise exception 'cannot revoke the current device' using errcode = '22023';
+    raise exception 'cannot revoke the current device' using errcode = 'SM003';
   end if;
 
   delete from auth.sessions s where s.id = target_session and s.user_id = caller;

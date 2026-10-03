@@ -12,10 +12,10 @@ export function devicePlatform(os: string | undefined): DevicePlatform {
 
 /** Order matters: Edge and Opera also say "Chrome", and Chrome also says "Safari". */
 const BROWSERS: ReadonlyArray<[RegExp, string]> = [
-  [/Edg\//, 'Edge'],
+  [/Edg(A|iOS)?\//, 'Edge'],
   [/OPR\//, 'Opera'],
-  [/Firefox\//, 'Firefox'],
-  [/Chrome\//, 'Chrome'],
+  [/Firefox\/|FxiOS\//, 'Firefox'],
+  [/Chrome\/|CriOS\//, 'Chrome'],
   [/Safari\//, 'Safari'],
 ];
 

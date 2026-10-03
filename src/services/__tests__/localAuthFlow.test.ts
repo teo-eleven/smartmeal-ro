@@ -4,6 +4,8 @@ import { localAuthSimulation } from '../localAuthSimulation';
 import { requestLoginCode, verifyLoginCode, LOGIN_CODE_INVALID } from '../authCode';
 import { getDisplayName, updateDisplayName } from '../profile';
 import { getDeviceId, listDevices, registerThisDevice, revokeDevice } from '../devices';
+import { localDeviceSimulation } from '../localDeviceSimulation';
+import { readAccountSecurity, setBiometricEnabled } from '../reauth';
 
 const CONSENT = { isAtLeast16: true, healthDataConsent: true };
 
@@ -22,6 +24,17 @@ describe('parcursul de cont, prin serviciul real', () => {
 
   test('simularea e activă fără un proiect configurat', () => {
     expect(localAuthSimulation.isActive()).toBe(true);
+  });
+
+  /** A release bundle is built with NODE_ENV=production, whatever else the env forgot. */
+  test('într-un bundle de producție simularea nu pornește', () => {
+    const before = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      expect(localAuthSimulation.isActive()).toBe(false);
+    } finally {
+      process.env.NODE_ENV = before;
+    }
   });
 
   test('cont nou, deconectare, reconectare', async () => {
@@ -204,5 +217,67 @@ describe('numele, codul pe email și dispozitivele, prin serviciile reale', () =
     await cloudSyncService.signUpWithEmail('c@d.ro', 'Muntele7Verde', CONSENT);
 
     expect((await listDevices()).devices).toHaveLength(0);
+  });
+
+  /** Every way in starts the monthly count, so no screen can forget to. */
+  test.each([
+    ['parolă', async () => cloudSyncService.signInWithEmail('a@b.ro', 'Muntele7Verde')],
+    [
+      'cod pe email',
+      async () => verifyLoginCode('a@b.ro', localAuthSimulation.SIMULATED_LOGIN_CODE),
+    ],
+    ['resetarea parolei', async () => cloudSyncService.updatePassword('AltaParola99', 'a@b.ro')],
+  ])('conectarea prin %s pornește numărătoarea de 30 de zile', async (_how, signIn) => {
+    await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde', CONSENT);
+    await cloudSyncService.signOut();
+    const before = Date.now();
+
+    await signIn();
+
+    expect((await readAccountSecurity('a@b.ro')).lastFullAuthAt).toBeGreaterThanOrEqual(before);
+  });
+
+  test('și contul nou o pornește', async () => {
+    await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde', CONSENT);
+
+    expect((await readAccountSecurity('a@b.ro')).lastFullAuthAt).not.toBeNull();
+  });
+
+  test('un dispozitiv deconectat de pe altul e refuzat până se conectează din nou', async () => {
+    await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde', CONSENT);
+    await registerThisDevice();
+    // What the other device does from its own Cont → Dispozitive.
+    await localDeviceSimulation.revoke('a@b.ro', await getDeviceId());
+
+    expect(await registerThisDevice()).toBe('revoked');
+
+    await cloudSyncService.signOut();
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    await cloudSyncService.signInWithEmail('a@b.ro', 'Muntele7Verde');
+    expect(await registerThisDevice()).toBe('ok');
+  });
+
+  test('un dispozitiv deconectat nu mai apare în listă și nu se deconectează de două ori', async () => {
+    await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde', CONSENT);
+    await registerThisDevice();
+    const other = (await listDevices()).devices.find((d) => !d.isCurrent);
+    await revokeDevice(other!.deviceId);
+
+    expect((await revokeDevice(other!.deviceId)).error).toMatch(/deja deconectat/);
+  });
+
+  test('ștergerea contului uită și dispozitivele, și datele de reverificare', async () => {
+    await cloudSyncService.signUpWithEmail('a@b.ro', 'Muntele7Verde', CONSENT);
+    await registerThisDevice();
+    await setBiometricEnabled('a@b.ro', true);
+
+    await cloudSyncService.deleteAccount();
+
+    expect(await localDeviceSimulation.list('a@b.ro')).toEqual([]);
+    expect(await readAccountSecurity('a@b.ro')).toEqual({
+      lastFullAuthAt: null,
+      biometricEnabled: false,
+      biometricAsked: false,
+    });
   });
 });

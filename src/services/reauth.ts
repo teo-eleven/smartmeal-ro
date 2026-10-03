@@ -1,16 +1,21 @@
 import { secureSessionStore } from './secureSessionStore';
+import { warnSafely } from './authErrors';
 
 /**
  * Asking a signed-in person to confirm it is them once a month.
  *
  * Supabase refreshes a session for as long as its refresh token is used, so without this a
- * phone signed in once stays signed in for good. The month is counted from the last real
- * sign-in — a password or an emailed code — and kept per account in the keychain (localStorage
- * on the web, as the session itself is).
+ * phone signed in once stays signed in for good. The month is counted from the last
+ * verification — a password, an emailed code, a new account, or Face ID / a fingerprint at
+ * the monthly lock — and kept per account in the keychain (localStorage on the web, as the
+ * session itself is).
  *
- * This is a lock on the device, not on the server: the session underneath stays valid. A
- * password or a code at the lock is a real sign-in again; Face ID or a fingerprint only
- * proves to this phone that its owner is holding it. See DECISIONS.md.
+ * Biometrics renew the month on purpose: the point of turning them on is not typing the
+ * password every thirty days. It is a lock on the device, not on the server; the session
+ * underneath stays valid throughout. See DECISIONS.md.
+ *
+ * The services that sign somebody in call markVerified themselves (supabase.ts, authCode.ts),
+ * so no screen can open a session without starting the count.
  */
 export const REAUTH_INTERVAL_DAYS = 30;
 const INTERVAL_MS = REAUTH_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
@@ -29,6 +34,14 @@ const NOTHING_SAVED: AccountSecurity = {
   biometricEnabled: false,
   biometricAsked: false,
 };
+
+/**
+ * 'absent': nothing was ever stored — an account signed in before this check existed.
+ * 'unusable': something is stored but cannot be trusted, or the keychain would not open.
+ * The two must not be confused: only the first earns a fresh month.
+ */
+type Stored =
+  { status: 'saved'; value: AccountSecurity } | { status: 'absent' } | { status: 'unusable' };
 
 export function isReauthDue(lastFullAuthAt: number | null, now: number): boolean {
   if (lastFullAuthAt === null) return true;
@@ -52,40 +65,83 @@ function keyFor(email: string): string {
   }
   h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
   h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-  return `smartmeal.reauth.${(h2 >>> 0).toString(16)}${(h1 >>> 0).toString(16)}`;
+  const hex = (n: number) => (n >>> 0).toString(16).padStart(8, '0');
+  return `smartmeal.reauth.${hex(h2)}${hex(h1)}`;
 }
 
-function parse(raw: string | null): AccountSecurity {
-  if (!raw) return NOTHING_SAVED;
+function parse(raw: string): AccountSecurity | null {
   try {
     const value: unknown = JSON.parse(raw);
-    if (typeof value !== 'object' || value === null) return NOTHING_SAVED;
+    if (typeof value !== 'object' || value === null) return null;
     const record = value as Record<string, unknown>;
     const at = record.lastFullAuthAt;
-    // Anything malformed means nothing saved: the lock then comes sooner, never later.
-    if (at !== null && (typeof at !== 'number' || !Number.isFinite(at))) return NOTHING_SAVED;
+    if (at !== null && (typeof at !== 'number' || !Number.isFinite(at))) return null;
     return {
-      lastFullAuthAt: at as number | null,
+      lastFullAuthAt: at,
       biometricEnabled: record.biometricEnabled === true,
       biometricAsked: record.biometricAsked === true,
     };
   } catch {
-    return NOTHING_SAVED;
+    return null;
   }
 }
 
+async function readStored(email: string): Promise<Stored> {
+  try {
+    const raw = await secureSessionStore.getItemOrThrow(keyFor(email));
+    if (raw === null) return { status: 'absent' };
+    const value = parse(raw);
+    return value ? { status: 'saved', value } : { status: 'unusable' };
+  } catch (e) {
+    warnSafely('Datele de reverificare nu au putut fi citite.', e);
+    return { status: 'unusable' };
+  }
+}
+
+/** For the screens: what to show. Anything unreadable shows as nothing saved. */
 export async function readAccountSecurity(email: string): Promise<AccountSecurity> {
-  return parse(await secureSessionStore.getItem(keyFor(email)));
+  const stored = await readStored(email);
+  return stored.status === 'saved' ? stored.value : NOTHING_SAVED;
 }
 
-async function update(email: string, change: Partial<AccountSecurity>): Promise<void> {
-  const next = { ...(await readAccountSecurity(email)), ...change };
-  await secureSessionStore.setItem(keyFor(email), JSON.stringify(next));
+/**
+ * Read, merge and write for one account at a time. Without the queue, a verification and a
+ * biometric choice saved at the same moment could each overwrite the other's field.
+ */
+const pending = new Map<string, Promise<void>>();
+
+function update(email: string, change: Partial<AccountSecurity>): Promise<void> {
+  const key = keyFor(email);
+  const previous = pending.get(key) ?? Promise.resolve();
+  const next = previous.then(async () => {
+    const current = await readAccountSecurity(email);
+    await secureSessionStore.setItem(key, JSON.stringify({ ...current, ...change }));
+  });
+  const settled = next.catch(() => undefined);
+  pending.set(key, settled);
+  void settled.then(() => {
+    if (pending.get(key) === settled) pending.delete(key);
+  });
+  return next;
 }
 
-/** After a password, an emailed code, or a new account: the month starts again. */
-export async function markFullAuth(email: string, now: number = Date.now()): Promise<void> {
+/** A password, an emailed code, a new account, or biometrics at the lock: the month restarts. */
+export async function markVerified(email: string, now: number = Date.now()): Promise<void> {
   await update(email, { lastFullAuthAt: now });
+}
+
+/**
+ * markVerified for the sign-in services: a keychain that will not write is logged, never
+ * allowed to fail the sign-in itself. The next start then finds nothing stored and starts the
+ * month there.
+ */
+export async function recordVerification(email: string | null | undefined): Promise<void> {
+  if (!email) return;
+  try {
+    await markVerified(email);
+  } catch (e) {
+    warnSafely('Data verificării nu a putut fi salvată.', e);
+  }
 }
 
 export async function setBiometricEnabled(email: string, enabled: boolean): Promise<void> {
@@ -101,15 +157,17 @@ export async function forgetAccountSecurity(email: string): Promise<void> {
 }
 
 /**
- * What the app does at start for a signed-in account. An account with no date saved was
- * signed in before this check existed; its month starts now rather than locking somebody
- * out because they updated the app.
+ * What the app does at start for a signed-in account. Nothing stored means an account signed
+ * in before this check existed: its month starts now, rather than locking somebody out for
+ * updating the app. Anything stored but unusable — or a keychain that will not open — locks:
+ * a damaged record must never be a way past the check.
  */
 export async function checkReauth(email: string, now: number = Date.now()): Promise<'ok' | 'due'> {
-  const { lastFullAuthAt } = await readAccountSecurity(email);
-  if (lastFullAuthAt === null) {
-    await markFullAuth(email, now);
+  const stored = await readStored(email);
+  if (stored.status === 'absent') {
+    await markVerified(email, now);
     return 'ok';
   }
-  return isReauthDue(lastFullAuthAt, now) ? 'due' : 'ok';
+  if (stored.status === 'unusable') return 'due';
+  return isReauthDue(stored.value.lastFullAuthAt, now) ? 'due' : 'ok';
 }

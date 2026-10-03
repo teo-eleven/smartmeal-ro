@@ -1,5 +1,6 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import { currentOs } from './platformOs';
+import { warnSafely } from './authErrors';
 
 /**
  * Face ID, Touch ID or a fingerprint, used to get past the monthly lock (see reauth.ts)
@@ -18,8 +19,13 @@ export interface BiometricResult {
 }
 
 const CANCELLED_CODES = new Set(['user_cancel', 'system_cancel', 'app_cancel', 'user_fallback']);
+/** Biometrics switched off or removed in the phone's settings since they were turned on here. */
+const NOT_SET_UP_CODES = new Set(['not_enrolled', 'passcode_not_set', 'not_available']);
 const LOCKED_OUT = 'Prea multe încercări. Folosește parola sau un cod pe email.';
+const NOT_SET_UP =
+  'Biometria nu mai e configurată pe telefon. Folosește parola sau un cod pe email.';
 const NOT_RECOGNISED = 'Nu te-am putut recunoaște. Încearcă din nou sau folosește parola.';
+const WEB_ONLY_PASSWORD = 'Pe web, conectează-te cu parola sau cu un cod.';
 
 function isNative(): boolean {
   const os = currentOs();
@@ -34,7 +40,7 @@ export async function isBiometricAvailable(): Promise<boolean> {
       (await LocalAuthentication.isEnrolledAsync())
     );
   } catch (e) {
-    console.warn('[SmartMeal] Biometria nu a putut fi verificată.', e);
+    warnSafely('Biometria nu a putut fi verificată.', e);
     return false;
   }
 }
@@ -50,7 +56,7 @@ export async function biometricLabel(): Promise<string> {
     if (types.includes(FACIAL_RECOGNITION)) return isIos ? 'Face ID' : 'recunoașterea feței';
     if (types.includes(FINGERPRINT)) return 'Touch ID';
   } catch (e) {
-    console.warn('[SmartMeal] Tipul de biometrie nu a putut fi citit.', e);
+    warnSafely('Tipul de biometrie nu a putut fi citit.', e);
   }
   return 'biometria';
 }
@@ -60,7 +66,7 @@ export async function authenticateWithBiometrics(): Promise<BiometricResult> {
     return {
       success: false,
       cancelled: false,
-      error: 'Pe web, conectează-te cu parola sau cu un cod.',
+      error: WEB_ONLY_PASSWORD,
     };
   }
   try {
@@ -68,13 +74,18 @@ export async function authenticateWithBiometrics(): Promise<BiometricResult> {
       promptMessage: 'Confirmă că ești tu',
       cancelLabel: 'Folosește parola',
       disableDeviceFallback: true,
+      // Android otherwise accepts "weak" (Class 2) face unlock, which a photo can fool.
+      biometricsSecurityLevel: 'strong',
     });
     if (result.success) return { success: true, cancelled: false, error: null };
     if (CANCELLED_CODES.has(result.error)) return { success: false, cancelled: true, error: null };
     if (result.error === 'lockout') return { success: false, cancelled: false, error: LOCKED_OUT };
+    if (NOT_SET_UP_CODES.has(result.error)) {
+      return { success: false, cancelled: false, error: NOT_SET_UP };
+    }
     return { success: false, cancelled: false, error: NOT_RECOGNISED };
   } catch (e) {
-    console.warn('[SmartMeal] Confirmarea biometrică a eșuat.', e);
+    warnSafely('Confirmarea biometrică a eșuat.', e);
     return { success: false, cancelled: false, error: NOT_RECOGNISED };
   }
 }
