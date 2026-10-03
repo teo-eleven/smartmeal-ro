@@ -130,4 +130,18 @@ describe('blocarea lunară la pornire', () => {
     expect(useAppStore.getState()).toMatchObject({ authStatus: 'guest', userEmail: null });
     expect(await cloudSyncService.currentEmail()).toBeNull();
   });
+
+  /** Straight to the login: an instant of 'guest' would show the plan to whoever holds it. */
+  test('„Deconectează-te” din blocare nu trece prin „fără cont”', async () => {
+    await markVerified('ana@b.ro', Date.now() - 31 * DAY);
+    await reopen();
+    const seen: string[] = [];
+    const stop = useAppStore.subscribe((state) => seen.push(state.authStatus));
+
+    await useAppStore.getState().signOutToLogin();
+    stop();
+
+    expect(seen).not.toContain('guest');
+    expect(useAppStore.getState()).toMatchObject({ authStatus: 'checking', userEmail: null });
+  });
 });

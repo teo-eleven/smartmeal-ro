@@ -58,13 +58,16 @@ export function ReauthScreen({ isDark }: { isDark: boolean }) {
     form.run(async () => {
       const result = await unlockWithBiometrics(email);
       if (result.error) form.showError(result.error);
+      else if (result.success && useAppStore.getState().authStatus === 'locked') {
+        form.showError('Nu am putut confirma. Folosește parola sau un cod pe email.');
+      }
     });
 
   // Face ID is asked for once on its own, as soon as it is known to be on; after a cancel
   // the button stays for another try.
   const hasPrompted = useRef(false);
   useEffect(() => {
-    if (!biometricEnabled || hasPrompted.current) return;
+    if (!biometricEnabled || hasPrompted.current || form.loading || isCodeMode) return;
     hasPrompted.current = true;
     void unlockWithFace();
   }, [biometricEnabled]); // Only when Face ID becomes known to be on; once.
@@ -172,7 +175,7 @@ export function ReauthScreen({ isDark }: { isDark: boolean }) {
 
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Deconectează-te"
+          accessibilityLabel="Nu ești tu? Deconectează-te"
           onPress={() => void signOutToLogin()}
           style={styles.signOutBtn}
         >

@@ -45,7 +45,9 @@ async function openLocked({ biometric = false }: { biometric?: boolean } = {}) {
 
 beforeEach(async () => {
   jest.clearAllMocks();
-  available.mockResolvedValue(false);
+  // Back to the defaults: an answer set by one test must not reach the next.
+  available.mockReset().mockResolvedValue(false);
+  authenticate.mockReset().mockResolvedValue({ success: true, cancelled: false, error: null });
   asSubscriber();
   await AsyncStorage.clear();
   useAuthSessionStore.getState().clear();
@@ -91,7 +93,7 @@ describe('reverificarea la 30 de zile', () => {
     fireEvent.press(screen.getByLabelText('Trimite codul de conectare'));
     await waitFor(() => expect(screen.getByLabelText('Codul de conectare')).toBeTruthy());
     fireEvent.changeText(screen.getByLabelText('Codul de conectare'), '123456');
-    fireEvent.press(screen.getByLabelText('Conectează-te cu codul'));
+    fireEvent.press(screen.getByLabelText('Intră în cont cu codul'));
 
     await waitFor(() => expect(useAppStore.getState().authStatus).toBe('signedIn'));
   });
@@ -99,7 +101,7 @@ describe('reverificarea la 30 de zile', () => {
   test('„Deconectează-te” duce la ecranul de login', async () => {
     await openLocked();
 
-    fireEvent.press(screen.getByLabelText('Deconectează-te'));
+    fireEvent.press(screen.getByLabelText('Nu ești tu? Deconectează-te'));
 
     await waitFor(() => expect(screen.getByLabelText('Fila Conectare')).toBeTruthy());
     expect(useAppStore.getState()).toMatchObject({ authStatus: 'checking', userEmail: null });
@@ -146,5 +148,23 @@ describe('reverificarea cu Face ID', () => {
 
     await waitFor(() => expect(screen.getByText('Bine ai revenit, Ana')).toBeTruthy());
     expect(authenticate).not.toHaveBeenCalled();
+  });
+
+  /** One try at a time: Face ID must not race a password already being checked. */
+  test('cât timp se verifică parola, Face ID nu pornește peste ea', async () => {
+    available.mockResolvedValue(true);
+    let finishFace: (value: unknown) => void = () => undefined;
+    authenticate.mockReturnValue(new Promise((resolve) => (finishFace = resolve)));
+
+    await openLocked({ biometric: true });
+    await waitFor(() => expect(authenticate).toHaveBeenCalledTimes(1));
+
+    // Face ID is still open; a press on the button below does nothing until it ends.
+    fireEvent.press(screen.getByLabelText('Deblochează cu Face ID'));
+    expect(authenticate).toHaveBeenCalledTimes(1);
+
+    finishFace({ success: false, cancelled: true, error: null });
+    await waitFor(() => expect(screen.getByLabelText('Deblochează cu Face ID')).toBeTruthy());
+    expect(useAppStore.getState().authStatus).toBe('locked');
   });
 });

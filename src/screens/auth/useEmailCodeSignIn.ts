@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { requestLoginCode, verifyLoginCode } from '../../services/authCode';
+import { LOGIN_CODE_INVALID, requestLoginCode, verifyLoginCode } from '../../services/authCode';
 import { AuthFormState } from './useAuthForm';
 
 /** After this many wrong codes in a row, that code is done with: a new one must be asked for. */
@@ -58,6 +58,11 @@ export function useEmailCodeSignIn(form: AuthFormState, fixedEmail?: string) {
         form.completeSignIn(signedIn, 'Te-ai conectat cu succes!');
         return;
       }
+      // Only a code the server turned down counts; being offline is not a wrong guess.
+      if (error !== LOGIN_CODE_INVALID) {
+        form.showError(error ?? 'Codul nu a putut fi verificat. Încearcă din nou.');
+        return;
+      }
       const attempts = failures + 1;
       setFailures(attempts);
       setCode('');
@@ -66,7 +71,7 @@ export function useEmailCodeSignIn(form: AuthFormState, fixedEmail?: string) {
         form.showError(TOO_MANY);
         return;
       }
-      form.showError(error ?? 'Codul nu este valid sau a expirat. Cere altul.');
+      form.showError(LOGIN_CODE_INVALID);
     });
 
   /** Back to typing the address (or, at the lock, to asking again). */

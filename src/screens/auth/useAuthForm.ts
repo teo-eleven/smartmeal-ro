@@ -106,12 +106,18 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
    * Every action that talks to the server goes through here: the old messages go, the button
    * spins, and it stops spinning however the action ends.
    */
+  const isBusy = useRef(false);
   const run = async (action: () => Promise<void>) => {
+    // One at a time: Face ID offered on its own while a password is already being checked
+    // would otherwise race it, and whichever ended first re-enabled the buttons.
+    if (isBusy.current) return;
+    isBusy.current = true;
     clearMessages();
     setLoading(true);
     try {
       await action();
     } finally {
+      isBusy.current = false;
       setLoading(false);
     }
   };

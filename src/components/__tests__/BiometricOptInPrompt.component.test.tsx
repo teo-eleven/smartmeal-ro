@@ -16,6 +16,11 @@ beforeEach(() => {
   });
 });
 
+afterEach(() => {
+  useAuthSessionStore.getState().clear();
+  useAppStore.setState({ authStatus: 'checking', userEmail: null });
+});
+
 /** "Folosești Face ID data viitoare?" — once, after signing in, where it can work. */
 describe('întrebarea despre Face ID', () => {
   test('apare după conectare, cu numele biometriei de pe telefon', () => {
@@ -55,5 +60,25 @@ describe('întrebarea despre Face ID', () => {
     render(<BiometricOptInPrompt isDark={false} />);
 
     expect(screen.queryByText(/data viitoare/)).toBeNull();
+  });
+
+  /** iOS shows one window at a time; a second one would be dropped, so this one waits. */
+  test('așteaptă cât timp e deschisă altă fereastră', () => {
+    const { rerender } = render(<BiometricOptInPrompt isDark={false} isSuppressed />);
+    expect(screen.queryByText(/data viitoare/)).toBeNull();
+
+    rerender(<BiometricOptInPrompt isDark={false} isSuppressed={false} />);
+
+    expect(screen.getByText('Folosești Face ID data viitoare?')).toBeTruthy();
+  });
+
+  test('dacă alegerea nu se poate salva, întrebarea se închide fără să blocheze ecranul', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    answer.mockRejectedValueOnce(new Error('keychain'));
+    render(<BiometricOptInPrompt isDark={false} />);
+
+    fireEvent.press(screen.getByLabelText('Nu acum'));
+
+    await waitFor(() => expect(screen.queryByText(/data viitoare/)).toBeNull());
   });
 });

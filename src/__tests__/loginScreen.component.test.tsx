@@ -7,6 +7,7 @@ import { localAuthSimulation } from '../services/localAuthSimulation';
 import { asSubscriber } from './helpers/subscriber';
 import { cloudSyncService } from '../services/supabase';
 import { getDisplayName } from '../services/profile';
+import * as authCode from '../services/authCode';
 
 const CONSENT = { isAtLeast16: true, healthDataConsent: true };
 
@@ -133,7 +134,7 @@ describe('ecranul de login de la prima pornire', () => {
 
     fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'ana@b.ro');
     fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
-    fireEvent.press(screen.getByLabelText('Conectează-te cu parola'));
+    fireEvent.press(screen.getByLabelText('Conectare cu parola'));
 
     await waitFor(() => expect(useAppStore.getState().authStatus).toBe('signedIn'));
   });
@@ -181,7 +182,7 @@ describe('conectarea cu cod pe email', () => {
     await askForCode();
 
     fireEvent.changeText(screen.getByLabelText('Codul de conectare'), '123456');
-    fireEvent.press(screen.getByLabelText('Conectează-te cu codul'));
+    fireEvent.press(screen.getByLabelText('Intră în cont cu codul'));
 
     await waitFor(() => expect(useAppStore.getState().authStatus).toBe('signedIn'));
     expect(useAppStore.getState().userEmail).toBe('ana@b.ro');
@@ -191,7 +192,7 @@ describe('conectarea cu cod pe email', () => {
     await askForCode();
 
     fireEvent.changeText(screen.getByLabelText('Codul de conectare'), '000000');
-    fireEvent.press(screen.getByLabelText('Conectează-te cu codul'));
+    fireEvent.press(screen.getByLabelText('Intră în cont cu codul'));
 
     await waitFor(() => expect(screen.getByText(/nu este valid/)).toBeTruthy());
     expect(useAppStore.getState().authStatus).toBe('checking');
@@ -206,7 +207,7 @@ describe('conectarea cu cod pe email', () => {
       fireEvent.changeText(screen.getByLabelText('Codul de conectare'), '000000');
       // Each attempt is answered before the next one is typed.
       await act(async () => {
-        fireEvent.press(screen.getByLabelText('Conectează-te cu codul'));
+        fireEvent.press(screen.getByLabelText('Intră în cont cu codul'));
       });
     }
 
@@ -215,13 +216,36 @@ describe('conectarea cu cod pe email', () => {
     expect(screen.getByLabelText('Trimite codul de conectare')).toBeTruthy();
   });
 
+  /** Being offline is not a wrong guess: five failed tries without internet keep the code. */
+  test('o eroare de rețea nu se numără ca un cod greșit', async () => {
+    await askForCode();
+    const verify = jest
+      .spyOn(authCode, 'verifyLoginCode')
+      .mockResolvedValue({
+        email: null,
+        error: 'Nu am putut verifica codul. Verifică conexiunea.',
+      });
+
+    for (let i = 0; i < 6; i += 1) {
+      fireEvent.changeText(screen.getByLabelText('Codul de conectare'), '123456');
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('Intră în cont cu codul'));
+      });
+    }
+
+    expect(screen.getByText(/Verifică conexiunea/)).toBeTruthy();
+    expect(screen.queryByText(/Prea multe coduri greșite/)).toBeNull();
+    expect(screen.getByLabelText('Codul de conectare')).toBeTruthy();
+    verify.mockRestore();
+  });
+
   test('„Folosește parola” întoarce la formularul cu parolă', () => {
     render(<App />);
     fireEvent.press(screen.getByLabelText('Primește un cod pe email'));
 
     fireEvent.press(screen.getByLabelText('Folosește parola'));
 
-    expect(screen.getByLabelText('Conectează-te cu parola')).toBeTruthy();
+    expect(screen.getByLabelText('Conectare cu parola')).toBeTruthy();
   });
 });
 

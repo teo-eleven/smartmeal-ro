@@ -149,7 +149,10 @@ function AppShell() {
   if (activeView === 'onboarding') {
     return (
       <SafeAreaView
-        style={[styles.safeArea, { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background }]}
+        style={[
+          styles.safeArea,
+          { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background },
+        ]}
         {...glass('root')}
       >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
@@ -178,6 +181,10 @@ function AppShell() {
           isDark={isDark}
         />
         <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
+        <BiometricOptInPrompt
+          isDark={isDark}
+          isSuppressed={authModalVisible || Boolean(activeNotice)}
+        />
       </SafeAreaView>
     );
   }
@@ -186,7 +193,9 @@ function AppShell() {
   // been read, a spinner: a paying person must never see the paywall flash on start.
   if (!isSubscriptionChecked) {
     return (
-      <SafeAreaView style={[styles.safeArea, styles.centered, { backgroundColor: theme.background }]}>
+      <SafeAreaView
+        style={[styles.safeArea, styles.centered, { backgroundColor: theme.background }]}
+      >
         <ActivityIndicator color={theme.text} accessibilityLabel="Se verifică abonamentul" />
       </SafeAreaView>
     );
@@ -198,6 +207,10 @@ function AppShell() {
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
         <PaywallScreen isDark={isDark} onBackToQuestions={() => setActiveView('onboarding')} />
         <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
+        <BiometricOptInPrompt
+          isDark={isDark}
+          isSuppressed={authModalVisible || Boolean(activeNotice)}
+        />
       </SafeAreaView>
     );
   }
@@ -206,7 +219,10 @@ function AppShell() {
   if (activeView === 'generating') {
     return (
       <SafeAreaView
-        style={[styles.safeArea, { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background }]}
+        style={[
+          styles.safeArea,
+          { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background },
+        ]}
         {...glass('root')}
       >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
@@ -230,7 +246,10 @@ function AppShell() {
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background }]}
+      style={[
+        styles.safeArea,
+        { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background },
+      ]}
       {...glass('root')}
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
@@ -256,7 +275,16 @@ function AppShell() {
             <View style={styles.brandRow}>
               <Text style={[styles.brandTitle, { color: theme.text }]}>SmartMeal</Text>
               {!isMobile && (
-                <View style={[styles.brandBadge, { backgroundColor: theme.surfaceTertiary, borderColor: theme.border, borderWidth: 1 }]}>
+                <View
+                  style={[
+                    styles.brandBadge,
+                    {
+                      backgroundColor: theme.surfaceTertiary,
+                      borderColor: theme.border,
+                      borderWidth: 1,
+                    },
+                  ]}
+                >
                   <Text style={[styles.brandBadgeText, { color: theme.text }]}>RO 🇷🇴</Text>
                 </View>
               )}
@@ -270,7 +298,10 @@ function AppShell() {
           {isDesktop && (
             <View
               {...glass('dock')}
-              style={[styles.desktopTabsDock, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
+              style={[
+                styles.desktopTabsDock,
+                { backgroundColor: theme.btnBg, borderColor: theme.border },
+              ]}
             >
               <TouchableOpacity
                 accessibilityRole="button"
@@ -332,7 +363,10 @@ function AppShell() {
               accessibilityLabel={`Temă: ${THEME_LABELS[themeMode]}. Apasă pentru a schimba.`}
               onPress={cycleThemeMode}
               {...glass('pill')}
-              style={[styles.syncBtn, { backgroundColor: theme.accentBg, borderColor: theme.border }]}
+              style={[
+                styles.syncBtn,
+                { backgroundColor: theme.accentBg, borderColor: theme.border },
+              ]}
               activeOpacity={0.8}
             >
               <Text style={[styles.syncBtnText, { color: theme.textMuted }]}>
@@ -355,10 +389,7 @@ function AppShell() {
               activeOpacity={0.7}
             >
               <Text
-                style={[
-                  styles.syncBtnText,
-                  { color: userEmail ? theme.text : theme.textMuted },
-                ]}
+                style={[styles.syncBtnText, { color: userEmail ? theme.text : theme.textMuted }]}
               >
                 {/* It opens the account window, which is what the label now says. */}
                 👤 Cont
@@ -469,15 +500,19 @@ function AppShell() {
 
       {/* Global Informative Notice Pop-up */}
       <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
+      <BiometricOptInPrompt
+        isDark={isDark}
+        isSuppressed={authModalVisible || Boolean(activeNotice)}
+      />
 
-        <UndoBanner
-          visible={Boolean(lastDiscardedPlan)}
-          message="Planul săptămânal a fost șters."
-          actionLabel="Anulează ștergerea"
-          onAction={undoReset}
-          onDismiss={dismissUndo}
-          isDark={isDark}
-        />
+      <UndoBanner
+        visible={Boolean(lastDiscardedPlan)}
+        message="Planul săptămânal a fost șters."
+        actionLabel="Anulează ștergerea"
+        onAction={undoReset}
+        onDismiss={dismissUndo}
+        isDark={isDark}
+      />
 
       {/* Replacing a live plan with the one another device saved */}
       <ConfirmDialog
@@ -644,13 +679,9 @@ const styles = StyleSheet.create({
  */
 export default function App() {
   const colorScheme = useColorScheme();
-  const themeMode = useAppStore((s) => s.themeMode);
-  const isDark = themeMode === 'system' ? colorScheme === 'dark' : themeMode === 'dark';
   return (
     <ErrorBoundary isDark={colorScheme === 'dark'}>
       <AppShell />
-      {/* Over whichever screen follows a sign-in: the questionnaire, the paywall or the plan. */}
-      <BiometricOptInPrompt isDark={isDark} />
     </ErrorBoundary>
   );
 }

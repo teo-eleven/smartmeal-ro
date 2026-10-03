@@ -39,7 +39,7 @@ export function AuthForm({
         {(['signin', 'signup'] as const).map((tab) => (
           <TouchableOpacity
             key={tab}
-            accessibilityRole="button"
+            accessibilityRole="tab"
             accessibilityLabel={`Fila ${tabLabels[tab]}`}
             accessibilityState={{ selected: form.mode === tab }}
             style={[
@@ -116,7 +116,7 @@ export function AuthForm({
 
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel={form.mode === 'signin' ? 'Conectează-te cu parola' : 'Creează contul'}
+        accessibilityLabel={form.mode === 'signin' ? 'Conectare cu parola' : 'Înregistrare'}
         style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
         onPress={form.handleAuth}
         disabled={form.loading}

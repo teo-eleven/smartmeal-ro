@@ -1136,9 +1136,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   signOutToLogin: async () => {
-    await cloudSyncService.signOut();
-    get().setUserEmail(null);
-    set({ authStatus: 'checking' });
+    try {
+      await cloudSyncService.signOut();
+    } finally {
+      // One step, never through 'guest', which would show the plan for an instant; and
+      // whatever the sign-out did, this device stops showing the account.
+      set({ userEmail: null, authStatus: 'checking' });
+      void reminderScheduler.cancelAll();
+    }
   },
 
   setUserEmail: (email: string | null) => {
@@ -1976,7 +1981,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => {
       // recalculateCartForPreferences persists the preferences itself; saving here too wrote
       // the same blob twice on one tap.
-      const nextPrefs: UserPreferences = { ...state.preferences, pantryStock: {}, pendingPantryStock: {} };
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        pantryStock: {},
+        pendingPantryStock: {},
+      };
       return recalculateCartForPreferences(state, nextPrefs);
     });
   },

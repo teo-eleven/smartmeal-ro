@@ -68,7 +68,7 @@ export function EmailCodeForm({
 
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel={isCodeStep ? 'Conectează-te cu codul' : 'Trimite codul de conectare'}
+        accessibilityLabel={isCodeStep ? 'Intră în cont cu codul' : 'Trimite codul de conectare'}
         onPress={isCodeStep ? code.verifyCode : code.requestCode}
         style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
         disabled={isBusy}
@@ -85,7 +85,6 @@ export function EmailCodeForm({
       {isCodeStep && (
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Trimite alt cod"
           onPress={code.restart}
           style={styles.resetBackBtn}
           disabled={isBusy}
