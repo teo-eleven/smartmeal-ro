@@ -7,6 +7,11 @@ import { useSubscriptionStore } from '../../store/subscriptionStore';
 import { NOT_SUBSCRIBED } from '../../services/subscriptionParse';
 
 jest.mock('../../services/dataExport', () => ({ collectDataExport: jest.fn() }));
+// The two sections that fetch their own data are tested on their own.
+jest.mock('../../services/devices', () => ({
+  listDevices: jest.fn(async () => ({ devices: [], error: null })),
+  revokeDevice: jest.fn(),
+}));
 
 function show(overrides: Partial<React.ComponentProps<typeof AccountPanel>> = {}) {
   const props: React.ComponentProps<typeof AccountPanel> = {
@@ -29,14 +34,14 @@ function show(overrides: Partial<React.ComponentProps<typeof AccountPanel>> = {}
 }
 
 /**
- * The signed-in account screen, in four sections. It used to be one column of big buttons of
+ * The signed-in account screen, in five sections. It used to be one column of big buttons of
  * equal weight: syncing, signing out, reminders and deleting the account all looked alike.
  */
 describe('panoul de cont', () => {
-  test('e împărțit în cele patru secțiuni, în ordine', () => {
+  test('e împărțit în cele cinci secțiuni, în ordine', () => {
     show();
 
-    const headings = ['CONTUL TĂU', 'SINCRONIZARE', 'MEMENTOURI', 'DATELE TALE'];
+    const headings = ['CONTUL TĂU', 'DISPOZITIVE', 'SINCRONIZARE', 'MEMENTOURI', 'DATELE TALE'];
     headings.forEach((h) => expect(screen.getByText(h)).toBeTruthy());
   });
 
@@ -111,7 +116,10 @@ describe('panoul de cont', () => {
  */
 describe('panoul de cont pe ecran lat', () => {
   function columnOf(text: string): string | undefined {
-    let node = screen.getByText(text) as unknown as { props?: { testID?: string }; parent: unknown };
+    let node = screen.getByText(text) as unknown as {
+      props?: { testID?: string };
+      parent: unknown;
+    };
     while (node) {
       if (node.props?.testID?.startsWith('account-column')) return node.props.testID;
       node = node.parent as typeof node;
@@ -124,6 +132,7 @@ describe('panoul de cont pe ecran lat', () => {
 
     expect(columnOf('MEMENTOURI')).toBe('account-column-right');
     expect(columnOf('CONTUL TĂU')).toBe('account-column-left');
+    expect(columnOf('DISPOZITIVE')).toBe('account-column-left');
     expect(columnOf('SINCRONIZARE')).toBe('account-column-left');
     expect(columnOf('DATELE TALE')).toBe('account-column-left');
   });
@@ -183,4 +192,3 @@ describe('panoul de cont, abonamentul', () => {
     expect(screen.getByText(/nu anulează abonamentul/i)).toBeTruthy();
   });
 });
-

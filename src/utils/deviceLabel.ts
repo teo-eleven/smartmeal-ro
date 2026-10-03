@@ -43,3 +43,23 @@ export function describeDevice(os: string | undefined, userAgent?: string): stri
   const system = firstMatch(userAgent ?? '', SYSTEMS);
   return system ? `${browser} pe ${system}` : browser;
 }
+
+const HOUR_MS = 60 * 60 * 1000;
+
+function startOfDay(time: number): number {
+  const day = new Date(time);
+  return new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
+}
+
+/** "Ultima activitate" in the device list: chiar acum, azi, ieri, or the date. */
+export function describeLastSeen(iso: string, now: number = Date.now()): string {
+  const seen = Date.parse(iso);
+  if (Number.isNaN(seen)) return 'necunoscut';
+  if (now - seen < HOUR_MS) return 'chiar acum';
+  const today = startOfDay(now);
+  if (seen >= today) return 'azi';
+  if (seen >= startOfDay(today - 1)) return 'ieri';
+  const date = new Date(seen);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`;
+}

@@ -5,6 +5,8 @@ import { getAppTheme } from '../styles/theme';
 import { DataExportButton } from './DataExportButton';
 import { PrivacyPolicyLink } from './PrivacyPolicyLink';
 import { ReminderSettingsPanel } from './ReminderSettingsPanel';
+import { AccountIdentity } from './AccountIdentity';
+import { DevicesSection } from './DevicesSection';
 import { useSubscriptionStore } from '../store/subscriptionStore';
 import { currentOs } from '../services/platformOs';
 
@@ -56,8 +58,8 @@ const Section: React.FC<{ title: string; isDark: boolean; children: React.ReactN
 };
 
 /**
- * The account screen once signed in, in four sections: the account, sync, reminders, and the
- * person's data. It used to be one column of equally loud buttons, where syncing, signing
+ * The account screen once signed in, in five sections: the account (with the name and Face
+ * ID), the devices signed in to it, sync, reminders, and the person's data. It used to be one column of equally loud buttons, where syncing, signing
  * out and deleting the account all looked alike.
  */
 export const AccountPanel: React.FC<AccountPanelProps> = ({
@@ -101,6 +103,7 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
           <Text style={[styles.smallBtnText, { color: '#ef4444' }]}>Deconectare</Text>
         </TouchableOpacity>
       </View>
+      <AccountIdentity email={userEmail} isDark={isDark} />
       {subscription.isActive && (
         <View style={styles.subscriptionRow}>
           <Text style={[styles.note, styles.subscriptionText, { color: theme.textMuted }]}>
@@ -121,6 +124,12 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
           )}
         </View>
       )}
+    </Section>
+  );
+
+  const devicesSection = (
+    <Section title="DISPOZITIVE" isDark={isDark}>
+      <DevicesSection isDark={isDark} />
     </Section>
   );
 
@@ -239,6 +248,7 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
       <View style={styles.columns}>
         <View testID="account-column-left" style={styles.column}>
           {accountSection}
+          {devicesSection}
           {syncSection}
           {dataSection}
         </View>
@@ -252,6 +262,7 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
   return (
     <View>
       {accountSection}
+      {devicesSection}
       {syncSection}
       {remindersSection}
       {dataSection}

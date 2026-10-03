@@ -1,4 +1,4 @@
-import { describeDevice, devicePlatform } from '../deviceLabel';
+import { describeDevice, describeLastSeen, devicePlatform } from '../deviceLabel';
 
 const CHROME_MAC =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36';
@@ -54,5 +54,32 @@ describe('platforma trimisă la server', () => {
     ['windows', 'web'],
   ])('%s → %s', (os, expected) => {
     expect(devicePlatform(os)).toBe(expected);
+  });
+});
+
+/** "Ultima activitate" in the device list, in words a person reads at a glance. */
+describe('ultima activitate', () => {
+  const NOW = new Date(2026, 9, 3, 15, 0, 0).getTime();
+  const at = (y: number, m: number, d: number, h = 12, min = 0) =>
+    new Date(y, m, d, h, min).toISOString();
+
+  test('în ultima oră: chiar acum', () => {
+    expect(describeLastSeen(at(2026, 9, 3, 14, 20), NOW)).toBe('chiar acum');
+  });
+
+  test('mai devreme azi', () => {
+    expect(describeLastSeen(at(2026, 9, 3, 8), NOW)).toBe('azi');
+  });
+
+  test('ieri', () => {
+    expect(describeLastSeen(at(2026, 9, 2, 23), NOW)).toBe('ieri');
+  });
+
+  test('mai demult: data', () => {
+    expect(describeLastSeen(at(2026, 8, 20), NOW)).toBe('20.09.2026');
+  });
+
+  test('o dată care nu e dată', () => {
+    expect(describeLastSeen('ieri', NOW)).toBe('necunoscut');
   });
 });
