@@ -28,6 +28,8 @@ interface SimAccount {
   email: string;
   passwordHash: string;
   createdAt: string;
+  /** Normalised by the caller (utils/displayName); absent on accounts from before names. */
+  displayName?: string;
 }
 
 interface SimSession {
@@ -73,7 +75,11 @@ export const localAuthSimulation = {
     return !env.isCloudSyncConfigured && env.appEnv !== 'production';
   },
 
-  async signUp(email: string, password: string): Promise<{ email: string | null; error: string | null }> {
+  async signUp(
+    email: string,
+    password: string,
+    displayName?: string | null
+  ): Promise<{ email: string | null; error: string | null }> {
     const key = email.trim().toLowerCase();
     const accounts = await readAccounts();
 
@@ -81,7 +87,12 @@ export const localAuthSimulation = {
       return { email: null, error: 'Există deja un cont cu această adresă. Conectează-te.' };
     }
 
-    accounts[key] = { email: key, passwordHash: weakHash(password), createdAt: new Date().toISOString() };
+    accounts[key] = {
+      email: key,
+      passwordHash: weakHash(password),
+      createdAt: new Date().toISOString(),
+      ...(displayName ? { displayName } : {}),
+    };
     await writeAccounts(accounts);
     await this.startSession(key);
     return { email: key, error: null };
@@ -142,6 +153,35 @@ export const localAuthSimulation = {
 
   /** Resetting a password without an inbox: the code is always the same six digits. */
   SIMULATED_RESET_CODE: '123456',
+
+  /** Signing in with an emailed code, likewise. */
+  SIMULATED_LOGIN_CODE: '123456',
+
+  /**
+   * One answer for a wrong code and for an address with no account, as Supabase gives, so
+   * the form cannot be used to find out who has one.
+   */
+  async signInWithCode(email: string, code: string): Promise<{ email: string | null; error: string | null }> {
+    const key = email.trim().toLowerCase();
+    const account = (await readAccounts())[key];
+    if (!account || code.trim() !== this.SIMULATED_LOGIN_CODE) {
+      return { email: null, error: 'invalid_code' };
+    }
+    await this.startSession(key);
+    return { email: key, error: null };
+  },
+
+  async displayNameOf(email: string): Promise<string | null> {
+    return (await readAccounts())[email.trim().toLowerCase()]?.displayName ?? null;
+  },
+
+  async setDisplayName(email: string, displayName: string): Promise<boolean> {
+    const key = email.trim().toLowerCase();
+    const accounts = await readAccounts();
+    if (!accounts[key]) return false;
+    await writeAccounts({ ...accounts, [key]: { ...accounts[key], displayName } });
+    return true;
+  },
 
   async resetPassword(email: string, newPassword: string): Promise<boolean> {
     const key = email.trim().toLowerCase();

@@ -17,6 +17,7 @@ import {
 } from '../types';
 import { parseReminderSettings } from '../utils/preferencesValidation';
 import { describeMissingConsent } from '../utils/signUpConsent';
+import { normalizeDisplayName } from '../utils/displayName';
 import { describeAuthError, describeFailure } from './authErrors';
 
 /**
@@ -156,7 +157,8 @@ export const cloudSyncService = {
   async signUpWithEmail(
     email: string,
     password: string,
-    consent: SignUpConsent
+    consent: SignUpConsent,
+    displayName?: string
   ): Promise<SignUpResult> {
     // The screen checks this too. Checking again here means no other path can open an
     // account holding health data without it.
@@ -164,9 +166,18 @@ export const cloudSyncService = {
     if (missing) {
       return { user: null, error: missing };
     }
+    // Optional here, required by the form; when given it must be one the database accepts.
+    const named = displayName === undefined ? null : normalizeDisplayName(displayName);
+    if (named?.error) {
+      return { user: null, error: named.error };
+    }
 
     if (localAuthSimulation.isActive()) {
-      const { email: created, error } = await localAuthSimulation.signUp(email, password);
+      const { email: created, error } = await localAuthSimulation.signUp(
+        email,
+        password,
+        named?.name
+      );
       if (!created) return { user: null, error };
       // The simulation has no inbox, so there is nothing to confirm.
       return { user: { email: created } as User, error: null, needsConfirmation: false };
@@ -189,6 +200,8 @@ export const cloudSyncService = {
             age_confirmed_16: true,
             health_data_consent: true,
             privacy_policy_version: PRIVACY_POLICY_VERSION,
+            // Copied into profiles by migration 0006's trigger.
+            ...(named?.name ? { display_name: named.name } : {}),
           },
         },
       });

@@ -31,6 +31,16 @@ jest.mock('expo-notifications', () => ({
   cancelScheduledNotificationAsync: async () => undefined,
 }));
 
+// Face ID and fingerprint are native code. Each test sets the answers it needs; by default the
+// device has a sensor with a fingerprint enrolled and every check succeeds.
+jest.mock('expo-local-authentication', () => ({
+  AuthenticationType: { FINGERPRINT: 1, FACIAL_RECOGNITION: 2, IRIS: 3 },
+  hasHardwareAsync: jest.fn(async () => true),
+  isEnrolledAsync: jest.fn(async () => true),
+  supportedAuthenticationTypesAsync: jest.fn(async () => [1]),
+  authenticateAsync: jest.fn(async () => ({ success: true })),
+}));
+
 // RevenueCat's SDK is native code. Each test sets the answers it needs on this object.
 jest.mock('react-native-purchases', () => {
   const empty = { entitlements: { active: {} }, managementURL: null };
