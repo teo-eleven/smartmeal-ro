@@ -170,11 +170,13 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 8,
   },
   name: {
     fontSize: 15,
     fontWeight: '700',
+    flexShrink: 1,
   },
   stapleBadge: {
     paddingHorizontal: 8,

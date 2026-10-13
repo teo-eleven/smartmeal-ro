@@ -196,7 +196,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
             <Text style={[styles.headerTitle, { color: theme.text }]} numberOfLines={1}>
               {recipe.title}
             </Text>
-            <Text style={[styles.headerSubtitle, { color: theme.primary }]}>
+            <Text style={[styles.headerSubtitle, { color: theme.primary }]} numberOfLines={1}>
               ⏱️ {totalTime} min • ~{formattedCostPerServing} lei/porție
             </Text>
           </View>
@@ -696,6 +696,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginTop: 2,
+    textAlign: 'center',
   },
   swapHeaderBtn: {
     paddingHorizontal: 14,

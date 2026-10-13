@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   ScrollView,
   StyleProp,
@@ -27,6 +26,7 @@ import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
 import { StoreComparisonModal } from './StoreComparisonModal';
 import { SavedPlansModal } from './SavedPlansModal';
+import { AppLoadingScreen } from '../components/AppLoadingScreen';
 
 interface AnimatedMealSlotProps {
   children: React.ReactNode;
@@ -137,7 +137,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
       case 'medium':
         return '#0a84ff';
       case 'premium':
-        return '#ffd60a';
+        return isDark ? '#ffd60a' : '#b45309';
       default:
         return '#0a84ff';
     }
@@ -170,28 +170,14 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
 
   if (!currentPlan) {
     return (
-      <View style={[styles.emptyContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.primary} />
-        <Text style={[styles.emptyText, { color: theme.text, marginTop: 16 }]}>
-          Se încarcă meniul săptămânal...
-        </Text>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={() => generatePlan()}
-          style={{
-            backgroundColor: theme.primary,
-            marginTop: 18,
-            paddingHorizontal: 22,
-            paddingVertical: 12,
-            borderRadius: 12,
-          }}
-          activeOpacity={0.8}
-        >
-          <Text style={{ color: theme.primaryText, fontWeight: '700', fontSize: 15 }}>
-            Generează Rețetele Acum
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <AppLoadingScreen
+        isDark={isDark}
+        title="Se încarcă meniul săptămânal..."
+        subtitle="Construim recomandările personalizate conform preferințelor tale."
+        onRetry={() => generatePlan()}
+        retryLabel="Generează Rețetele Acum"
+        showRetryAfterMs={1200}
+      />
     );
   }
 
@@ -877,6 +863,7 @@ const styles = StyleSheet.create({
   toolbarDesktopRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 18,
   },
   toolbarSection: {
@@ -1076,6 +1063,7 @@ const styles = StyleSheet.create({
   mealsRow: {
     flexDirection: 'row',
     alignItems: 'stretch',
+    flexWrap: 'wrap',
     gap: 16,
     width: '100%',
   },
@@ -1084,7 +1072,7 @@ const styles = StyleSheet.create({
   },
   mealCol: {
     flex: 1,
-    minWidth: 0,
+    minWidth: 280,
     transition: 'all 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
   },
   emptyContainer: {

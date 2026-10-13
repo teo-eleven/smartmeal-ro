@@ -267,49 +267,49 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
               </Text>
             </TouchableOpacity>
           </View>
+        </View>
 
-          {/* What this week will not use up is worth more than the trip itself, so it gets
-              its own line rather than hiding inside the pantry screen. */}
+        {/* What this week will not use up is worth more than the trip itself, so it gets
+            its own line rather than hiding inside the pantry screen. */}
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={isShoppingMode ? 'Ieși din modul cumpărături' : 'Intră în modul cumpărături'}
+          onPress={() => setIsShoppingMode((on) => !on)}
+          style={[
+            styles.shoppingModeBtn,
+            {
+              borderColor: isShoppingMode ? theme.primary : theme.border,
+              backgroundColor: isShoppingMode ? theme.primary : theme.btnBg,
+            },
+          ]}
+          activeOpacity={0.8}
+        >
+          <Text
+            style={[
+              styles.shoppingModeText,
+              { color: isShoppingMode ? theme.primaryText : theme.text },
+            ]}
+          >
+            {isShoppingMode ? '✓ Sunt în magazin — rânduri mari' : '🛒 Sunt în magazin'}
+          </Text>
+        </TouchableOpacity>
+
+        {surplusCount > 0 && (
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel={isShoppingMode ? 'Ieși din modul cumpărături' : 'Intră în modul cumpărături'}
-            onPress={() => setIsShoppingMode((on) => !on)}
-            style={[
-              styles.shoppingModeBtn,
-              {
-                borderColor: isShoppingMode ? theme.primary : theme.border,
-                backgroundColor: isShoppingMode ? theme.primary : theme.btnBg,
-              },
-            ]}
+            accessibilityLabel="Pune surplusul în cămară"
+            onPress={carryOverSurplus}
+            style={[styles.surplusBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
             activeOpacity={0.8}
           >
-            <Text
-              style={[
-                styles.shoppingModeText,
-                { color: isShoppingMode ? theme.primaryText : theme.text },
-              ]}
-            >
-              {isShoppingMode ? '✓ Sunt în magazin — rânduri mari' : '🛒 Sunt în magazin'}
+            <Text style={[styles.surplusTitle, { color: theme.text }]}>
+              ↻ Îți rămân {surplusCount} {surplusCount === 1 ? 'ingredient' : 'ingrediente'} după săptămâna asta
+            </Text>
+            <Text style={[styles.surplusHint, { color: theme.textMuted }]}>
+              Cam {surplusValueRon} lei. Apasă după ce ai făcut cumpărăturile și se scad din lista următoare.
             </Text>
           </TouchableOpacity>
-
-          {surplusCount > 0 && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Pune surplusul în cămară"
-              onPress={carryOverSurplus}
-              style={[styles.surplusBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.surplusTitle, { color: theme.text }]}>
-                ↻ Îți rămân {surplusCount} {surplusCount === 1 ? 'ingredient' : 'ingrediente'} după săptămâna asta
-              </Text>
-              <Text style={[styles.surplusHint, { color: theme.textMuted }]}>
-                Cam {surplusValueRon} lei. Apasă după ce ai făcut cumpărăturile și se scad din lista următoare.
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        )}
       </View>
 
       {/* Celebratory Banner when shopping is complete */}
@@ -406,7 +406,8 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
 
 const styles = StyleSheet.create({
   shoppingModeBtn: {
-    marginTop: 10,
+    width: '100%',
+    marginTop: 14,
     borderWidth: 1,
     borderRadius: 14,
     paddingVertical: 12,
@@ -414,6 +415,7 @@ const styles = StyleSheet.create({
   },
   shoppingModeText: { fontSize: 13, fontWeight: '800' },
   surplusBtn: {
+    width: '100%',
     marginTop: 10,
     borderWidth: 1,
     borderRadius: 14,
@@ -438,6 +440,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowRadius: 16,
     elevation: 4,
+    overflow: 'hidden',
   },
   overviewInner: {
     width: '100%',
@@ -446,6 +449,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 20,
   },
   overviewCol: {
@@ -461,9 +465,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   overviewColRightDesktop: {
-    minWidth: 150,
+    width: 'auto',
+    flex: 1,
+    minWidth: 170,
+    maxWidth: 220,
     marginTop: 0,
     justifyContent: 'center',
+    alignItems: 'stretch',
   },
   overviewDividerV: {
     width: 1,
@@ -566,6 +574,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   actionBtn: {
+    width: '100%',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -575,6 +584,7 @@ const styles = StyleSheet.create({
   actionBtnText: {
     fontSize: 12,
     fontWeight: '700',
+    textAlign: 'center',
   },
   celebrationCard: {
     width: '100%',

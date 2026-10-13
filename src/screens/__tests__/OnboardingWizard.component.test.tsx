@@ -41,26 +41,26 @@ describe('OnboardingWizard', () => {
   });
 
   test('the diet step offers the allergen selector', () => {
-    useAppStore.getState().goToStep(7);
+    useAppStore.getState().goToStep(6);
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
     expect(screen.getByText(/Ai alergii alimentare/i)).toBeTruthy();
   });
 
   test('the diet step reports how many recipes remain', () => {
-    useAppStore.getState().goToStep(7);
+    useAppStore.getState().goToStep(6);
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
     expect(screen.getByText(/rețete disponibile/i)).toBeTruthy();
   });
 
   test('choosing an allergy narrows the catalog', () => {
-    useAppStore.getState().goToStep(7);
+    useAppStore.getState().goToStep(6);
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
     fireEvent.press(screen.getByLabelText(/Evită Lactate/i));
     expect(useAppStore.getState().preferences.avoidedAllergens).toContain('lactate');
   });
 
   test('the appliance step also reports availability', () => {
-    useAppStore.getState().goToStep(8);
+    useAppStore.getState().goToStep(7);
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
     expect(screen.getByText(/Ce aparate ai în bucătărie/i)).toBeTruthy();
     expect(screen.getByText(/rețete disponibile/i)).toBeTruthy();
@@ -160,7 +160,7 @@ describe('OnboardingWizard pe ecran lat', () => {
 describe('OnboardingWizard, pasul de ronțăieli', () => {
   beforeEach(() => {
     reset();
-    useAppStore.getState().goToStep(9);
+    useAppStore.getState().goToStep(8);
   });
 
   test('alegerea unui snac se reține', () => {
@@ -201,5 +201,18 @@ describe('OnboardingWizard, pasul de ronțăieli', () => {
 
     expect(useAppStore.getState().preferences.includeAlcohol).toBe(false);
     expect(screen.queryByText(beer.name)).toBeNull();
+  });
+});
+
+describe('OnboardingWizard, pasul de buget (pasul 9)', () => {
+  beforeEach(() => {
+    reset();
+    useAppStore.getState().goToStep(9);
+  });
+
+  test('afișează sliderul de buget și permite setarea bugetului', () => {
+    render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
+    expect(screen.getByText(/Care este bugetul tău/i)).toBeTruthy();
+    expect(screen.getByLabelText(/Folosește bugetul sugerat/i)).toBeTruthy();
   });
 });

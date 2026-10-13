@@ -113,7 +113,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
                 },
               ]}
             >
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={[styles.savingsTitle, { color: theme.text }]}>
                   {currentPantry.length === 0
                     ? 'Nu ai bifat ingrediente din cămară'

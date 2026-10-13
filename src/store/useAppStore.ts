@@ -100,6 +100,8 @@ export interface AppState {
   signOutToLogin: () => Promise<void>;
   isSyncing: boolean;
   lastSyncedAt: string | null;
+  globalLoadingMessage: string | null;
+  setGlobalLoading: (loading: boolean, message?: string | null) => void;
 
   // Pending confirmation for a destructive action
   confirmRequest: ConfirmActionId | null;
@@ -752,12 +754,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   totalSteps: 9,
   activeView: 'onboarding',
   isHydrated: false,
-  themeMode: 'system',
+  themeMode: 'dark',
   reminders: { ...DEFAULT_REMINDERS },
   userEmail: null,
   authStatus: 'checking',
   isSyncing: false,
   lastSyncedAt: null,
+  globalLoadingMessage: null,
+  setGlobalLoading: (loading: boolean, message?: string | null) =>
+    set({ globalLoadingMessage: loading ? message || 'Se actualizează...' : null }),
   preferences: { ...DEFAULT_PREFERENCES },
   currentPlan: null,
   groceryItems: [],
@@ -1011,9 +1016,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             ? Math.max(state.maxVisitedStep, targetStep)
             : state.maxVisitedStep,
         themeMode:
-          storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
-            ? storedTheme
-            : state.themeMode,
+          storedTheme === 'light' ? 'light' : 'dark',
         reminders: storedReminders,
         userEmail: signedInEmail ?? state.userEmail,
         // Not signed in means the gate, on every start. "Without an account" is chosen per
@@ -1092,8 +1095,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   cycleThemeMode: () => {
     set((state) => {
-      const order: ThemeMode[] = ['system', 'light', 'dark'];
-      const next = order[(order.indexOf(state.themeMode) + 1) % order.length];
+      const next: ThemeMode = state.themeMode === 'light' ? 'dark' : 'light';
       void storageService.saveThemeMode(next);
       return { themeMode: next };
     });

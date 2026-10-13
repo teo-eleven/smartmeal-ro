@@ -277,6 +277,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   marketBadgeGroup: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,

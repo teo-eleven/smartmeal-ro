@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Platform,
   ScrollView,
@@ -13,7 +13,7 @@ import { DayOfWeek, DietType, FoodTier, MealSlot, SupermarketId } from '../../ty
 import { BudgetSlider } from '../../components/BudgetSlider';
 import { ApplianceSelector } from '../../components/ApplianceSelector';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getRetailProductsByCategory } from '../../data/retailProducts';
+import { getRetailProductsByCategory, RETAIL_PRODUCTS_MAP } from '../../data/retailProducts';
 import { useResponsive } from '../../hooks/useResponsive';
 import { MOOD_OPTIONS_CATALOG } from '../../utils/moodCatalog';
 import { DIET_OPTIONS_CATALOG, areDietsCompatible } from '../../utils/dietCompatibility';
@@ -44,11 +44,11 @@ const ONBOARDING_STEPS_META: StepMeta[] = [
   { step: 2, title: 'Persoane', icon: '👥', shortDesc: 'Porții' },
   { step: 3, title: 'Zile', icon: '📅', shortDesc: 'Zile de gătit' },
   { step: 4, title: 'Mese & Nivel', icon: '🍽️', shortDesc: 'Mese & Calitate' },
-  { step: 5, title: 'Buget', icon: '💰', shortDesc: 'Optimizare cost' },
-  { step: 6, title: 'Pofte', icon: '⚡', shortDesc: 'Stiluri & Vibe' },
-  { step: 7, title: 'Dietă', icon: '🥗', shortDesc: 'Restricții' },
-  { step: 8, title: 'Aparate', icon: '🍳', shortDesc: 'Dotare bucătărie' },
-  { step: 9, title: 'Ronțăieli', icon: '🍿', shortDesc: 'Snacks & Băuturi' },
+  { step: 5, title: 'Pofte', icon: '⚡', shortDesc: 'Stiluri & Vibe' },
+  { step: 6, title: 'Dietă', icon: '🥗', shortDesc: 'Restricții' },
+  { step: 7, title: 'Aparate', icon: '🍳', shortDesc: 'Dotare bucătărie' },
+  { step: 8, title: 'Ronțăieli', icon: '🍿', shortDesc: 'Snacks & Băuturi' },
+  { step: 9, title: 'Buget', icon: '💰', shortDesc: 'Optimizare cost' },
 ];
 
 const DAY_LABELS: Record<DayOfWeek, string> = {
@@ -143,7 +143,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
     setPeopleCount,
     toggleCookingDay,
     setCookingDays,
-    setMealsPerDayCount,
     setMealSlots,
     setFoodTier,
     setBudget,
@@ -168,6 +167,15 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
   const containerMaxWidth = Math.min(contentMaxWidth, 1180);
 
   const theme = getAppTheme(isDark);
+
+  const extrasCost = useMemo(() => {
+    const snackIds = preferences.selectedSnackIds || [];
+    const drinkIds = preferences.selectedDrinkIds || [];
+    return [...snackIds, ...drinkIds].reduce((sum, id) => {
+      const prod = RETAIL_PRODUCTS_MAP[id];
+      return sum + (prod?.typicalPriceRon[preferences.supermarketId] ?? 0);
+    }, 0);
+  }, [preferences.selectedSnackIds, preferences.selectedDrinkIds, preferences.supermarketId]);
 
   const handleNextOrFinish = () => {
     if (currentStep < totalSteps) {
@@ -244,7 +252,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             </View>
 
             {/* Stepped Water Flow Nodes Bar ("ca un curs al apei în trepte") */}
-            <View style={styles.waterFlowTrack}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[styles.waterFlowTrack, { minWidth: isDesktop ? '100%' : 860 }]}
+            >
               {ONBOARDING_STEPS_META.map((stepItem, idx) => {
                 const isCurrent = stepItem.step === currentStep;
                 const isCompleted = stepItem.step < currentStep || (stepItem.step <= maxVisitedStep && !isCurrent);
@@ -298,7 +310,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                   </React.Fragment>
                 );
               })}
-            </View>
+            </ScrollView>
           </View>
         </View>
       ) : (
@@ -428,7 +440,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                           },
                         ]}
                       >
-                        {isSelected && <Text style={styles.supermarketRadioCheck}>✓</Text>}
+                        {isSelected && <Text style={[styles.supermarketRadioCheck, { color: theme.primaryText }]}>✓</Text>}
                       </View>
                     </TouchableOpacity>
                   );
@@ -666,13 +678,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                             return;
                           }
                           setMealSlots(remaining);
-                          const mainCount = remaining.filter((s) => ['breakfast', 'lunch', 'dinner'].includes(s)).length;
-                          setMealsPerDayCount((mainCount >= 1 && mainCount <= 3 ? mainCount : 1) as 1 | 2 | 3);
                         } else {
                           const updated = [...preferences.mealSlots, option.slot];
                           setMealSlots(updated);
-                          const mainCount = updated.filter((s) => ['breakfast', 'lunch', 'dinner'].includes(s)).length;
-                          setMealsPerDayCount((mainCount >= 1 && mainCount <= 3 ? mainCount : 3) as 1 | 2 | 3);
                         }
                       }}
                       activeOpacity={0.7}
@@ -782,31 +790,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             </View>
           )}
 
-          {/* STEP 5: BUDGET SLIDER */}
+          {/* STEP 5: MOOD & STYLES (POFTE VARIATE) */}
           {currentStep === 5 && (
-            <View style={styles.stepSection}>
-              <Text style={[styles.questionTitle, { color: theme.text }]}>
-                Care este bugetul tău?
-              </Text>
-              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Suma totală pe care dorești să o cheltui la magazin pentru mesele din aceste zile.
-              </Text>
-
-              <BudgetSlider
-                budget={preferences.budgetRon}
-                peopleCount={preferences.peopleCount}
-                daysCount={preferences.cookingDays.length}
-                mealsPerDay={preferences.mealSlots.length}
-                supermarketId={preferences.supermarketId}
-                foodTier={preferences.foodTier}
-                onChangeBudget={setBudget}
-                isDark={isDark}
-              />
-            </View>
-          )}
-
-          {/* STEP 6: MOOD & STYLES (POFTE VARIATE) */}
-          {currentStep === 6 && (
             <View style={styles.stepSection}>
               <Text style={[styles.questionTitle, { color: theme.text }]}>
                 Ce pofte ai săptămâna asta?
@@ -865,8 +850,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             </View>
           )}
 
-          {/* STEP 7: DIETARY RESTRICTIONS (MAX 2 COMPATIBLE) */}
-          {currentStep === 7 && (() => {
+          {/* STEP 6: DIETARY RESTRICTIONS (MAX 2 COMPATIBLE) */}
+          {currentStep === 6 && (() => {
             const selectedDiets: DietType[] =
               preferences.dietTypes && preferences.dietTypes.length > 0
                 ? preferences.dietTypes
@@ -961,8 +946,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             );
           })()}
 
-          {/* STEP 8: KITCHEN APPLIANCES */}
-          {currentStep === 8 && (
+          {/* STEP 7: KITCHEN APPLIANCES */}
+          {currentStep === 7 && (
             <View style={styles.stepSection}>
               <Text style={[styles.questionTitle, { color: theme.text }]}>
                 Ce aparate ai în bucătărie?
@@ -982,8 +967,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             </View>
           )}
 
-          {/* STEP 9: RETAIL SNACKS & BEVERAGES */}
-          {currentStep === 9 && (
+          {/* STEP 8: RETAIL SNACKS & BEVERAGES */}
+          {currentStep === 8 && (
             <View style={styles.stepSection}>
               <Text style={[styles.questionTitle, { color: theme.text }]}>
                 🍿 Ronțăieli & 🥤 Băuturi de Magazin
@@ -1050,7 +1035,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                             },
                           ]}
                         >
-                          {isSelected && <Text style={styles.retailCheckmark}>✓</Text>}
+                          {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
                         </View>
                       </View>
                     </TouchableOpacity>
@@ -1103,7 +1088,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                             },
                           ]}
                         >
-                          {isSelected && <Text style={styles.retailCheckmark}>✓</Text>}
+                          {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
                         </View>
                       </View>
                     </TouchableOpacity>
@@ -1156,7 +1141,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                             },
                           ]}
                         >
-                          {isSelected && <Text style={styles.retailCheckmark}>✓</Text>}
+                          {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
                         </View>
                       </View>
                     </TouchableOpacity>
@@ -1208,7 +1193,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                     },
                   ]}
                 >
-                  {preferences.includeAlcohol && <Text style={styles.retailCheckmark}>✓</Text>}
+                  {preferences.includeAlcohol && <Text style={[styles.retailCheckmark, { color: '#ffffff' }]}>✓</Text>}
                 </View>
               </TouchableOpacity>
 
@@ -1254,7 +1239,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                               },
                             ]}
                           >
-                            {isSelected && <Text style={styles.retailCheckmark}>✓</Text>}
+                            {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
                           </View>
                         </View>
                       </TouchableOpacity>
@@ -1271,6 +1256,30 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                   </Text>
                 </View>
               )}
+            </View>
+          )}
+
+          {/* STEP 9: BUDGET SLIDER */}
+          {currentStep === 9 && (
+            <View style={styles.stepSection}>
+              <Text style={[styles.questionTitle, { color: theme.text }]}>
+                Care este bugetul tău?
+              </Text>
+              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
+                Suma totală pe care dorești să o cheltui la magazin pentru mesele și gustările din aceste zile.
+              </Text>
+
+              <BudgetSlider
+                budget={preferences.budgetRon}
+                peopleCount={preferences.peopleCount}
+                daysCount={preferences.cookingDays.length}
+                mealsPerDay={preferences.mealSlots.length}
+                supermarketId={preferences.supermarketId}
+                foodTier={preferences.foodTier}
+                extrasCost={extrasCost}
+                onChangeBudget={setBudget}
+                isDark={isDark}
+              />
             </View>
           )}
         </View>
@@ -1299,7 +1308,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             onPress={handleNextOrFinish}
             activeOpacity={0.85}
             {...glass('btn-primary')}
-            style={[styles.footerContinueWrap, { flex: isLargeScreen ? 1 : undefined, maxWidth: isLargeScreen ? 460 : '100%' }]}
+            style={[styles.footerContinueWrap, { flex: 1, maxWidth: isLargeScreen ? 460 : '100%' }]}
           >
             <LinearGradient
               colors={isDark ? ['#ffffff', '#f2f2f7'] : ['#000000', '#1c1c1e']}
@@ -1662,7 +1671,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   footerContinueWrap: {
-    width: '100%',
+    flex: 1,
   },
   marketBadge: {
     width: 44,
@@ -1927,7 +1936,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   moodCard: {
-    width: '48%',
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
@@ -2000,7 +2009,8 @@ const styles = StyleSheet.create({
   continueButton: {
     width: '100%',
     maxWidth: 480,
-    paddingVertical: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -2012,8 +2022,9 @@ const styles = StyleSheet.create({
   },
   continueButtonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
+    textAlign: 'center',
   },
   retailSupermarketBanner: {
     flexDirection: 'row',

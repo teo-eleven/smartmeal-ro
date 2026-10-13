@@ -178,7 +178,7 @@ describe('walking the onboarding end to end, step by step', () => {
     render(<App />);
 
     act(() => {
-      useAppStore.getState().goToStep(7);
+      useAppStore.getState().goToStep(6);
     });
     fireEvent.press(screen.getByLabelText(/Evită Lactate/i));
 

@@ -5,14 +5,14 @@ import { useAppStore } from '../store/useAppStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { asSubscriber } from './helpers/subscriber';
 
-/** Following the phone is the right default; a kitchen at night is not a kitchen at noon. */
+/** Binary theme toggle: dark (negru pur) si light (alb) */
 describe('alegerea temei', () => {
   beforeEach(async () => {
     asSubscriber();
     await AsyncStorage.clear();
     // The app now opens on a sign-in gate; this test is about what is behind it.
     useAppStore.setState({
-      themeMode: 'system',
+      themeMode: 'dark',
       activeView: 'meals',
       activeNotice: null,
       authStatus: 'guest',
@@ -25,32 +25,32 @@ describe('alegerea temei', () => {
     cleanup();
   });
 
-  test('pornește urmând telefonul', () => {
+  test('pornește în modul întunecat (dark/negru)', () => {
     render(<App />);
 
-    expect(screen.getByLabelText(/Temă: ca telefonul/i)).toBeTruthy();
+    expect(screen.getByLabelText(/Temă: întunecată/i)).toBeTruthy();
   });
 
-  test('apăsările o rotesc prin cele trei stări și se întorc', () => {
+  test('apăsările comută binar și instant între alb și negru', () => {
     render(<App />);
 
-    fireEvent.press(screen.getByLabelText(/Temă: ca telefonul/i));
+    fireEvent.press(screen.getByLabelText(/Temă: întunecată/i));
     expect(useAppStore.getState().themeMode).toBe('light');
 
     fireEvent.press(screen.getByLabelText(/Temă: luminoasă/i));
     expect(useAppStore.getState().themeMode).toBe('dark');
 
     fireEvent.press(screen.getByLabelText(/Temă: întunecată/i));
-    expect(useAppStore.getState().themeMode).toBe('system');
+    expect(useAppStore.getState().themeMode).toBe('light');
   });
 
   test('alegerea se ține minte între porniri', async () => {
     render(<App />);
-    fireEvent.press(screen.getByLabelText(/Temă: ca telefonul/i));
+    fireEvent.press(screen.getByLabelText(/Temă: întunecată/i));
     cleanup();
 
     await act(async () => {
-      useAppStore.setState({ themeMode: 'system', isHydrated: false, authStatus: 'guest' });
+      useAppStore.setState({ themeMode: 'dark', isHydrated: false, authStatus: 'guest' });
       await useAppStore.getState().hydrateStorage();
     });
 
