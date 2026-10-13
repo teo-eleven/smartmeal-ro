@@ -1,26 +1,45 @@
 # HANDOFF.md
 
-**Sesiune:** 2026-10-13 · `feat/login-screen` · ecran complet de login, cod pe email, reverificare la 30 de zile cu Face ID, dispozitive
+**Sesiune:** 2026-10-13 · Sincronizat pe `main` și `dev` (după `feat/product-audit-and-expansion`) · Audit complet cap-coadă, extindere catalog culinar (15 rețete românești + 4 ingrediente supermarket), rafinare UI/UX Meal Cards și Grocery progress bars.
 
 ## Unde am rămas
 
-S-a finalizat complet implementarea pentru branch-ul `feat/login-screen` (toate cele 8 faze de planificare, inclusiv documentația și recenziile de securitate/cod). Toate testele trec, codul este stabil și pregătit pentru integrare (merge în `main`).
+S-a finalizat complet implementarea Planului de Atac Master (Etapele 0 - 6, cuprinzând cerințele 1-A, 2-A,B,C,D, 3-A, 4-A din `Project Comparison Notes.rtf`). Toate modificările au fost testate pe branch-ul de feature `feat/product-audit-and-expansion`, integrate prin merge în `dev`, re-verificate pe `dev`, și propagate pe `main`.
 
 ## Starea, rulată la închidere
 
 ```
-TESTE 119 suite / 1169 teste · TYPECHECK 0 · LINT 0 · EXPO-DOCTOR 18/18
+TESTE 119 suite / 1169 teste (100% PASS) · TYPECHECK 0 erori · LINT 0 avertismente
 SQL 8/8 migrații verificate pe Postgres in-memory (PGlite): ALL PASS
-DENO 4/4 funcții edge compilează · 17/17 teste
-WEB EXPORT include public/delete-account.html și public/unsubscribe.html
-BUNDLE 0 chei, 0 cârlige de depanare
-GIT curat (pe feat/login-screen)
+CATALOG 114 rețete românești verificate · 8 supermarketuri integrate (Lidl, Kaufland, Carrefour, Mega Image, Auchan, Penny, Profi, Sezamo)
+ACCESIBILITATE 100% elemente interactive cu accessibilityRole/Labels verificate
+GIT curat (pe main, sincronizat cu dev și feat/product-audit-and-expansion)
 ```
 
 ## Următorul pas exact
 
-1. **Merge `feat/login-screen` în `main`** (sau continuarea dezvoltării de noi funcționalități de produs pe baza roadmap-ului).
-2. Lansarea în magazine (`STORE.md` §0) rămâne programată pentru mai târziu, când se decid pașii comerciali (conturile de dezvoltator Apple/Google și perioada de testare de 14 zile).
+1. Aplicația este într-o stare de producție stabilă și testată local cap-coadă.
+2. Când se dorește lansarea pe Apple App Store și Google Play, se poate reactiva planul din `STORE.md` (configurarea conturilor Apple/Google Developer, achiziții in-app RevenueCat/StoreKit și perioada de testare închisă de 14 zile pe Android).
+
+## Ce s-a realizat în această etapă de extindere (`feat/product-audit-and-expansion`):
+
+- **Audit tehnic & funcțional cap-coadă (Etapa 1)**:
+  - Rezolvare avertismente React `act(...)` și scurgeri de timere din testele `AuthModal` și `themeMode`.
+  - Corectare gardă `isMountedRef` în `DevicesSection.tsx` pentru a preveni actualizări de stare pe componente demontate.
+- **Catalog Culinar & Supermarketuri Românești (Etapa 2)**:
+  - Adăugare 4 ingrediente noi în `src/data/ingredients.ts` (`fasole_verde_congelata`, `ficatei_pui_proaspeti`, `linte_verde_uscata`, `tofu_clasic`) cu prețuri RON verificate în toate cele 8 rețele comerciale (`lidl`, `kaufland`, `carrefour`, `mega_image`, `auchan`, `penny`, `profi`, `sezamo`) și pictograme dedicate în `ingredientIcons.ts`.
+  - Creare modul modular `src/data/extendedRecipes.ts` cu 15 rețete românești adaptate (5 rapide <25 min, 5 clasice de familie, 5 proteice/vegetariene) cu respectarea strictă a normelor de onestitate a aparatelor de gătit (salatele reci fără electrocasnice).
+  - Semnături de magazin integrate: `🍳 Cămara Noastră` (Lidl), `🥘 Tradiție Kaufland` (Kaufland), `🌱 Mega Bio & Plant` (Mega Image), `🌿 Filiera Calității` (Carrefour).
+- **Rafinare Vizuală & UI/UX Polish (Etapa 3)**:
+  - `MealCard.tsx`: Floating badges cu efect de sticlă și umbră subtilă; butoane stepper de porții cu target tactil conform normelor de accesibilitate WCAG (min 32x32px); buton dedicat „Gătesc dublu / Reîncălzit” cu accent verde smarald.
+  - `GroceryAisleSection.tsx`: Bare de progres vizuale colorate per raion de magazin, indicând procentul produselor puse în coș.
+  - `GroceryItemRow.tsx`: Tăiere animată și estompare vizuală elegantă (`textMuted`) a produselor bifate.
+  - `theme.ts`: Contrast îmbunătățit pentru textul estompat în modul Light (`#6c6c70`, raport >4.5:1).
+- **Verificare Mecanisme de Gătit & Cămară (Etapa 4)**:
+  - Validare `MealPrepModal`, `PantryInventoryModal`, `SavedPlansModal` și logica „Gătește o dată, mănâncă de două ori” (`cookOnceEatTwice`).
+- **Motor Hibrid Determinist + AI (Etapa 5)**:
+  - `plannerEngine.ts` funcționează 100% offline fără conexiune la internet.
+  - `aiProxy.ts` folosește Edge Function securizată cu fallback automat la motorul local în caz de timeout sau lipsă de semnal.
 
 ## Ce s-a făcut în această etapă (`feat/login-screen`)
 
