@@ -46,7 +46,7 @@ export const APPLE_IOS_THEME = {
     surfaceTertiary: '#e5e5ea',
     dock: 'rgba(255, 255, 255, 0.90)',
     text: '#000000',
-    textMuted: '#8e8e93',
+    textMuted: '#6c6c70',
     textSubtle: '#c7c7cc',
     primary: '#000000',
     primaryText: '#ffffff',

@@ -79,7 +79,7 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({
               style={[
                 styles.name,
                 {
-                  color: theme.text,
+                  color: item.isPurchased ? theme.textMuted : theme.text,
                   textDecorationLine: item.isPurchased ? 'line-through' : 'none',
                 },
               ]}

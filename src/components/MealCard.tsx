@@ -357,10 +357,16 @@ export const MealCard: React.FC<MealCardProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Gătesc din nou în ziua asta"
                 onPress={onUndoCookDouble}
-                style={[styles.leftoverBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
+                style={[
+                  styles.leftoverBtn,
+                  {
+                    borderColor: isDark ? 'rgba(52, 211, 153, 0.45)' : '#a7f3d0',
+                    backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5',
+                  },
+                ]}
                 activeOpacity={0.75}
               >
-                <Text style={[styles.leftoverBtnText, { color: theme.textMuted }]}>
+                <Text style={[styles.leftoverBtnText, { color: isDark ? '#34d399' : '#059669' }]}>
                   ♻️ Reîncălzit din ziua de dinainte · gătesc din nou
                 </Text>
               </TouchableOpacity>
@@ -457,9 +463,16 @@ const styles = StyleSheet.create({
   },
   floatingBadge: {
     position: 'absolute',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    shadowColor: '#000000',
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 3,
   },
   dayBadge: {
     top: 14,
@@ -494,7 +507,7 @@ const styles = StyleSheet.create({
   pillBadge: {
     borderRadius: 20,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
   },
@@ -562,11 +575,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 4,
+    minHeight: 34,
   },
   servingsStepBtn: {
-    paddingHorizontal: 8,
+    minWidth: 32,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
     paddingVertical: 2,
   },
   servingsStepText: {
@@ -590,6 +608,7 @@ const styles = StyleSheet.create({
   },
   swapBtn: {
     flex: 1,
+    minHeight: 40,
     paddingVertical: 9,
     paddingHorizontal: 8,
     borderRadius: 12,
@@ -614,6 +633,7 @@ const styles = StyleSheet.create({
   },
   viewBtn: {
     flex: 1.3,
+    minHeight: 40,
     paddingVertical: 9,
     paddingHorizontal: 10,
     borderRadius: 12,

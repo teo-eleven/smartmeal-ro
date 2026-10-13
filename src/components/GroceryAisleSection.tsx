@@ -76,7 +76,7 @@ export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
           <Text
             style={[
               styles.countBadge,
-              { color: isAllPurchased ? (isDark ? '#ffffff' : '#000000') : theme.textMuted },
+              { color: isAllPurchased ? (isDark ? '#30d158' : '#34c759') : theme.textMuted },
             ]}
           >
             {purchasedCount}/{items.length} {isAllPurchased ? '✓' : ''}
@@ -86,6 +86,24 @@ export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
           </Text>
         </View>
       </TouchableOpacity>
+
+      {/* Mini Progress Bar per Aisle */}
+      <View
+        style={[
+          styles.progressBarTrack,
+          { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' },
+        ]}
+      >
+        <View
+          style={[
+            styles.progressBarFill,
+            {
+              width: `${(purchasedCount / items.length) * 100}%`,
+              backgroundColor: isAllPurchased ? (isDark ? '#30d158' : '#34c759') : meta.color,
+            },
+          ]}
+        />
+      </View>
 
       {/* Items list */}
       {!collapsed && (
@@ -143,6 +161,18 @@ const styles = StyleSheet.create({
   },
   arrow: {
     fontSize: 10,
+  },
+  progressBarTrack: {
+    height: 3,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginTop: -4,
+    marginBottom: 8,
+    marginHorizontal: 4,
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 2,
   },
   itemsList: {
     paddingLeft: 2,
