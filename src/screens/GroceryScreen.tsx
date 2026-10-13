@@ -438,6 +438,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowRadius: 16,
     elevation: 4,
+    overflow: 'hidden',
   },
   overviewInner: {
     width: '100%',
@@ -461,9 +462,12 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   overviewColRightDesktop: {
-    minWidth: 150,
+    width: 'auto',
+    flex: 1,
+    maxWidth: 220,
     marginTop: 0,
     justifyContent: 'center',
+    alignItems: 'stretch',
   },
   overviewDividerV: {
     width: 1,
@@ -566,6 +570,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   actionBtn: {
+    width: '100%',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -575,6 +580,7 @@ const styles = StyleSheet.create({
   actionBtnText: {
     fontSize: 12,
     fontWeight: '700',
+    textAlign: 'center',
   },
   celebrationCard: {
     width: '100%',

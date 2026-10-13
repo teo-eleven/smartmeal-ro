@@ -34,15 +34,14 @@ import { PaywallScreen } from './src/screens/PaywallScreen';
 import { useSubscriptionStore } from './src/store/subscriptionStore';
 import { cloudSyncService } from './src/services/supabase';
 
-const THEME_ICONS: Record<ThemeMode, string> = { system: '🌗', light: '☀️', dark: '🌙' };
+const THEME_ICONS: Record<ThemeMode, string> = { system: '🌙', light: '☀️', dark: '🌙' };
 const THEME_LABELS: Record<ThemeMode, string> = {
-  system: 'ca telefonul',
+  system: 'întunecată',
   light: 'luminoasă',
   dark: 'întunecată',
 };
 
 function AppShell() {
-  const colorScheme = useColorScheme();
   const [authModalVisible, setAuthModalVisible] = useState(false);
 
   const {
@@ -74,8 +73,8 @@ function AppShell() {
     generatePlan,
   } = useAppStore();
 
-  // The phone's setting is the default; an explicit choice overrides it.
-  const isDark = themeMode === 'system' ? colorScheme === 'dark' : themeMode === 'dark';
+  // Binary theme toggle: dark (negru pur) sau light (alb)
+  const isDark = themeMode === 'light' ? false : true;
 
   const { isDesktop, isMobile, contentMaxWidth } = useResponsive();
 

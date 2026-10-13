@@ -13,6 +13,7 @@ interface BudgetSliderProps {
   isDark: boolean;
   mealsPerDay?: number;
   foodTier?: FoodTier;
+  extrasCost?: number;
 }
 
 export const BudgetSlider: React.FC<BudgetSliderProps> = ({
@@ -24,8 +25,10 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
   isDark,
   mealsPerDay = 1,
   foodTier = 'medium',
+  extrasCost = 0,
 }) => {
-  const minFloor = calculateMinimumViableBudget(peopleCount, daysCount, supermarketId, true, mealsPerDay, foodTier);
+  const baseFloor = calculateMinimumViableBudget(peopleCount, daysCount, supermarketId, true, mealsPerDay, foodTier);
+  const minFloor = baseFloor + Math.ceil(extrasCost);
   const isBelowFloor = budget < minFloor;
 
   const [customText, setCustomText] = useState(String(budget));
@@ -139,7 +142,7 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
               </Text>
             </Text>
             <Text style={[styles.suggestedSubtitle, { color: theme.textMuted }]}>
-              Calculat pentru {peopleCount} {peopleCount === 1 ? 'persoană' : 'persoane'}, {daysCount} {daysCount === 1 ? 'zi' : 'zile'}, {mealsPerDay} {mealsPerDay === 1 ? 'masă' : 'mese'}/zi.
+              Calculat pentru {peopleCount} {peopleCount === 1 ? 'persoană' : 'persoane'}, {daysCount} {daysCount === 1 ? 'zi' : 'zile'}, {mealsPerDay} {mealsPerDay === 1 ? 'masă' : 'mese'}/zi{extrasCost > 0 ? ` + gustări & băuturi (~${Math.round(extrasCost)} lei)` : ''}.
             </Text>
           </View>
         </View>
