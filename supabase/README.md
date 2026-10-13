@@ -22,19 +22,39 @@ brew install supabase/tap/supabase
 supabase login
 supabase link --project-ref <project-ref>
 
-# 3. Cheia Gemini, server-side
+# 3. Aplicarea migrațiilor în baza de date (0001 - 0008)
+supabase db push
+# Verifică local oricând că toate cele 8 migrații sunt valide: npm run test:sql
+
+# 4. Cheia Gemini, server-side
 supabase secrets set GEMINI_API_KEY=<cheia-ta>
 
-# 4. Originile care au voie să apeleze funcția din browser
+# 5. Originile care au voie să apeleze funcția din browser
 #    Fără asta CORS rămâne '*', potrivit doar în dezvoltare: cheia anon e publică prin
 #    design, așa că orice site care a copiat-o poate apela funcția din browserul unui
 #    utilizator, pe cota ta de Gemini. Aplicațiile native nu trimit Origin și nu sunt afectate.
 supabase secrets set ALLOWED_ORIGINS=https://domeniul-tau.ro,https://www.domeniul-tau.ro
 
-# 5. Publicarea funcțiilor
+# 6. Publicarea funcțiilor
 supabase functions deploy proxy-gemini-plan
 supabase functions deploy delete-account
 ```
+
+### Migrațiile din `supabase/migrations/`
+- **0001_user_meal_plans.sql**: Tabela planurilor de mese cu politici RLS și limite de dimensiune JSONB.
+- **0002_ai_rate_limits.sql**: Limitare partajată a apelurilor către proxy-ul AI Gemini.
+- **0003_user_reminders.sql**: Preferințe mementouri locale pe dispozitiv.
+- **0004_email_reminders.sql**: Mementouri pe email, frecvență și urmărire livrări.
+- **0005_user_consents.sql**: Consimțăminte GDPR înghețate la înregistrare.
+- **0006_profiles.sql**: Tabela `profiles` cu `display_name` populat automat prin trigger din metadate la signup.
+- **0007_user_devices.sql**: Tabela `user_devices` (istoric dispozitive, înregistrare sesiune și revocare la distanță).
+- **0008_tighten_consent_grants.sql**: Restrângere drepturi pe tabela de consimțăminte.
+
+### Șabloane de email (Authentication → Email Templates)
+Supabase trimite implicit link-uri web. Aplicația mobilă cere coduri OTP formate din cifre (`{{ .Token }}`):
+- **Magic Link / Conectare cu cod**: copiază conținutul din `supabase/templates/magic_link.html`.
+- **Resetare parolă**: copiază conținutul din `supabase/templates/recovery.html`.
+- **Confirmare cont**: copiază conținutul din `supabase/templates/confirmation.html`.
 
 `delete-account` este **obligatorie** înainte de orice submisie în magazine: Apple cere din
 2022 o cale de ștergere a contului direct din aplicație (5.1.1v), iar Google Play cere și una

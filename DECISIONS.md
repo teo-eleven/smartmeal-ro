@@ -661,3 +661,45 @@ obligation: the validator is now part of the definition of the type.
 *What would make this decision wrong:* a boundary that needs to accept a shape the catalogue
 cannot describe — a plan imported from another app, say. Then the whitelist is the wrong
 tool and the import needs its own adapter rather than a loosened validator.
+
+---
+
+## ADR-19: Ecran de autentificare complet, conectare cu cod pe email, reverificare la 30 de zile cu biometrie și managementul dispozitivelor
+
+**Status:** Accepted · 2026-10-03 · `feat/login-screen`
+
+### Context
+Inițial, fluxul de intrare folosea `WelcomeGate` și fereastra modală `AuthModal`. Pe măsură ce aplicația s-a maturizat, au apărut cerințe clare de securitate și experiență utilizator:
+1. Un ecran complet și curat de login la prima pornire, păstrând accesul „Continuă fără cont” cerut de Apple (regula App Store Review 5.1.1(i)).
+2. Autentificare fără parolă prin cod primit pe email (OTP), atât pentru conectare cât și pentru resetarea parolei.
+3. Nume personalizat la înregistrare, afișat în cont și în salutul aplicației.
+4. O poartă de reverificare periodică la 30 de zile de la ultima conectare pe acel dispozitiv, cu deblocare rapidă prin Face ID / Touch ID sau parolă/cod ca fallback.
+5. Vizibilitatea și managementul tuturor dispozitivelor conectate pe un cont, cu posibilitatea revocării de la distanță a altor sesiuni.
+
+### Opțiuni evaluate
+1. **Păstrarea vechiului `AuthModal` și aglomerarea logicii în el**
+   - *Respins:* `AuthModal.tsx` atinsese 760 de rânduri (limita strictă din proiect fiind 800) și conținea amestecată logica de vizualizare profil cu formularele de autentificare și resetare.
+2. **Împărțirea `AuthModal` în piese modulare refolosibile + un ecran complet `LoginScreen` și o poartă de securitate `AuthGate`** *(ALES)*
+   - *Ales:* Formularele au fost extrase în `src/screens/auth/` (`useAuthForm`, `AuthForm`, `EmailCodeForm`, `ResetPasswordFlow`). `AuthGate` dirijează starea aplicației (`checking` -> `LoginScreen` / `ReauthScreen` / conținutul principal).
+3. **Biometria pe post de cheie de sesiune vs. barieră de deblocare locală**
+   - *Decizie asumată:* Biometria (`expo-local-authentication`) acționează ca o barieră hardware locală sigură pe dispozitiv pentru deblocarea periodică la 30 de zile. Nu emite un nou token pe server (tokenul de refresh Supabase este stocat în Keychain/Keystore). O autentificare prin parolă sau cod reprezintă o verificare reală pe server.
+4. **Gestionarea dispozitivelor prin RPC-uri dedicate vs. Edge Functions**
+   - *Decizie:* Tabela `user_devices` este protejată prin RLS (doar citire proprie). Toate modificările se fac prin funcții Postgres `SECURITY DEFINER` (`register_device`, `revoke_device`, `forget_this_device`), care preiau identitatea direct din JWT (`auth.uid()`, `auth.jwt() ->> 'session_id'`), prevenind orice manipulare de la client.
+
+### Decizie
+- S-au adăugat migrările Postgres:
+  - `0006_profiles.sql`: tabela `profiles` cu `display_name` populat automat din `raw_user_meta_data` via trigger la înregistrare.
+  - `0007_user_devices.sql`: tabela `user_devices` (max 20 dispozitive per cont, ștergerea sesiunii din `auth.sessions` la revocare).
+  - `0008_tighten_consent_grants.sql`: restrângerea strictă a privilegiilor pe acordurile utilizatorilor.
+- S-a creat `src/services/authCode.ts` pentru autentificarea cu cod OTP prin email, răspunzând identic pentru adrese necunoscute și cunoscute (prevenire enumerare adrese).
+- S-a creat `src/services/reauth.ts` și `src/services/biometric.ts` pentru contorizarea celor 30 de zile în `secureSessionStore` și deblocarea biometrică.
+- S-a creat `src/screens/LoginScreen.tsx`, `src/screens/ReauthScreen.tsx` și `src/screens/AuthGate.tsx`.
+- S-a adăugat `DevicesSection.tsx` și `AccountIdentity.tsx` în fereastra de Cont.
+
+### Compromis acceptat
+- Dispozitivul revocat de la distanță mai poate efectua apeluri până la expirarea token-ului JWT curent (până la o oră). Pentru a minimiza această fereastră, clientul verifică validitatea la pornire și la revenirea în prim-plan la fiecare 5 minute prin `deviceSession.ts`.
+- Ștergerea datelor aplicației de pe telefon curăță contorul celor 30 de zile, dar șterge și sesiunea curentă, cerând relogin obligatoriu.
+
+### Condiție de invalidare
+Dacă cerințele aplicației se mută pe un model strict enterprise cu revocare instantanee la nivel de secundă (care ar impune validarea token-ului la fiecare cerere printr-un gateway Redis/Edge centralizat).
+
