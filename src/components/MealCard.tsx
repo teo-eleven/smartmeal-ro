@@ -81,16 +81,28 @@ function getTierLabel(tier?: FoodTier): string {
   }
 }
 
-function getTierBadgeBg(tier?: FoodTier): string {
+function getTierBadgeStyle(tier?: FoodTier, isDark: boolean = true): { bg: string; text: string } {
   switch (tier) {
     case 'basic':
-      return 'rgba(255, 255, 255, 0.2)';
+      return {
+        bg: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
+        text: isDark ? '#ffffff' : '#000000',
+      };
     case 'medium':
-      return 'rgba(10, 132, 255, 0.85)';
+      return {
+        bg: isDark ? 'rgba(10, 132, 255, 0.85)' : 'rgba(10, 132, 255, 0.9)',
+        text: '#ffffff',
+      };
     case 'premium':
-      return 'rgba(217, 119, 6, 0.9)';
+      return {
+        bg: isDark ? 'rgba(217, 119, 6, 0.9)' : 'rgba(180, 83, 9, 0.9)',
+        text: '#ffffff',
+      };
     default:
-      return 'rgba(0, 0, 0, 0.6)';
+      return {
+        bg: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+        text: isDark ? '#ffffff' : '#000000',
+      };
   }
 }
 
@@ -234,11 +246,14 @@ export const MealCard: React.FC<MealCardProps> = ({
             <View style={[styles.pillBadge, { backgroundColor: theme.btnBg, borderColor: theme.border }]}>
               <Text style={[styles.pillText, { color: theme.text }]}>⏱️ {totalCookingTime} min</Text>
             </View>
-            {recipe.tier && (
-              <View style={[styles.pillBadge, { backgroundColor: getTierBadgeBg(recipe.tier) }]}>
-                <Text style={styles.pillText}>{getTierLabel(recipe.tier)}</Text>
-              </View>
-            )}
+            {recipe.tier && (() => {
+              const tierStyle = getTierBadgeStyle(recipe.tier, isDark);
+              return (
+                <View style={[styles.pillBadge, { backgroundColor: tierStyle.bg }]}>
+                  <Text style={[styles.pillText, { color: tierStyle.text }]}>{getTierLabel(recipe.tier)}</Text>
+                </View>
+              );
+            })()}
             {recipe.storeBadgeLabel && (
               <View style={[styles.pillBadge, { backgroundColor: getStoreBadgeBg(recipe.storeSignature) }]}>
                 <Text style={styles.pillText}>{recipe.storeBadgeLabel}</Text>

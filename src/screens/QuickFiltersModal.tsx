@@ -87,8 +87,10 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
 
   const toggleMood = (mood: MoodTag) => {
     if (moodTags.includes(mood)) {
+      if (moodTags.length <= 1) return; // Must have at least 1 mood
       setMoodTags(moodTags.filter((m) => m !== mood));
     } else {
+      if (moodTags.length >= 5) return; // Max 5 moods
       setMoodTags([...moodTags, mood]);
     }
   };

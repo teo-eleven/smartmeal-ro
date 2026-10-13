@@ -42,7 +42,7 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
   // in three and then divided by the number of days, so the "medie zilnică" it presents as
   // nutritional guidance came out at about a third of what the week actually contains.
   plan.days
-    .flatMap((day) => day.meals)
+    .flatMap((day) => day.meals || [])
     .forEach((meal) => {
       const nutrition = meal.recipe.nutritionPerServing;
       totalCalories += nutrition.calories;

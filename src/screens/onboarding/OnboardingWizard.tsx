@@ -436,7 +436,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                           },
                         ]}
                       >
-                        {isSelected && <Text style={styles.supermarketRadioCheck}>✓</Text>}
+                        {isSelected && <Text style={[styles.supermarketRadioCheck, { color: theme.primaryText }]}>✓</Text>}
                       </View>
                     </TouchableOpacity>
                   );
@@ -1031,7 +1031,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                             },
                           ]}
                         >
-                          {isSelected && <Text style={styles.retailCheckmark}>✓</Text>}
+                          {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
                         </View>
                       </View>
                     </TouchableOpacity>
@@ -1084,7 +1084,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                             },
                           ]}
                         >
-                          {isSelected && <Text style={styles.retailCheckmark}>✓</Text>}
+                          {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
                         </View>
                       </View>
                     </TouchableOpacity>
@@ -1137,7 +1137,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                             },
                           ]}
                         >
-                          {isSelected && <Text style={styles.retailCheckmark}>✓</Text>}
+                          {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
                         </View>
                       </View>
                     </TouchableOpacity>
@@ -1189,7 +1189,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                     },
                   ]}
                 >
-                  {preferences.includeAlcohol && <Text style={styles.retailCheckmark}>✓</Text>}
+                  {preferences.includeAlcohol && <Text style={[styles.retailCheckmark, { color: '#ffffff' }]}>✓</Text>}
                 </View>
               </TouchableOpacity>
 
@@ -1235,7 +1235,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                               },
                             ]}
                           >
-                            {isSelected && <Text style={styles.retailCheckmark}>✓</Text>}
+                            {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
                           </View>
                         </View>
                       </TouchableOpacity>
@@ -1304,7 +1304,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             onPress={handleNextOrFinish}
             activeOpacity={0.85}
             {...glass('btn-primary')}
-            style={[styles.footerContinueWrap, { flex: isLargeScreen ? 1 : undefined, maxWidth: isLargeScreen ? 460 : '100%' }]}
+            style={[styles.footerContinueWrap, { flex: 1, maxWidth: isLargeScreen ? 460 : '100%' }]}
           >
             <LinearGradient
               colors={isDark ? ['#ffffff', '#f2f2f7'] : ['#000000', '#1c1c1e']}
@@ -1667,7 +1667,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   footerContinueWrap: {
-    width: '100%',
+    flex: 1,
   },
   marketBadge: {
     width: 44,

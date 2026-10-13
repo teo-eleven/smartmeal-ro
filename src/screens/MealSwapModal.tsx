@@ -78,7 +78,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   const targetMeal = slot ? currentMealDay?.meals?.find((m) => m.slot === slot) : null;
   const currentRecipe = targetMeal ? targetMeal.recipe : currentMealDay?.recipe;
   const currentRecipeId = currentRecipe?.id;
-  const slotTitle = targetMeal ? ` ${targetMeal.slotLabelRo}` : '';
+  const slotTitle = targetMeal?.slotLabelRo || '';
 
   // Filter eligible recipes suitable for this specific meal slot
   const eligible = getEligibleRecipes(preferences);
@@ -152,7 +152,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                   Rețetă curentă în plan:
                 </Text>
                 <Text style={[styles.currentTitle, { color: theme.text }]}>
-                  {currentMealDay.recipe.title}
+                  {currentRecipe?.title || currentMealDay.recipe.title}
                 </Text>
               </View>
             )}

@@ -38,7 +38,7 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
   };
 
   // Generate structured batch cooking guide tailored to the week's dishes
-  const mealsCount = plan.days.reduce((acc, d) => acc + d.meals.length, 0);
+  const mealsCount = plan.days.reduce((acc, d) => acc + (d.meals?.length || 0), 0);
 
   const prepPhases: MealPrepPhase[] = [
     {

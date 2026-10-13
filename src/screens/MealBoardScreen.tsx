@@ -137,7 +137,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
       case 'medium':
         return '#0a84ff';
       case 'premium':
-        return '#ffd60a';
+        return isDark ? '#ffd60a' : '#b45309';
       default:
         return '#0a84ff';
     }
