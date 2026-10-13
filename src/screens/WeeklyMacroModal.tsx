@@ -293,11 +293,13 @@ const styles = StyleSheet.create({
   },
   macroGrid: {
     flexDirection: 'row',
-    gap: 10,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   macroItem: {
     flex: 1,
-    padding: 12,
+    minWidth: 90,
+    padding: 10,
     borderRadius: 14,
     borderWidth: 1,
   },
@@ -313,7 +315,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   macroName: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
   macroAmount: {

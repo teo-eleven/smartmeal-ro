@@ -877,6 +877,7 @@ const styles = StyleSheet.create({
   toolbarDesktopRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 18,
   },
   toolbarSection: {
@@ -1076,6 +1077,7 @@ const styles = StyleSheet.create({
   mealsRow: {
     flexDirection: 'row',
     alignItems: 'stretch',
+    flexWrap: 'wrap',
     gap: 16,
     width: '100%',
   },
@@ -1084,7 +1086,7 @@ const styles = StyleSheet.create({
   },
   mealCol: {
     flex: 1,
-    minWidth: 0,
+    minWidth: 280,
     transition: 'all 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
   },
   emptyContainer: {

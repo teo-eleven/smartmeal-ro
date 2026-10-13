@@ -252,7 +252,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             </View>
 
             {/* Stepped Water Flow Nodes Bar ("ca un curs al apei în trepte") */}
-            <View style={styles.waterFlowTrack}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[styles.waterFlowTrack, { minWidth: isDesktop ? '100%' : 860 }]}
+            >
               {ONBOARDING_STEPS_META.map((stepItem, idx) => {
                 const isCurrent = stepItem.step === currentStep;
                 const isCompleted = stepItem.step < currentStep || (stepItem.step <= maxVisitedStep && !isCurrent);
@@ -306,7 +310,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                   </React.Fragment>
                 );
               })}
-            </View>
+            </ScrollView>
           </View>
         </View>
       ) : (
@@ -1932,7 +1936,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   moodCard: {
-    width: '48%',
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
@@ -2005,7 +2009,8 @@ const styles = StyleSheet.create({
   continueButton: {
     width: '100%',
     maxWidth: 480,
-    paddingVertical: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -2017,8 +2022,9 @@ const styles = StyleSheet.create({
   },
   continueButtonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
+    textAlign: 'center',
   },
   retailSupermarketBanner: {
     flexDirection: 'row',
