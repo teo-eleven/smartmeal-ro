@@ -860,6 +860,42 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     unit: 'g',
     typicalPriceRon: { lidl: 13.99, kaufland: 13.49, carrefour: 14.99, mega_image: 16.09, auchan: 14.27, penny: 13.43, profi: 15.11, sezamo: 15.67 },
   },
+  fasole_verde_congelata: {
+    id: 'fasole_verde_congelata',
+    name: 'Fasole verde păstăi congelată',
+    category: 'produce',
+    isPantryStaple: false,
+    standardPackSize: 450,
+    unit: 'g',
+    typicalPriceRon: { lidl: 4.99, kaufland: 4.79, carrefour: 5.49, mega_image: 5.99, auchan: 5.19, penny: 4.89, profi: 5.29, sezamo: 6.49 },
+  },
+  ficatei_pui_proaspeti: {
+    id: 'ficatei_pui_proaspeti',
+    name: 'Ficăței de pui proaspeți',
+    category: 'meat_fish',
+    isPantryStaple: false,
+    standardPackSize: 500,
+    unit: 'g',
+    typicalPriceRon: { lidl: 8.99, kaufland: 8.49, carrefour: 9.49, mega_image: 10.49, auchan: 8.99, penny: 8.69, profi: 9.29, sezamo: 11.29 },
+  },
+  linte_verde_uscata: {
+    id: 'linte_verde_uscata',
+    name: 'Linte verde boabe uscată',
+    category: 'pantry',
+    isPantryStaple: false,
+    standardPackSize: 500,
+    unit: 'g',
+    typicalPriceRon: { lidl: 6.49, kaufland: 5.99, carrefour: 6.99, mega_image: 7.99, auchan: 6.79, penny: 6.29, profi: 6.89, sezamo: 8.49 },
+  },
+  tofu_clasic: {
+    id: 'tofu_clasic',
+    name: 'Tofu simplu în saramură',
+    category: 'dairy',
+    isPantryStaple: false,
+    standardPackSize: 300,
+    unit: 'g',
+    typicalPriceRon: { lidl: 5.99, kaufland: 5.49, carrefour: 6.49, mega_image: 7.29, auchan: 6.19, penny: 5.79, profi: 6.39, sezamo: 7.99 },
+  },
 };
 
 export const INGREDIENTS_LIST: Ingredient[] = Object.values(INGREDIENTS);

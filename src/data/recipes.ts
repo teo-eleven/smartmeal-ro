@@ -1,4 +1,5 @@
 import { FoodTier, MealSlot, Recipe, SupermarketId } from '../types';
+import { EXTENDED_RECIPES } from './extendedRecipes';
 
 const BASE_RECIPES: Recipe[] = [
   {
@@ -3313,6 +3314,20 @@ const RECIPE_STORE_SPEC_MAP: Record<string, RecipeStoreSpec> = {
     storeSignature: 'carrefour',
     storeBadgeLabel: '🌿 Filiera Calității',
   },
+
+  // Extended recipes signatures
+  ochiuri_mamaliga_telemea: {
+    storeSignature: 'lidl',
+    storeBadgeLabel: '🍳 Cămara Noastră',
+  },
+  ficatei_pui_ceapa_tigaie: {
+    storeSignature: 'kaufland',
+    storeBadgeLabel: '🥘 Tradiție Kaufland',
+  },
+  tofu_tigaie_legume_orez: {
+    storeSignature: 'mega_image',
+    storeBadgeLabel: '🌱 Mega Bio & Plant',
+  },
 };
 
 export const RECIPES: Recipe[] = [
@@ -3332,6 +3347,17 @@ export const RECIPES: Recipe[] = [
     return {
       ...recipe,
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'medium',
+      availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
+      storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
+      storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
+    };
+  }),
+  ...EXTENDED_RECIPES.map((recipe) => {
+    const storeSpec = RECIPE_STORE_SPEC_MAP[recipe.id];
+    return {
+      ...recipe,
+      suitableSlots: recipe.suitableSlots ?? ['lunch', 'dinner'],
+      tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'basic',
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
       storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
