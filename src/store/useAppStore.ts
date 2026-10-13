@@ -100,6 +100,8 @@ export interface AppState {
   signOutToLogin: () => Promise<void>;
   isSyncing: boolean;
   lastSyncedAt: string | null;
+  globalLoadingMessage: string | null;
+  setGlobalLoading: (loading: boolean, message?: string | null) => void;
 
   // Pending confirmation for a destructive action
   confirmRequest: ConfirmActionId | null;
@@ -758,6 +760,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   authStatus: 'checking',
   isSyncing: false,
   lastSyncedAt: null,
+  globalLoadingMessage: null,
+  setGlobalLoading: (loading: boolean, message?: string | null) =>
+    set({ globalLoadingMessage: loading ? message || 'Se actualizează...' : null }),
   preferences: { ...DEFAULT_PREFERENCES },
   currentPlan: null,
   groceryItems: [],

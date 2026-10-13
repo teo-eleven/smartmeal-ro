@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   AppState,
   Platform,
@@ -33,6 +32,8 @@ import { UndoBanner } from './src/components/UndoBanner';
 import { PaywallScreen } from './src/screens/PaywallScreen';
 import { useSubscriptionStore } from './src/store/subscriptionStore';
 import { cloudSyncService } from './src/services/supabase';
+import { AppLoadingScreen } from './src/components/AppLoadingScreen';
+import { LoadingToast } from './src/components/LoadingToast';
 
 const THEME_ICONS: Record<ThemeMode, string> = { system: '🌙', light: '☀️', dark: '🌙' };
 const THEME_LABELS: Record<ThemeMode, string> = {
@@ -54,6 +55,7 @@ function AppShell() {
     groceryItems,
     userEmail,
     isSyncing,
+    globalLoadingMessage,
     lastSyncedAt,
     activeNotice,
     clearNotice,
@@ -184,19 +186,29 @@ function AppShell() {
           isDark={isDark}
           isSuppressed={authModalVisible || Boolean(activeNotice)}
         />
+        <LoadingToast
+          visible={isSyncing || Boolean(globalLoadingMessage)}
+          message={globalLoadingMessage || 'Se sincronizează...'}
+          isDark={isDark}
+        />
       </SafeAreaView>
     );
   }
 
   // Past the questionnaire, which stays free, the app needs the subscription. Until it has
-  // been read, a spinner: a paying person must never see the paywall flash on start.
+  // been read, a branded loading screen: a paying person must never see the paywall flash on start.
   if (!isSubscriptionChecked) {
     return (
-      <SafeAreaView
-        style={[styles.safeArea, styles.centered, { backgroundColor: theme.background }]}
-      >
-        <ActivityIndicator color={theme.text} accessibilityLabel="Se verifică abonamentul" />
-      </SafeAreaView>
+      <AppLoadingScreen
+        isDark={isDark}
+        title="Se verifică abonamentul..."
+        subtitle="Validăm starea contului tău SmartMeal."
+        accessibilityLabel="Se verifică abonamentul"
+        onRetry={() => {
+          void useSubscriptionStore.getState().refresh();
+        }}
+        retryLabel="Reîncearcă verificarea"
+      />
     );
   }
 
@@ -539,6 +551,12 @@ function AppShell() {
         isDestructive
         onConfirm={confirmPending}
         onCancel={cancelConfirm}
+        isDark={isDark}
+      />
+
+      <LoadingToast
+        visible={isSyncing || Boolean(globalLoadingMessage)}
+        message={globalLoadingMessage || 'Se sincronizează...'}
         isDark={isDark}
       />
     </SafeAreaView>
