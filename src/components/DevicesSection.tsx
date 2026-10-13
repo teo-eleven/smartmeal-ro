@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { DeviceInfo, listDevices, revokeDevice } from '../services/devices';
 import { describeLastSeen } from '../utils/deviceLabel';
@@ -26,10 +26,20 @@ export function DevicesSection({ isDark }: { isDark: boolean }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState<DeviceInfo | null>(null);
   const [isRevoking, setIsRevoking] = useState(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const load = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setError(null);
     const result = await listDevices();
+    if (!isMountedRef.current) return;
     setDevices(result.devices);
     setError(result.error);
   }, []);

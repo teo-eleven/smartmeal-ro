@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react-native';
 import App from '../../App';
 import { useAppStore } from '../store/useAppStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,6 +19,10 @@ describe('alegerea temei', () => {
       isHydrated: true,
     });
     useAppStore.getState().generatePlan();
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   test('pornește urmând telefonul', () => {
@@ -43,10 +47,14 @@ describe('alegerea temei', () => {
   test('alegerea se ține minte între porniri', async () => {
     render(<App />);
     fireEvent.press(screen.getByLabelText(/Temă: ca telefonul/i));
+    cleanup();
 
-    useAppStore.setState({ themeMode: 'system', isHydrated: false, authStatus: 'guest' });
-    await useAppStore.getState().hydrateStorage();
+    await act(async () => {
+      useAppStore.setState({ themeMode: 'system', isHydrated: false, authStatus: 'guest' });
+      await useAppStore.getState().hydrateStorage();
+    });
 
     expect(useAppStore.getState().themeMode).toBe('light');
   });
 });
+

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react-native';
 import { AuthModal } from '../AuthModal';
 import { cloudSyncService } from '../../services/supabase';
 
@@ -16,6 +16,10 @@ jest.mock('../../services/supabase', () => ({
   },
 }));
 
+jest.mock('../../components/DevicesSection', () => ({
+  DevicesSection: () => null,
+}));
+
 const baseProps = {
   visible: true,
   onClose: jest.fn(),
@@ -26,6 +30,10 @@ const baseProps = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+});
+
+afterEach(() => {
+  cleanup();
 });
 
 const AGE = 'Am cel puțin 16 ani';
@@ -120,31 +128,28 @@ describe('AuthModal', () => {
    * as it does after signing in; left open, it came back over the plan on its own.
    */
   test('cont nou fără confirmare: te conectează și închide fereastra', async () => {
-    jest.useFakeTimers();
-    try {
-      (cloudSyncService.signUpWithEmail as jest.Mock).mockResolvedValue({
-        user: { email: 'nou@b.ro' },
-        error: null,
-        needsConfirmation: false,
-      });
-      const onUserChanged = jest.fn();
-      const onClose = jest.fn();
-      render(<AuthModal {...baseProps} onUserChanged={onUserChanged} onClose={onClose} />);
+    (cloudSyncService.signUpWithEmail as jest.Mock).mockResolvedValue({
+      user: { email: 'nou@b.ro' },
+      error: null,
+      needsConfirmation: false,
+    });
+    const onUserChanged = jest.fn();
+    const onClose = jest.fn();
+    render(<AuthModal {...baseProps} onUserChanged={onUserChanged} onClose={onClose} />);
 
-      fireEvent.press(screen.getByText('Creează cont'));
+    fireEvent.press(screen.getByText('Creează cont'));
 
-      fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
-      fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
-      fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
-      tickBothConsents();
-      fireEvent.press(screen.getByText('Înregistrare'));
+    fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
+    tickBothConsents();
+    fireEvent.press(screen.getByText('Înregistrare'));
 
-      await waitFor(() => expect(onUserChanged).toHaveBeenCalledWith('nou@b.ro'));
+    await waitFor(() => expect(onUserChanged).toHaveBeenCalledWith('nou@b.ro'));
+    act(() => {
       jest.advanceTimersByTime(1000);
-      expect(onClose).toHaveBeenCalled();
-    } finally {
-      jest.useRealTimers();
-    }
+    });
+    expect(onClose).toHaveBeenCalled();
   });
 
   test('o excepție de rețea devine un mesaj, nu un ecran alb', async () => {
@@ -674,25 +679,20 @@ describe('AuthModal, numele la cont nou', () => {
  */
 describe('AuthModal, închiderea după conectare', () => {
   test('dacă fereastra dispare înainte, închiderea întârziată nu mai rulează', async () => {
-    jest.useFakeTimers();
-    try {
-      (cloudSyncService.signInWithEmail as jest.Mock).mockResolvedValue({
-        user: { email: 'a@b.ro' },
-        error: null,
-      });
-      const onClose = jest.fn();
-      const { unmount } = render(<AuthModal {...baseProps} onClose={onClose} />);
-      fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'a@b.ro');
-      fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
-      fireEvent.press(screen.getByText('Conectare'));
-      await waitFor(() => expect(baseProps.onUserChanged).toHaveBeenCalledWith('a@b.ro'));
+    (cloudSyncService.signInWithEmail as jest.Mock).mockResolvedValue({
+      user: { email: 'a@b.ro' },
+      error: null,
+    });
+    const onClose = jest.fn();
+    const { unmount } = render(<AuthModal {...baseProps} onClose={onClose} />);
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'a@b.ro');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
+    fireEvent.press(screen.getByText('Conectare'));
+    await waitFor(() => expect(baseProps.onUserChanged).toHaveBeenCalledWith('a@b.ro'));
 
-      unmount();
-      jest.advanceTimersByTime(1000);
+    unmount();
+    jest.advanceTimersByTime(1000);
 
-      expect(onClose).not.toHaveBeenCalled();
-    } finally {
-      jest.useRealTimers();
-    }
+    expect(onClose).not.toHaveBeenCalled();
   });
 });
