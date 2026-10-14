@@ -297,8 +297,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   macroItem: {
-    flex: 1,
-    minWidth: 90,
+    flexGrow: 1,
+    flexBasis: 88,
+    minWidth: 88,
     padding: 10,
     borderRadius: 14,
     borderWidth: 1,
@@ -306,17 +307,20 @@ const styles = StyleSheet.create({
   macroItemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     marginBottom: 6,
+    flexWrap: 'nowrap',
   },
   macroDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
+    flexShrink: 0,
   },
   macroName: {
     fontSize: 11,
     fontWeight: '700',
+    flexShrink: 1,
   },
   macroAmount: {
     fontSize: 18,

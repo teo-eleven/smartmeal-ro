@@ -195,6 +195,7 @@ const styles = StyleSheet.create({
   tightStepBtn: {
     width: 56,
     height: 56,
+    flexShrink: 0,
     borderRadius: 16,
     borderWidth: 1.5,
     alignItems: 'center',
@@ -206,13 +207,14 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
   tightCenterInputBox: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
     height: 56,
     flexShrink: 1,
-    minWidth: 120,
+    minWidth: 110,
     maxWidth: 220,
     borderRadius: 16,
     borderWidth: 1.5,

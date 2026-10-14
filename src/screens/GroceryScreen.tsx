@@ -176,9 +176,9 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
         {...glass('card')}
         style={[styles.overviewCard, { backgroundColor: theme.card, borderColor: theme.border, maxWidth: contentMaxWidth }]}
       >
-        <View style={[styles.overviewInner, isLargeScreen && styles.overviewDesktopRow]}>
+        <View style={[styles.overviewInner, isDesktop && styles.overviewDesktopRow]}>
           {/* Left Panel: Supermarket info + Total cost */}
-          <View style={[styles.overviewCol, isLargeScreen && styles.overviewColDesktop]}>
+          <View style={[styles.overviewCol, isDesktop && styles.overviewColDesktop]}>
             <View style={styles.supermarketHeader}>
               <View style={[styles.marketDot, { backgroundColor: market.brandColor }]} />
               <Text style={[styles.supermarketTitle, { color: theme.text }]}>
@@ -202,10 +202,10 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
             </View>
           </View>
 
-          {isLargeScreen && <View style={[styles.overviewDividerV, { backgroundColor: theme.border }]} />}
+          {isDesktop && <View style={[styles.overviewDividerV, { backgroundColor: theme.border }]} />}
 
           {/* Center Panel: Progress Gauge & Stat Chips */}
-          <View style={[styles.overviewCol, isLargeScreen && styles.overviewColDesktop]}>
+          <View style={[styles.overviewCol, isDesktop && styles.overviewColDesktop]}>
             <View style={styles.progressContainer}>
               <View style={styles.progressHeaderRow}>
                 <Text style={[styles.progressLabel, { color: theme.text }]}>
@@ -244,10 +244,10 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
             </View>
           </View>
 
-          {isLargeScreen && <View style={[styles.overviewDividerV, { backgroundColor: theme.border }]} />}
+          {isDesktop && <View style={[styles.overviewDividerV, { backgroundColor: theme.border }]} />}
 
           {/* Right Panel: Bulk Action Buttons */}
-          <View style={[styles.overviewColRight, isLargeScreen && styles.overviewColRightDesktop]}>
+          <View style={[styles.overviewColRight, isDesktop && styles.overviewColRightDesktop]}>
             <TouchableOpacity
               accessibilityRole="button"
               onPress={checkAll}

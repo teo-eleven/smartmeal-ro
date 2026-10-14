@@ -446,9 +446,9 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
             { backgroundColor: theme.card, borderColor: theme.border, maxWidth: contentMaxWidth },
           ]}
         >
-          <View style={[styles.toolbarControlsWrapper, isLargeScreen && styles.toolbarDesktopRow]}>
+          <View style={[styles.toolbarControlsWrapper, isDesktop && styles.toolbarDesktopRow]}>
             {/* Section 1: Meals per Day */}
-            <View style={[styles.toolbarSection, isLargeScreen && styles.toolbarSectionDesktop]}>
+            <View style={[styles.toolbarSection, isDesktop && styles.toolbarSectionDesktop]}>
               <View style={styles.mealsPerDayHeader}>
                 <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>Mese pe zi:</Text>
                 <Text style={[styles.mealsPerDaySubtitle, { color: theme.text }]}>
@@ -496,12 +496,12 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
             </View>
 
             {/* Desktop Vertical Divider */}
-            {isLargeScreen && (
+            {isDesktop && (
               <View style={[styles.toolbarDividerV, { backgroundColor: theme.border }]} />
             )}
 
             {/* Section 2: Food Tier */}
-            <View style={[styles.toolbarSection, isLargeScreen && styles.toolbarSectionDesktop]}>
+            <View style={[styles.toolbarSection, isDesktop && styles.toolbarSectionDesktop]}>
               <View style={styles.mealsPerDayHeader}>
                 <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>
                   Nivel ingrediente:
@@ -590,14 +590,14 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
             </View>
 
             {/* Desktop Vertical Divider */}
-            {isLargeScreen && (
+            {isDesktop && (
               <View style={[styles.toolbarDividerV, { backgroundColor: theme.border }]} />
             )}
 
             {/* Section 3: which chain the estimate is priced at. Not "real" or "official":
                 the prices are estimates from usual shelf prices, and the app has no link with
                 any chain. */}
-            <View style={[styles.toolbarSection, isLargeScreen && styles.toolbarSectionDesktop]}>
+            <View style={[styles.toolbarSection, isDesktop && styles.toolbarSectionDesktop]}>
               <View style={styles.mealsPerDayHeader}>
                 <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>
                   Prețuri estimate la:
@@ -1113,8 +1113,11 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   mealCol: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 0,
+    flexBasis: 280,
     minWidth: 280,
+    maxWidth: '100%',
     transition: 'all 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
   },
   emptyContainer: {

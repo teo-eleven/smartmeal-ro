@@ -687,6 +687,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   closeIcon: {
     fontSize: 13,
@@ -713,6 +714,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1.5,
+    flexShrink: 0,
   },
   swapHeaderText: {
     fontSize: 12,

@@ -162,7 +162,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
     showNotice,
   } = useAppStore();
 
-  const { isDesktop, isTablet, contentMaxWidth } = useResponsive();
+  const { isDesktop, isTablet, isMobile, contentMaxWidth } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;
   const containerMaxWidth = Math.min(contentMaxWidth, 1180);
 
@@ -2022,7 +2022,8 @@ const styles = StyleSheet.create({
   },
   continueButtonText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: '800',
     textAlign: 'center',
   },

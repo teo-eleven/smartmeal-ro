@@ -304,6 +304,7 @@ const styles = StyleSheet.create({
   resetLink: {
     paddingVertical: 4,
     paddingHorizontal: 8,
+    flexShrink: 0,
   },
   resetLinkText: {
     fontSize: 13,
