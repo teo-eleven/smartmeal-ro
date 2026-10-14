@@ -69,4 +69,25 @@ describe('AppLoadingScreen Component', () => {
 
     expect(screen.getByLabelText('Se încarcă datele')).toBeTruthy();
   });
+
+  test('renders properly in overlay mode with custom icon and steps', () => {
+    const steps = ['Verificare ingrediente', 'Optimizare preț', 'Completare coș'];
+    render(
+      <AppLoadingScreen
+        isDark={true}
+        overlay={true}
+        icon="🔄"
+        title="Se reîncarcă meniul..."
+        steps={steps}
+        accessibilityLabel="Overlay reîncărcare"
+      />
+    );
+
+    expect(screen.getByLabelText('Overlay reîncărcare')).toBeTruthy();
+    expect(screen.getByText('🔄')).toBeTruthy();
+    expect(screen.getByText('Se reîncarcă meniul...')).toBeTruthy();
+    expect(screen.getByText('Verificare ingrediente')).toBeTruthy();
+    expect(screen.getByText('Optimizare preț')).toBeTruthy();
+    expect(screen.getByText('Completare coș')).toBeTruthy();
+  });
 });

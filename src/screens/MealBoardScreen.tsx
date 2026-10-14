@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  RefreshControl,
   ScrollView,
   StyleProp,
   StyleSheet,
@@ -113,6 +114,8 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     addExtraMealToDay,
     removeMealFromDay,
     setMealServings,
+    isReloading,
+    triggerReload,
     savedPlans,
     saveCurrentPlan,
     restoreSavedPlan,
@@ -215,15 +218,59 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isReloading}
+            onRefresh={() => {
+              void triggerReload({
+                title: 'Se reîmprospătează meniul...',
+                subtitle: 'Sincronizăm stocurile și verificăm lista de cumpărături...',
+                icon: '🔄',
+              });
+            }}
+            tintColor={theme.primary}
+            colors={[theme.primary]}
+          />
+        }
+      >
         {/* Financial Overview Header */}
         <View style={[styles.planHeaderWrapper, { maxWidth: contentMaxWidth }]}>
           <PlanHeader
             plan={currentPlan}
-            onRebuildPlan={reshufflePlan}
+            onRebuildPlan={() => {
+              void triggerReload(
+                {
+                  title: 'Regenerăm meniul săptămânal...',
+                  subtitle: 'Selectăm rețete proaspete și optimizăm costul total...',
+                  icon: '🔄',
+                  steps: [
+                    'Verificăm disponibilitatea ingredientelor',
+                    'Optimizăm distribuția meselor pe zile',
+                    'Actualizăm lista de cumpărături pe raioane',
+                  ],
+                },
+                () => {
+                  reshufflePlan();
+                }
+              );
+            }}
             onResetOnboarding={() => requestConfirm('reset_onboarding')}
             onOpenFilters={() => setFiltersModalVisible(true)}
-            onRaiseBudget={(amountRon) => updatePreferencesAndRebuild({ budgetRon: amountRon })}
+            onRaiseBudget={(amountRon) => {
+              void triggerReload(
+                {
+                  title: 'Recalculăm meniul pentru noul buget...',
+                  subtitle: `Ajustăm ingredientele conform bugetului de ${amountRon} lei...`,
+                  icon: '💰',
+                },
+                () => {
+                  updatePreferencesAndRebuild({ budgetRon: amountRon });
+                }
+              );
+            }}
             isDark={isDark}
           />
         </View>
@@ -236,6 +283,42 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
             { backgroundColor: theme.card, borderColor: theme.border, maxWidth: contentMaxWidth },
           ]}
         >
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Reîncarcă și regenerează meniul săptămânal"
+            onPress={() => {
+              void triggerReload(
+                {
+                  title: 'Regenerăm meniul săptămânal...',
+                  subtitle: 'Selectăm variante culinare noi adaptate preferințelor tale...',
+                  icon: '🔄',
+                  steps: [
+                    'Verificăm ingredientele la preț de magazin',
+                    'Asigurăm varietatea meselor fără repetiții',
+                    'Actualizăm lista de cumpărături pe 7 raioane',
+                  ],
+                },
+                () => {
+                  reshufflePlan();
+                }
+              );
+            }}
+            {...glass('pill')}
+            style={[
+              styles.quickActionBtn,
+              { backgroundColor: theme.btnBg, borderColor: theme.border },
+            ]}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.quickActionIcon}>🔄</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.quickActionTitle, { color: theme.text }]}>Regenerează Meniul</Text>
+              <Text style={[styles.quickActionSub, { color: theme.textMuted }]}>
+                Variante noi pe săptămână
+              </Text>
+            </View>
+          </TouchableOpacity>
+
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Planurile mele salvate"
@@ -532,7 +615,19 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                     <TouchableOpacity
                       accessibilityRole="button"
                       key={market.id}
-                      onPress={() => setSupermarket(market.id)}
+                      onPress={() => {
+                        if (preferences.supermarketId === market.id) return;
+                        void triggerReload(
+                          {
+                            title: `Actualizăm prețurile pentru ${market.name}...`,
+                            subtitle: `Recalculăm ingredientele conform ofertelor ${market.name}...`,
+                            icon: '🛒',
+                          },
+                          () => {
+                            setSupermarket(market.id);
+                          }
+                        );
+                      }}
                       {...glass(isActive ? 'pill-active' : 'pill')}
                       style={[
                         styles.marketPill,

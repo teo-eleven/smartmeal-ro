@@ -72,4 +72,27 @@ describe('Loading Screens & Toasts Integration Flows', () => {
     expect(screen.getByText('Se reîncarcă datele...')).toBeTruthy();
     expect(screen.getByLabelText('Se reîncarcă datele...')).toBeTruthy();
   });
+
+  test('Scenario 5: Shows full branded AppLoadingScreen overlay during meal plan regeneration/reload', () => {
+    useSubscriptionStore.setState({ isChecked: true });
+    useAppStore.getState().quickStart();
+    useAppStore.setState({
+      isReloading: true,
+      reloadConfig: {
+        title: 'Regenerăm meniul săptămânal...',
+        subtitle: 'Selectăm variante culinare noi adaptate preferințelor tale...',
+        icon: '🔄',
+        steps: ['Verificăm ingredientele', 'Optimizăm mesele', 'Actualizăm lista'],
+      },
+    });
+
+    render(<App />);
+
+    expect(screen.getByLabelText('Se reîncarcă datele')).toBeTruthy();
+    expect(screen.getByText('🔄')).toBeTruthy();
+    expect(screen.getByText('Regenerăm meniul săptămânal...')).toBeTruthy();
+    expect(screen.getByText('Verificăm ingredientele')).toBeTruthy();
+    expect(screen.getByText('Optimizăm mesele')).toBeTruthy();
+    expect(screen.getByText('Actualizăm lista')).toBeTruthy();
+  });
 });

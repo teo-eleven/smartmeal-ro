@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore } from '../store/useAppStore';
 import { SUPERMARKETS } from '../data/supermarkets';
@@ -33,6 +33,8 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
     currentPlan,
     groceryItems,
     preferences,
+    isReloading,
+    triggerReload,
     toggleGroceryItem,
     setExcludePantryStaples,
     carryOverSurplus,
@@ -151,7 +153,24 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
   const theme = getAppTheme(isDark);
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={isReloading}
+          onRefresh={() => {
+            void triggerReload({
+              title: 'Se actualizează lista de cumpărături...',
+              subtitle: 'Verificăm cele 7 raioane și deducem articolele din cămară...',
+              icon: '🛒',
+            });
+          }}
+          tintColor={theme.primary}
+          colors={[theme.primary]}
+        />
+      }
+    >
       {/* Shopping Overview Modernist Dashboard Card */}
       <View
         {...glass('card')}

@@ -18,11 +18,14 @@ export interface AppLoadingScreenProps {
   isDark: boolean;
   title?: string;
   subtitle?: string;
+  icon?: string;
   accessibilityLabel?: string;
   tips?: string[];
+  steps?: string[];
   onRetry?: () => void;
   retryLabel?: string;
   showRetryAfterMs?: number;
+  overlay?: boolean;
 }
 
 const DEFAULT_TIPS = [
@@ -36,11 +39,14 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
   isDark,
   title = 'Se pregătește SmartMeal...',
   subtitle,
+  icon = '🍽️',
   accessibilityLabel,
   tips = DEFAULT_TIPS,
+  steps,
   onRetry,
   retryLabel = '↻ Reîncearcă',
   showRetryAfterMs = 6000,
+  overlay = false,
 }) => {
   const theme = getAppTheme(isDark);
 
@@ -48,9 +54,21 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
   const haloAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
   const tipFadeAnim = useRef(new Animated.Value(1)).current;
+  const overlayFadeAnim = useRef(new Animated.Value(overlay ? 0 : 1)).current;
 
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [showRetry, setShowRetry] = useState(false);
+
+  useEffect(() => {
+    if (overlay) {
+      Animated.timing(overlayFadeAnim, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [overlay, overlayFadeAnim]);
 
   useEffect(() => {
     // Breathing pulse animation on logo badge
@@ -161,6 +179,141 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
 
   const displaySubtitle = subtitle ?? tips[currentTipIndex] ?? 'Optimizăm rețetele și ingredientele...';
 
+  const content = (
+    <View style={styles.centerContainer}>
+      {/* Modernist Glass Hero Box */}
+      <View
+        {...glass('card')}
+        style={[
+          styles.card,
+          {
+            backgroundColor: isDark ? 'rgba(28, 28, 30, 0.88)' : 'rgba(255, 255, 255, 0.95)',
+            borderColor: theme.border,
+          },
+        ]}
+      >
+        {/* Pulsing Brand Hero Icon with Glowing Halo Aura */}
+        <View style={styles.iconContainer}>
+          <Animated.View
+            style={[
+              styles.haloAura,
+              {
+                transform: [{ scale: haloScale }],
+                opacity: haloOpacity,
+                backgroundColor: isDark ? '#ffffff' : '#000000',
+              },
+            ]}
+          />
+          <Animated.View style={[styles.iconWrap, { transform: [{ scale: pulseAnim }] }]}>
+            <LinearGradient
+              colors={isDark ? ['#ffffff', '#8e8e93'] : ['#000000', '#3a3a3c']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.iconGradient}
+            >
+              <Text style={styles.heroEmoji}>{icon}</Text>
+            </LinearGradient>
+          </Animated.View>
+        </View>
+
+        {/* Brand Header */}
+        <View style={styles.brandRow}>
+          <Text style={[styles.brandName, { color: theme.text }]}>SmartMeal</Text>
+          <View
+            style={[
+              styles.countryBadge,
+              { backgroundColor: theme.surfaceTertiary, borderColor: theme.border },
+            ]}
+          >
+            <Text style={[styles.countryBadgeText, { color: theme.text }]}>RO 🇷🇴</Text>
+          </View>
+        </View>
+
+        {/* Contextual Status Heading */}
+        <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+
+        {/* Rotating Subtitle with Smooth Fade */}
+        <Animated.View style={{ opacity: tipFadeAnim, minHeight: 40, justifyContent: 'center' }}>
+          <Text style={[styles.subtitle, { color: theme.textMuted }]}>{displaySubtitle}</Text>
+        </Animated.View>
+
+        {/* Modern Slim Loading Bar */}
+        <View
+          style={[
+            styles.progressTrack,
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+            },
+          ]}
+        >
+          <Animated.View
+            style={[
+              styles.progressBar,
+              {
+                width: progressInterpolate,
+                backgroundColor: theme.primary,
+              },
+            ]}
+          />
+        </View>
+
+        {/* Dynamic Progress Steps / Stages if provided */}
+        {steps && steps.length > 0 && (
+          <View style={styles.stepsContainer}>
+            {steps.map((step, idx) => (
+              <View key={idx} style={styles.stepItemRow}>
+                <View
+                  style={[
+                    styles.stepItemBadge,
+                    { backgroundColor: theme.surfaceTertiary, borderColor: theme.border },
+                  ]}
+                >
+                  <Text style={[styles.stepItemCheck, { color: theme.primary }]}>✓</Text>
+                </View>
+                <Text style={[styles.stepItemText, { color: theme.text }]}>{step}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Fallback Action when loading takes longer than normal */}
+        {showRetry && onRetry && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Reîncearcă încărcarea"
+            onPress={onRetry}
+            activeOpacity={0.8}
+            style={[
+              styles.retryBtn,
+              { borderColor: theme.border, backgroundColor: theme.accentBg },
+            ]}
+          >
+            <Text style={[styles.retryBtnText, { color: theme.primary }]}>{retryLabel}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+
+  if (overlay) {
+    return (
+      <Animated.View
+        accessibilityLabel={accessibilityLabel || title}
+        accessibilityViewIsModal={true}
+        style={[
+          styles.overlayContainer,
+          {
+            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.90)',
+            opacity: overlayFadeAnim,
+          },
+        ]}
+      >
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        {content}
+      </Animated.View>
+    );
+  }
+
   return (
     <SafeAreaView
       accessibilityLabel={accessibilityLabel || title}
@@ -171,106 +324,51 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
       {...glass('root')}
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-
-      <View style={styles.centerContainer}>
-        {/* Modernist Glass Hero Box */}
-        <View
-          {...glass('card')}
-          style={[
-            styles.card,
-            {
-              backgroundColor: isDark ? 'rgba(28, 28, 30, 0.75)' : 'rgba(255, 255, 255, 0.90)',
-              borderColor: theme.border,
-            },
-          ]}
-        >
-          {/* Pulsing Brand Hero Icon with Glowing Halo Aura */}
-          <View style={styles.iconContainer}>
-            <Animated.View
-              style={[
-                styles.haloAura,
-                {
-                  transform: [{ scale: haloScale }],
-                  opacity: haloOpacity,
-                  backgroundColor: isDark ? '#ffffff' : '#000000',
-                },
-              ]}
-            />
-            <Animated.View style={[styles.iconWrap, { transform: [{ scale: pulseAnim }] }]}>
-              <LinearGradient
-                colors={isDark ? ['#ffffff', '#8e8e93'] : ['#000000', '#3a3a3c']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.iconGradient}
-              >
-                <Text style={styles.heroEmoji}>🍽️</Text>
-              </LinearGradient>
-            </Animated.View>
-          </View>
-
-          {/* Brand Header */}
-          <View style={styles.brandRow}>
-            <Text style={[styles.brandName, { color: theme.text }]}>SmartMeal</Text>
-            <View
-              style={[
-                styles.countryBadge,
-                { backgroundColor: theme.surfaceTertiary, borderColor: theme.border },
-              ]}
-            >
-              <Text style={[styles.countryBadgeText, { color: theme.text }]}>RO 🇷🇴</Text>
-            </View>
-          </View>
-
-          {/* Contextual Status Heading */}
-          <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
-
-          {/* Rotating Subtitle with Smooth Fade */}
-          <Animated.View style={{ opacity: tipFadeAnim, minHeight: 40, justifyContent: 'center' }}>
-            <Text style={[styles.subtitle, { color: theme.textMuted }]}>{displaySubtitle}</Text>
-          </Animated.View>
-
-          {/* Modern Slim Loading Bar */}
-          <View
-            style={[
-              styles.progressTrack,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-              },
-            ]}
-          >
-            <Animated.View
-              style={[
-                styles.progressBar,
-                {
-                  width: progressInterpolate,
-                  backgroundColor: theme.primary,
-                },
-              ]}
-            />
-          </View>
-
-          {/* Fallback Action when loading takes longer than normal */}
-          {showRetry && onRetry && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Reîncearcă încărcarea"
-              onPress={onRetry}
-              activeOpacity={0.8}
-              style={[
-                styles.retryBtn,
-                { borderColor: theme.border, backgroundColor: theme.accentBg },
-              ]}
-            >
-              <Text style={[styles.retryBtnText, { color: theme.primary }]}>{retryLabel}</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      {content}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  overlayContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 99999,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(20px)' } : {}),
+  },
+  stepsContainer: {
+    width: '100%',
+    marginTop: 18,
+    gap: 8,
+  },
+  stepItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  stepItemBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepItemCheck: {
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  stepItemText: {
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
     justifyContent: 'center',

@@ -102,6 +102,23 @@ export interface AppState {
   lastSyncedAt: string | null;
   globalLoadingMessage: string | null;
   setGlobalLoading: (loading: boolean, message?: string | null) => void;
+  isReloading: boolean;
+  reloadConfig: {
+    title?: string;
+    subtitle?: string;
+    icon?: string;
+    steps?: string[];
+  } | null;
+  triggerReload: (
+    opts?: {
+      title?: string;
+      subtitle?: string;
+      icon?: string;
+      steps?: string[];
+      durationMs?: number;
+    },
+    task?: () => Promise<void> | void
+  ) => Promise<void>;
 
   // Pending confirmation for a destructive action
   confirmRequest: ConfirmActionId | null;
@@ -763,6 +780,33 @@ export const useAppStore = create<AppState>((set, get) => ({
   globalLoadingMessage: null,
   setGlobalLoading: (loading: boolean, message?: string | null) =>
     set({ globalLoadingMessage: loading ? message || 'Se actualizează...' : null }),
+  isReloading: false,
+  reloadConfig: null,
+  triggerReload: async (opts, task) => {
+    const durationMs = opts?.durationMs ?? 650;
+    set({
+      isReloading: true,
+      reloadConfig: {
+        title: opts?.title || 'Se reîncarcă datele...',
+        subtitle: opts?.subtitle || 'Actualizăm planul de mese și ingredientele...',
+        icon: opts?.icon || '🔄',
+        steps: opts?.steps,
+      },
+    });
+    const startTime = Date.now();
+    try {
+      if (task) {
+        await task();
+      }
+    } finally {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, durationMs - elapsed);
+      if (remaining > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remaining));
+      }
+      set({ isReloading: false, reloadConfig: null });
+    }
+  },
   preferences: { ...DEFAULT_PREFERENCES },
   currentPlan: null,
   groceryItems: [],

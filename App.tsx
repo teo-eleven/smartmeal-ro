@@ -56,6 +56,8 @@ function AppShell() {
     userEmail,
     isSyncing,
     globalLoadingMessage,
+    isReloading,
+    reloadConfig,
     lastSyncedAt,
     activeNotice,
     clearNotice,
@@ -191,6 +193,17 @@ function AppShell() {
           message={globalLoadingMessage || 'Se sincronizează...'}
           isDark={isDark}
         />
+        {isReloading && (
+          <AppLoadingScreen
+            isDark={isDark}
+            overlay
+            title={reloadConfig?.title || 'Se reîncarcă datele...'}
+            subtitle={reloadConfig?.subtitle}
+            icon={reloadConfig?.icon || '🔄'}
+            steps={reloadConfig?.steps}
+            accessibilityLabel="Se reîncarcă datele"
+          />
+        )}
       </SafeAreaView>
     );
   }
@@ -559,6 +572,18 @@ function AppShell() {
         message={globalLoadingMessage || 'Se sincronizează...'}
         isDark={isDark}
       />
+
+      {isReloading && (
+        <AppLoadingScreen
+          isDark={isDark}
+          overlay
+          title={reloadConfig?.title || 'Se reîncarcă datele...'}
+          subtitle={reloadConfig?.subtitle}
+          icon={reloadConfig?.icon || '🔄'}
+          steps={reloadConfig?.steps}
+          accessibilityLabel="Se reîncarcă datele"
+        />
+      )}
     </SafeAreaView>
   );
 }
