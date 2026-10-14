@@ -356,7 +356,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   </Text>
                 </View>
 
-                <View style={styles.ingredientsList}>
+                <View style={[styles.ingredientsList, isWide && styles.ingredientsListWide]}>
                   {recipe.ingredients.map((ing, i) => {
                     const dbIng = INGREDIENTS[ing.ingredientId];
                     const scaledAmount = Math.round(ing.amountPerServing * activeServings * 10) / 10;
@@ -370,7 +370,9 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                         activeOpacity={0.7}
                         style={[
                           styles.ingredientRow,
-                          i < recipe.ingredients.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border },
+                          isWide && styles.ingredientRowWide,
+                          !isWide && i < recipe.ingredients.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border },
+                          isWide && { borderColor: theme.border, borderWidth: 1, borderRadius: 12 },
                           isChecked && { backgroundColor: theme.stepDoneBg },
                         ]}
                       >
@@ -916,12 +918,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   ingredientsList: {},
+  ingredientsListWide: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    padding: 12,
+  },
   ingredientRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
     gap: 12,
+  },
+  ingredientRowWide: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    gap: 8,
   },
   ingCheckSquare: {
     width: 20,

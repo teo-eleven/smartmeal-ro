@@ -110,6 +110,34 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
     return acc;
   }, {});
 
+  // Active aisles with items
+  const activeAisles = AISLE_ORDER.filter(
+    (category) => groupedItems[category] && groupedItems[category].length > 0
+  );
+
+  // Responsive column count: 3 on desktop, 2 on tablet, 1 on mobile
+  const numColumns = Math.min(isDesktop ? 3 : isTablet ? 2 : 1, Math.max(1, activeAisles.length));
+
+  // Distribute active aisles across columns to balance vertical height (masonry)
+  const columns: AisleCategory[][] = Array.from({ length: numColumns }, () => []);
+  const colWeights = Array.from({ length: numColumns }, () => 0);
+
+  activeAisles.forEach((category) => {
+    const items = groupedItems[category] || [];
+    // Weight = header height (approx 2 items) + item count
+    const weight = 2 + items.length;
+
+    // Pick the column with minimum weight
+    let minIdx = 0;
+    for (let c = 1; c < numColumns; c++) {
+      if (colWeights[c] < colWeights[minIdx]) {
+        minIdx = c;
+      }
+    }
+    columns[minIdx].push(category);
+    colWeights[minIdx] += weight;
+  });
+
   const handleShareList = async () => {
     const remaining = groceryItems.filter((i) => !i.isPurchased);
     if (remaining.length === 0) return;
@@ -394,23 +422,39 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
         </View>
       </TouchableOpacity>
 
-      {/* Aisle by Aisle Grouped Sections in Multi-Column Grid */}
-      <View style={[styles.aislesContainer, isLargeScreen && styles.aislesGridDesktop, { maxWidth: contentMaxWidth }]}>
-        {AISLE_ORDER.map((category) => {
-          const items = groupedItems[category];
-          if (!items || items.length === 0) return null;
-          return (
-            <View key={category} style={[styles.aisleCol, isLargeScreen && styles.aisleColDesktop]}>
-              <GroceryAisleSection
-                category={category}
-                items={items}
-                onToggleItem={toggleGroceryItem}
-                isDark={isDark}
-                isShoppingMode={isShoppingMode}
-              />
-            </View>
-          );
-        })}
+      {/* Aisle by Aisle Grouped Sections in Multi-Column Masonry */}
+      <View
+        style={[
+          styles.aislesContainer,
+          isLargeScreen ? styles.masonryRow : styles.singleColumnContainer,
+          { maxWidth: contentMaxWidth },
+        ]}
+      >
+        {columns.map((colAisles, colIdx) => (
+          <View
+            key={`aisle-col-${colIdx}`}
+            style={[
+              styles.masonryCol,
+              !isLargeScreen && { width: '100%' },
+            ]}
+          >
+            {colAisles.map((category) => {
+              const items = groupedItems[category];
+              if (!items || items.length === 0) return null;
+              return (
+                <View key={category} style={styles.aisleCol}>
+                  <GroceryAisleSection
+                    category={category}
+                    items={items}
+                    onToggleItem={toggleGroceryItem}
+                    isDark={isDark}
+                    isShoppingMode={isShoppingMode}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        ))}
       </View>
 
       {/* Retail Snacks & Drinks Modal */}
@@ -677,17 +721,21 @@ const styles = StyleSheet.create({
   aislesContainer: {
     width: '100%',
   },
-  aislesGridDesktop: {
+  singleColumnContainer: {
+    width: '100%',
+    flexDirection: 'column',
+  },
+  masonryRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
     alignItems: 'flex-start',
+    gap: 16,
+    width: '100%',
+  },
+  masonryCol: {
+    flex: 1,
+    flexDirection: 'column',
   },
   aisleCol: {
     width: '100%',
-  },
-  aisleColDesktop: {
-    flex: 1,
-    minWidth: 360,
   },
 });
