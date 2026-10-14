@@ -162,7 +162,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
     showNotice,
   } = useAppStore();
 
-  const { isDesktop, isTablet, isMobile, contentMaxWidth } = useResponsive();
+  const { isDesktop, isTablet, contentMaxWidth } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;
   const containerMaxWidth = Math.min(contentMaxWidth, 1180);
 
