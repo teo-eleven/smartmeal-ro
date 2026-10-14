@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import { WeekOverview } from '../../components/WeekOverview';
 import { MealBoardScreen } from '../MealBoardScreen';
 import { useAppStore } from '../../store/useAppStore';
 import { DayOfWeek, UserPreferences } from '../../types';
@@ -37,22 +38,22 @@ function boot() {
   useAppStore.getState().generatePlan();
 }
 
-/** Twenty-one full cards is a long scroll; the overview is for judging the week at once. */
-describe('vederea pe săptămână', () => {
+describe('vederea pe săptămână și afișarea curată zi cu zi', () => {
   beforeEach(boot);
 
-  test('tabla pornește zi cu zi', () => {
+  test('MealBoardScreen afișează exclusiv vederea zi cu zi (fără butonul de săptămână)', () => {
     render(<MealBoardScreen isDark={false} />);
 
-    expect(screen.getByLabelText('Vezi toată săptămâna')).toBeTruthy();
+    expect(screen.queryByLabelText('Vezi toată săptămâna')).toBeNull();
+    expect(screen.getByText(/📅 LUNI/)).toBeTruthy();
   });
 
-  test('comutată, arată fiecare zi și fiecare masă', () => {
-    render(<MealBoardScreen isDark={false} />);
-
-    fireEvent.press(screen.getByLabelText('Vezi toată săptămâna'));
-
+  test('WeekOverview afișează fiecare zi și fiecare masă', () => {
     const plan = useAppStore.getState().currentPlan!;
+    const onPressMeal = jest.fn();
+
+    render(<WeekOverview days={plan.days} onPressMeal={onPressMeal} isDark={false} />);
+
     const firstMeal = plan.days[0].meals[0];
     expect(
       screen.getByLabelText(new RegExp(`Luni, ${firstMeal.slotLabelRo}`, 'i'))
@@ -60,22 +61,16 @@ describe('vederea pe săptămână', () => {
     expect(screen.getByText('Miercuri')).toBeTruthy();
   });
 
-  test('o masă din vedere deschide rețeta ei', () => {
-    render(<MealBoardScreen isDark={false} />);
-    fireEvent.press(screen.getByLabelText('Vezi toată săptămâna'));
+  test('o masă din WeekOverview apelează callback-ul onPressMeal', () => {
+    const plan = useAppStore.getState().currentPlan!;
+    const onPressMeal = jest.fn();
 
-    const meal = useAppStore.getState().currentPlan!.days[0].meals[0];
-    fireEvent.press(screen.getByLabelText(new RegExp(`Luni, ${meal.slotLabelRo}`, 'i')));
+    render(<WeekOverview days={plan.days} onPressMeal={onPressMeal} isDark={false} />);
 
-    expect(screen.getByText(/Schimbă cu alt preparat/i)).toBeTruthy();
-  });
+    const firstMeal = plan.days[0].meals[0];
+    const button = screen.getByLabelText(new RegExp(`Luni, ${firstMeal.slotLabelRo}`, 'i'));
+    fireEvent.press(button);
 
-  test('se poate reveni la zi cu zi', () => {
-    render(<MealBoardScreen isDark={false} />);
-
-    fireEvent.press(screen.getByLabelText('Vezi toată săptămâna'));
-    fireEvent.press(screen.getByLabelText('Vezi zi cu zi'));
-
-    expect(screen.getByLabelText('Vezi toată săptămâna')).toBeTruthy();
+    expect(onPressMeal).toHaveBeenCalledWith('monday', firstMeal);
   });
 });

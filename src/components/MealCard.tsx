@@ -148,6 +148,7 @@ export const MealCard: React.FC<MealCardProps> = ({
   const recipe = meal ? meal.recipe : day.recipe;
   const costRon = meal ? meal.estimatedCostRon : day.estimatedCostRon;
   const servings = meal ? meal.servings : day.servings;
+  const portionCost = servings > 0 ? Math.round((costRon / servings) * 100) / 100 : costRon;
   const effectiveSlotLabel = slotLabel || meal?.slotLabelRo;
 
   const primaryMood = recipe.moodTags[0]
@@ -228,9 +229,17 @@ export const MealCard: React.FC<MealCardProps> = ({
           </View>
 
           {/* Floating Price Badge (Top-Right) */}
-          <View style={[styles.floatingBadge, styles.priceBadge, { backgroundColor: isDark ? 'rgba(28, 28, 30, 0.90)' : 'rgba(255, 255, 255, 0.92)' }]}>
+          <View
+            style={[
+              styles.floatingBadge,
+              styles.priceBadge,
+              { backgroundColor: isDark ? 'rgba(28, 28, 30, 0.90)' : 'rgba(255, 255, 255, 0.92)' },
+            ]}
+          >
             <Text style={[styles.priceBadgeText, { color: theme.primary }]}>~{costRon} lei</Text>
-            <Text style={[styles.priceSubText, { color: theme.textMuted }]}>/ porție</Text>
+            <Text style={[styles.priceSubText, { color: theme.textMuted }]}>
+              {servings > 1 ? `total • ~${portionCost.toFixed(2)}/p` : '/ porție'}
+            </Text>
           </View>
 
           {/* Bottom Info Floating on Image */}
@@ -276,7 +285,7 @@ export const MealCard: React.FC<MealCardProps> = ({
               <Text style={[styles.macroVal, { color: theme.text }]}>
                 {recipe.nutritionPerServing.calories}
               </Text>
-              <Text style={[styles.macroLbl, { color: theme.textMuted }]}>kcal</Text>
+              <Text style={[styles.macroLbl, { color: theme.textMuted }]}>kcal/p</Text>
             </View>
             <View style={styles.macroDivider} />
 
@@ -284,7 +293,7 @@ export const MealCard: React.FC<MealCardProps> = ({
               <Text style={[styles.macroVal, { color: '#38bdf8' }]}>
                 {recipe.nutritionPerServing.proteinGrams}g
               </Text>
-              <Text style={[styles.macroLbl, { color: theme.textMuted }]}>proteină</Text>
+              <Text style={[styles.macroLbl, { color: theme.textMuted }]}>proteină/p</Text>
             </View>
             <View style={styles.macroDivider} />
 
@@ -292,7 +301,7 @@ export const MealCard: React.FC<MealCardProps> = ({
               <Text style={[styles.macroVal, { color: '#fbbf24' }]}>
                 {recipe.nutritionPerServing.carbsGrams}g
               </Text>
-              <Text style={[styles.macroLbl, { color: theme.textMuted }]}>carbo</Text>
+              <Text style={[styles.macroLbl, { color: theme.textMuted }]}>carbo/p</Text>
             </View>
             <View style={styles.macroDivider} />
 
@@ -300,7 +309,7 @@ export const MealCard: React.FC<MealCardProps> = ({
               <Text style={[styles.macroVal, { color: '#f87171' }]}>
                 {recipe.nutritionPerServing.fatGrams}g
               </Text>
-              <Text style={[styles.macroLbl, { color: theme.textMuted }]}>grăsimi</Text>
+              <Text style={[styles.macroLbl, { color: theme.textMuted }]}>grăsimi/p</Text>
             </View>
           </View>
 

@@ -2195,6 +2195,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         return {
           ...day,
           meals: updatedMeals,
+          servings: day.recipe.id === mealId ? safeServings : day.servings,
           estimatedCostRon: Math.round(daySum * 100) / 100,
         };
       });

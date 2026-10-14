@@ -51,6 +51,7 @@ interface RecipeDetailModalProps {
   visible: boolean;
   onClose: () => void;
   onSwap: () => void;
+  onChangeServings?: (servings: number) => void;
   isDark: boolean;
 }
 
@@ -109,12 +110,21 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   visible,
   onClose,
   onSwap,
+  onChangeServings,
   isDark,
 }) => {
   const [personalNotes, setPersonalNotes] = useState('');
   const [activeServings, setActiveServings] = useState(initialServings);
   const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>({});
   const [checkedIngredients, setCheckedIngredients] = useState<Record<string, boolean>>({});
+
+  const handleServingsChange = (newServings: number) => {
+    const clamped = Math.max(1, Math.min(12, newServings));
+    setActiveServings(clamped);
+    if (onChangeServings) {
+      onChangeServings(clamped);
+    }
+  };
 
   const { isDesktop, isTablet, contentMaxWidth } = useResponsive();
   const isWide = isDesktop || isTablet;
@@ -288,7 +298,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel="Scade o porție"
-                    onPress={() => setActiveServings((s) => Math.max(1, s - 1))}
+                    onPress={() => handleServingsChange(activeServings - 1)}
                     style={[styles.stepBtn, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
                     activeOpacity={0.7}
                   >
@@ -302,7 +312,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel="Adaugă o porție"
-                    onPress={() => setActiveServings((s) => Math.min(12, s + 1))}
+                    onPress={() => handleServingsChange(activeServings + 1)}
                     style={[styles.stepBtn, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
                     activeOpacity={0.7}
                   >
