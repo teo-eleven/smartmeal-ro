@@ -240,23 +240,6 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
         <View style={[styles.planHeaderWrapper, { maxWidth: contentMaxWidth }]}>
           <PlanHeader
             plan={currentPlan}
-            onRebuildPlan={() => {
-              void triggerReload(
-                {
-                  title: 'Regenerăm meniul săptămânal...',
-                  subtitle: 'Selectăm rețete proaspete și optimizăm costul total...',
-                  icon: '🔄',
-                  steps: [
-                    'Verificăm disponibilitatea ingredientelor',
-                    'Optimizăm distribuția meselor pe zile',
-                    'Actualizăm lista de cumpărături pe raioane',
-                  ],
-                },
-                () => {
-                  reshufflePlan();
-                }
-              );
-            }}
             onResetOnboarding={() => requestConfirm('reset_onboarding')}
             onOpenFilters={() => setFiltersModalVisible(true)}
             onRaiseBudget={(amountRon) => {

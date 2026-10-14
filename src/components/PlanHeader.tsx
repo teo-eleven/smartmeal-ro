@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MealPlan } from '../types';
 import { SUPERMARKETS } from '../data/supermarkets';
@@ -7,12 +7,8 @@ import { getAppTheme } from '../styles/theme';
 import { buildBudgetMessageRo, summarizeBudget } from '../utils/budgetMessaging';
 import { glass } from '../styles/glass';
 
-/** How long the "amestecat" confirmation stays on the button. */
-const FEEDBACK_MS = 2400;
-
 interface PlanHeaderProps {
   plan: MealPlan;
-  onRebuildPlan: () => void;
   onResetOnboarding: () => void;
   onOpenFilters?: () => void;
   onRaiseBudget?: (amountRon: number) => void;
@@ -21,45 +17,11 @@ interface PlanHeaderProps {
 
 export const PlanHeader: React.FC<PlanHeaderProps> = ({
   plan,
-  onRebuildPlan,
   onResetOnboarding,
   onOpenFilters,
   onRaiseBudget,
   isDark,
 }) => {
-  const spinAnim = useRef(new Animated.Value(0)).current;
-  const [shuffledFeedback, setShuffledFeedback] = useState(false);
-  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // The confirmation fades after a moment; without this the timer outlives the screen and
-  // fires setState on an unmounted component if the user navigates away first.
-  useEffect(
-    () => () => {
-      if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
-    },
-    []
-  );
-
-  const handleRebuild = () => {
-    Animated.sequence([
-      Animated.timing(spinAnim, {
-        toValue: 1,
-        duration: 450,
-        useNativeDriver: true,
-      }),
-      Animated.timing(spinAnim, {
-        toValue: 0,
-        duration: 0,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    onRebuildPlan();
-    setShuffledFeedback(true);
-    if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
-    feedbackTimer.current = setTimeout(() => setShuffledFeedback(false), FEEDBACK_MS);
-  };
-
   const market = SUPERMARKETS[plan.supermarketId];
   const savings = Math.round((plan.totalBudgetRon - plan.totalCartCostRon) * 10) / 10;
   const isOverBudget = plan.totalCartCostRon > plan.totalBudgetRon;
@@ -202,58 +164,6 @@ export const PlanHeader: React.FC<PlanHeaderProps> = ({
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Action Buttons */}
-      <View style={styles.actionRow}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={handleRebuild}
-          {...glass('btn-primary')}
-          style={[
-            styles.rebuildBtn,
-            {
-              backgroundColor: shuffledFeedback
-                ? theme.surfaceTertiary
-                : isDark
-                  ? '#ffffff'
-                  : '#000000',
-              borderColor: isDark ? '#ffffff' : '#000000',
-              borderWidth: 1,
-            },
-          ]}
-          activeOpacity={0.75}
-        >
-          <Animated.Text
-            style={[
-              {
-                fontSize: 18,
-                marginRight: 8,
-                transform: [
-                  {
-                    rotate: spinAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ['0deg', '360deg'],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            ✨
-          </Animated.Text>
-          <Text
-            style={[
-              styles.rebuildBtnText,
-              {
-                color: shuffledFeedback ? theme.text : isDark ? '#000000' : '#ffffff',
-                fontWeight: '800',
-              },
-            ]}
-          >
-            {shuffledFeedback ? '✓ Meniu Re-amestecat cu Succes!' : 'Re-amestecă Meniul Săptămânal'}
-          </Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -379,7 +289,6 @@ const styles = StyleSheet.create({
   statusBanner: {
     padding: 12,
     borderRadius: 14,
-    marginBottom: 14,
   },
   statusText: {
     fontSize: 12,
@@ -395,20 +304,6 @@ const styles = StyleSheet.create({
   },
   raiseBudgetBtnText: {
     fontSize: 12,
-    fontWeight: '800',
-  },
-  actionRow: {
-    width: '100%',
-  },
-  rebuildBtn: {
-    width: '100%',
-    paddingVertical: 12,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rebuildBtnText: {
-    fontSize: 13,
     fontWeight: '800',
   },
 });
