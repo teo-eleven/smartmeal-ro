@@ -95,4 +95,15 @@ describe('Loading Screens & Toasts Integration Flows', () => {
     expect(screen.getByText('Optimizăm mesele')).toBeTruthy();
     expect(screen.getByText('Actualizăm lista')).toBeTruthy();
   });
+
+  test('Scenario 6: Shows AppLoadingScreen and prevents LoginScreen flash before hydration completes', () => {
+    useAppStore.setState({ isHydrated: false, authStatus: 'checking' });
+
+    render(<App />);
+
+    expect(screen.getByLabelText('Se încarcă')).toBeTruthy();
+    expect(screen.getByText('Se pregătește SmartMeal...')).toBeTruthy();
+    expect(screen.queryByLabelText('Fila Conectare')).toBeNull();
+    expect(screen.queryByLabelText('Continuă fără cont')).toBeNull();
+  });
 });

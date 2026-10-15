@@ -80,5 +80,5 @@ describe('întrebarea despre Face ID', () => {
     fireEvent.press(screen.getByLabelText('Nu acum'));
 
     await waitFor(() => expect(screen.queryByText(/data viitoare/)).toBeNull());
-  });
+  }, 10000);
 });

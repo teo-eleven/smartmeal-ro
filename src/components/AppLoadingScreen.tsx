@@ -109,21 +109,14 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
     );
     haloLoop.start();
 
-    // Infinite progress bar animation
+    // Infinite continuous smooth shimmer progress bar animation
     const progressLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(progressAnim, {
-          toValue: 1,
-          duration: 1300,
-          easing: Easing.inOut(Easing.cubic),
-          useNativeDriver: false,
-        }),
-        Animated.timing(progressAnim, {
-          toValue: 0,
-          duration: 0,
-          useNativeDriver: false,
-        }),
-      ])
+      Animated.timing(progressAnim, {
+        toValue: 1,
+        duration: 1500,
+        easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+        useNativeDriver: false,
+      })
     );
     progressLoop.start();
 
@@ -172,9 +165,14 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
     outputRange: [0.45, 0.05],
   });
 
-  const progressInterpolate = progressAnim.interpolate({
+  const progressLeft = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['-35%', '100%'],
+  });
+
+  const progressWidth = progressAnim.interpolate({
     inputRange: [0, 0.5, 1],
-    outputRange: ['0%', '72%', '100%'],
+    outputRange: ['28%', '46%', '28%'],
   });
 
   const displaySubtitle = subtitle ?? tips[currentTipIndex] ?? 'Optimizăm rețetele și ingredientele...';
@@ -187,8 +185,8 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? 'rgba(28, 28, 30, 0.88)' : 'rgba(255, 255, 255, 0.95)',
-            borderColor: theme.border,
+            backgroundColor: isDark ? 'rgba(18, 18, 18, 0.96)' : 'rgba(255, 255, 255, 0.98)',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
           },
         ]}
       >
@@ -250,7 +248,8 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
             style={[
               styles.progressBar,
               {
-                width: progressInterpolate,
+                left: progressLeft,
+                width: progressWidth,
                 backgroundColor: theme.primary,
               },
             ]}
@@ -319,7 +318,7 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
       accessibilityLabel={accessibilityLabel || title}
       style={[
         styles.safeArea,
-        { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background },
+        { backgroundColor: theme.background },
       ]}
       {...glass('root')}
     >
@@ -466,8 +465,12 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     overflow: 'hidden',
+    position: 'relative',
   },
   progressBar: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
     height: '100%',
     borderRadius: 3,
   },
