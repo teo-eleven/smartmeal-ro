@@ -11,7 +11,6 @@ import {
   View,
 } from 'react-native';
 import { getAppTheme } from '../styles/theme';
-import { glass } from '../styles/glass';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export interface AppLoadingScreenProps {
@@ -50,8 +49,6 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
 }) => {
   const theme = getAppTheme(isDark);
 
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const haloAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
   const tipFadeAnim = useRef(new Animated.Value(1)).current;
   const overlayFadeAnim = useRef(new Animated.Value(overlay ? 0 : 1)).current;
@@ -63,7 +60,7 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
     if (overlay) {
       Animated.timing(overlayFadeAnim, {
         toValue: 1,
-        duration: 200,
+        duration: 180,
         easing: Easing.out(Easing.ease),
         useNativeDriver: true,
       }).start();
@@ -71,68 +68,30 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
   }, [overlay, overlayFadeAnim]);
 
   useEffect(() => {
-    // Breathing pulse animation on logo badge
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.08,
-          duration: 900,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 900,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulseLoop.start();
-
-    // Glowing halo pulse behind the hero icon
-    const haloLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(haloAnim, {
-          toValue: 1,
-          duration: 1200,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(haloAnim, {
-          toValue: 0,
-          duration: 1200,
-          easing: Easing.in(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    haloLoop.start();
-
-    // Infinite continuous smooth shimmer progress bar animation
+    // Continuous hardware-accelerated progress bar shimmer
     const progressLoop = Animated.loop(
       Animated.timing(progressAnim, {
         toValue: 1,
         duration: 1500,
         easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-        useNativeDriver: false,
+        useNativeDriver: Platform.OS !== 'web',
       })
     );
     progressLoop.start();
 
-    // Dynamic rotating tips every 2.4s if no custom static subtitle was provided
+    // In-place opacity-only fade for rotating tips (no layout shift)
     let tipTimer: NodeJS.Timeout | null = null;
     if (!subtitle && tips.length > 1) {
       tipTimer = setInterval(() => {
         Animated.sequence([
           Animated.timing(tipFadeAnim, {
             toValue: 0,
-            duration: 220,
+            duration: 180,
             useNativeDriver: true,
           }),
           Animated.timing(tipFadeAnim, {
             toValue: 1,
-            duration: 260,
+            duration: 220,
             useNativeDriver: true,
           }),
         ]).start();
@@ -141,156 +100,140 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
       }, 2500);
     }
 
-    // Timeout fallback so user is never blocked
+    // Fallback retry trigger
     const retryTimer = setTimeout(() => {
       setShowRetry(true);
     }, showRetryAfterMs);
 
     return () => {
-      pulseLoop.stop();
-      haloLoop.stop();
       progressLoop.stop();
       if (tipTimer) clearInterval(tipTimer);
       clearTimeout(retryTimer);
     };
-  }, [pulseAnim, haloAnim, progressAnim, tipFadeAnim, subtitle, tips.length, showRetryAfterMs]);
+  }, [progressAnim, tipFadeAnim, subtitle, tips.length, showRetryAfterMs]);
 
-  const haloScale = haloAnim.interpolate({
+  // Shimmer translates across track from -100% to 320% width
+  const progressTranslateX = progressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 1.45],
-  });
-
-  const haloOpacity = haloAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.45, 0.05],
-  });
-
-  const progressLeft = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['-35%', '100%'],
-  });
-
-  const progressWidth = progressAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: ['28%', '46%', '28%'],
+    outputRange: [-100, 320],
   });
 
   const displaySubtitle = subtitle ?? tips[currentTipIndex] ?? 'Optimizăm rețetele și ingredientele...';
 
-  const content = (
-    <View style={styles.centerContainer}>
-      {/* Modernist Glass Hero Box */}
+  const cardNode = (
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: isDark ? '#18181b' : '#ffffff',
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+        },
+      ]}
+    >
+      {/* Rock-Solid Stationary Brand Icon */}
       <View
-        {...glass('card')}
         style={[
-          styles.card,
+          styles.iconSquircle,
           {
-            backgroundColor: isDark ? 'rgba(18, 18, 18, 0.96)' : 'rgba(255, 255, 255, 0.98)',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
           },
         ]}
       >
-        {/* Pulsing Brand Hero Icon with Glowing Halo Aura */}
-        <View style={styles.iconContainer}>
-          <Animated.View
-            style={[
-              styles.haloAura,
-              {
-                transform: [{ scale: haloScale }],
-                opacity: haloOpacity,
-                backgroundColor: isDark ? '#ffffff' : '#000000',
-              },
-            ]}
-          />
-          <Animated.View style={[styles.iconWrap, { transform: [{ scale: pulseAnim }] }]}>
-            <LinearGradient
-              colors={isDark ? ['#ffffff', '#8e8e93'] : ['#000000', '#3a3a3c']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.iconGradient}
-            >
-              <Text style={styles.heroEmoji}>{icon}</Text>
-            </LinearGradient>
-          </Animated.View>
-        </View>
+        <LinearGradient
+          colors={isDark ? ['#27272a', '#18181b'] : ['#f4f4f5', '#e4e4e7']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.iconGradient}
+        >
+          <Text style={styles.heroEmoji}>{icon}</Text>
+        </LinearGradient>
+      </View>
 
-        {/* Brand Header */}
-        <View style={styles.brandRow}>
-          <Text style={[styles.brandName, { color: theme.text }]}>SmartMeal</Text>
-          <View
-            style={[
-              styles.countryBadge,
-              { backgroundColor: theme.surfaceTertiary, borderColor: theme.border },
-            ]}
-          >
-            <Text style={[styles.countryBadgeText, { color: theme.text }]}>RO 🇷🇴</Text>
-          </View>
-        </View>
-
-        {/* Contextual Status Heading */}
-        <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
-
-        {/* Rotating Subtitle with Smooth Fade */}
-        <Animated.View style={{ opacity: tipFadeAnim, minHeight: 40, justifyContent: 'center' }}>
-          <Text style={[styles.subtitle, { color: theme.textMuted }]}>{displaySubtitle}</Text>
-        </Animated.View>
-
-        {/* Modern Slim Loading Bar */}
+      {/* Brand Row */}
+      <View style={styles.brandRow}>
+        <Text style={[styles.brandName, { color: theme.text }]}>SmartMeal</Text>
         <View
           style={[
-            styles.progressTrack,
+            styles.countryBadge,
             {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.1)',
             },
           ]}
         >
-          <Animated.View
-            style={[
-              styles.progressBar,
-              {
-                left: progressLeft,
-                width: progressWidth,
-                backgroundColor: theme.primary,
-              },
-            ]}
-          />
+          <Text style={[styles.countryBadgeText, { color: theme.text }]}>RO 🇷🇴</Text>
         </View>
-
-        {/* Dynamic Progress Steps / Stages if provided */}
-        {steps && steps.length > 0 && (
-          <View style={styles.stepsContainer}>
-            {steps.map((step, idx) => (
-              <View key={idx} style={styles.stepItemRow}>
-                <View
-                  style={[
-                    styles.stepItemBadge,
-                    { backgroundColor: theme.surfaceTertiary, borderColor: theme.border },
-                  ]}
-                >
-                  <Text style={[styles.stepItemCheck, { color: theme.primary }]}>✓</Text>
-                </View>
-                <Text style={[styles.stepItemText, { color: theme.text }]}>{step}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Fallback Action when loading takes longer than normal */}
-        {showRetry && onRetry && (
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Reîncearcă încărcarea"
-            onPress={onRetry}
-            activeOpacity={0.8}
-            style={[
-              styles.retryBtn,
-              { borderColor: theme.border, backgroundColor: theme.accentBg },
-            ]}
-          >
-            <Text style={[styles.retryBtnText, { color: theme.primary }]}>{retryLabel}</Text>
-          </TouchableOpacity>
-        )}
       </View>
+
+      {/* Status Heading */}
+      <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+
+      {/* Fixed Height Subtitle Container (Zero vertical layout shift) */}
+      <View style={styles.subContainer}>
+        <Animated.View style={{ opacity: tipFadeAnim, width: '100%', alignItems: 'center' }}>
+          <Text numberOfLines={2} style={[styles.subtitle, { color: isDark ? '#a1a1aa' : '#71717a' }]}>
+            {displaySubtitle}
+          </Text>
+        </Animated.View>
+      </View>
+
+      {/* Clean Shimmer Progress Bar Track */}
+      <View
+        style={[
+          styles.progressTrack,
+          {
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+          },
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.progressBar,
+            {
+              backgroundColor: theme.primary,
+              transform: [{ translateX: progressTranslateX }],
+            },
+          ]}
+        />
+      </View>
+
+      {/* Steps List (Optional) */}
+      {steps && steps.length > 0 && (
+        <View style={styles.stepsContainer}>
+          {steps.map((step, idx) => (
+            <View key={idx} style={styles.stepItemRow}>
+              <View
+                style={[
+                  styles.stepItemBadge,
+                  {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.stepItemCheck, { color: theme.primary }]}>✓</Text>
+              </View>
+              <Text style={[styles.stepItemText, { color: theme.text }]}>{step}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Fallback Action */}
+      {showRetry && onRetry && (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Reîncearcă încărcarea"
+          onPress={onRetry}
+          activeOpacity={0.8}
+          style={[
+            styles.retryBtn,
+            { borderColor: theme.border, backgroundColor: theme.accentBg },
+          ]}
+        >
+          <Text style={[styles.retryBtnText, { color: theme.primary }]}>{retryLabel}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -302,13 +245,13 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
         style={[
           styles.overlayContainer,
           {
-            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.90)',
+            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.82)' : 'rgba(255, 255, 255, 0.88)',
             opacity: overlayFadeAnim,
           },
         ]}
       >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-        {content}
+        {cardNode}
       </Animated.View>
     );
   }
@@ -320,15 +263,19 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
         styles.safeArea,
         { backgroundColor: theme.background },
       ]}
-      {...glass('root')}
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-      {content}
+      {cardNode}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   overlayContainer: {
     position: 'absolute',
     top: 0,
@@ -338,8 +285,97 @@ const styles = StyleSheet.create({
     zIndex: 99999,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(20px)' } : {}),
+    padding: 16,
+    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(16px)' } : {}),
+  },
+  card: {
+    width: 360,
+    maxWidth: '90%',
+    minHeight: 270,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.25,
+    shadowRadius: 32,
+    elevation: 8,
+  },
+  iconSquircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroEmoji: {
+    fontSize: 32,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  brandName: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  countryBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  countryBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  subContainer: {
+    height: 38,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  subtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  progressTrack: {
+    width: '100%',
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  progressBar: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: '32%',
+    borderRadius: 2,
   },
   stepsContainer: {
     width: '100%',
@@ -352,15 +388,15 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   stepItemBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepItemCheck: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
   },
   stepItemText: {
@@ -368,117 +404,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
   },
-  safeArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  centerContainer: {
-    width: '100%',
-    maxWidth: 440,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  card: {
-    width: '100%',
-    borderRadius: 28,
-    borderWidth: 1.5,
-    paddingVertical: 36,
-    paddingHorizontal: 28,
-    alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.16,
-    shadowRadius: 24,
-    elevation: 8,
-  },
-  iconContainer: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    width: 88,
-    height: 88,
-  },
-  haloAura: {
-    position: 'absolute',
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-  },
-  iconWrap: {
-    position: 'relative',
-  },
-  iconGradient: {
-    width: 76,
-    height: 76,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.22,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  heroEmoji: {
-    fontSize: 36,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
-  },
-  brandName: {
-    fontSize: 22,
-    fontWeight: '900',
-    letterSpacing: -0.5,
-  },
-  countryBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  countryBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    textAlign: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 8,
-  },
-  progressTrack: {
-    width: '100%',
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  progressBar: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    height: '100%',
-    borderRadius: 3,
-  },
   retryBtn: {
-    marginTop: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 14,
+    marginTop: 18,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    borderRadius: 12,
     borderWidth: 1,
   },
   retryBtnText: {

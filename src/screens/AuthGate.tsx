@@ -30,7 +30,7 @@ export function AuthGate({ isDark }: { isDark: boolean }) {
       <AppLoadingScreen
         isDark={isDark}
         title="Se pregătește SmartMeal..."
-        subtitle="Verificăm datele salvate și încărcăm meniul tău inteligent."
+        subtitle="Încărcăm meniul tău inteligent și optimizăm datele..."
         accessibilityLabel="Se încarcă"
         onRetry={() => {
           void hydrateStorage();

@@ -453,26 +453,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                     key={cnt}
                     onPress={() => {
                       if (baseMealsCount === cnt) return;
-                      void triggerReload(
-                        {
-                          title: `Configurăm ${cnt} ${cnt === 1 ? 'masă' : 'mese'} pe zi...`,
-                          subtitle:
-                            cnt === 1
-                              ? 'Meniu optimizat cu o masă principală caldă.'
-                              : cnt === 2
-                                ? 'Meniu optimizat cu prânz și cină echilibrate.'
-                                : 'Meniu complet: mic dejun, prânz și cină.',
-                          icon: '🍽️',
-                          steps: [
-                            'Ajustăm structura meselor zilnice',
-                            'Calculăm cantitățile optime de ingrediente',
-                            'Regenerăm lista de cumpărături pe 7 raioane',
-                          ],
-                        },
-                        () => {
-                          setMealsPerDayCount(cnt);
-                        }
-                      );
+                      setMealsPerDayCount(cnt);
                     }}
                     {...glass(baseMealsCount === cnt ? 'pill-active' : 'pill')}
                     style={[
@@ -539,23 +520,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                       key={tier}
                       onPress={() => {
                       if (preferences.foodTier === tier) return;
-                      void triggerReload(
-                        {
-                          title: 'Actualizăm nivelul de ingrediente...',
-                          subtitle: `Ajustăm rețetele conform nivelului ${
-                            tier === 'basic' ? 'Basic' : tier === 'medium' ? 'Medium' : 'Premium'
-                          }...`,
-                          icon: tier === 'basic' ? '🥉' : tier === 'medium' ? '🥈' : '🥇',
-                          steps: [
-                            'Selectăm ingrediente adaptate nivelului de preț',
-                            'Optimizăm rețetele săptămânale',
-                            'Actualizăm totalul coșului de cumpărături',
-                          ],
-                        },
-                        () => {
-                          setFoodTier(tier);
-                        }
-                      );
+                      setFoodTier(tier);
                     }}
                       {...glass(isActive ? 'pill-active' : 'pill')}
                       style={[
@@ -641,16 +606,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                       key={market.id}
                       onPress={() => {
                         if (preferences.supermarketId === market.id) return;
-                        void triggerReload(
-                          {
-                            title: `Actualizăm prețurile pentru ${market.name}...`,
-                            subtitle: `Recalculăm ingredientele conform ofertelor ${market.name}...`,
-                            icon: '🛒',
-                          },
-                          () => {
-                            setSupermarket(market.id);
-                          }
-                        );
+                        setSupermarket(market.id);
                       }}
                       {...glass(isActive ? 'pill-active' : 'pill')}
                       style={[
@@ -863,22 +819,8 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
         onClose={() => setFiltersModalVisible(false)}
         preferences={preferences}
         onApplyFilters={(newPrefs) => {
+          updatePreferencesAndRebuild(newPrefs);
           setFiltersModalVisible(false);
-          void triggerReload(
-            {
-              title: 'Aplicăm noile filtre...',
-              subtitle: 'Recalculăm meniul săptămânal conform noilor preferințe...',
-              icon: '⚙️',
-              steps: [
-                'Verificăm compatibilitatea rețetelor',
-                'Ajustăm zilele de gătit și aparatele',
-                'Actualizăm lista de cumpărături',
-              ],
-            },
-            () => {
-              updatePreferencesAndRebuild(newPrefs);
-            }
-          );
         }}
         onResetOnboarding={() => requestConfirm('reset_onboarding')}
         isDark={isDark}
@@ -891,17 +833,8 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
         canSaveCurrent={Boolean(currentPlan)}
         onSaveCurrent={saveCurrentPlan}
         onRestore={(savedPlanId) => {
+          restoreSavedPlan(savedPlanId);
           setSavedPlansVisible(false);
-          void triggerReload(
-            {
-              title: 'Restaurăm planul salvat...',
-              subtitle: 'Încărcăm rețetele și coșul de cumpărături din arhivă...',
-              icon: '⭐',
-            },
-            () => {
-              restoreSavedPlan(savedPlanId);
-            }
-          );
         }}
         onDelete={deleteSavedPlan}
         onClose={() => setSavedPlansVisible(false)}
