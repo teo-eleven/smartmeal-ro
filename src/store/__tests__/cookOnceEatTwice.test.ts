@@ -104,6 +104,40 @@ describe('gătesc o dată, mănânc de două ori', () => {
     expect(dayOf('monday').meals[0].servings).toBe(source.servings);
   });
 
+  test('dublarea unui desert adaugă desertul reîncălzit în ziua următoare fără a suprascrie cina', () => {
+    boot();
+    // Adăugăm un desert lunea
+    useAppStore.getState().addExtraMealToDay('monday', 'dessert');
+    const mondayDessert = dayOf('monday').meals.find((m) => m.slot === 'dessert')!;
+    expect(mondayDessert).toBeDefined();
+
+    const tuesdayDinnerBefore = dayOf('tuesday').meals.find((m) => m.slot === 'dinner')!;
+    expect(tuesdayDinnerBefore).toBeDefined();
+    expect(dayOf('tuesday').meals.some((m) => m.slot === 'dessert')).toBe(false);
+
+    // Gătim dublu desertul de luni
+    useAppStore.getState().cookDoubleFor('monday', mondayDessert.id);
+
+    // Verificăm că marți a apărut desertul reîncălzit
+    const tuesdayDessert = dayOf('tuesday').meals.find((m) => m.slot === 'dessert')!;
+    expect(tuesdayDessert).toBeDefined();
+    expect(tuesdayDessert.recipe.id).toBe(mondayDessert.recipe.id);
+    expect(tuesdayDessert.isLeftover).toBe(true);
+    expect(tuesdayDessert.estimatedCostRon).toBe(0);
+
+    // Cina de marți a rămas neatinsă
+    const tuesdayDinnerAfter = dayOf('tuesday').meals.find((m) => m.slot === 'dinner')!;
+    expect(tuesdayDinnerAfter.id).toBe(tuesdayDinnerBefore.id);
+    expect(tuesdayDinnerAfter.recipe.id).toBe(tuesdayDinnerBefore.recipe.id);
+
+    // Anulăm gătitul dublu pentru desertul de marți
+    useAppStore.getState().undoCookDouble('tuesday', tuesdayDessert.id);
+
+    // Marți nu mai are desert, cina a rămas intactă
+    expect(dayOf('tuesday').meals.some((m) => m.slot === 'dessert')).toBe(false);
+    expect(dayOf('monday').meals.find((m) => m.slot === 'dessert')!.servings).toBe(mondayDessert.servings);
+  });
+
   test('ultima zi nu are unde să reporteze, deci refuză', () => {
     boot();
     const last = dayOf('friday').meals[0];

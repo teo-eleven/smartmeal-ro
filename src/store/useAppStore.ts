@@ -1807,8 +1807,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         };
       }
 
-      const target = nextDay.meals.find((m) => m.slot === source.slot) ?? nextDay.meals[0];
-      if (!target) return state;
+      const existingTarget = nextDay.meals.find((m) => m.slot === source.slot);
 
       const days = plan.days.map((day, index) => {
         if (index === dayIndex) {
@@ -1820,18 +1819,35 @@ export const useAppStore = create<AppState>((set, get) => ({
           return { ...day, meals, ...rebuildDayShape(meals, day) };
         }
         if (index === dayIndex + 1) {
-          const meals = day.meals.map((m) =>
-            m.id === target.id
-              ? {
-                  ...m,
-                  recipe: source.recipe,
-                  isLeftover: true,
-                  leftoverFromMealId: source.id,
-                  estimatedCostRon: 0,
-                }
-              : m
-          );
-          return { ...day, meals, ...rebuildDayShape(meals, day) };
+          if (existingTarget) {
+            const meals = day.meals.map((m) =>
+              m.id === existingTarget.id
+                ? {
+                    ...m,
+                    recipe: source.recipe,
+                    isLeftover: true,
+                    leftoverFromMealId: source.id,
+                    estimatedCostRon: 0,
+                  }
+                : m
+            );
+            return { ...day, meals, ...rebuildDayShape(meals, day) };
+          } else {
+            // Append a new leftover meal so unrelated slots (e.g. dinner) are not overwritten
+            const newLeftoverMeal: PlannedMeal = {
+              id: `${nextDay.dayOfWeek}-${source.slot}-leftover-${Date.now()}`,
+              slot: source.slot,
+              slotLabelRo: source.slotLabelRo || (source.slot === 'dessert' ? 'Desert' : source.slot),
+              recipe: source.recipe,
+              servings: state.preferences.peopleCount || source.servings,
+              estimatedCostRon: 0,
+              isLeftover: true,
+              leftoverFromMealId: source.id,
+              isAddedLeftover: true,
+            };
+            const meals = [...day.meals, newLeftoverMeal];
+            return { ...day, meals, ...rebuildDayShape(meals, day) };
+          }
         }
         return day;
       });
@@ -1889,6 +1905,10 @@ export const useAppStore = create<AppState>((set, get) => ({
           return { ...day, meals, ...rebuildDayShape(meals, day) };
         }
         if (index === dayIndex) {
+          if (leftover.isAddedLeftover || leftover.slot === 'dessert') {
+            const meals = day.meals.filter((m) => m.id !== mealId);
+            return { ...day, meals, ...rebuildDayShape(meals, day) };
+          }
           const meals = day.meals.map((m) =>
             m.id === mealId
               ? {
@@ -1937,6 +1957,24 @@ export const useAppStore = create<AppState>((set, get) => ({
             ),
           };
         }
+      }
+
+      if (isRemoving) {
+        void storageService.savePreferences(nextPrefs);
+        return { preferences: nextPrefs };
+      }
+
+      if (state.currentPlan) {
+        const { days: safeDays } = makePlanSafeForPreferences(state.currentPlan.days, nextPrefs);
+        const days = safeDays.map((d) => ({
+          ...d,
+          ...rebuildDayShape(d.meals, d),
+        }));
+        void storageService.savePreferences(nextPrefs);
+        return {
+          preferences: nextPrefs,
+          ...withRecalculatedCart(state, days, null),
+        };
       }
 
       return applyPreferencesWithRebuild(state, nextPrefs);

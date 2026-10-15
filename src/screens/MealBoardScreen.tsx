@@ -774,6 +774,8 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
         visible={Boolean(selectedRecipe)}
         recipe={selectedRecipe}
         servings={detailServings}
+        targetDay={detailTarget?.dayOfWeek}
+        targetSlot={detailTarget?.slot}
         onClose={() => {
           setSelectedRecipe(null);
           setDetailTarget(null);

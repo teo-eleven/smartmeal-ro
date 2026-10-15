@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
   SafeAreaView,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Appliance, Recipe, SupermarketId } from '../types';
+import { Appliance, DayOfWeek, MealSlot, Recipe, SupermarketId } from '../types';
 import { INGREDIENTS } from '../data/ingredients';
 import { MacroBar } from '../components/MacroBar';
 import { useResponsive } from '../hooks/useResponsive';
@@ -21,6 +21,8 @@ import { RecipeVisual } from '../components/RecipeVisual';
 import { getAppTheme } from '../styles/theme';
 import { getRecipeAllergens } from '../utils/allergenFilter';
 import { ALLERGEN_CATALOG } from '../data/allergens';
+import { getEligibleRecipes } from '../engine/plannerEngine';
+import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 
 function getStoreBadgeBg(store?: SupermarketId): string {
   switch (store) {
@@ -53,6 +55,8 @@ interface RecipeDetailModalProps {
   onSwap: () => void;
   onChangeServings?: (servings: number) => void;
   isDark: boolean;
+  targetDay?: DayOfWeek | null;
+  targetSlot?: MealSlot | null;
 }
 
 const APPLIANCE_MAP: Record<Appliance, { name: string; icon: string }> = {
@@ -112,6 +116,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   onSwap,
   onChangeServings,
   isDark,
+  targetDay,
+  targetSlot,
 }) => {
   const [personalNotes, setPersonalNotes] = useState('');
   const [activeServings, setActiveServings] = useState(initialServings);
@@ -128,7 +134,47 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
   const { isDesktop, isTablet, contentMaxWidth } = useResponsive();
   const isWide = isDesktop || isTablet;
-  const { preferences, toggleFavouriteRecipe, toggleDislikedRecipe } = useAppStore();
+  const {
+    preferences,
+    currentPlan,
+    replaceMealWithRecipe,
+    toggleFavouriteRecipe,
+    toggleDislikedRecipe,
+    showNotice,
+  } = useAppStore();
+
+  const suggestedReplacement = useMemo(() => {
+    if (!recipe) return null;
+    const eligible = getEligibleRecipes(preferences);
+    const target = targetSlot || (recipe.suitableSlots && recipe.suitableSlots[0]) || 'dinner';
+    const slotFiltered = eligible.filter(
+      (r) => r.id !== recipe.id && (r.suitableSlots ? r.suitableSlots.includes(target) : true)
+    );
+    const baseCandidates =
+      slotFiltered.length > 0 ? slotFiltered : eligible.filter((r) => r.id !== recipe.id);
+
+    const usedRecipeIds = new Set<string>();
+    if (currentPlan) {
+      currentPlan.days.forEach((d) => {
+        d.meals?.forEach((m) => usedRecipeIds.add(m.recipe.id));
+      });
+    }
+
+    const unusedCandidates = baseCandidates.filter((r) => !usedRecipeIds.has(r.id));
+    const pool = unusedCandidates.length > 0 ? unusedCandidates : baseCandidates;
+
+    if (pool.length === 0) return null;
+
+    // Prioritize favorites if any
+    const favs = pool.filter((r) => (preferences.favouriteRecipeIds ?? []).includes(r.id));
+    if (favs.length > 0) return favs[0];
+
+    // Prioritize same tier
+    const sameTier = pool.filter((r) => r.tier === recipe.tier);
+    if (sameTier.length > 0) return sameTier[0];
+
+    return pool[0];
+  }, [recipe, preferences, currentPlan, targetSlot]);
 
   useEffect(() => {
     setActiveServings(initialServings);
@@ -629,6 +675,123 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   </Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Intelligent Automatic Replacement Suggestion when Disliked */}
+              {isDisliked && suggestedReplacement && (
+                <View
+                  style={[
+                    styles.dislikeSuggestionCard,
+                    {
+                      backgroundColor: isDark ? '#121212' : '#f8fafc',
+                      borderColor: isDark ? 'rgba(239, 68, 68, 0.4)' : '#fca5a5',
+                    },
+                  ]}
+                >
+                  <View style={styles.dislikeSuggestionHeader}>
+                    <Text style={styles.dislikeSuggestionBadge}>💡 Sugestie de înlocuire recomandată</Text>
+                  </View>
+                  <Text style={[styles.dislikeSuggestionSubtext, { color: theme.textMuted }]}>
+                    Rețeta „{recipe.title}” a fost exclusă definitiv de pe acest cont. Iată alternativa optimă pentru acest loc:
+                  </Text>
+
+                  <View
+                    style={[
+                      styles.suggestedDishBox,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                  >
+                    <View style={styles.suggestedDishHeader}>
+                      <Text style={[styles.suggestedDishTitle, { color: theme.text }]}>
+                        {suggestedReplacement.title}
+                      </Text>
+                      {suggestedReplacement.tier && (
+                        <View style={[styles.suggestedTierBadge, { backgroundColor: theme.inputBg }]}>
+                          <Text style={[styles.suggestedTierText, { color: theme.textMuted }]}>
+                            {suggestedReplacement.tier === 'basic'
+                              ? '🥉 Basic'
+                              : suggestedReplacement.tier === 'medium'
+                                ? '🥈 Medium'
+                                : '🥇 Premium'}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <Text style={[styles.suggestedDishDesc, { color: theme.textMuted }]} numberOfLines={2}>
+                      {suggestedReplacement.description}
+                    </Text>
+
+                    <View style={styles.suggestedMetaRow}>
+                      <View style={[styles.suggestedMetaPill, { backgroundColor: theme.inputBg }]}>
+                        <Text style={[styles.suggestedMetaText, { color: theme.text }]}>
+                          ⏱️ {suggestedReplacement.prepTimeMinutes} min
+                        </Text>
+                      </View>
+                      <View style={[styles.suggestedMetaPill, { backgroundColor: theme.inputBg }]}>
+                        <Text style={[styles.suggestedMetaText, { color: theme.text }]}>
+                          🔥 {suggestedReplacement.nutritionPerServing.calories} kcal
+                        </Text>
+                      </View>
+                      <View style={[styles.suggestedMetaPill, { backgroundColor: theme.primaryLight }]}>
+                        <Text style={[styles.suggestedMetaText, { color: theme.primary }]}>
+                          💰 ~
+                          {Math.round(
+                            calculateRecipePortionCost(
+                              suggestedReplacement,
+                              activeServings,
+                              preferences.supermarketId,
+                              preferences.excludePantryStaples
+                            )
+                          )}{' '}
+                          lei
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.suggestedActionsColumn}>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={`Înlocuiește cu ${suggestedReplacement.title}`}
+                      onPress={() => {
+                        if (targetDay) {
+                          replaceMealWithRecipe(targetDay, suggestedReplacement, targetSlot || undefined);
+                          showNotice(
+                            'Rețetă înlocuită',
+                            `Am adăugat „${suggestedReplacement.title}” în meniul tău.`,
+                            'success'
+                          );
+                          onClose();
+                        } else {
+                          onSwap();
+                        }
+                      }}
+                      style={[styles.confirmReplacementBtn, { backgroundColor: '#16a34a' }]}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.confirmReplacementBtnText}>✓ Înlocuiește cu această rețetă</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel="Alege altceva din catalog"
+                      onPress={onSwap}
+                      style={[
+                        styles.browseCatalogBtn,
+                        { backgroundColor: theme.btnBg, borderColor: theme.border },
+                      ]}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.browseCatalogBtnText, { color: theme.text }]}>
+                        🔄 Alege altceva din catalog
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
 
               {/* Actions Row */}
               <View style={styles.actionButtonsContainer}>
@@ -1175,5 +1338,97 @@ const styles = StyleSheet.create({
   aiIngredientsList: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  dislikeSuggestionCard: {
+    padding: 16,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    marginTop: 14,
+    gap: 12,
+  },
+  dislikeSuggestionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dislikeSuggestionBadge: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#ef4444',
+  },
+  dislikeSuggestionSubtext: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  suggestedDishBox: {
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 8,
+  },
+  suggestedDishHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  suggestedDishTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    flex: 1,
+  },
+  suggestedTierBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  suggestedTierText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  suggestedDishDesc: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  suggestedMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  suggestedMetaPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  suggestedMetaText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  suggestedActionsColumn: {
+    gap: 8,
+    marginTop: 4,
+  },
+  confirmReplacementBtn: {
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmReplacementBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  browseCatalogBtn: {
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  browseCatalogBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

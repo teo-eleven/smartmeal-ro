@@ -198,6 +198,12 @@ export interface PlannedMeal {
    * at all once the source had been swapped.
    */
   leftoverFromMealId?: string;
+  /**
+   * True when this leftover meal was appended dynamically (e.g. for desserts where the
+   * target day didn't originally have that meal slot). When undone, this meal is removed
+   * rather than reset to an empty state.
+   */
+  isAddedLeftover?: boolean;
 }
 
 export interface UserPreferences {
