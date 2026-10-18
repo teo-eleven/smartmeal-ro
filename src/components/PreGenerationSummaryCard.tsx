@@ -200,42 +200,42 @@ export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> =
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
-    padding: 18,
-    marginVertical: 14,
+    padding: 10,
+    marginVertical: 6,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
+    gap: 8,
+    marginBottom: 8,
   },
   headerIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerIcon: {
-    fontSize: 22,
+    fontSize: 18,
   },
   title: {
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: '800',
     letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 1,
   },
   metricsGrid: {
-    gap: 10,
+    gap: 6,
   },
   metricCard: {
-    padding: 12,
-    borderRadius: 12,
+    padding: 8,
+    borderRadius: 10,
     borderWidth: 1,
   },
   metricLabel: {

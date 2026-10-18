@@ -870,14 +870,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 Zile de gătit & Mese
               </Text>
               <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Stabilește ritmul săptămânii tale: în ce zile gătești, ce mese dorești și nivelul ingredientelor.
-              </Text>
-
-              <Text style={[styles.questionTitle, { color: theme.text }]}>
-                În ce zile vei găti?
-              </Text>
-              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Alege zilele din săptămână pentru care dorești rețete planificate.
+                Alege zilele în care gătești, mesele dorite și nivelul ingredientelor.
               </Text>
 
               {/* Quick Preset Buttons Row */}
@@ -1779,8 +1772,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   desktopHeader: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
     alignItems: 'center',
     width: '100%',
@@ -1792,7 +1785,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 6,
   },
   brandGroup: {
     flexDirection: 'row',
@@ -1812,14 +1805,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   desktopCurrentStepTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '900',
     letterSpacing: -0.3,
   },
   desktopBackBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 8,
     borderWidth: 1,
   },
   waterFlowTrack: {
@@ -1827,23 +1820,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   flowStreamLine: {
     flex: 1,
-    height: 3,
-    borderRadius: 2,
+    height: 2,
+    borderRadius: 1,
     overflow: 'hidden',
-    marginHorizontal: 4,
+    marginHorizontal: 3,
   },
   stepNode: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 14,
     borderWidth: 1.5,
-    gap: 5,
+    gap: 4,
   },
   stepNodeActive: {
     shadowColor: '#000000',
@@ -1863,16 +1856,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   header: {
-    paddingTop: 12,
-    paddingBottom: 12,
-    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   logoText: {
     fontSize: 18,
@@ -1893,59 +1886,61 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   progressTrack: {
-    height: 6,
-    borderRadius: 3,
+    height: 4,
+    borderRadius: 2,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 2,
   },
   scrollContent: {
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 6,
     paddingHorizontal: 16,
     width: '100%',
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   contentCard: {
     width: '100%',
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
-    padding: 16,
+    padding: 12,
   },
   stepSection: {
     width: '100%',
   },
   questionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
-    marginBottom: 4,
-    lineHeight: 26,
+    marginBottom: 2,
+    lineHeight: 22,
   },
   quickStartCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    marginBottom: 12,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 8,
   },
-  quickStartIcon: { fontSize: 18 },
-  quickStartTitle: { fontSize: 13, fontWeight: '800' },
-  quickStartSubtitle: { fontSize: 11, fontWeight: '500', marginTop: 1, lineHeight: 14 },
-  quickStartArrow: { fontSize: 16, fontWeight: '800' },
+  quickStartIcon: { fontSize: 16 },
+  quickStartTitle: { fontSize: 12, fontWeight: '800' },
+  quickStartSubtitle: { fontSize: 11, fontWeight: '500', marginTop: 1, lineHeight: 13 },
+  quickStartArrow: { fontSize: 14, fontWeight: '800' },
   allergenBlock: {
-    marginTop: 14,
-    paddingTop: 12,
+    marginTop: 10,
+    paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(128,128,128,0.35)',
   },
   questionSubtitle: {
-    fontSize: 12,
-    lineHeight: 17,
-    marginBottom: 12,
+    fontSize: 11,
+    lineHeight: 15,
+    marginBottom: 8,
   },
   supermarketGrid: {
     gap: 12,
@@ -2110,18 +2105,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
   },
   footerBackBtn: {
-    paddingVertical: 14,
-    paddingHorizontal: 22,
-    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 14,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   footerBackText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   footerContinueWrap: {
@@ -2247,30 +2242,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   mealCountGrid: {
-    gap: 12,
-    marginBottom: 20,
+    gap: 8,
+    marginBottom: 14,
   },
   mealCountCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 16,
+    padding: 10,
+    borderRadius: 14,
     borderWidth: 2,
-    gap: 12,
+    gap: 10,
   },
   mealCountIcon: {
-    fontSize: 28,
+    fontSize: 22,
   },
   mealCountInfo: {
     flex: 1,
   },
   mealCountTitle: {
-    fontSize: 16,
-    marginBottom: 4,
+    fontSize: 14,
+    marginBottom: 2,
   },
   mealCountSubtitle: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
   },
   radioCircle: {
     width: 22,
@@ -2351,28 +2346,28 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   tierCardsGrid: {
-    gap: 10,
-    marginTop: 8,
+    gap: 8,
+    marginTop: 4,
   },
   tierCard: {
-    padding: 14,
-    borderRadius: 16,
+    padding: 10,
+    borderRadius: 14,
     borderWidth: 1.5,
   },
   tierCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 6,
+    gap: 8,
+    marginBottom: 4,
   },
   tierCardIcon: {
-    fontSize: 22,
+    fontSize: 18,
   },
   tierCardTextContainer: {
     flex: 1,
   },
   tierCardTitle: {
-    fontSize: 14,
+    fontSize: 13,
   },
   tierCardPrice: {
     fontSize: 11,
@@ -2380,9 +2375,9 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   tierCardDesc: {
-    fontSize: 12,
-    lineHeight: 16,
-    marginLeft: 32,
+    fontSize: 11,
+    lineHeight: 14,
+    marginLeft: 26,
   },
   moodGrid: {
     flexDirection: 'row',
@@ -2424,32 +2419,32 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   dietList: {
-    gap: 12,
+    gap: 8,
   },
   dietCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    borderWidth: 2,
-    gap: 14,
-    minHeight: 74,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    gap: 10,
+    minHeight: 52,
   },
   dietIcon: {
-    fontSize: 26,
+    fontSize: 22,
   },
   dietInfo: {
     flex: 1,
   },
   dietLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   dietDesc: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
   },
   radioInnerDot: {
     width: 8,
@@ -2458,21 +2453,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   footer: {
-    padding: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderTopWidth: 1,
     alignItems: 'center',
   },
   continueButton: {
     width: '100%',
     maxWidth: 480,
-    paddingVertical: 14,
+    paddingVertical: 11,
     paddingHorizontal: 10,
-    borderRadius: 16,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 3,
   },
@@ -2515,21 +2511,21 @@ const styles = StyleSheet.create({
   retailProductCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 14,
+    padding: 8,
+    borderRadius: 12,
     borderWidth: 1.5,
-    gap: 12,
+    gap: 8,
   },
   retailProductIcon: {
-    fontSize: 24,
+    fontSize: 20,
   },
   retailProductTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   retailProductBrand: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 1,
   },
   retailPriceBox: {
     alignItems: 'flex-end',
