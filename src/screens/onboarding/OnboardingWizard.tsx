@@ -21,6 +21,8 @@ import { getAppTheme } from '../../styles/theme';
 import { glass } from '../../styles/glass';
 import { EligibilityMeter } from '../../components/EligibilityMeter';
 import { AllergenSelector } from '../../components/AllergenSelector';
+import { HEALTH_GOALS_CATALOG } from '../../data/healthTags';
+import { PreGenerationSummaryCard } from '../../components/PreGenerationSummaryCard';
 
 interface OnboardingWizardProps {
   isDark: boolean;
@@ -149,6 +151,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
     toggleMoodTag,
     toggleDietType,
     toggleAvoidedAllergen,
+    toggleHealthGoalTag,
+    setSnackTastePreference,
     toggleAppliance,
     toggleSnackProduct,
     toggleDrinkProduct,
@@ -941,6 +945,66 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                   />
                 </View>
 
+                {/* HEALTH & WELLNESS GOALS */}
+                <View style={styles.healthGoalsBlock}>
+                  <Text style={[styles.questionTitle, { color: theme.text, fontSize: 17 }]}>
+                    🩺 Obiective de sănătate & stil de viață
+                  </Text>
+                  <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
+                    Opțional: filtre speciale nutriționale și medicale populare în România. Meniul recomandat va prioritiza aceste criterii.
+                  </Text>
+
+                  <View style={[styles.dietList, isLargeScreen && styles.dietListDesktop]}>
+                    {HEALTH_GOALS_CATALOG.map((goal) => {
+                      const isSelected = (preferences.healthGoalTags || []).includes(goal.id);
+                      return (
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          key={goal.id}
+                          onPress={() => toggleHealthGoalTag(goal.id)}
+                          activeOpacity={0.75}
+                          style={[
+                            styles.dietCard,
+                            isLargeScreen && styles.dietCardDesktop,
+                            {
+                              backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                              borderColor: isSelected ? theme.primary : theme.border,
+                            },
+                          ]}
+                        >
+                          <Text style={styles.dietIcon}>{goal.icon}</Text>
+                          <View style={styles.dietInfo}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              <Text style={[styles.dietLabel, { color: theme.text }]}>
+                                {goal.labelRo}
+                              </Text>
+                              {isSelected && (
+                                <View style={[styles.incompatibleBadge, { backgroundColor: theme.surfaceTertiary, borderColor: theme.border, borderWidth: 1 }]}>
+                                  <Text style={{ fontSize: 10, color: theme.text, fontWeight: '800' }}>Activ</Text>
+                                </View>
+                              )}
+                            </View>
+                            <Text style={[styles.dietDesc, { color: theme.textMuted }]}>
+                              {goal.descriptionRo}
+                            </Text>
+                          </View>
+                          <View
+                            style={[
+                              styles.dietRadio,
+                              {
+                                borderColor: isSelected ? theme.primary : theme.border,
+                                backgroundColor: isSelected ? theme.primary : 'transparent',
+                              },
+                            ]}
+                          >
+                            {isSelected && <Text style={{ color: theme.primaryText, fontSize: 12, fontWeight: '900' }}>✓</Text>}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
                 <EligibilityMeter preferences={preferences} isDark={isDark} />
               </View>
             );
@@ -990,111 +1054,167 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 </View>
               </View>
 
-              {/* SECTION 1: RONȚĂIELI SĂRATE */}
-              <Text style={[styles.retailSectionHeading, { color: theme.text }]}>
-                🍿 Chipsuri & Snacks sărate
-              </Text>
-              <View style={[styles.retailCardsGrid, isLargeScreen && styles.retailCardsGridDesktop]}>
-                {getRetailProductsByCategory('snack_savory').map((prod) => {
-                  const isSelected = (preferences.selectedSnackIds || []).includes(prod.id);
-                  const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
-                  return (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      key={prod.id}
-                      onPress={() => toggleSnackProduct(prod.id)}
-                      activeOpacity={0.7}
-                      style={[
-                        styles.retailProductCard,
-                        isLargeScreen && styles.retailProductCardDesktop,
-                        {
-                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
-                          borderColor: isSelected ? theme.primary : theme.border,
-                        },
-                      ]}
-                    >
-                      <Text style={styles.retailProductIcon}>{prod.icon}</Text>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.retailProductTitle, { color: isSelected ? theme.primary : theme.text }]}>
-                          {prod.name}
-                        </Text>
-                        <Text style={[styles.retailProductBrand, { color: theme.textMuted }]}>
-                          {prod.brand} • {prod.packageSize}
-                        </Text>
-                      </View>
-                      <View style={styles.retailPriceBox}>
-                        <Text style={[styles.retailProductPrice, { color: isSelected ? theme.primary : theme.text }]}>
-                          {price.toFixed(2)} lei
-                        </Text>
-                        <View
+              {/* SNACK TASTE SELECTOR [Dulce] vs [Sărat] vs [Ambele] */}
+              <View style={[styles.snackTasteBox, { backgroundColor: theme.accentBg, borderColor: theme.border }]}>
+                <Text style={[styles.snackTasteTitle, { color: theme.text }]}>
+                  Ce fel de gustări preferi de obicei?
+                </Text>
+                <View style={styles.snackTasteSegmentedRow}>
+                  {[
+                    { id: 'savory', label: '🍿 Sărat', desc: 'Chipsuri & alune' },
+                    { id: 'sweet', label: '🍫 Dulce', desc: 'Ciocolată & dulciuri' },
+                    { id: 'both', label: '⚖️ Ambele', desc: 'Sărat și dulce' },
+                  ].map((tab) => {
+                    const isCurrent = (preferences.snackTastePreference || 'both') === tab.id;
+                    return (
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        key={tab.id}
+                        onPress={() => setSnackTastePreference(tab.id as 'sweet' | 'savory' | 'both')}
+                        style={[
+                          styles.snackTasteTab,
+                          {
+                            backgroundColor: isCurrent ? theme.primaryLight : 'transparent',
+                            borderColor: isCurrent ? theme.primary : theme.border,
+                          },
+                        ]}
+                        activeOpacity={0.7}
+                      >
+                        <Text
                           style={[
-                            styles.retailCheckbox,
-                            {
-                              backgroundColor: isSelected ? theme.primary : 'transparent',
-                              borderColor: isSelected ? theme.primary : theme.border,
-                            },
+                            styles.snackTasteTabLabel,
+                            { color: isCurrent ? theme.primary : theme.text, fontWeight: isCurrent ? '800' : '600' },
                           ]}
                         >
-                          {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
+                          {tab.label}
+                        </Text>
+                        <Text style={[styles.snackTasteTabDesc, { color: theme.textMuted }]}>
+                          {tab.desc}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
 
-              {/* SECTION 2: DULCIURI & CIOCOLATĂ */}
-              <Text style={[styles.retailSectionHeading, { color: theme.text, marginTop: 20 }]}>
-                🍫 Ciocolată & Dulciuri
-              </Text>
-              <View style={[styles.retailCardsGrid, isLargeScreen && styles.retailCardsGridDesktop]}>
-                {getRetailProductsByCategory('snack_sweet').map((prod) => {
-                  const isSelected = (preferences.selectedSnackIds || []).includes(prod.id);
-                  const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
-                  return (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      key={prod.id}
-                      onPress={() => toggleSnackProduct(prod.id)}
-                      activeOpacity={0.7}
-                      style={[
-                        styles.retailProductCard,
-                        isLargeScreen && styles.retailProductCardDesktop,
-                        {
-                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
-                          borderColor: isSelected ? theme.primary : theme.border,
-                        },
-                      ]}
-                    >
-                      <Text style={styles.retailProductIcon}>{prod.icon}</Text>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.retailProductTitle, { color: isSelected ? theme.primary : theme.text }]}>
-                          {prod.name}
-                        </Text>
-                        <Text style={[styles.retailProductBrand, { color: theme.textMuted }]}>
-                          {prod.brand} • {prod.packageSize}
-                        </Text>
-                      </View>
-                      <View style={styles.retailPriceBox}>
-                        <Text style={[styles.retailProductPrice, { color: isSelected ? theme.primary : theme.text }]}>
-                          {price.toFixed(2)} lei
-                        </Text>
-                        <View
-                          style={[
-                            styles.retailCheckbox,
-                            {
-                              backgroundColor: isSelected ? theme.primary : 'transparent',
-                              borderColor: isSelected ? theme.primary : theme.border,
-                            },
-                          ]}
-                        >
-                          {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+              {/* RETAIL SNACKS: DYNAMIC ORDER BASED ON PREFERENCE */}
+              {(() => {
+                const savorySection = (
+                  <View key="savory-block" style={{ marginTop: 12 }}>
+                    <Text style={[styles.retailSectionHeading, { color: theme.text }]}>
+                      🍿 Chipsuri & Snacks sărate
+                    </Text>
+                    <View style={[styles.retailCardsGrid, isLargeScreen && styles.retailCardsGridDesktop]}>
+                      {getRetailProductsByCategory('snack_savory').map((prod) => {
+                        const isSelected = (preferences.selectedSnackIds || []).includes(prod.id);
+                        const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
+                        return (
+                          <TouchableOpacity
+                            accessibilityRole="button"
+                            key={prod.id}
+                            onPress={() => toggleSnackProduct(prod.id)}
+                            activeOpacity={0.7}
+                            style={[
+                              styles.retailProductCard,
+                              isLargeScreen && styles.retailProductCardDesktop,
+                              {
+                                backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                                borderColor: isSelected ? theme.primary : theme.border,
+                              },
+                            ]}
+                          >
+                            <Text style={styles.retailProductIcon}>{prod.icon}</Text>
+                            <View style={{ flex: 1 }}>
+                              <Text style={[styles.retailProductTitle, { color: isSelected ? theme.primary : theme.text }]}>
+                                {prod.name}
+                              </Text>
+                              <Text style={[styles.retailProductBrand, { color: theme.textMuted }]}>
+                                {prod.brand} • {prod.packageSize}
+                              </Text>
+                            </View>
+                            <View style={styles.retailPriceBox}>
+                              <Text style={[styles.retailProductPrice, { color: isSelected ? theme.primary : theme.text }]}>
+                                {price.toFixed(2)} lei
+                              </Text>
+                              <View
+                                style={[
+                                  styles.retailCheckbox,
+                                  {
+                                    backgroundColor: isSelected ? theme.primary : 'transparent',
+                                    borderColor: isSelected ? theme.primary : theme.border,
+                                  },
+                                ]}
+                              >
+                                {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+
+                const sweetSection = (
+                  <View key="sweet-block" style={{ marginTop: 16 }}>
+                    <Text style={[styles.retailSectionHeading, { color: theme.text }]}>
+                      🍫 Ciocolată & Dulciuri
+                    </Text>
+                    <View style={[styles.retailCardsGrid, isLargeScreen && styles.retailCardsGridDesktop]}>
+                      {getRetailProductsByCategory('snack_sweet').map((prod) => {
+                        const isSelected = (preferences.selectedSnackIds || []).includes(prod.id);
+                        const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
+                        return (
+                          <TouchableOpacity
+                            accessibilityRole="button"
+                            key={prod.id}
+                            onPress={() => toggleSnackProduct(prod.id)}
+                            activeOpacity={0.7}
+                            style={[
+                              styles.retailProductCard,
+                              isLargeScreen && styles.retailProductCardDesktop,
+                              {
+                                backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                                borderColor: isSelected ? theme.primary : theme.border,
+                              },
+                            ]}
+                          >
+                            <Text style={styles.retailProductIcon}>{prod.icon}</Text>
+                            <View style={{ flex: 1 }}>
+                              <Text style={[styles.retailProductTitle, { color: isSelected ? theme.primary : theme.text }]}>
+                                {prod.name}
+                              </Text>
+                              <Text style={[styles.retailProductBrand, { color: theme.textMuted }]}>
+                                {prod.brand} • {prod.packageSize}
+                              </Text>
+                            </View>
+                            <View style={styles.retailPriceBox}>
+                              <Text style={[styles.retailProductPrice, { color: isSelected ? theme.primary : theme.text }]}>
+                                {price.toFixed(2)} lei
+                              </Text>
+                              <View
+                                style={[
+                                  styles.retailCheckbox,
+                                  {
+                                    backgroundColor: isSelected ? theme.primary : 'transparent',
+                                    borderColor: isSelected ? theme.primary : theme.border,
+                                  },
+                                ]}
+                              >
+                                {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+
+                return preferences.snackTastePreference === 'sweet'
+                  ? [sweetSection, savorySection]
+                  : [savorySection, sweetSection];
+              })()}
 
               {/* SECTION 3: BĂUTURI RĂCORITOARE & APĂ */}
               <Text style={[styles.retailSectionHeading, { color: theme.text, marginTop: 20 }]}>
@@ -1279,6 +1399,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 extrasCost={extrasCost}
                 onChangeBudget={setBudget}
                 isDark={isDark}
+              />
+
+              <PreGenerationSummaryCard
+                preferences={preferences}
+                isDark={isDark}
+                extrasCost={extrasCost}
               />
             </View>
           )}
@@ -2131,5 +2257,41 @@ const styles = StyleSheet.create({
   accountBtnText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  healthGoalsBlock: {
+    marginTop: 24,
+    gap: 8,
+  },
+  snackTasteBox: {
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    marginBottom: 16,
+    gap: 10,
+  },
+  snackTasteTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  snackTasteSegmentedRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  snackTasteTab: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  snackTasteTabLabel: {
+    fontSize: 13,
+  },
+  snackTasteTabDesc: {
+    fontSize: 10,
+    marginTop: 2,
+    textAlign: 'center',
   },
 });

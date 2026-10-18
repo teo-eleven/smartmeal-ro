@@ -6,6 +6,7 @@ import {
   DietType,
   FoodTier,
   GroceryListItem,
+  HealthGoalTag,
   MealPlan,
   MealPlanDay,
   MealSlot,
@@ -170,6 +171,9 @@ export interface AppState {
   toggleFavouriteRecipe: (recipeId: string) => void;
   clearPantryStock: () => void;
   toggleAvoidedAllergen: (allergen: Allergen) => void;
+  toggleHealthGoalTag: (tag: HealthGoalTag) => void;
+  setHealthGoalTags: (tags: HealthGoalTag[]) => void;
+  setSnackTastePreference: (preference: 'sweet' | 'savory' | 'both') => void;
   toggleAppliance: (appliance: Appliance) => void;
   setExcludePantryStaples: (exclude: boolean) => void;
   setMealSlots: (slots: MealSlot[]) => void;
@@ -1761,6 +1765,41 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (rejection) return rejection;
 
       return applyPreferencesWithRebuild(state, nextPrefs);
+    });
+  },
+
+  toggleHealthGoalTag: (tag: HealthGoalTag) => {
+    set((state) => {
+      const current = state.preferences.healthGoalTags || [];
+      const updated = current.includes(tag)
+        ? current.filter((t) => t !== tag)
+        : [...current, tag];
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        healthGoalTags: updated,
+      };
+      return applyPreferenceStep(state, nextPrefs);
+    });
+  },
+
+  setHealthGoalTags: (tags: HealthGoalTag[]) => {
+    set((state) => {
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        healthGoalTags: tags,
+      };
+      return applyPreferenceStep(state, nextPrefs);
+    });
+  },
+
+  setSnackTastePreference: (preference: 'sweet' | 'savory' | 'both') => {
+    set((state) => {
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        snackTastePreference: preference,
+      };
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
     });
   },
 

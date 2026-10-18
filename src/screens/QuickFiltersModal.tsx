@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Appliance, DayOfWeek, MoodTag, UserPreferences } from '../types';
+import { Appliance, DayOfWeek, HealthGoalTag, MoodTag, UserPreferences } from '../types';
+import { HEALTH_GOALS_CATALOG } from '../data/healthTags';
 import { getAppTheme } from '../styles/theme';
 
 interface QuickFiltersModalProps {
@@ -70,6 +71,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
   const [budgetRon, setBudgetRon] = useState<number>(preferences.budgetRon);
   const [moodTags, setMoodTags] = useState<MoodTag[]>(preferences.moodTags);
   const [appliances, setAppliances] = useState<Appliance[]>(preferences.appliances || ['hob', 'oven']);
+  const [healthGoalTags, setHealthGoalTags] = useState<HealthGoalTag[]>(preferences.healthGoalTags || []);
   const [budgetInputText, setBudgetInputText] = useState<string>(String(preferences.budgetRon));
 
   if (!visible) return null;
@@ -104,6 +106,14 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
     }
   };
 
+  const toggleHealthGoal = (tag: HealthGoalTag) => {
+    if (healthGoalTags.includes(tag)) {
+      setHealthGoalTags(healthGoalTags.filter((t) => t !== tag));
+    } else {
+      setHealthGoalTags([...healthGoalTags, tag]);
+    }
+  };
+
   const handleSave = () => {
     const finalBudget = Math.max(50, Number(budgetInputText) || budgetRon);
     onApplyFilters({
@@ -112,6 +122,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
       budgetRon: finalBudget,
       moodTags,
       appliances,
+      healthGoalTags,
     });
     onClose();
   };
@@ -356,6 +367,51 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                       >
                         {app.label}
                       </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Section 6: Obiective de Sănătate & Stil de Viață */}
+            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>🩺 Obiective de Sănătate & Nutriție</Text>
+                <Text style={[styles.sectionSubtitle, { color: theme.textMuted }]}>
+                  {healthGoalTags.length} active
+                </Text>
+              </View>
+
+              <View style={styles.moodGrid}>
+                {HEALTH_GOALS_CATALOG.map((goal) => {
+                  const isActive = healthGoalTags.includes(goal.id);
+                  return (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      key={goal.id}
+                      onPress={() => toggleHealthGoal(goal.id)}
+                      style={[
+                        styles.moodChip,
+                        {
+                          backgroundColor: isActive ? theme.primaryLight : theme.btnBg,
+                          borderColor: isActive ? theme.primary : theme.border,
+                        },
+                      ]}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={styles.moodChipIcon}>{goal.icon}</Text>
+                      <Text
+                        style={[
+                          styles.moodChipText,
+                          {
+                            color: isActive ? theme.primary : theme.text,
+                            fontWeight: isActive ? '800' : '600',
+                          },
+                        ]}
+                      >
+                        {goal.shortBadgeRo}
+                      </Text>
+                      {isActive && <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '900', marginLeft: 4 }}>✓</Text>}
                     </TouchableOpacity>
                   );
                 })}

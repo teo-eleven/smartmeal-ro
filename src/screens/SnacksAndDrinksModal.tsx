@@ -24,7 +24,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
   onClose,
   isDark,
 }) => {
-  const { preferences, toggleSnackProduct, toggleDrinkProduct, setIncludeAlcohol } = useAppStore();
+  const { preferences, toggleSnackProduct, toggleDrinkProduct, setIncludeAlcohol, setSnackTastePreference } = useAppStore();
   const { contentMaxWidth, isDesktop, isTablet } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;
 
@@ -90,111 +90,162 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
               </View>
             </View>
 
-            {/* SECTION 1: RONȚĂIELI SĂRATE */}
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              🍿 Chipsuri & Snacks Sărate
-            </Text>
-            <View style={[styles.productsGrid, isLargeScreen && styles.productsGridDesktop]}>
-              {getRetailProductsByCategory('snack_savory').map((prod) => {
-                const isSelected = selectedSnacks.includes(prod.id);
-                const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
-                return (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    key={prod.id}
-                    onPress={() => toggleSnackProduct(prod.id)}
-                    activeOpacity={0.7}
-                    style={[
-                      styles.productCard,
-                      isLargeScreen && styles.productCardDesktop,
-                      {
-                        backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
-                        borderColor: isSelected ? theme.primary : theme.border,
-                      },
-                    ]}
-                  >
-                    <Text style={styles.productIcon}>{prod.icon}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.productName, { color: isSelected ? theme.primary : theme.text }]}>
-                        {prod.name}
-                      </Text>
-                      <Text style={[styles.productDetails, { color: theme.textMuted }]}>
-                        {prod.brand} • {prod.packageSize}
-                      </Text>
-                    </View>
-                    <View style={styles.priceContainer}>
-                      <Text style={[styles.productPrice, { color: isSelected ? theme.primary : theme.text }]}>
-                        {price.toFixed(2)} lei
-                      </Text>
-                      <View
+            {/* Taste Preference Filter Tabs */}
+            <View style={[styles.tasteFilterBox, { backgroundColor: theme.accentBg, borderColor: theme.border }]}>
+              <Text style={[styles.tasteFilterTitle, { color: theme.text }]}>Preferință:</Text>
+              <View style={styles.tasteFilterRow}>
+                {[
+                  { id: 'savory', label: '🍿 Sărat' },
+                  { id: 'sweet', label: '🍫 Dulce' },
+                  { id: 'both', label: '⚖️ Ambele' },
+                ].map((tab) => {
+                  const isCurrent = (preferences.snackTastePreference || 'both') === tab.id;
+                  return (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      key={tab.id}
+                      onPress={() => setSnackTastePreference(tab.id as 'sweet' | 'savory' | 'both')}
+                      style={[
+                        styles.tasteFilterTab,
+                        {
+                          backgroundColor: isCurrent ? theme.primaryLight : 'transparent',
+                          borderColor: isCurrent ? theme.primary : theme.border,
+                        },
+                      ]}
+                      activeOpacity={0.7}
+                    >
+                      <Text
                         style={[
-                          styles.checkbox,
-                          {
-                            backgroundColor: isSelected ? theme.primary : 'transparent',
-                            borderColor: isSelected ? theme.primary : theme.border,
-                          },
+                          styles.tasteFilterText,
+                          { color: isCurrent ? theme.primary : theme.text, fontWeight: isCurrent ? '800' : '600' },
                         ]}
                       >
-                        {isSelected && <Text style={[styles.checkIcon, { color: theme.primaryText }]}>✓</Text>}
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
+                        {tab.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
 
-            {/* SECTION 2: DULCIURI & CIOCOLATĂ */}
-            <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>
-              🍫 Ciocolată & Dulciuri
-            </Text>
-            <View style={[styles.productsGrid, isLargeScreen && styles.productsGridDesktop]}>
-              {getRetailProductsByCategory('snack_sweet').map((prod) => {
-                const isSelected = selectedSnacks.includes(prod.id);
-                const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
-                return (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    key={prod.id}
-                    onPress={() => toggleSnackProduct(prod.id)}
-                    activeOpacity={0.7}
-                    style={[
-                      styles.productCard,
-                      isLargeScreen && styles.productCardDesktop,
-                      {
-                        backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
-                        borderColor: isSelected ? theme.primary : theme.border,
-                      },
-                    ]}
-                  >
-                    <Text style={styles.productIcon}>{prod.icon}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.productName, { color: isSelected ? theme.primary : theme.text }]}>
-                        {prod.name}
-                      </Text>
-                      <Text style={[styles.productDetails, { color: theme.textMuted }]}>
-                        {prod.brand} • {prod.packageSize}
-                      </Text>
-                    </View>
-                    <View style={styles.priceContainer}>
-                      <Text style={[styles.productPrice, { color: isSelected ? theme.primary : theme.text }]}>
-                        {price.toFixed(2)} lei
-                      </Text>
-                      <View
-                        style={[
-                          styles.checkbox,
-                          {
-                            backgroundColor: isSelected ? theme.primary : 'transparent',
-                            borderColor: isSelected ? theme.primary : theme.border,
-                          },
-                        ]}
-                      >
-                        {isSelected && <Text style={[styles.checkIcon, { color: theme.primaryText }]}>✓</Text>}
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {/* DYNAMIC SNACK SECTIONS */}
+            {(() => {
+              const savorySection = (
+                <View key="savory-modal-section">
+                  <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 12 }]}>
+                    🍿 Chipsuri & Snacks Sărate
+                  </Text>
+                  <View style={[styles.productsGrid, isLargeScreen && styles.productsGridDesktop]}>
+                    {getRetailProductsByCategory('snack_savory').map((prod) => {
+                      const isSelected = selectedSnacks.includes(prod.id);
+                      const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
+                      return (
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          key={prod.id}
+                          onPress={() => toggleSnackProduct(prod.id)}
+                          activeOpacity={0.7}
+                          style={[
+                            styles.productCard,
+                            isLargeScreen && styles.productCardDesktop,
+                            {
+                              backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                              borderColor: isSelected ? theme.primary : theme.border,
+                            },
+                          ]}
+                        >
+                          <Text style={styles.productIcon}>{prod.icon}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.productName, { color: isSelected ? theme.primary : theme.text }]}>
+                              {prod.name}
+                            </Text>
+                            <Text style={[styles.productDetails, { color: theme.textMuted }]}>
+                              {prod.brand} • {prod.packageSize}
+                            </Text>
+                          </View>
+                          <View style={styles.priceContainer}>
+                            <Text style={[styles.productPrice, { color: isSelected ? theme.primary : theme.text }]}>
+                              {price.toFixed(2)} lei
+                            </Text>
+                            <View
+                              style={[
+                                styles.checkbox,
+                                {
+                                  backgroundColor: isSelected ? theme.primary : 'transparent',
+                                  borderColor: isSelected ? theme.primary : theme.border,
+                                },
+                              ]}
+                            >
+                              {isSelected && <Text style={[styles.checkIcon, { color: theme.primaryText }]}>✓</Text>}
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              );
+
+              const sweetSection = (
+                <View key="sweet-modal-section">
+                  <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>
+                    🍫 Ciocolată & Dulciuri
+                  </Text>
+                  <View style={[styles.productsGrid, isLargeScreen && styles.productsGridDesktop]}>
+                    {getRetailProductsByCategory('snack_sweet').map((prod) => {
+                      const isSelected = selectedSnacks.includes(prod.id);
+                      const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
+                      return (
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          key={prod.id}
+                          onPress={() => toggleSnackProduct(prod.id)}
+                          activeOpacity={0.7}
+                          style={[
+                            styles.productCard,
+                            isLargeScreen && styles.productCardDesktop,
+                            {
+                              backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                              borderColor: isSelected ? theme.primary : theme.border,
+                            },
+                          ]}
+                        >
+                          <Text style={styles.productIcon}>{prod.icon}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.productName, { color: isSelected ? theme.primary : theme.text }]}>
+                              {prod.name}
+                            </Text>
+                            <Text style={[styles.productDetails, { color: theme.textMuted }]}>
+                              {prod.brand} • {prod.packageSize}
+                            </Text>
+                          </View>
+                          <View style={styles.priceContainer}>
+                            <Text style={[styles.productPrice, { color: isSelected ? theme.primary : theme.text }]}>
+                              {price.toFixed(2)} lei
+                            </Text>
+                            <View
+                              style={[
+                                styles.checkbox,
+                                {
+                                  backgroundColor: isSelected ? theme.primary : 'transparent',
+                                  borderColor: isSelected ? theme.primary : theme.border,
+                                },
+                              ]}
+                            >
+                              {isSelected && <Text style={[styles.checkIcon, { color: theme.primaryText }]}>✓</Text>}
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              );
+
+              return preferences.snackTastePreference === 'sweet'
+                ? [sweetSection, savorySection]
+                : [savorySection, sweetSection];
+            })()}
 
             {/* SECTION 3: BĂUTURI RĂCORITOARE & APĂ */}
             <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>
@@ -538,5 +589,36 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '800',
+  },
+  tasteFilterBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 10,
+    marginTop: 14,
+    marginBottom: 4,
+  },
+  tasteFilterTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  tasteFilterRow: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 6,
+  },
+  tasteFilterTab: {
+    flex: 1,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tasteFilterText: {
+    fontSize: 12,
   },
 });

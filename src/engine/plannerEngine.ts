@@ -15,6 +15,7 @@ import { calculateRecipePortionCost } from './budgetCalculator';
 import { aggregateGroceryList } from './groceryAggregator';
 import { isRecipeMatchingDiets } from '../utils/dietCompatibility';
 import { isRecipeSafeForAllergies } from '../utils/allergenFilter';
+import { recipeContainsPork } from '../data/healthTags';
 
 export function getSlotLabelRo(slot: MealSlot): string {
   switch (slot) {
@@ -81,10 +82,12 @@ export function getEligibleRecipes(preferences: UserPreferences): Recipe[] {
       : [preferences.dietType];
 
   const rejected = new Set(preferences.dislikedRecipeIds ?? []);
+  const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
 
   return RECIPES.filter(
     (recipe) =>
       !rejected.has(recipe.id) &&
+      (!requirePorkFree || !recipeContainsPork(recipe)) &&
       isRecipeMatchingDiets(recipe, activeDiets) &&
       isRecipeSafeForAllergies(recipe, preferences.avoidedAllergens) &&
       hasRequiredAppliances(recipe.appliances, preferences.appliances) &&
@@ -216,6 +219,10 @@ export function getAlternativeRecipes(
     const bStoreMatch =
       preferences.supermarketId && b.storeSignature === preferences.supermarketId ? 1 : 0;
     if (bStoreMatch !== aStoreMatch) return bStoreMatch - aStoreMatch;
+
+    const aHealthMatches = (a.healthTags || []).filter((t) => preferences.healthGoalTags?.includes(t)).length;
+    const bHealthMatches = (b.healthTags || []).filter((t) => preferences.healthGoalTags?.includes(t)).length;
+    if (bHealthMatches !== aHealthMatches) return bHealthMatches - aHealthMatches;
 
     const aMatch = a.tier === effectiveTier ? 1 : 0;
     const bMatch = b.tier === effectiveTier ? 1 : 0;
@@ -444,6 +451,14 @@ export function generateMealPlan(
       recipe.moodTags.forEach((tag) => {
         if (preferences.moodTags.includes(tag)) {
           score += 15;
+        }
+      });
+    }
+
+    if (preferences.healthGoalTags && preferences.healthGoalTags.length > 0) {
+      recipe.healthTags?.forEach((tag) => {
+        if (preferences.healthGoalTags?.includes(tag)) {
+          score += 25;
         }
       });
     }
@@ -761,14 +776,16 @@ export function swapMealInPlan(
     throw new Error('[PlannerEngine] Nu există alte rețete compatibile pentru swap.');
   }
 
-  // Pick the best replacement matching foodTier and mood preferences
+  // Pick the best replacement matching foodTier, mood and health preferences
   const effectiveTier = preferences.foodTier || 'medium';
   availableCandidates.sort((a, b) => {
     const aTier = a.tier === effectiveTier ? 20 : 0;
     const bTier = b.tier === effectiveTier ? 20 : 0;
     const aMatches = a.moodTags.filter((t) => preferences.moodTags.includes(t)).length;
     const bMatches = b.moodTags.filter((t) => preferences.moodTags.includes(t)).length;
-    return bTier + bMatches - (aTier + aMatches);
+    const aHealth = (a.healthTags || []).filter((t) => preferences.healthGoalTags?.includes(t)).length;
+    const bHealth = (b.healthTags || []).filter((t) => preferences.healthGoalTags?.includes(t)).length;
+    return bTier + bMatches * 10 + bHealth * 15 - (aTier + aMatches * 10 + aHealth * 15);
   });
 
   const replacementRecipe = availableCandidates[0];

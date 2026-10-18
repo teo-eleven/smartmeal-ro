@@ -12,6 +12,7 @@ import { RecipeVisual } from './RecipeVisual';
 
 import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
+import { getHealthGoalMeta } from '../data/healthTags';
 
 interface MealCardProps {
   day: MealPlanDay;
@@ -344,6 +345,27 @@ export const MealCard: React.FC<MealCardProps> = ({
             <View style={[styles.pillBadge, { backgroundColor: theme.btnBg, borderColor: theme.border }]}>
               <Text style={[styles.pillText, { color: theme.text }]}>{primaryMood}</Text>
             </View>
+            {(() => {
+              const metaTag = recipe.healthTags?.find((t) => t !== 'pork_free');
+              if (!metaTag) return null;
+              const meta = getHealthGoalMeta(metaTag);
+              if (!meta) return null;
+              return (
+                <View
+                  style={[
+                    styles.pillBadge,
+                    {
+                      backgroundColor: isDark ? 'rgba(52, 199, 89, 0.15)' : '#e8f5e9',
+                      borderColor: isDark ? 'rgba(52, 199, 89, 0.4)' : '#c8e6c9',
+                    },
+                  ]}
+                >
+                  <Text style={[styles.pillText, { color: isDark ? '#4ade80' : '#15803d', fontWeight: '800' }]}>
+                    {meta.icon} {meta.shortBadgeRo}
+                  </Text>
+                </View>
+              );
+            })()}
           </View>
 
           {/* The dish name is set over the visual just above; repeating it here said the

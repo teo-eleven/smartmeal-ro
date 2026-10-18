@@ -24,6 +24,7 @@ import { ALLERGEN_CATALOG } from '../data/allergens';
 import { getEligibleRecipes } from '../engine/plannerEngine';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { formatIngredientWithHousehold } from '../utils/householdUnits';
+import { getHealthGoalMeta } from '../data/healthTags';
 
 function getStoreBadgeBg(store?: SupermarketId): string {
   switch (store) {
@@ -356,6 +357,15 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       <Text style={styles.heroPillText}>{recipe.storeBadgeLabel}</Text>
                     </View>
                   )}
+                  {recipe.healthTags?.filter((t) => t !== 'pork_free').map((tag) => {
+                    const meta = getHealthGoalMeta(tag);
+                    if (!meta) return null;
+                    return (
+                      <View key={tag} style={[styles.heroPill, { backgroundColor: 'rgba(52, 199, 89, 0.85)' }]}>
+                        <Text style={styles.heroPillText}>{meta.icon} {meta.shortBadgeRo}</Text>
+                      </View>
+                    );
+                  })}
                 </View>
               </View>
 

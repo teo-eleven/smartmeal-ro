@@ -1,5 +1,6 @@
-import { FoodTier, MealSlot, Recipe, SupermarketId } from '../types';
+import { FoodTier, HealthGoalTag, MealSlot, Recipe, SupermarketId } from '../types';
 import { EXTENDED_RECIPES } from './extendedRecipes';
+import { getRecipeHealthTags } from './healthTags';
 
 const BASE_RECIPES: Recipe[] = [
   {
@@ -3330,13 +3331,69 @@ const RECIPE_STORE_SPEC_MAP: Record<string, RecipeStoreSpec> = {
   },
 };
 
+export const RECIPE_HEALTH_TAGS_MAP: Record<string, HealthGoalTag[]> = {
+  // Fish & Seafood (Omega-3 & Anti-inflammatory & PCOS & Heart)
+  somon_la_tigaie_orez: ['anti_inflammatory', 'pcos_friendly', 'diabetic_friendly', 'heart_healthy'],
+  somon_cuptor_legume: ['anti_inflammatory', 'pcos_friendly', 'diabetic_friendly', 'heart_healthy'],
+  dorada_cuptor_lamaie_ierburi: ['anti_inflammatory', 'pcos_friendly', 'diabetic_friendly', 'heart_healthy'],
+  tagliatelle_creveti_usturoi: ['anti_inflammatory', 'heart_healthy'],
+  creveti_saganaki_feta_rosii: ['anti_inflammatory', 'heart_healthy'],
+  wrap_ton_avocado: ['anti_inflammatory', 'heart_healthy', 'pcos_friendly'],
+  paste_ton_rosii: ['anti_inflammatory', 'heart_healthy'],
+  toast_crema_branza_somon_afumat: ['anti_inflammatory', 'heart_healthy', 'pcos_friendly'],
+
+  // Poultry & High Protein (PCOS & Anti-inflammatory & Diabetic)
+  pui_airfryer_cartofi: ['pcos_friendly'],
+  pulpe_pui_cuptor_usturoi: ['anti_inflammatory', 'pcos_friendly', 'heart_healthy'],
+  curry_pui_lapte_cocos: ['anti_inflammatory', 'pcos_friendly'],
+  salata_calda_pui_crutoane: ['anti_inflammatory', 'pcos_friendly', 'high_fiber'],
+  orez_pui_legume_wok: ['anti_inflammatory', 'pcos_friendly'],
+  ostropel_pui_piure_cartofi: ['pcos_friendly'],
+  ciorba_radauteana_rapida: ['diabetic_friendly', 'pcos_friendly'],
+  curcan_stirfry_legume_soia: ['anti_inflammatory', 'pcos_friendly', 'diabetic_friendly'],
+  aripioare_pui_airfryer: ['pcos_friendly'],
+  quesadilla_pui_cascaval: ['pcos_friendly'],
+
+  // Plant-based, Legumes & High Fiber
+  hummus_cremos_legume_crocante: ['anti_inflammatory', 'high_fiber', 'diabetic_friendly', 'heart_healthy', 'pcos_friendly'],
+  guacamole_chips_nachos: ['anti_inflammatory', 'high_fiber', 'heart_healthy'],
+  salata_calda_naut_spanac: ['anti_inflammatory', 'high_fiber', 'diabetic_friendly', 'heart_healthy'],
+  curry_naut_cocos_orez: ['anti_inflammatory', 'high_fiber', 'diabetic_friendly', 'heart_healthy'],
+  ghiveci_legume_cuptor: ['anti_inflammatory', 'high_fiber', 'diabetic_friendly', 'heart_healthy'],
+  ciorba_legume_lamaie: ['anti_inflammatory', 'high_fiber', 'diabetic_friendly', 'heart_healthy'],
+  mancare_mazare_morcov_marar: ['high_fiber', 'diabetic_friendly', 'heart_healthy'],
+  tocanita_fasole_boabe_boia: ['high_fiber', 'diabetic_friendly', 'heart_healthy'],
+  chili_vegetal_fasole_porumb: ['high_fiber', 'heart_healthy'],
+  dovlecei_pane_cuptor: ['anti_inflammatory'],
+  ciuperci_umplute_cuptor: ['anti_inflammatory', 'diabetic_friendly', 'pcos_friendly'],
+  chiftele_legume_airfryer: ['high_fiber', 'heart_healthy'],
+  salata_greceasca_telemea: ['anti_inflammatory', 'heart_healthy'],
+  supa_crema_legume_crutoane: ['anti_inflammatory', 'high_fiber', 'diabetic_friendly'],
+  bruschete_rosii_usturoi_busuioc: ['anti_inflammatory', 'heart_healthy'],
+  tartine_avocado_rosii_cherry: ['anti_inflammatory', 'heart_healthy'],
+  dovlecei_umpluti_orez_cuptor: ['anti_inflammatory', 'high_fiber', 'heart_healthy'],
+
+  // Breakfast & Oats & Snacks
+  terci_ovaz_fructe_miere: ['high_fiber', 'heart_healthy'],
+  terci_ovaz_vegan_banane: ['high_fiber', 'heart_healthy'],
+  ovaz_peste_noapte_mar_nuci: ['high_fiber', 'heart_healthy', 'anti_inflammatory'],
+  budinca_chia_fructe_padure: ['anti_inflammatory', 'high_fiber', 'pcos_friendly', 'heart_healthy'],
+  omleta_cremoasa_spanac_branza: ['pcos_friendly', 'diabetic_friendly'],
+  omleta_taraneasca_telemea: ['diabetic_friendly', 'pcos_friendly'],
+  toast_ou_avocado: ['anti_inflammatory', 'pcos_friendly', 'heart_healthy'],
+  mix_nuci_seminte_miere: ['high_fiber', 'heart_healthy', 'anti_inflammatory'],
+};
+
 export const RECIPES: Recipe[] = [
   ...BASE_RECIPES.map((recipe) => {
     const storeSpec = RECIPE_STORE_SPEC_MAP[recipe.id];
+    const explicitHealth = RECIPE_HEALTH_TAGS_MAP[recipe.id] ?? recipe.healthTags;
+    const finalHealthTags = getRecipeHealthTags({ ...recipe, healthTags: explicitHealth });
     return {
       ...recipe,
       suitableSlots: recipe.suitableSlots ?? RECIPE_SLOTS_MAP[recipe.id] ?? ['dinner', 'lunch'],
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'medium',
+      healthTags: finalHealthTags,
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
       storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
@@ -3344,9 +3401,12 @@ export const RECIPES: Recipe[] = [
   }),
   ...NEW_RECIPES.map((recipe) => {
     const storeSpec = RECIPE_STORE_SPEC_MAP[recipe.id];
+    const explicitHealth = RECIPE_HEALTH_TAGS_MAP[recipe.id] ?? recipe.healthTags;
+    const finalHealthTags = getRecipeHealthTags({ ...recipe, healthTags: explicitHealth });
     return {
       ...recipe,
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'medium',
+      healthTags: finalHealthTags,
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
       storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
@@ -3354,10 +3414,13 @@ export const RECIPES: Recipe[] = [
   }),
   ...EXTENDED_RECIPES.map((recipe) => {
     const storeSpec = RECIPE_STORE_SPEC_MAP[recipe.id];
+    const explicitHealth = RECIPE_HEALTH_TAGS_MAP[recipe.id] ?? recipe.healthTags;
+    const finalHealthTags = getRecipeHealthTags({ ...recipe, healthTags: explicitHealth });
     return {
       ...recipe,
       suitableSlots: recipe.suitableSlots ?? ['lunch', 'dinner'],
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'basic',
+      healthTags: finalHealthTags,
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
       storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
