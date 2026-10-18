@@ -3324,6 +3324,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         (m) =>
           m.isLeftover &&
           (m.leftoverFromMealId === originalMealId ||
+            (originalMeal && m.recipe.id === originalMeal.recipe.id) ||
             (m.slot === targetSlot && (dIdx === dayIndex + 1 || m.leftoverFromDay === dayOfWeek)))
       );
 
@@ -3332,6 +3333,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           if (
             m.isLeftover &&
             (m.leftoverFromMealId === originalMealId ||
+              (originalMeal && m.recipe.id === originalMeal.recipe.id) ||
               (m.slot === targetSlot && (dIdx === dayIndex + 1 || m.leftoverFromDay === dayOfWeek)))
           ) {
             return {

@@ -49,7 +49,6 @@ function AppShell() {
     authStatus,
     isHydrated,
     themeMode,
-    cycleThemeMode,
     activeView,
     currentPlan,
     groceryItems,
@@ -77,8 +76,8 @@ function AppShell() {
     generatePlan,
   } = useAppStore();
 
-  // Binary theme toggle: dark (negru pur) sau light (alb)
-  const isDark = themeMode === 'light' ? false : true;
+  // Permanently locked to the luxury Warm Forest & Amber Lantern theme
+  const isDark = true;
 
   const { isDesktop, isMobile, contentMaxWidth } = useResponsive();
 
@@ -382,22 +381,6 @@ function AppShell() {
           )}
 
           <View style={styles.topBarActions}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={`Temă: ${THEME_LABELS[themeMode]}. Apasă pentru a schimba.`}
-              onPress={cycleThemeMode}
-              {...glass('pill')}
-              style={[
-                styles.syncBtn,
-                { backgroundColor: theme.accentBg, borderColor: theme.border },
-              ]}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.syncBtnText, { color: theme.textMuted }]}>
-                {THEME_ICONS[themeMode]}
-              </Text>
-            </TouchableOpacity>
-
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel="Contul meu"

@@ -1123,8 +1123,8 @@ const styles = StyleSheet.create({
   mealCol: {
     flexGrow: 1,
     flexShrink: 0,
-    flexBasis: 300,
-    minWidth: 280,
+    flexBasis: 320,
+    minWidth: 300,
     maxWidth: 460,
     transition: 'all 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
   },

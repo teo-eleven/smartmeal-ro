@@ -294,12 +294,31 @@ export const MealCard: React.FC<MealCardProps> = ({
           />
 
           {/* Floating Day Badge (Top-Left) */}
-          <View style={[styles.floatingBadge, styles.dayBadge, { backgroundColor: isDark ? 'rgba(28, 36, 30, 0.92)' : 'rgba(255, 255, 255, 0.94)' }]}>
+          <View
+            style={[
+              styles.floatingBadge,
+              styles.dayBadge,
+              isDessert && styles.dessertBadgeRow,
+              { backgroundColor: isDark ? 'rgba(28, 36, 30, 0.92)' : 'rgba(255, 255, 255, 0.94)' },
+            ]}
+          >
             <Text style={[styles.dayBadgeText, { color: getSlotColor(meal?.slot, isDark) }]} numberOfLines={1}>
               {isDessert
                 ? '🍰 DESERT'
                 : `${DAY_LABELS[day.dayOfWeek].toUpperCase()}${effectiveSlotLabel ? ` • ${effectiveSlotLabel.toUpperCase()}` : ''}`}
             </Text>
+            {isDessert && onRemoveMeal && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Șterge desertul din această zi"
+                onPress={onRemoveMeal}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.headerRemoveBtn}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.headerRemoveBtnText}>✕</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Floating Price Badge (Top-Right) */}
@@ -310,10 +329,17 @@ export const MealCard: React.FC<MealCardProps> = ({
               { backgroundColor: isDark ? 'rgba(28, 36, 30, 0.92)' : 'rgba(255, 255, 255, 0.94)' },
             ]}
           >
-            <Text style={[styles.priceBadgeText, { color: theme.primary }]} numberOfLines={1}>~{costRon} lei</Text>
-            <Text style={[styles.priceSubText, { color: theme.textMuted }]} numberOfLines={1}>
-              {servings > 1 ? `total • ~${portionCost.toFixed(2)}/p` : '/ porție'}
-            </Text>
+            <View style={styles.priceMainRow}>
+              <Text style={[styles.priceBadgeText, { color: theme.primary }]} numberOfLines={1}>~{costRon} lei</Text>
+              {servings === 1 && (
+                <Text style={[styles.priceSubText, { color: theme.textMuted }]} numberOfLines={1}>/ porție</Text>
+              )}
+            </View>
+            {servings > 1 && (
+              <Text style={[styles.priceSubText, { color: theme.textMuted }]} numberOfLines={1}>
+                total • ~{portionCost.toFixed(2)}/p
+              </Text>
+            )}
           </View>
 
           {/* Bottom Info Floating on Image */}
@@ -454,20 +480,6 @@ export const MealCard: React.FC<MealCardProps> = ({
                   </Text>
                 </View>
               )}
-
-              {onRemoveMeal && (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={onRemoveMeal}
-                  style={[
-                    styles.removeBtn,
-                    { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.18)' : '#fee2e2' },
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.removeBtnText, { color: '#ef4444' }]}>✕ Șterge desert</Text>
-                </TouchableOpacity>
-              )}
             </View>
 
             {/* Cheapest suggestion the planner can make, so it sits with the other actions */}
@@ -520,7 +532,7 @@ export const MealCard: React.FC<MealCardProps> = ({
                 </TouchableOpacity>
               )}
 
-              {onToggleEatOut && !meal?.isLeftover && (
+              {onToggleEatOut && !meal?.isLeftover && !isDessert && (
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel="Mănânc în oraș la această masă"
@@ -608,7 +620,26 @@ const styles = StyleSheet.create({
   dayBadge: {
     top: 12,
     left: 12,
-    maxWidth: '48%',
+    maxWidth: '52%',
+  },
+  dessertBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerRemoveBtn: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerRemoveBtnText: {
+    color: '#ef4444',
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 13,
   },
   dayBadgeText: {
     fontSize: 11,
@@ -618,7 +649,13 @@ const styles = StyleSheet.create({
   priceBadge: {
     top: 12,
     right: 12,
-    maxWidth: '48%',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+  },
+  priceMainRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,

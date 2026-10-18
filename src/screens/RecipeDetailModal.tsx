@@ -249,7 +249,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <View style={[styles.modalCard, isWide && styles.modalCardWide, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* Floating Top Navigation Header */}
           <View style={[styles.topBar, { backgroundColor: theme.glassBg, borderBottomColor: theme.border }]}>
           <TouchableOpacity
@@ -359,15 +359,6 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       <Text style={styles.heroPillText}>{recipe.storeBadgeLabel}</Text>
                     </View>
                   )}
-                  {recipe.healthTags?.filter((t) => t !== 'pork_free').map((tag) => {
-                    const meta = getHealthGoalMeta(tag);
-                    if (!meta) return null;
-                    return (
-                      <View key={tag} style={[styles.heroPill, { backgroundColor: 'rgba(52, 199, 89, 0.85)' }]}>
-                        <Text style={styles.heroPillText}>{meta.icon} {meta.shortBadgeRo}</Text>
-                      </View>
-                    );
-                  })}
                 </View>
               </View>
 
@@ -375,6 +366,35 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               <View style={[styles.detailsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <Text style={[styles.title, { color: theme.text }]}>{recipe.title}</Text>
                 <Text style={[styles.description, { color: theme.textMuted }]}>{recipe.description}</Text>
+
+                {/* Health & Wellness Badges Strip */}
+                {recipe.healthTags && recipe.healthTags.filter((t) => t !== 'pork_free').length > 0 && (
+                  <View style={styles.healthTagsRow}>
+                    {recipe.healthTags
+                      .filter((t) => t !== 'pork_free')
+                      .map((tag) => {
+                        const meta = getHealthGoalMeta(tag);
+                        if (!meta) return null;
+                        return (
+                          <View
+                            key={tag}
+                            style={[
+                              styles.healthTagBadge,
+                              {
+                                backgroundColor: isDark ? 'rgba(52, 199, 89, 0.15)' : '#e8f5e9',
+                                borderColor: isDark ? 'rgba(52, 199, 89, 0.35)' : '#a5d6a7',
+                              },
+                            ]}
+                          >
+                            <Text style={styles.healthTagIcon}>{meta.icon}</Text>
+                            <Text style={[styles.healthTagText, { color: isDark ? '#4ade80' : '#2e7d32' }]}>
+                              {meta.shortBadgeRo}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                  </View>
+                )}
 
                 {/* Price transparent indicator */}
                 <View style={[styles.priceBox, { backgroundColor: theme.primaryLight, borderColor: theme.primary }]}>
@@ -947,6 +967,10 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 20,
   },
+  modalCardWide: {
+    maxWidth: 1140,
+    maxHeight: '92%',
+  },
   verdictRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   verdictBtn: {
     flex: 1,
@@ -1098,6 +1122,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 14,
+  },
+  healthTagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  healthTagBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  healthTagIcon: {
+    fontSize: 13,
+  },
+  healthTagText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   rowText: {
     flex: 1,

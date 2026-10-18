@@ -119,4 +119,33 @@ describe('replaceMealWithRecipe se apără singur', () => {
     const sum = groceryItems.reduce((total, item) => total + item.estimatedPriceRon, 0);
     expect(Math.abs(sum - currentPlan!.totalCartCostRon)).toBeLessThan(0.02);
   });
+
+  test('când dublez desertul de luni pe marți și apoi schimb desertul de luni, desertul de marți se actualizează automat cu noua rețetă', () => {
+    boot();
+    useAppStore.getState().addExtraMealToDay('monday', 'dessert');
+    let plan = useAppStore.getState().currentPlan!;
+    let mon = plan.days.find((d) => d.dayOfWeek === 'monday')!;
+    let monDessert = mon.meals.find((m) => m.slot === 'dessert')!;
+
+    useAppStore.getState().cookDoubleFor('monday', monDessert.id);
+    plan = useAppStore.getState().currentPlan!;
+    let tue = plan.days.find((d) => d.dayOfWeek === 'tuesday')!;
+    let tueDessert = tue.meals.find((m) => m.slot === 'dessert');
+    expect(tueDessert).toBeDefined();
+    expect(tueDessert!.isLeftover).toBe(true);
+
+    const newDessert = findRecipe(
+      (r) => (r.suitableSlots?.includes('dessert') ?? false) && r.id !== monDessert.recipe.id
+    );
+
+    useAppStore.getState().replaceMealWithRecipe('monday', newDessert, 'dessert');
+    plan = useAppStore.getState().currentPlan!;
+    mon = plan.days.find((d) => d.dayOfWeek === 'monday')!;
+    tue = plan.days.find((d) => d.dayOfWeek === 'tuesday')!;
+    monDessert = mon.meals.find((m) => m.slot === 'dessert')!;
+    tueDessert = tue.meals.find((m) => m.slot === 'dessert')!;
+
+    expect(monDessert.recipe.id).toBe(newDessert.id);
+    expect(tueDessert.recipe.id).toBe(newDessert.id);
+  });
 });
