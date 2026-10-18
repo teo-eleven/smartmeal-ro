@@ -19,7 +19,8 @@ import { QuickFiltersModal } from './QuickFiltersModal';
 import { PantryInventoryModal } from './PantryInventoryModal';
 import { MealPrepModal } from './MealPrepModal';
 import { WeeklyMacroModal } from './WeeklyMacroModal';
-import { SUPERMARKET_LIST } from '../data/supermarkets';
+import { MealsPerDayModal } from './MealsPerDayModal';
+import { BudgetOverrunModal } from './BudgetOverrunModal';
 import { DayOfWeek, FoodTier, MealSlot, Recipe } from '../types';
 import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
@@ -153,6 +154,22 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
   const [detailTarget, setDetailTarget] = useState<{ dayOfWeek: DayOfWeek; slot: MealSlot } | null>(
     null
   );
+
+  const [mealsModalVisible, setMealsModalVisible] = useState(false);
+  const [mealsModalInitialCount, setMealsModalInitialCount] = useState<1 | 2 | 3>(1);
+  const [budgetOverrunModalVisible, setBudgetOverrunModalVisible] = useState(false);
+  const lastOverrunPromptCostRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!currentPlan) return;
+    if (
+      currentPlan.totalCartCostRon > currentPlan.totalBudgetRon &&
+      lastOverrunPromptCostRef.current !== currentPlan.totalCartCostRon
+    ) {
+      lastOverrunPromptCostRef.current = currentPlan.totalCartCostRon;
+      setBudgetOverrunModalVisible(true);
+    }
+  }, [currentPlan?.totalCartCostRon, currentPlan?.totalBudgetRon]);
 
   // Attempted only once per mount: a plan that cannot be built must not re-trigger the
   // effect on every render, which previously turned an impossible setup into a crash loop.
@@ -435,11 +452,22 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
             <View style={[styles.toolbarSection, isDesktop && styles.toolbarSectionDesktop]}>
               <View style={styles.mealsPerDayHeader}>
                 <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>Mese pe zi:</Text>
-                <Text style={[styles.mealsPerDaySubtitle, { color: theme.text }]}>
-                  {baseMealsCount === 1 && '1 Masă (Cină)'}
-                  {baseMealsCount === 2 && '2 Mese (Prânz + Cină)'}
-                  {baseMealsCount === 3 && '3 Mese (Complet)'}
-                </Text>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setMealsModalInitialCount((baseMealsCount as 1 | 2 | 3) || 1);
+                    setMealsModalVisible(true);
+                  }}
+                  style={[
+                    styles.customizeDaysBtn,
+                    { backgroundColor: theme.surfaceSecondary, borderColor: theme.border },
+                  ]}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.customizeDaysBtnText, { color: theme.primary }]}>
+                    ⚙️ Personalizează pe zile
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               <View
@@ -453,8 +481,12 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                     accessibilityRole="button"
                     key={cnt}
                     onPress={() => {
-                      if (baseMealsCount === cnt) return;
-                      setMealsPerDayCount(cnt);
+                      if (cnt === 3) {
+                        setMealsPerDayCount(3);
+                      } else {
+                        setMealsModalInitialCount(cnt);
+                        setMealsModalVisible(true);
+                      }
                     }}
                     {...glass(baseMealsCount === cnt ? 'pill-active' : 'pill')}
                     style={[
@@ -520,9 +552,9 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                       accessibilityRole="button"
                       key={tier}
                       onPress={() => {
-                      if (preferences.foodTier === tier) return;
-                      setFoodTier(tier);
-                    }}
+                        if (preferences.foodTier === tier) return;
+                        setFoodTier(tier);
+                      }}
                       {...glass(isActive ? 'pill-active' : 'pill')}
                       style={[
                         styles.segmentBtn,
@@ -568,62 +600,6 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                         ]}
                       >
                         {label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-
-            {/* Desktop Vertical Divider */}
-            {isDesktop && (
-              <View style={[styles.toolbarDividerV, { backgroundColor: theme.border }]} />
-            )}
-
-            {/* Section 3: which chain the estimate is priced at. Not "real" or "official":
-                the prices are estimates from usual shelf prices, and the app has no link with
-                any chain. */}
-            <View style={[styles.toolbarSection, isDesktop && styles.toolbarSectionDesktop]}>
-              <View style={styles.mealsPerDayHeader}>
-                <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>
-                  Prețuri estimate la:
-                </Text>
-                <Text style={[styles.mealsPerDaySubtitle, { color: theme.primary }]}>
-                  {SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId)?.name ??
-                    preferences.supermarketId}
-                </Text>
-              </View>
-
-              <View style={styles.supermarketPillsRow}>
-                {SUPERMARKET_LIST.map((market) => {
-                  const isActive = preferences.supermarketId === market.id;
-                  return (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      key={market.id}
-                      onPress={() => {
-                        if (preferences.supermarketId === market.id) return;
-                        setSupermarket(market.id);
-                      }}
-                      {...glass(isActive ? 'pill-active' : 'pill')}
-                      style={[
-                        styles.marketPill,
-                        isActive
-                          ? { backgroundColor: market.brandColor, borderColor: market.brandColor }
-                          : { backgroundColor: theme.btnBg, borderColor: theme.border },
-                      ]}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.marketPillText,
-                          {
-                            color: isActive ? '#ffffff' : theme.text,
-                            fontWeight: isActive ? '800' : '600',
-                          },
-                        ]}
-                      >
-                        {market.name}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -880,6 +856,36 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
         plan={currentPlan}
         isDark={isDark}
       />
+
+      {/* Meals Per Day Customization Modal */}
+      <MealsPerDayModal
+        visible={mealsModalVisible}
+        initialCount={mealsModalInitialCount}
+        onClose={() => setMealsModalVisible(false)}
+        isDark={isDark}
+      />
+
+      {/* Informative Budget Overrun Modal */}
+      <BudgetOverrunModal
+        visible={budgetOverrunModalVisible}
+        currentCostRon={currentPlan?.totalCartCostRon ?? 0}
+        currentBudgetRon={currentPlan?.totalBudgetRon ?? preferences.budgetRon}
+        onConfirmIncrease={(newBudget) => {
+          setBudgetOverrunModalVisible(false);
+          void triggerReload(
+            {
+              title: 'Actualizăm bugetul...',
+              subtitle: `Configurăm noul buget la ${newBudget} lei...`,
+              icon: '💰',
+            },
+            () => {
+              updatePreferencesAndRebuild({ budgetRon: newBudget });
+            }
+          );
+        }}
+        onDismiss={() => setBudgetOverrunModalVisible(false)}
+        isDark={isDark}
+      />
     </View>
   );
 };
@@ -942,6 +948,16 @@ const styles = StyleSheet.create({
   },
   mealsPerDaySubtitle: {
     fontSize: 12,
+    fontWeight: '800',
+  },
+  customizeDaysBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  customizeDaysBtnText: {
+    fontSize: 11,
     fontWeight: '800',
   },
   segmentedControl: {
@@ -1107,9 +1123,9 @@ const styles = StyleSheet.create({
   mealCol: {
     flexGrow: 1,
     flexShrink: 0,
-    flexBasis: 280,
+    flexBasis: 300,
     minWidth: 280,
-    maxWidth: '100%',
+    maxWidth: 460,
     transition: 'all 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
   },
   emptyContainer: {
@@ -1121,33 +1137,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '700',
-    textAlign: 'center',
-  },
-  tierSectionContainer: {
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-  },
-  supermarketPillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  marketPill: {
-    flex: 1,
-    minWidth: 68,
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  marketPillText: {
-    fontSize: 11,
-    // "Mega Image" is the only name that wraps, and without this it sat left-aligned while
-    // every single-line neighbour looked centred.
     textAlign: 'center',
   },
   quickActionsBar: {

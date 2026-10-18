@@ -502,12 +502,13 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                               textDecorationLine: isChecked ? 'line-through' : 'none',
                             },
                           ]}
+                          numberOfLines={2}
                         >
                           {dbIng ? dbIng.name : ing.ingredientId}
                         </Text>
 
                         <View style={[styles.amountBadge, { backgroundColor: theme.inputBg }]}>
-                          <Text style={[styles.ingredientAmount, { color: theme.primary }]}>
+                          <Text style={[styles.ingredientAmount, { color: theme.primary }]} numberOfLines={2}>
                             {formatIngredientWithHousehold(ing.ingredientId, scaledAmount, ing.unit)}
                           </Text>
                         </View>
@@ -1191,11 +1192,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    gap: 12,
+    gap: 10,
   },
   ingredientRowWide: {
-    flexBasis: '47%',
-    flexGrow: 1,
+    flexBasis: '48%',
+    flexGrow: 0,
+    width: '48.5%',
+    maxWidth: '50%',
     paddingVertical: 10,
     paddingHorizontal: 12,
     gap: 8,
@@ -1207,6 +1210,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   checkMark: {
     color: '#ffffff',
@@ -1215,17 +1219,23 @@ const styles = StyleSheet.create({
   },
   ingredientName: {
     flex: 1,
-    fontSize: 14,
+    flexShrink: 1,
+    fontSize: 13,
     fontWeight: '600',
+    marginRight: 6,
   },
   amountBadge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    flexShrink: 0,
+    maxWidth: '52%',
+    alignSelf: 'center',
   },
   ingredientAmount: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
+    textAlign: 'right',
   },
   cardSection: {
     padding: 20,

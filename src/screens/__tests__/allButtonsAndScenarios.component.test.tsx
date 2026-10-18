@@ -325,13 +325,12 @@ describe('TESTARE EXHAUSTIVĂ: Toate butoanele și scenariile din aplicație', (
       expect(useAppStore.getState().preferences.foodTier).toBe('premium');
     });
 
-    test('comutarea magazinului pe toolbar (Carrefour, Lidl, Kaufland)', () => {
+    test('deschiderea modalului de personalizare mese pe zile', () => {
       render(<MealBoardScreen isDark={false} />);
-      fireEvent.press(screen.getAllByText('Lidl')[0]);
-      expect(useAppStore.getState().preferences.supermarketId).toBe('lidl');
-
-      fireEvent.press(screen.getAllByText('Kaufland')[0]);
-      expect(useAppStore.getState().preferences.supermarketId).toBe('kaufland');
+      const customizeBtn = screen.getByText(/Personalizează pe zile/i);
+      expect(customizeBtn).toBeTruthy();
+      fireEvent.press(customizeBtn);
+      expect(screen.getByText('🍽️ Personalizează Mesele pe Zile')).toBeTruthy();
     });
 
     test('acțiunea „Adaugă desert” adaugă desert de casă în ziua curentă', () => {

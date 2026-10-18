@@ -124,12 +124,33 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
                 </Text>
               </View>
 
-              {totalSavedEstimate > 0 && (
-                <View style={[styles.savingsBadge, { backgroundColor: theme.primary }]}>
-                  <Text style={[styles.savingsBadgeLabel, { color: theme.primaryText }]}>Economie estimată</Text>
-                  <Text style={[styles.savingsBadgeVal, { color: theme.primaryText }]}>~{Math.round(totalSavedEstimate)} LEI</Text>
-                </View>
-              )}
+              <View
+                style={[
+                  styles.savingsBadge,
+                  {
+                    backgroundColor: totalSavedEstimate > 0 ? theme.primary : theme.surfaceSecondary,
+                    borderWidth: 1,
+                    borderColor: totalSavedEstimate > 0 ? theme.primary : theme.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.savingsBadgeLabel,
+                    { color: totalSavedEstimate > 0 ? theme.primaryText : theme.textMuted },
+                  ]}
+                >
+                  {totalSavedEstimate > 0 ? 'Economie estimată' : 'Fără economii'}
+                </Text>
+                <Text
+                  style={[
+                    styles.savingsBadgeVal,
+                    { color: totalSavedEstimate > 0 ? theme.primaryText : theme.text },
+                  ]}
+                >
+                  {totalSavedEstimate > 0 ? `~${Math.round(totalSavedEstimate)} LEI` : '0 LEI'}
+                </Text>
+              </View>
             </View>
 
             {/* Quick Bulk Actions */}
@@ -181,7 +202,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
                           styles.stapleName,
                           {
                             color: theme.text,
-                            fontWeight: isSelected ? '800' : '600',
+                            fontWeight: '700',
                           },
                         ]}
                       >
@@ -277,6 +298,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     marginBottom: 16,
     gap: 12,
+    minHeight: 82,
   },
   savingsTitle: {
     fontSize: 15,

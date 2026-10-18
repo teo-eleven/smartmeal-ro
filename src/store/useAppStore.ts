@@ -184,6 +184,7 @@ export interface AppState {
   setExcludePantryStaples: (exclude: boolean) => void;
   setMealSlots: (slots: MealSlot[]) => void;
   setMealsPerDayCount: (count: 1 | 2 | 3) => void;
+  setDailyMealSlots: (dailySlots: Partial<Record<DayOfWeek, MealSlot[]>>, count?: 1 | 2 | 3) => void;
   setFoodTier: (tier: FoodTier) => void;
   toggleExtraSlot: (slot: 'dessert') => void;
   addExtraMealToDay: (dayOfWeek: DayOfWeek, slot: 'dessert') => void;
@@ -1893,6 +1894,7 @@ export const useAppStore = create<AppState>((set, get) => ({
                     recipe: source.recipe,
                     isLeftover: true,
                     leftoverFromMealId: source.id,
+                    leftoverFromDay: dayOfWeek,
                     estimatedCostRon: 0,
                   }
                 : m
@@ -1910,6 +1912,7 @@ export const useAppStore = create<AppState>((set, get) => ({
               estimatedCostRon: 0,
               isLeftover: true,
               leftoverFromMealId: source.id,
+              leftoverFromDay: dayOfWeek,
               isAddedLeftover: true,
             };
             const meals = [...day.meals, newLeftoverMeal];
@@ -2206,7 +2209,38 @@ export const useAppStore = create<AppState>((set, get) => ({
       );
       const combinedSlots: MealSlot[] = [...baseSlots, ...activeExtras];
 
-      const nextPrefs = { ...state.preferences, mealSlots: combinedSlots };
+      const nextPrefs = { ...state.preferences, mealSlots: combinedSlots, dailyMealSlots: undefined };
+      return applyPreferencesWithRebuild(state, nextPrefs);
+    });
+  },
+
+  setDailyMealSlots: (dailySlots: Partial<Record<DayOfWeek, MealSlot[]>>, _count?: 1 | 2 | 3) => {
+    set((state) => {
+      const allSlotsUsed = new Set<MealSlot>();
+      Object.values(dailySlots).forEach((slots) => {
+        slots?.forEach((s) => allSlotsUsed.add(s));
+      });
+      const activeExtras = state.preferences.mealSlots.filter(
+        (s) => s === 'snack' || s === 'dessert'
+      );
+      activeExtras.forEach((s) => allSlotsUsed.add(s));
+
+      const CANONICAL_ORDER: Record<string, number> = {
+        breakfast: 1,
+        lunch: 2,
+        dinner: 3,
+        snack: 4,
+        dessert: 5,
+      };
+      const combinedSlots: MealSlot[] = Array.from(allSlotsUsed).sort(
+        (a, b) => (CANONICAL_ORDER[a] ?? 99) - (CANONICAL_ORDER[b] ?? 99)
+      );
+
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        dailyMealSlots: dailySlots,
+        mealSlots: combinedSlots.length > 0 ? combinedSlots : ['dinner'],
+      };
       return applyPreferencesWithRebuild(state, nextPrefs);
     });
   },
@@ -3244,41 +3278,84 @@ export const useAppStore = create<AppState>((set, get) => ({
     const targetSlot: MealSlot =
       slot || (targetDay.meals && targetDay.meals.length > 0 ? targetDay.meals[0].slot : 'dinner');
 
+    const originalMeal = targetDay.meals?.find((m) => m.slot === targetSlot && !m.isLeftover);
+    const originalMealId = originalMeal?.id;
+    const effectiveServings = originalMeal ? originalMeal.servings : currentPlan.peopleCount;
+
     const newCost = calculateRecipePortionCost(
       canonical,
-      currentPlan.peopleCount,
+      effectiveServings,
       preferences.supermarketId,
       preferences.excludePantryStaples
     );
 
-    const updatedDays = [...currentPlan.days];
-    const updatedMeals = (targetDay.meals || []).map((m) => {
-      // Same rule as a swap: a reheated portion belongs to the day it was cooked on.
-      if (m.slot === targetSlot && !m.isLeftover) {
+    const updatedDays = currentPlan.days.map((day, dIdx) => {
+      if (dIdx === dayIndex) {
+        const updatedMeals = (day.meals || []).map((m) => {
+          // Same rule as a swap: a reheated portion belongs to the day it was cooked on.
+          if (m.slot === targetSlot && !m.isLeftover) {
+            return {
+              ...m,
+              recipe: canonical,
+              estimatedCostRon: newCost,
+            };
+          }
+          return m;
+        });
+
+        const primaryMeal =
+          updatedMeals.find((m) => m.slot === 'dinner') ||
+          updatedMeals[0] || {
+            recipe: canonical,
+            estimatedCostRon: newCost,
+          };
+        const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
+
         return {
-          ...m,
-          recipe: canonical,
-          estimatedCostRon: newCost,
+          ...day,
+          meals: updatedMeals,
+          recipe: primaryMeal.recipe,
+          estimatedCostRon: Math.round(dayCostSum * 100) / 100,
         };
       }
-      return m;
+
+      // Check if this other day has a leftover linked to the replaced meal
+      const hasDependentLeftover = day.meals?.some(
+        (m) =>
+          m.isLeftover &&
+          (m.leftoverFromMealId === originalMealId ||
+            (m.slot === targetSlot && (dIdx === dayIndex + 1 || m.leftoverFromDay === dayOfWeek)))
+      );
+
+      if (hasDependentLeftover) {
+        const updatedMeals = (day.meals || []).map((m) => {
+          if (
+            m.isLeftover &&
+            (m.leftoverFromMealId === originalMealId ||
+              (m.slot === targetSlot && (dIdx === dayIndex + 1 || m.leftoverFromDay === dayOfWeek)))
+          ) {
+            return {
+              ...m,
+              recipe: canonical,
+              estimatedCostRon: 0,
+            };
+          }
+          return m;
+        });
+
+        const primaryMeal = updatedMeals.find((m) => m.slot === 'dinner') || updatedMeals[0];
+        const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
+
+        return {
+          ...day,
+          meals: updatedMeals,
+          recipe: primaryMeal?.recipe || day.recipe,
+          estimatedCostRon: Math.round(dayCostSum * 100) / 100,
+        };
+      }
+
+      return day;
     });
-
-    const primaryMeal = updatedMeals.find((m) => m.slot === 'dinner') ||
-      updatedMeals[0] || {
-        recipe: canonical,
-        estimatedCostRon: newCost,
-      };
-    const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
-
-    updatedDays[dayIndex] = {
-      ...targetDay,
-      meals: updatedMeals,
-      recipe: primaryMeal.recipe,
-      // Two decimals, like every meal cost and every sibling day total. One decimal
-      // here let a day drift from the sum of its own meals by up to five bani.
-      estimatedCostRon: Math.round(dayCostSum * 100) / 100,
-    };
 
     const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
     updatedDays.forEach((d) => {

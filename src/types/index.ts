@@ -207,6 +207,7 @@ export interface PlannedMeal {
    * at all once the source had been swapped.
    */
   leftoverFromMealId?: string;
+  leftoverFromDay?: DayOfWeek;
   /**
    * True when this leftover meal was appended dynamically (e.g. for desserts where the
    * target day didn't originally have that meal slot). When undone, this meal is removed
@@ -256,6 +257,7 @@ export interface UserPreferences {
   /** Allergens to exclude entirely. Treated as a hard constraint, never relaxed. */
   avoidedAllergens?: Allergen[];
   mealSlots: MealSlot[];
+  dailyMealSlots?: Partial<Record<DayOfWeek, MealSlot[]>>;
   foodTier?: FoodTier;
   selectedSnackIds?: string[];
   selectedDrinkIds?: string[];

@@ -43,7 +43,7 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
 
   const content = (
     <View style={styles.content} pointerEvents="none">
-      <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={compact ? 2 : 3}>
+      <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={2}>
         {recipe.title}
       </Text>
 
@@ -110,24 +110,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
+    width: '100%',
+    maxWidth: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 22,
+    paddingHorizontal: 16,
   },
   title: {
+    width: '100%',
+    maxWidth: '100%',
     color: '#ffffff',
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '800',
     textAlign: 'center',
-    lineHeight: 25,
+    lineHeight: 23,
     letterSpacing: -0.3,
-    textShadowColor: 'rgba(0,0,0,0.55)',
+    textShadowColor: 'rgba(0,0,0,0.65)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 6,
   },
   titleCompact: {
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 18,
   },
   rule: {
     width: 46,

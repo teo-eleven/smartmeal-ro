@@ -87,23 +87,23 @@ function getTierBadgeStyle(tier?: FoodTier, isDark: boolean = true): { bg: strin
   switch (tier) {
     case 'basic':
       return {
-        bg: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
-        text: isDark ? '#ffffff' : '#000000',
+        bg: isDark ? 'rgba(245, 239, 235, 0.12)' : 'rgba(42, 32, 26, 0.08)',
+        text: isDark ? '#F5EFEB' : '#2A201A',
       };
     case 'medium':
       return {
-        bg: isDark ? 'rgba(10, 132, 255, 0.85)' : 'rgba(10, 132, 255, 0.9)',
-        text: '#ffffff',
+        bg: isDark ? 'rgba(230, 167, 86, 0.22)' : 'rgba(217, 142, 58, 0.18)',
+        text: isDark ? '#F3C06D' : '#C88232',
       };
     case 'premium':
       return {
-        bg: isDark ? 'rgba(217, 119, 6, 0.9)' : 'rgba(180, 83, 9, 0.9)',
-        text: '#ffffff',
+        bg: isDark ? '#E6A756' : '#C88232',
+        text: '#131914',
       };
     default:
       return {
-        bg: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-        text: isDark ? '#ffffff' : '#000000',
+        bg: isDark ? 'rgba(245, 239, 235, 0.12)' : 'rgba(42, 32, 26, 0.08)',
+        text: isDark ? '#F5EFEB' : '#2A201A',
       };
   }
 }
@@ -294,10 +294,10 @@ export const MealCard: React.FC<MealCardProps> = ({
           />
 
           {/* Floating Day Badge (Top-Left) */}
-          <View style={[styles.floatingBadge, styles.dayBadge, { backgroundColor: isDark ? 'rgba(28, 28, 30, 0.90)' : 'rgba(255, 255, 255, 0.92)' }]}>
-            <Text style={[styles.dayBadgeText, { color: getSlotColor(meal?.slot, isDark) }]}>
+          <View style={[styles.floatingBadge, styles.dayBadge, { backgroundColor: isDark ? 'rgba(28, 36, 30, 0.92)' : 'rgba(255, 255, 255, 0.94)' }]}>
+            <Text style={[styles.dayBadgeText, { color: getSlotColor(meal?.slot, isDark) }]} numberOfLines={1}>
               {isDessert
-                ? '🍰 DESERT DE CASĂ'
+                ? '🍰 DESERT'
                 : `${DAY_LABELS[day.dayOfWeek].toUpperCase()}${effectiveSlotLabel ? ` • ${effectiveSlotLabel.toUpperCase()}` : ''}`}
             </Text>
           </View>
@@ -307,11 +307,11 @@ export const MealCard: React.FC<MealCardProps> = ({
             style={[
               styles.floatingBadge,
               styles.priceBadge,
-              { backgroundColor: isDark ? 'rgba(28, 28, 30, 0.90)' : 'rgba(255, 255, 255, 0.92)' },
+              { backgroundColor: isDark ? 'rgba(28, 36, 30, 0.92)' : 'rgba(255, 255, 255, 0.94)' },
             ]}
           >
-            <Text style={[styles.priceBadgeText, { color: theme.primary }]}>~{costRon} lei</Text>
-            <Text style={[styles.priceSubText, { color: theme.textMuted }]}>
+            <Text style={[styles.priceBadgeText, { color: theme.primary }]} numberOfLines={1}>~{costRon} lei</Text>
+            <Text style={[styles.priceSubText, { color: theme.textMuted }]} numberOfLines={1}>
               {servings > 1 ? `total • ~${portionCost.toFixed(2)}/p` : '/ porție'}
             </Text>
           </View>
@@ -606,8 +606,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   dayBadge: {
-    top: 14,
-    left: 14,
+    top: 12,
+    left: 12,
+    maxWidth: '48%',
   },
   dayBadgeText: {
     fontSize: 11,
@@ -615,8 +616,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   priceBadge: {
-    top: 14,
-    right: 14,
+    top: 12,
+    right: 12,
+    maxWidth: '48%',
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
