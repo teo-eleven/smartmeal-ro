@@ -234,3 +234,25 @@ describe('OnboardingWizard, pasul de pofte (pasul 5 cu FoodMoodSwiper)', () => {
     expect(useAppStore.getState().preferences.moodTags).toContain('speedy');
   });
 });
+
+describe('OnboardingWizard, pasul de dietă (pasul 6)', () => {
+  beforeEach(() => {
+    reset();
+    useAppStore.getState().goToStep(6);
+  });
+
+  test('afișează stilurile alimentare principale și permite selectarea Vegetarian fără blocaj', () => {
+    render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
+
+    expect(screen.getByText('Stilul alimentar principal (alege una):')).toBeTruthy();
+    expect(screen.getByText('Vegetarian')).toBeTruthy();
+    expect(screen.getByText('Vegan / De post')).toBeTruthy();
+    expect(screen.getByText('Pescatarian')).toBeTruthy();
+
+    // Tap on Vegetarian directly
+    fireEvent.press(screen.getByText('Vegetarian'));
+
+    expect(useAppStore.getState().preferences.dietType).toBe('vegetarian');
+    expect(useAppStore.getState().preferences.dietTypes).toContain('vegetarian');
+  });
+});

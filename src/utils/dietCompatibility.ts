@@ -54,6 +54,17 @@ export const DIET_OPTIONS_CATALOG: DietOptionInfo[] = [
   },
 ];
 
+export const BASE_DIETS: DietType[] = ['omnivore', 'vegetarian', 'vegan', 'pescatarian'];
+export const MODIFIER_DIETS: DietType[] = ['gluten_free', 'keto'];
+
+export function isBaseDiet(diet: DietType): boolean {
+  return BASE_DIETS.includes(diet);
+}
+
+export function isModifierDiet(diet: DietType): boolean {
+  return MODIFIER_DIETS.includes(diet);
+}
+
 /**
  * Compatibility matrix for combining up to 2 dietary preferences.
  *

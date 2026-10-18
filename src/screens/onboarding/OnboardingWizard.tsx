@@ -8,7 +8,12 @@ import { ApplianceSelector } from '../../components/ApplianceSelector';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getRetailProductsByCategory, RETAIL_PRODUCTS_MAP } from '../../data/retailProducts';
 import { useResponsive } from '../../hooks/useResponsive';
-import { DIET_OPTIONS_CATALOG, areDietsCompatible } from '../../utils/dietCompatibility';
+import {
+  DIET_OPTIONS_CATALOG,
+  areDietsCompatible,
+  isBaseDiet,
+  isModifierDiet,
+} from '../../utils/dietCompatibility';
 import { getAppTheme } from '../../styles/theme';
 import { glass } from '../../styles/glass';
 import { EligibilityMeter } from '../../components/EligibilityMeter';
@@ -937,6 +942,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 preferences.dietTypes && preferences.dietTypes.length > 0
                   ? preferences.dietTypes
                   : [preferences.dietType];
+              const activeBaseDiet: DietType =
+                selectedDiets.find(isBaseDiet) || preferences.dietType || 'omnivore';
+
+              const baseDietOptions = DIET_OPTIONS_CATALOG.filter((d) => isBaseDiet(d.id));
+              const modifierDietOptions = DIET_OPTIONS_CATALOG.filter((d) => isModifierDiet(d.id));
 
               return (
                 <View style={styles.stepSection}>
@@ -944,19 +954,113 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     Ai preferințe dietetice?
                   </Text>
                   <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                    Poți selecta până la 2 diete compatibile (selectate: {selectedDiets.length}/2).
-                    De exemplu: Vegetarian + Fără Gluten, sau Omnivor + Low-Carb.
+                    Alege stilul tău alimentar de bază și adaugă opțional restricții speciale (cum ar fi Fără Gluten sau Low-Carb).
+                  </Text>
+
+                  {/* 1. Base Diets Section */}
+                  <Text
+                    style={[
+                      styles.customizeSlotsHeading,
+                      { color: theme.textMuted, marginTop: 12, marginBottom: 12 },
+                    ]}
+                  >
+                    Stilul alimentar principal (alege una):
                   </Text>
 
                   <View style={[styles.dietList, isLargeScreen && styles.dietListDesktop]}>
-                    {DIET_OPTIONS_CATALOG.map((diet) => {
-                      const isSelected = selectedDiets.includes(diet.id);
-                      const isIncompatible =
-                        !isSelected && selectedDiets.some((d) => !areDietsCompatible(d, diet.id));
+                    {baseDietOptions.map((diet) => {
+                      const isSelected = activeBaseDiet === diet.id;
 
                       return (
                         <TouchableOpacity
                           accessibilityRole="button"
+                          accessibilityLabel={`${diet.label}, ${diet.desc}`}
+                          key={diet.id}
+                          onPress={() => toggleDietType(diet.id)}
+                          activeOpacity={0.75}
+                          style={[
+                            styles.dietCard,
+                            isLargeScreen && styles.dietCardDesktop,
+                            {
+                              backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                              borderColor: isSelected ? theme.primary : theme.border,
+                            },
+                          ]}
+                        >
+                          <Text style={styles.dietIcon}>{diet.icon}</Text>
+                          <View style={styles.dietInfo}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              <Text style={[styles.dietLabel, { color: theme.text }]}>
+                                {diet.label}
+                              </Text>
+                              {isSelected && (
+                                <View
+                                  style={[
+                                    styles.incompatibleBadge,
+                                    {
+                                      backgroundColor: theme.surfaceTertiary,
+                                      borderColor: theme.border,
+                                      borderWidth: 1,
+                                    },
+                                  ]}
+                                >
+                                  <Text
+                                    style={{ fontSize: 10, color: theme.text, fontWeight: '800' }}
+                                  >
+                                    Activ
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                            <Text style={[styles.dietDesc, { color: theme.textMuted }]}>
+                              {diet.desc}
+                            </Text>
+                          </View>
+                          <View
+                            style={[
+                              styles.dietRadio,
+                              {
+                                borderColor: isSelected ? theme.primary : theme.border,
+                                backgroundColor: isSelected ? theme.primary : 'transparent',
+                              },
+                            ]}
+                          >
+                            {isSelected && (
+                              <Text
+                                style={{
+                                  color: theme.primaryText,
+                                  fontSize: 12,
+                                  fontWeight: '900',
+                                }}
+                              >
+                                ✓
+                              </Text>
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  {/* 2. Special Restrictions / Modifiers */}
+                  <Text
+                    style={[
+                      styles.customizeSlotsHeading,
+                      { color: theme.textMuted, marginTop: 24, marginBottom: 12 },
+                    ]}
+                  >
+                    Restricții speciale suplimentare (opțional):
+                  </Text>
+
+                  <View style={[styles.dietList, isLargeScreen && styles.dietListDesktop]}>
+                    {modifierDietOptions.map((diet) => {
+                      const isSelected = selectedDiets.includes(diet.id);
+                      const isIncompatible = !areDietsCompatible(activeBaseDiet, diet.id);
+
+                      return (
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityLabel={`${diet.label}, ${diet.desc}`}
                           key={diet.id}
                           onPress={() => toggleDietType(diet.id)}
                           activeOpacity={0.75}
@@ -990,7 +1094,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                                   <Text
                                     style={{ fontSize: 10, color: '#ef4444', fontWeight: '800' }}
                                   >
-                                    Incompatibil
+                                    Incompatibil cu {activeBaseDiet === 'vegan' ? 'Vegan' : activeBaseDiet}
                                   </Text>
                                 </View>
                               )}
@@ -1019,7 +1123,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                           </View>
                           <View
                             style={[
-                              styles.dietRadio,
+                              styles.dayCheckbox,
                               {
                                 borderColor: isSelected ? theme.primary : theme.border,
                                 backgroundColor: isSelected ? theme.primary : 'transparent',

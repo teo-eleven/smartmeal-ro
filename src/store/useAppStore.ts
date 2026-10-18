@@ -49,7 +49,12 @@ import { storageService } from '../services/storage';
 import { cloudSyncService } from '../services/supabase';
 import { checkReauth } from '../services/reauth';
 import { describeFailure } from '../services/authErrors';
-import { areDietsCompatible, isRecipeMatchingDiets } from '../utils/dietCompatibility';
+import {
+  areDietsCompatible,
+  isRecipeMatchingDiets,
+  isBaseDiet,
+  isModifierDiet,
+} from '../utils/dietCompatibility';
 
 export type ActiveView = 'onboarding' | 'generating' | 'meals' | 'grocery';
 
@@ -1676,21 +1681,31 @@ export const useAppStore = create<AppState>((set, get) => ({
           ? state.preferences.dietTypes
           : [state.preferences.dietType];
 
-      if (current.includes(diet)) {
-        if (current.length === 1) {
-          return {
-            ...state,
-            activeNotice: {
-              id: Date.now().toString(),
-              title: 'Cel puțin o orientare alimentară',
-              message:
-                'Planul tău are nevoie de cel puțin o dietă de bază (ex: Omnivor sau Vegetarian) pentru a genera rețete conforme.',
-              type: 'info',
-            },
-          };
+      // CASE 1: The user selected a BASE DIET (omnivore, vegetarian, vegan, pescatarian)
+      if (isBaseDiet(diet)) {
+        // If already selected as the only base diet, keep it
+        if (current[0] === diet && current.length === 1) {
+          return state;
         }
+
+        // Keep existing modifiers that are compatible with the new base diet
+        const existingModifiers = current.filter(isModifierDiet);
+        const compatibleModifiers = existingModifiers.filter((m) => areDietsCompatible(diet, m));
+
+        const nextDiets: DietType[] = [diet, ...compatibleModifiers];
+        const nextPrefs: UserPreferences = {
+          ...state.preferences,
+          dietType: diet,
+          dietTypes: nextDiets,
+        };
+        return applyPreferenceStep(state, nextPrefs);
+      }
+
+      // CASE 2: The user selected a MODIFIER DIET (gluten_free, keto)
+      if (current.includes(diet)) {
+        // Deselecting modifier: remove it cleanly
         const nextDiets = current.filter((d) => d !== diet);
-        const primaryDiet = nextDiets[0] || 'omnivore';
+        const primaryDiet = nextDiets.find(isBaseDiet) || 'omnivore';
         const nextPrefs: UserPreferences = {
           ...state.preferences,
           dietType: primaryDiet,
@@ -1699,52 +1714,51 @@ export const useAppStore = create<AppState>((set, get) => ({
         return applyPreferenceStep(state, nextPrefs);
       }
 
-      // Check compatibility with existing selected diets
-      const incompatibleDiets = current.filter((d) => !areDietsCompatible(d, diet));
-      if (incompatibleDiets.length > 0) {
+      // Adding modifier: check compatibility with the active base diet
+      const baseDiet = current.find(isBaseDiet) || 'omnivore';
+      if (!areDietsCompatible(baseDiet, diet)) {
         return {
           ...state,
           activeNotice: {
             id: Date.now().toString(),
-            title: 'Diete incompatibile',
-            message:
-              'Dieta selectată nu se poate combina cu dieta deja activă (de exemplu nu se poate combina Omnivor cu Vegan sau Post). Debifează opțiunea incompatibilă pentru a o alege pe aceasta.',
+            title: 'Dietă incompatibilă',
+            message: `Opțiunea ${diet === 'keto' ? 'Low-Carb / Keto' : 'Fără Gluten'} nu este compatibilă cu alimentația ${baseDiet === 'vegan' ? 'Vegană' : baseDiet}.`,
             type: 'warning',
           },
         };
       }
 
-      if (current.length >= 2) {
+      // Check max limits (1 base diet + up to 2 modifiers)
+      const modifiers = current.filter(isModifierDiet);
+      if (modifiers.length >= 2) {
         return {
           ...state,
           activeNotice: {
             id: Date.now().toString(),
-            title: 'Limită de 2 diete',
-            message:
-              'Poți combina maximum 2 diete simultan (de exemplu Vegetarian + Fără Gluten) pentru a garanta rețete disponibile în catalog.',
+            title: 'Limită restricții speciale',
+            message: 'Poți combina maximum 2 restricții speciale simultan.',
             type: 'warning',
           },
         };
       }
 
-      const nextDiets = [...current, diet];
-      const primaryDiet = nextDiets[0] || 'omnivore';
+      const nextDiets: DietType[] = [...current, diet];
       const nextPrefs: UserPreferences = {
         ...state.preferences,
-        dietType: primaryDiet,
+        dietType: baseDiet,
         dietTypes: nextDiets,
       };
-
       return applyPreferenceStep(state, nextPrefs);
     });
   },
 
   setDietTypes: (diets: DietType[]) => {
     set((state) => {
-      const safeDiets = diets.length > 0 ? diets.slice(0, 2) : (['omnivore'] as DietType[]);
+      const safeDiets = diets.length > 0 ? diets : (['omnivore'] as DietType[]);
+      const primaryDiet = safeDiets.find(isBaseDiet) || safeDiets[0] || 'omnivore';
       const nextPrefs: UserPreferences = {
         ...state.preferences,
-        dietType: safeDiets[0],
+        dietType: primaryDiet,
         dietTypes: safeDiets,
       };
       return applyPreferenceStep(state, nextPrefs);
