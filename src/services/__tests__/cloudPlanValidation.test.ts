@@ -145,12 +145,16 @@ describe('cloudSyncService.loadMealPlan', () => {
     expect(result.error).toBeNull();
   });
 
-  test('o eroare de la Postgres este raportată cu mesajul ei', async () => {
+  /** Reported, but in Romanian: the Postgres text is English and describes the server. */
+  test('o eroare de la Postgres e raportată, în română, fără detaliile serverului', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     cloudRowIs(null, { message: 'permission denied for table user_meal_plans' });
 
     const result = await cloudSyncService.loadMealPlan('uuid-1');
 
-    expect(result.error).toContain('permission denied');
+    expect(result.error).toBe('Nu am putut citi planul din cloud.');
+    expect(result.error).not.toContain('permission denied');
+    warn.mockRestore();
   });
 
   test('citește rândul utilizatorului autentificat, nu altul', async () => {

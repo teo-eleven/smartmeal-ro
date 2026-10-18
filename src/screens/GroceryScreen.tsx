@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore } from '../store/useAppStore';
 import { SUPERMARKETS } from '../data/supermarkets';
@@ -33,6 +33,8 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
     currentPlan,
     groceryItems,
     preferences,
+    isReloading,
+    triggerReload,
     toggleGroceryItem,
     setExcludePantryStaples,
     carryOverSurplus,
@@ -72,11 +74,12 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
   const [shareCopiedFeedback, setShareCopiedFeedback] = useState(false);
   const { isDesktop, isTablet, contentMaxWidth } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;
+  const theme = getAppTheme(isDark);
 
   if (!currentPlan) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={[styles.emptyText, { color: isDark ? '#ffffff' : '#000000' }]}>
+        <Text style={[styles.emptyText, { color: theme.text }]}>
           Niciun meniu activ. Configurează preferințele pentru a genera lista de cumpărături.
         </Text>
       </View>
@@ -107,6 +110,34 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
     acc[cat].push(item);
     return acc;
   }, {});
+
+  // Active aisles with items
+  const activeAisles = AISLE_ORDER.filter(
+    (category) => groupedItems[category] && groupedItems[category].length > 0
+  );
+
+  // Responsive column count: 3 on desktop, 2 on tablet, 1 on mobile
+  const numColumns = Math.min(isDesktop ? 3 : isTablet ? 2 : 1, Math.max(1, activeAisles.length));
+
+  // Distribute active aisles across columns to balance vertical height (masonry)
+  const columns: AisleCategory[][] = Array.from({ length: numColumns }, () => []);
+  const colWeights = Array.from({ length: numColumns }, () => 0);
+
+  activeAisles.forEach((category) => {
+    const items = groupedItems[category] || [];
+    // Weight = header height (approx 2 items) + item count
+    const weight = 2 + items.length;
+
+    // Pick the column with minimum weight
+    let minIdx = 0;
+    for (let c = 1; c < numColumns; c++) {
+      if (colWeights[c] < colWeights[minIdx]) {
+        minIdx = c;
+      }
+    }
+    columns[minIdx].push(category);
+    colWeights[minIdx] += weight;
+  });
 
   const handleShareList = async () => {
     const remaining = groceryItems.filter((i) => !i.isPurchased);
@@ -148,18 +179,33 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
     });
   };
 
-  const theme = getAppTheme(isDark);
-
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={isReloading}
+          onRefresh={() => {
+            void triggerReload({
+              title: 'Se actualizează lista de cumpărături...',
+              subtitle: 'Verificăm cele 7 raioane și deducem articolele din cămară...',
+              icon: '🛒',
+            });
+          }}
+          tintColor={theme.primary}
+          colors={[theme.primary]}
+        />
+      }
+    >
       {/* Shopping Overview Modernist Dashboard Card */}
       <View
         {...glass('card')}
         style={[styles.overviewCard, { backgroundColor: theme.card, borderColor: theme.border, maxWidth: contentMaxWidth }]}
       >
-        <View style={[styles.overviewInner, isLargeScreen && styles.overviewDesktopRow]}>
+        <View style={[styles.overviewInner, isDesktop && styles.overviewDesktopRow]}>
           {/* Left Panel: Supermarket info + Total cost */}
-          <View style={[styles.overviewCol, isLargeScreen && styles.overviewColDesktop]}>
+          <View style={[styles.overviewCol, isDesktop && styles.overviewColDesktop]}>
             <View style={styles.supermarketHeader}>
               <View style={[styles.marketDot, { backgroundColor: market.brandColor }]} />
               <Text style={[styles.supermarketTitle, { color: theme.text }]}>
@@ -183,10 +229,10 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
             </View>
           </View>
 
-          {isLargeScreen && <View style={[styles.overviewDividerV, { backgroundColor: theme.border }]} />}
+          {isDesktop && <View style={[styles.overviewDividerV, { backgroundColor: theme.border }]} />}
 
           {/* Center Panel: Progress Gauge & Stat Chips */}
-          <View style={[styles.overviewCol, isLargeScreen && styles.overviewColDesktop]}>
+          <View style={[styles.overviewCol, isDesktop && styles.overviewColDesktop]}>
             <View style={styles.progressContainer}>
               <View style={styles.progressHeaderRow}>
                 <Text style={[styles.progressLabel, { color: theme.text }]}>
@@ -199,7 +245,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
 
               <View style={[styles.progressTrack, { backgroundColor: theme.trackBg }]}>
                 <LinearGradient
-                  colors={isDark ? ['#ffffff', '#8e8e93'] : ['#000000', '#636366']}
+                  colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={[styles.progressBar, { width: `${progressPercent}%` }]}
@@ -225,10 +271,10 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
             </View>
           </View>
 
-          {isLargeScreen && <View style={[styles.overviewDividerV, { backgroundColor: theme.border }]} />}
+          {isDesktop && <View style={[styles.overviewDividerV, { backgroundColor: theme.border }]} />}
 
           {/* Right Panel: Bulk Action Buttons */}
-          <View style={[styles.overviewColRight, isLargeScreen && styles.overviewColRightDesktop]}>
+          <View style={[styles.overviewColRight, isDesktop && styles.overviewColRightDesktop]}>
             <TouchableOpacity
               accessibilityRole="button"
               onPress={checkAll}
@@ -267,49 +313,49 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
               </Text>
             </TouchableOpacity>
           </View>
+        </View>
 
-          {/* What this week will not use up is worth more than the trip itself, so it gets
-              its own line rather than hiding inside the pantry screen. */}
+        {/* What this week will not use up is worth more than the trip itself, so it gets
+            its own line rather than hiding inside the pantry screen. */}
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={isShoppingMode ? 'Ieși din modul cumpărături' : 'Intră în modul cumpărături'}
+          onPress={() => setIsShoppingMode((on) => !on)}
+          style={[
+            styles.shoppingModeBtn,
+            {
+              borderColor: isShoppingMode ? theme.primary : theme.border,
+              backgroundColor: isShoppingMode ? theme.primary : theme.btnBg,
+            },
+          ]}
+          activeOpacity={0.8}
+        >
+          <Text
+            style={[
+              styles.shoppingModeText,
+              { color: isShoppingMode ? theme.primaryText : theme.text },
+            ]}
+          >
+            {isShoppingMode ? '✓ Sunt în magazin — rânduri mari' : '🛒 Sunt în magazin'}
+          </Text>
+        </TouchableOpacity>
+
+        {surplusCount > 0 && (
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel={isShoppingMode ? 'Ieși din modul cumpărături' : 'Intră în modul cumpărături'}
-            onPress={() => setIsShoppingMode((on) => !on)}
-            style={[
-              styles.shoppingModeBtn,
-              {
-                borderColor: isShoppingMode ? theme.primary : theme.border,
-                backgroundColor: isShoppingMode ? theme.primary : theme.btnBg,
-              },
-            ]}
+            accessibilityLabel="Pune surplusul în cămară"
+            onPress={carryOverSurplus}
+            style={[styles.surplusBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
             activeOpacity={0.8}
           >
-            <Text
-              style={[
-                styles.shoppingModeText,
-                { color: isShoppingMode ? theme.primaryText : theme.text },
-              ]}
-            >
-              {isShoppingMode ? '✓ Sunt în magazin — rânduri mari' : '🛒 Sunt în magazin'}
+            <Text style={[styles.surplusTitle, { color: theme.text }]}>
+              ↻ Îți rămân {surplusCount} {surplusCount === 1 ? 'ingredient' : 'ingrediente'} după săptămâna asta
+            </Text>
+            <Text style={[styles.surplusHint, { color: theme.textMuted }]}>
+              Cam {surplusValueRon} lei. Apasă după ce ai făcut cumpărăturile și se scad din lista următoare.
             </Text>
           </TouchableOpacity>
-
-          {surplusCount > 0 && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Pune surplusul în cămară"
-              onPress={carryOverSurplus}
-              style={[styles.surplusBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.surplusTitle, { color: theme.text }]}>
-                ↻ Îți rămân {surplusCount} {surplusCount === 1 ? 'ingredient' : 'ingrediente'} după săptămâna asta
-              </Text>
-              <Text style={[styles.surplusHint, { color: theme.textMuted }]}>
-                Cam {surplusValueRon} lei. Apasă după ce ai făcut cumpărăturile și se scad din lista următoare.
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        )}
       </View>
 
       {/* Celebratory Banner when shopping is complete */}
@@ -375,23 +421,39 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
         </View>
       </TouchableOpacity>
 
-      {/* Aisle by Aisle Grouped Sections in Multi-Column Grid */}
-      <View style={[styles.aislesContainer, isLargeScreen && styles.aislesGridDesktop, { maxWidth: contentMaxWidth }]}>
-        {AISLE_ORDER.map((category) => {
-          const items = groupedItems[category];
-          if (!items || items.length === 0) return null;
-          return (
-            <View key={category} style={[styles.aisleCol, isLargeScreen && styles.aisleColDesktop]}>
-              <GroceryAisleSection
-                category={category}
-                items={items}
-                onToggleItem={toggleGroceryItem}
-                isDark={isDark}
-                isShoppingMode={isShoppingMode}
-              />
-            </View>
-          );
-        })}
+      {/* Aisle by Aisle Grouped Sections in Multi-Column Masonry */}
+      <View
+        style={[
+          styles.aislesContainer,
+          isLargeScreen ? styles.masonryRow : styles.singleColumnContainer,
+          { maxWidth: contentMaxWidth },
+        ]}
+      >
+        {columns.map((colAisles, colIdx) => (
+          <View
+            key={`aisle-col-${colIdx}`}
+            style={[
+              styles.masonryCol,
+              !isLargeScreen && { width: '100%' },
+            ]}
+          >
+            {colAisles.map((category) => {
+              const items = groupedItems[category];
+              if (!items || items.length === 0) return null;
+              return (
+                <View key={category} style={styles.aisleCol}>
+                  <GroceryAisleSection
+                    category={category}
+                    items={items}
+                    onToggleItem={toggleGroceryItem}
+                    isDark={isDark}
+                    isShoppingMode={isShoppingMode}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        ))}
       </View>
 
       {/* Retail Snacks & Drinks Modal */}
@@ -406,7 +468,8 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
 
 const styles = StyleSheet.create({
   shoppingModeBtn: {
-    marginTop: 10,
+    width: '100%',
+    marginTop: 14,
     borderWidth: 1,
     borderRadius: 14,
     paddingVertical: 12,
@@ -414,6 +477,7 @@ const styles = StyleSheet.create({
   },
   shoppingModeText: { fontSize: 13, fontWeight: '800' },
   surplusBtn: {
+    width: '100%',
     marginTop: 10,
     borderWidth: 1,
     borderRadius: 14,
@@ -438,6 +502,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowRadius: 16,
     elevation: 4,
+    overflow: 'hidden',
   },
   overviewInner: {
     width: '100%',
@@ -446,6 +511,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 20,
   },
   overviewCol: {
@@ -461,9 +527,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   overviewColRightDesktop: {
-    minWidth: 150,
+    width: 'auto',
+    flex: 1,
+    minWidth: 170,
+    maxWidth: 220,
     marginTop: 0,
     justifyContent: 'center',
+    alignItems: 'stretch',
   },
   overviewDividerV: {
     width: 1,
@@ -566,6 +636,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   actionBtn: {
+    width: '100%',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -575,6 +646,7 @@ const styles = StyleSheet.create({
   actionBtnText: {
     fontSize: 12,
     fontWeight: '700',
+    textAlign: 'center',
   },
   celebrationCard: {
     width: '100%',
@@ -636,6 +708,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   retailSnacksBtn: {
+    minHeight: 44,
+    minWidth: 72,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 10,
@@ -648,17 +724,21 @@ const styles = StyleSheet.create({
   aislesContainer: {
     width: '100%',
   },
-  aislesGridDesktop: {
+  singleColumnContainer: {
+    width: '100%',
+    flexDirection: 'column',
+  },
+  masonryRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
     alignItems: 'flex-start',
+    gap: 16,
+    width: '100%',
+  },
+  masonryCol: {
+    flex: 1,
+    flexDirection: 'column',
   },
   aisleCol: {
     width: '100%',
-  },
-  aisleColDesktop: {
-    flex: 1,
-    minWidth: 360,
   },
 });

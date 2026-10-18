@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>%WEB_TITLE%</title>
+    <!-- The `react-native-web` recommended style reset -->
+    <style id="expo-reset">
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #000000;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      body {
+        overflow: hidden;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+
+      /* Instant pre-mount loader styles - identical dimensions to AppLoadingScreen */
+      #sm-preloader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        background-color: #000000;
+        color: #ffffff;
+        z-index: 999999;
+      }
+      .sm-preloader-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justifyContent: center;
+        width: 360px;
+        max-width: calc(100vw - 32px);
+        min-height: 270px;
+        padding: 32px 24px;
+        background: #18181b;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 24px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+        box-sizing: border-box;
+      }
+      .sm-preloader-icon {
+        width: 68px;
+        height: 68px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #27272a, #18181b);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        display: flex;
+        align-items: center;
+        justifyContent: center;
+        font-size: 32px;
+        margin-bottom: 18px;
+      }
+      .sm-brand-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .sm-brand-name {
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+      }
+      .sm-country-badge {
+        font-size: 10px;
+        font-weight: 800;
+        padding: 2px 7px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+      }
+      .sm-title {
+        font-size: 15px;
+        font-weight: 700;
+        margin: 0 0 6px 0;
+        text-align: center;
+      }
+      .sm-sub-container {
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        width: 100%;
+      }
+      .sm-sub {
+        font-size: 13px;
+        line-height: 18px;
+        color: #a1a1aa;
+        margin: 0;
+        text-align: center;
+      }
+      .sm-track {
+        width: 100%;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 2px;
+        overflow: hidden;
+        position: relative;
+      }
+      .sm-bar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 32%;
+        background: #16a34a;
+        border-radius: 2px;
+        animation: sm-shimmer 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+      @keyframes sm-shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(350%); }
+      }
+
+      /* Light mode adaptation */
+      @media (prefers-color-scheme: light) {
+        html.light body, html.light #sm-preloader {
+          background-color: #ffffff;
+          color: #000000;
+        }
+        html.light .sm-preloader-card {
+          background: #ffffff;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+        }
+        html.light .sm-preloader-icon {
+          background: linear-gradient(135deg, #f4f4f5, #e4e4e7);
+          border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        html.light .sm-country-badge {
+          background: rgba(0, 0, 0, 0.05);
+          border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        html.light .sm-sub {
+          color: #71717a;
+        }
+        html.light .sm-track {
+          background: rgba(0, 0, 0, 0.08);
+        }
+      }
+    </style>
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('smartmeal_preferences');
+          if (stored) {
+            var prefs = JSON.parse(stored);
+            if (prefs && prefs.themeMode === 'light') {
+              document.documentElement.classList.add('light');
+              document.body.style.backgroundColor = '#ffffff';
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+
+  <body>
+    <!-- Use static rendering with Expo Router to support running without JavaScript. -->
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <!-- The root element for your Expo app. Contains pre-mount loading shell. -->
+    <div id="root">
+      <div id="sm-preloader">
+        <div class="sm-preloader-card">
+          <div class="sm-preloader-icon">🍽️</div>
+          <div class="sm-brand-row">
+            <span class="sm-brand-name">SmartMeal</span>
+            <span class="sm-country-badge">RO 🇷🇴</span>
+          </div>
+          <h2 class="sm-title">Se pregătește SmartMeal...</h2>
+          <div class="sm-sub-container">
+            <p class="sm-sub">Încărcăm meniul tău inteligent și optimizăm datele...</p>
+          </div>
+          <div class="sm-track">
+            <div class="sm-bar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

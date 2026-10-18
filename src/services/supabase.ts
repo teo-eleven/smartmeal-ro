@@ -17,6 +17,17 @@ import {
 } from '../types';
 import { parseReminderSettings } from '../utils/preferencesValidation';
 import { describeMissingConsent } from '../utils/signUpConsent';
+import { normalizeDisplayName } from '../utils/displayName';
+import { describeAuthError, describeFailure } from './authErrors';
+import { forgetAccountSecurity, recordVerification } from './reauth';
+import { localDeviceSimulation } from './localDeviceSimulation';
+import { signingOutOnPurpose } from './signOutIntent';
+
+/**
+ * Database errors come back in English and describe the server ("new row violates row-level
+ * security policy"). The user gets this; the detail goes to the log.
+ */
+const CLOUD_SAVE_FAILED = 'Nu am putut salva în cloud. Încearcă din nou.';
 import { isWellFormedPlan } from './storage';
 
 let supabaseClientInstance: SupabaseClient | null = null;
@@ -47,6 +58,13 @@ export function getSupabaseClient(): SupabaseClient | null {
     console.warn('[Supabase] Failed to initialize Supabase client:', e);
     return null;
   }
+}
+
+export interface SignUpResult {
+  user: User | null;
+  error: string | null;
+  /** Set on success: true when the address must be confirmed before anyone can sign in. */
+  needsConfirmation?: boolean;
 }
 
 /** A row of user_consents, as written by the sign-up trigger in migration 0005. */
@@ -120,6 +138,7 @@ export const cloudSyncService = {
     // The simulation refuses to run in a production build; see localAuthSimulation.
     if (localAuthSimulation.isActive()) {
       const { email: signedIn, error } = await localAuthSimulation.signIn(email, password);
+      await recordVerification(signedIn);
       return { user: signedIn ? ({ email: signedIn } as User) : null, error };
     }
 
@@ -130,11 +149,12 @@ export const cloudSyncService = {
     try {
       const { data, error } = await client.auth.signInWithPassword({ email, password });
       if (error) {
-        return { user: null, error: error.message };
+        return { user: null, error: describeAuthError(error) };
       }
+      await recordVerification(data.user?.email);
       return { user: data.user, error: null };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare neașteptată la autentificare.';
+      const message = describeFailure(e, 'Eroare neașteptată la autentificare.');
       return { user: null, error: message };
     }
   },
@@ -142,18 +162,31 @@ export const cloudSyncService = {
   async signUpWithEmail(
     email: string,
     password: string,
-    consent: SignUpConsent
-  ): Promise<{ user: User | null; error: string | null }> {
+    consent: SignUpConsent,
+    displayName?: string
+  ): Promise<SignUpResult> {
     // The screen checks this too. Checking again here means no other path can open an
     // account holding health data without it.
     const missing = describeMissingConsent(consent);
     if (missing) {
       return { user: null, error: missing };
     }
+    // Optional here, required by the form; when given it must be one the database accepts.
+    const named = displayName === undefined ? null : normalizeDisplayName(displayName);
+    if (named?.error) {
+      return { user: null, error: named.error };
+    }
 
     if (localAuthSimulation.isActive()) {
-      const { email: created, error } = await localAuthSimulation.signUp(email, password);
-      return { user: created ? ({ email: created } as User) : null, error };
+      const { email: created, error } = await localAuthSimulation.signUp(
+        email,
+        password,
+        named?.name
+      );
+      if (!created) return { user: null, error };
+      // The simulation has no inbox, so there is nothing to confirm.
+      await recordVerification(created);
+      return { user: { email: created } as User, error: null, needsConfirmation: false };
     }
 
     const client = getSupabaseClient();
@@ -173,15 +206,22 @@ export const cloudSyncService = {
             age_confirmed_16: true,
             health_data_consent: true,
             privacy_policy_version: PRIVACY_POLICY_VERSION,
+            // Copied into profiles by migration 0006's trigger.
+            ...(named?.name ? { display_name: named.name } : {}),
           },
         },
       });
       if (error) {
-        return { user: null, error: error.message };
+        return { user: null, error: describeAuthError(error) };
       }
-      return { user: data.user, error: null };
+      // With "Confirm email" on, Supabase creates the user but opens no session until the
+      // address is confirmed. Reporting that is what stops the app from treating an account
+      // it cannot use yet as signed in.
+      // No session yet means nobody is signed in; the count starts at the first sign-in.
+      if (data.session) await recordVerification(data.user?.email);
+      return { user: data.user, error: null, needsConfirmation: !data.session };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare neașteptată la înregistrare.';
+      const message = describeFailure(e, 'Eroare neașteptată la înregistrare.');
       return { user: null, error: message };
     }
   },
@@ -195,8 +235,18 @@ export const cloudSyncService = {
    * reach the client; the function identifies the caller from their own token.
    */
   async deleteAccount(): Promise<{ success: boolean; error: string | null }> {
+    return signingOutOnPurpose(() => this.deleteAccountNow());
+  },
+
+  async deleteAccountNow(): Promise<{ success: boolean; error: string | null }> {
     if (localAuthSimulation.isActive()) {
+      const email = await localAuthSimulation.currentEmail();
       await localAuthSimulation.deleteAccount();
+      // The server cascades devices with the account; the simulation has to say so.
+      if (email) {
+        await localDeviceSimulation.forget(email);
+        await forgetAccountSecurity(email);
+      }
       return { success: true, error: null };
     }
 
@@ -231,10 +281,12 @@ export const cloudSyncService = {
 
       // The session is dead once the user is gone; clear it locally so the app does not go
       // on believing someone is signed in.
+      const email = session.user?.email;
       await client.auth.signOut();
+      if (email) await forgetAccountSecurity(email);
       return { success: true, error: null };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare la ștergerea contului.';
+      const message = describeFailure(e, 'Eroare la ștergerea contului.');
       return { success: false, error: message };
     }
   },
@@ -271,7 +323,7 @@ export const cloudSyncService = {
       return { success: true, error: null };
     } catch (e: unknown) {
       // Network failures are worth reporting; a rejected address is not, for the reason above.
-      const message = e instanceof Error ? e.message : 'Eroare la trimiterea codului.';
+      const message = describeFailure(e, 'Eroare la trimiterea codului.');
       return { success: false, error: message };
     }
   },
@@ -306,7 +358,7 @@ export const cloudSyncService = {
       }
       return { success: true, error: null };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare la verificarea codului.';
+      const message = describeFailure(e, 'Eroare la verificarea codului.');
       return { success: false, error: message };
     }
   },
@@ -318,6 +370,8 @@ export const cloudSyncService = {
   ): Promise<{ success: boolean; error: string | null }> {
     if (localAuthSimulation.isActive()) {
       const done = await localAuthSimulation.resetPassword(emailForSimulation ?? '', newPassword);
+      // A reset ends signed in, so it is a verification like any other.
+      if (done) await recordVerification(emailForSimulation?.trim().toLowerCase());
       return done
         ? { success: true, error: null }
         : { success: false, error: 'Nu există un cont cu adresa aceasta.' };
@@ -329,13 +383,14 @@ export const cloudSyncService = {
     }
 
     try {
-      const { error } = await client.auth.updateUser({ password: newPassword });
+      const { data, error } = await client.auth.updateUser({ password: newPassword });
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: describeAuthError(error) };
       }
+      await recordVerification(data?.user?.email);
       return { success: true, error: null };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare la schimbarea parolei.';
+      const message = describeFailure(e, 'Eroare la schimbarea parolei.');
       return { success: false, error: message };
     }
   },
@@ -425,27 +480,45 @@ export const cloudSyncService = {
         { onConflict: 'user_id' }
       );
 
-      if (error) return { success: false, error: error.message };
+      if (error) {
+        console.warn('[Supabase] Could not save the reminder settings:', error.message);
+        return { success: false, error: CLOUD_SAVE_FAILED };
+      }
       return { success: true, error: null };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare la salvarea mementourilor.';
+      const message = describeFailure(e, 'Eroare la salvarea mementourilor.');
       return { success: false, error: message };
     }
   },
 
+  /**
+   * Signs this device out, and takes it off the account's device list first so the list
+   * never shows it as signed in afterwards (migration 0007, forget_this_device).
+   */
   async signOut(): Promise<void> {
-    if (localAuthSimulation.isActive()) {
-      await localAuthSimulation.signOut();
-      return;
-    }
+    await signingOutOnPurpose(async () => {
+      if (localAuthSimulation.isActive()) {
+        const email = await localAuthSimulation.currentEmail();
+        const sessionId = await localAuthSimulation.currentSessionId();
+        if (email && sessionId) await localDeviceSimulation.forgetSession(email, sessionId);
+        await localAuthSimulation.signOut();
+        return;
+      }
 
-    const client = getSupabaseClient();
-    if (!client) return;
-    try {
-      await client.auth.signOut();
-    } catch (e) {
-      console.warn('[Supabase] Error during sign out:', e);
-    }
+      const client = getSupabaseClient();
+      if (!client) return;
+      try {
+        // Best effort: a list entry left behind is tidied by the 20-device cap, while a
+        // sign-out that failed because of it would leave somebody signed in.
+        await client.rpc('forget_this_device').then(undefined, () => undefined);
+        // This device only. Supabase's default ends every session of the account, which made
+        // "Deconectare" on a phone sign the laptop out too; other devices are signed out from
+        // Cont → Dispozitive instead.
+        await client.auth.signOut({ scope: 'local' });
+      } catch (e) {
+        console.warn('[Supabase] Error during sign out:', e);
+      }
+    });
   },
 
   async saveMealPlan(
@@ -473,11 +546,12 @@ export const cloudSyncService = {
       );
 
       if (error) {
-        return { success: false, error: error.message };
+        console.warn('[Supabase] Could not save the plan:', error.message);
+        return { success: false, error: CLOUD_SAVE_FAILED };
       }
       return { success: true, error: null };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare la salvarea în cloud.';
+      const message = describeFailure(e, 'Eroare la salvarea în cloud.');
       return { success: false, error: message };
     }
   },
@@ -495,7 +569,8 @@ export const cloudSyncService = {
         .maybeSingle();
 
       if (error) {
-        return { ...EMPTY_CLOUD_PLAN, error: error.message };
+        console.warn('[Supabase] Could not read the plan:', error.message);
+        return { ...EMPTY_CLOUD_PLAN, error: 'Nu am putut citi planul din cloud.' };
       }
       if (!data) {
         return EMPTY_CLOUD_PLAN;
@@ -519,7 +594,7 @@ export const cloudSyncService = {
         error: null,
       };
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare la încărcarea din cloud.';
+      const message = describeFailure(e, 'Eroare la încărcarea din cloud.');
       return { ...EMPTY_CLOUD_PLAN, error: message };
     }
   },

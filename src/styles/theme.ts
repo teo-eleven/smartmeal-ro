@@ -8,64 +8,64 @@ import { Platform, ViewStyle } from 'react-native';
  */
 export const APPLE_IOS_THEME = {
   dark: {
-    background: '#000000',
-    card: '#1c1c1e',
-    cardGlass: 'rgba(28, 28, 30, 0.85)',
-    cardHover: '#2c2c2e',
-    surfaceSecondary: '#2c2c2e',
-    surfaceTertiary: '#3a3a3c',
-    dock: 'rgba(28, 28, 30, 0.88)',
-    text: '#ffffff',
-    textMuted: '#8e8e93',
-    textSubtle: '#636366',
-    primary: '#ffffff',
-    primaryText: '#000000',
-    primaryLight: 'rgba(255, 255, 255, 0.12)',
-    primaryGlow: 'rgba(255, 255, 255, 0.20)',
-    border: 'rgba(255, 255, 255, 0.12)',
-    borderStrong: 'rgba(255, 255, 255, 0.24)',
-    borderSubtle: 'rgba(255, 255, 255, 0.08)',
-    accentBg: 'rgba(255, 255, 255, 0.06)',
-    btnBg: '#2c2c2e',
-    trackBg: 'rgba(255, 255, 255, 0.12)',
-    glassBg: 'rgba(28, 28, 30, 0.90)',
-    inputBg: '#2c2c2e',
-    dayHeaderBg: '#1c1c1e',
-    successBg: 'rgba(48, 209, 88, 0.15)',
-    successText: '#30d158',
-    warningBg: 'rgba(255, 69, 58, 0.15)',
-    warningText: '#ff453a',
-    shadow: '0 12px 36px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12)',
+    background: '#131914',
+    card: '#1C241E',
+    cardGlass: 'rgba(28, 36, 30, 0.88)',
+    cardHover: '#243027',
+    surfaceSecondary: '#243027',
+    surfaceTertiary: '#2A201A',
+    dock: 'rgba(19, 25, 20, 0.94)',
+    text: '#F5EFEB',
+    textMuted: '#C5BAAB',
+    textSubtle: '#8A7E70',
+    primary: '#E6A756',
+    primaryText: '#131914',
+    primaryLight: 'rgba(230, 167, 86, 0.16)',
+    primaryGlow: 'rgba(230, 167, 86, 0.28)',
+    border: 'rgba(245, 239, 235, 0.10)',
+    borderStrong: 'rgba(230, 167, 86, 0.35)',
+    borderSubtle: 'rgba(245, 239, 235, 0.06)',
+    accentBg: 'rgba(245, 239, 235, 0.05)',
+    btnBg: '#2A201A',
+    trackBg: 'rgba(245, 239, 235, 0.12)',
+    glassBg: 'rgba(28, 36, 30, 0.92)',
+    inputBg: '#1C241E',
+    dayHeaderBg: '#1C241E',
+    successBg: 'rgba(136, 178, 122, 0.18)',
+    successText: '#88B27A',
+    warningBg: 'rgba(217, 107, 67, 0.18)',
+    warningText: '#D96B43',
+    shadow: '0 12px 36px rgba(10, 14, 11, 0.65), 0 0 20px rgba(230, 167, 86, 0.08)',
   },
   light: {
-    background: '#f2f2f7',
-    card: '#ffffff',
-    cardGlass: 'rgba(255, 255, 255, 0.85)',
-    cardHover: '#f8f8fa',
-    surfaceSecondary: '#f2f2f7',
-    surfaceTertiary: '#e5e5ea',
-    dock: 'rgba(255, 255, 255, 0.90)',
-    text: '#000000',
-    textMuted: '#8e8e93',
-    textSubtle: '#c7c7cc',
-    primary: '#000000',
-    primaryText: '#ffffff',
-    primaryLight: 'rgba(0, 0, 0, 0.08)',
-    primaryGlow: 'rgba(0, 0, 0, 0.12)',
-    border: 'rgba(0, 0, 0, 0.10)',
-    borderStrong: 'rgba(0, 0, 0, 0.20)',
-    borderSubtle: 'rgba(0, 0, 0, 0.05)',
-    accentBg: 'rgba(0, 0, 0, 0.04)',
-    btnBg: '#e5e5ea',
-    trackBg: 'rgba(0, 0, 0, 0.08)',
-    glassBg: 'rgba(255, 255, 255, 0.92)',
-    inputBg: '#f2f2f7',
-    dayHeaderBg: '#ffffff',
-    successBg: 'rgba(52, 199, 89, 0.15)',
-    successText: '#34c759',
-    warningBg: 'rgba(255, 59, 48, 0.15)',
-    warningText: '#ff3b30',
-    shadow: '0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+    background: '#EFE9DF',
+    card: '#FAF7F2',
+    cardGlass: 'rgba(250, 247, 242, 0.90)',
+    cardHover: '#F2EDE4',
+    surfaceSecondary: '#E5DDD1',
+    surfaceTertiary: '#D9CEBF',
+    dock: 'rgba(250, 247, 242, 0.94)',
+    text: '#1E2620',
+    textMuted: '#685C50',
+    textSubtle: '#9C8E7F',
+    primary: '#C88232',
+    primaryText: '#FFFFFF',
+    primaryLight: 'rgba(200, 130, 50, 0.12)',
+    primaryGlow: 'rgba(200, 130, 50, 0.20)',
+    border: 'rgba(30, 38, 32, 0.10)',
+    borderStrong: 'rgba(200, 130, 50, 0.35)',
+    borderSubtle: 'rgba(30, 38, 32, 0.05)',
+    accentBg: 'rgba(30, 38, 32, 0.04)',
+    btnBg: '#E5DDD1',
+    trackBg: 'rgba(30, 38, 32, 0.08)',
+    glassBg: 'rgba(250, 247, 242, 0.94)',
+    inputBg: '#EFE9DF',
+    dayHeaderBg: '#FAF7F2',
+    successBg: 'rgba(90, 138, 76, 0.15)',
+    successText: '#4E7A40',
+    warningBg: 'rgba(200, 90, 50, 0.15)',
+    warningText: '#C25828',
+    shadow: '0 8px 24px rgba(60, 48, 36, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
   },
 };
 
@@ -83,22 +83,22 @@ export function getAppTheme(isDark: boolean = true) {
 export function getEmeraldGlassCard(isDark: boolean = true): ViewStyle {
   if (Platform.OS === 'web') {
     return {
-      backgroundColor: isDark ? 'rgba(28, 28, 30, 0.85)' : 'rgba(255, 255, 255, 0.88)',
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+      backgroundColor: isDark ? 'rgba(28, 36, 30, 0.88)' : 'rgba(250, 247, 242, 0.90)',
+      borderColor: isDark ? 'rgba(245, 239, 235, 0.10)' : 'rgba(30, 38, 32, 0.08)',
       borderWidth: 1,
       borderRadius: 22,
       ...({
         backdropFilter: 'blur(28px) saturate(190%)',
         WebkitBackdropFilter: 'blur(28px) saturate(190%)',
         boxShadow: isDark
-          ? '0 12px 36px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12)'
-          : '0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+          ? '0 12px 36px rgba(10, 14, 11, 0.65), 0 0 20px rgba(230, 167, 86, 0.06)'
+          : '0 8px 24px rgba(60, 48, 36, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
       }),
     };
   }
   return {
-    backgroundColor: isDark ? '#1c1c1e' : '#ffffff',
-    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+    backgroundColor: isDark ? '#1C241E' : '#FAF7F2',
+    borderColor: isDark ? 'rgba(245, 239, 235, 0.10)' : 'rgba(30, 38, 32, 0.08)',
     borderWidth: 1,
     borderRadius: 22,
   };
@@ -107,22 +107,22 @@ export function getEmeraldGlassCard(isDark: boolean = true): ViewStyle {
 export function getEmeraldGlassDock(isDark: boolean = true): ViewStyle {
   if (Platform.OS === 'web') {
     return {
-      backgroundColor: isDark ? 'rgba(28, 28, 30, 0.88)' : 'rgba(255, 255, 255, 0.92)',
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.10)',
+      backgroundColor: isDark ? 'rgba(19, 25, 20, 0.94)' : 'rgba(250, 247, 242, 0.94)',
+      borderColor: isDark ? 'rgba(245, 239, 235, 0.12)' : 'rgba(30, 38, 32, 0.10)',
       borderWidth: 1.5,
       borderRadius: 9999,
       ...({
         backdropFilter: 'blur(36px) saturate(190%)',
         WebkitBackdropFilter: 'blur(36px) saturate(190%)',
         boxShadow: isDark
-          ? '0 20px 48px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.18)'
-          : '0 14px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+          ? '0 20px 48px rgba(10, 14, 11, 0.8), 0 0 24px rgba(230, 167, 86, 0.10)'
+          : '0 14px 32px rgba(60, 48, 36, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
       }),
     };
   }
   return {
-    backgroundColor: isDark ? '#1c1c1e' : '#ffffff',
-    borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.10)',
+    backgroundColor: isDark ? '#131914' : '#FAF7F2',
+    borderColor: isDark ? 'rgba(245, 239, 235, 0.12)' : 'rgba(30, 38, 32, 0.10)',
     borderWidth: 1.5,
     borderRadius: 9999,
   };
@@ -131,22 +131,22 @@ export function getEmeraldGlassDock(isDark: boolean = true): ViewStyle {
 export function getEmeraldGlassPill(isActive: boolean, isDark: boolean = true): ViewStyle {
   if (isActive) {
     return {
-      backgroundColor: isDark ? '#ffffff' : '#000000',
-      borderColor: isDark ? '#ffffff' : '#000000',
+      backgroundColor: isDark ? '#E6A756' : '#C88232',
+      borderColor: isDark ? '#E6A756' : '#C88232',
       borderWidth: 1,
       borderRadius: 14,
       ...(Platform.OS === 'web'
         ? ({
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
-            boxShadow: isDark ? '0 4px 14px rgba(255, 255, 255, 0.22)' : '0 4px 14px rgba(0, 0, 0, 0.18)',
+            boxShadow: isDark ? '0 4px 16px rgba(230, 167, 86, 0.35)' : '0 4px 14px rgba(200, 130, 50, 0.25)',
           })
         : {}),
     };
   }
   return {
-    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.05)',
-    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+    backgroundColor: isDark ? 'rgba(245, 239, 235, 0.07)' : 'rgba(30, 38, 32, 0.05)',
+    borderColor: isDark ? 'rgba(245, 239, 235, 0.12)' : 'rgba(30, 38, 32, 0.08)',
     borderWidth: 1,
     borderRadius: 14,
     ...(Platform.OS === 'web'
@@ -175,15 +175,15 @@ export function injectEmeraldGlassStyles(isDark: boolean = true): void {
   }
 
   styleEl.textContent = `
-    /* Apple iOS Black & White Minimalist Global Engine */
+    /* Apple iOS Warm Culinary Luxury (Forest & Amber Lantern) Global Engine */
     html, body, #root {
-      background-color: ${isDark ? '#000000' : '#f2f2f7'} !important;
+      background-color: ${isDark ? '#131914' : '#EFE9DF'} !important;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif !important;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       min-height: 100%;
       position: relative;
-      color: ${isDark ? '#ffffff' : '#000000'};
+      color: ${isDark ? '#F5EFEB' : '#1E2620'};
     }
 
     /* Clean root layers without extraneous background tints */
@@ -192,87 +192,87 @@ export function injectEmeraldGlassStyles(isDark: boolean = true): void {
       background-color: transparent !important;
     }
 
-    /* Apple Grouped & Inset Cards (iOS System Gray 6) */
+    /* Apple Grouped & Inset Cards (Forest Noir / Sage Velvet) */
     [data-glass="card"] {
-      background: ${isDark ? 'rgba(28, 28, 30, 0.85)' : 'rgba(255, 255, 255, 0.88)'} !important;
+      background: ${isDark ? 'rgba(28, 36, 30, 0.88)' : 'rgba(250, 247, 242, 0.90)'} !important;
       backdrop-filter: blur(28px) saturate(190%) !important;
       -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-      border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'} !important;
+      border: 1px solid ${isDark ? 'rgba(245, 239, 235, 0.10)' : 'rgba(30, 38, 32, 0.08)'} !important;
       box-shadow: ${isDark
-        ? '0 12px 36px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12)'
-        : '0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8)'} !important;
+        ? '0 12px 36px rgba(10, 14, 11, 0.65), 0 0 20px rgba(230, 167, 86, 0.06)'
+        : '0 8px 24px rgba(60, 48, 36, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)'} !important;
       border-radius: 22px !important;
       position: relative;
     }
 
     /* Apple iOS Translucent Navigation Dock */
     [data-glass="dock"] {
-      background: ${isDark ? 'rgba(28, 28, 30, 0.88)' : 'rgba(255, 255, 255, 0.92)'} !important;
+      background: ${isDark ? 'rgba(19, 25, 20, 0.94)' : 'rgba(250, 247, 242, 0.94)'} !important;
       backdrop-filter: blur(36px) saturate(190%) !important;
       -webkit-backdrop-filter: blur(36px) saturate(190%) !important;
-      border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.10)'} !important;
+      border: 1px solid ${isDark ? 'rgba(245, 239, 235, 0.12)' : 'rgba(30, 38, 32, 0.10)'} !important;
       box-shadow: ${isDark
-        ? '0 20px 48px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.18)'
-        : '0 14px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'} !important;
+        ? '0 20px 48px rgba(10, 14, 11, 0.8), 0 0 24px rgba(230, 167, 86, 0.10)'
+        : '0 14px 32px rgba(60, 48, 36, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'} !important;
       border-radius: 9999px !important;
     }
 
     /* Apple iOS Segmented Control & Inactive Pills */
     [data-glass="pill"] {
-      background: ${isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.05)'} !important;
+      background: ${isDark ? 'rgba(245, 239, 235, 0.07)' : 'rgba(30, 38, 32, 0.05)'} !important;
       backdrop-filter: blur(14px) !important;
       -webkit-backdrop-filter: blur(14px) !important;
-      border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'} !important;
+      border: 1px solid ${isDark ? 'rgba(245, 239, 235, 0.12)' : 'rgba(30, 38, 32, 0.08)'} !important;
       border-radius: 14px !important;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
     [data-glass="pill"]:hover {
-      background: ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'} !important;
-      border-color: ${isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.18)'} !important;
+      background: ${isDark ? 'rgba(245, 239, 235, 0.12)' : 'rgba(30, 38, 32, 0.08)'} !important;
+      border-color: ${isDark ? 'rgba(230, 167, 86, 0.35)' : 'rgba(200, 130, 50, 0.25)'} !important;
       transform: translateY(-1px);
     }
 
-    /* Apple iOS Active / Selected Pill (Signature Black & White Contrast) */
+    /* Apple iOS Active / Selected Pill (Amber Lamp Glow) */
     [data-glass="pill-active"] {
-      background: ${isDark ? '#ffffff' : '#000000'} !important;
-      border: 1px solid ${isDark ? '#ffffff' : '#000000'} !important;
-      box-shadow: 0 4px 14px ${isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.18)'} !important;
+      background: ${isDark ? '#E6A756' : '#C88232'} !important;
+      border: 1px solid ${isDark ? '#E6A756' : '#C88232'} !important;
+      box-shadow: 0 4px 16px ${isDark ? 'rgba(230, 167, 86, 0.35)' : 'rgba(200, 130, 50, 0.25)'} !important;
       border-radius: 14px !important;
     }
     [data-glass="pill-active"] * {
-      color: ${isDark ? '#000000' : '#ffffff'} !important;
-      font-weight: 700 !important;
+      color: ${isDark ? '#131914' : '#FFFFFF'} !important;
+      font-weight: 800 !important;
     }
 
-    /* Apple Primary Action Button (Signature Black/White High-Contrast) */
+    /* Apple Primary Action Button (Warm Honey Amber Glow) */
     [data-glass="btn-primary"] {
-      background: ${isDark ? '#ffffff' : '#000000'} !important;
-      border: 1px solid ${isDark ? '#ffffff' : '#000000'} !important;
-      box-shadow: 0 6px 20px ${isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.15)'} !important;
+      background: ${isDark ? 'linear-gradient(135deg, #F3C06D 0%, #E6A756 100%)' : 'linear-gradient(135deg, #D98E3A 0%, #C88232 100%)'} !important;
+      border: 1px solid ${isDark ? 'rgba(243, 192, 109, 0.4)' : 'rgba(200, 130, 50, 0.4)'} !important;
+      box-shadow: 0 6px 20px ${isDark ? 'rgba(230, 167, 86, 0.35)' : 'rgba(200, 130, 50, 0.25)'} !important;
       border-radius: 14px !important;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
     [data-glass="btn-primary"] * {
-      color: ${isDark ? '#000000' : '#ffffff'} !important;
-      font-weight: 700 !important;
+      color: ${isDark ? '#131914' : '#FFFFFF'} !important;
+      font-weight: 800 !important;
     }
     [data-glass="btn-primary"]:hover {
-      opacity: 0.90;
+      opacity: 0.92;
       transform: translateY(-1.5px) scale(1.015);
-      box-shadow: 0 8px 24px ${isDark ? 'rgba(255, 255, 255, 0.28)' : 'rgba(0, 0, 0, 0.22)'} !important;
+      box-shadow: 0 8px 24px ${isDark ? 'rgba(230, 167, 86, 0.45)' : 'rgba(200, 130, 50, 0.32)'} !important;
     }
     [data-glass="btn-primary"]:active {
       transform: translateY(1px) scale(0.985);
-      opacity: 0.82;
+      opacity: 0.85;
     }
 
-    /* Apple Modals & Bottom Sheets (iOS Sheet Presentation) */
+    /* Apple Modals & Bottom Sheets (Forest Velvet Sheet Presentation) */
     [data-glass="modal"] {
-      background: ${isDark ? 'rgba(28, 28, 30, 0.96)' : 'rgba(255, 255, 255, 0.97)'} !important;
+      background: ${isDark ? 'rgba(20, 27, 22, 0.96)' : 'rgba(250, 247, 242, 0.97)'} !important;
       backdrop-filter: blur(36px) saturate(190%) !important;
       -webkit-backdrop-filter: blur(36px) saturate(190%) !important;
-      border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.10)'} !important;
-      box-shadow: 0 28px 64px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+      border: 1px solid ${isDark ? 'rgba(245, 239, 235, 0.12)' : 'rgba(30, 38, 32, 0.10)'} !important;
+      box-shadow: 0 28px 64px rgba(10, 14, 11, 0.75), inset 0 1px 0 rgba(245, 239, 235, 0.08) !important;
       border-radius: 26px !important;
     }
 
@@ -284,20 +284,15 @@ export function injectEmeraldGlassStyles(isDark: boolean = true): void {
       filter: brightness(1.08);
     }
 
-    /* Apple Clean Dark Scrollbars */
+    /* Clean Modern Scrollbars: hidden track to remove lateral bar clutter */
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 0px;
+      height: 0px;
+      display: none;
     }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: ${isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.20)'};
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: ${isDark ? 'rgba(255, 255, 255, 0.42)' : 'rgba(0, 0, 0, 0.38)'};
+    * {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
   `;
 }

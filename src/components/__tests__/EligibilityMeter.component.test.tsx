@@ -39,7 +39,12 @@ describe('EligibilityMeter', () => {
   test('flags a thin catalog rather than pretending it is fine', () => {
     render(
       <EligibilityMeter
-        preferences={buildPreferences({ dietType: 'vegan', dietTypes: ['vegan'], appliances: ['air_fryer'] })}
+        preferences={buildPreferences({
+          dietType: 'vegan',
+          dietTypes: ['vegan'],
+          appliances: ['microwave'],
+          avoidedAllergens: ['gluten'],
+        })}
         isDark={false}
       />
     );

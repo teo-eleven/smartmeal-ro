@@ -1,10 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react-native';
 import { AuthModal } from '../AuthModal';
 import { cloudSyncService } from '../../services/supabase';
 
 jest.mock('../../services/supabase', () => ({
   cloudSyncService: {
+    isConfigured: jest.fn(() => true),
     signInWithEmail: jest.fn(),
     signUpWithEmail: jest.fn(),
     signOut: jest.fn(),
@@ -13,6 +14,10 @@ jest.mock('../../services/supabase', () => ({
     verifyPasswordResetCode: jest.fn(),
     updatePassword: jest.fn(),
   },
+}));
+
+jest.mock('../../components/DevicesSection', () => ({
+  DevicesSection: () => null,
 }));
 
 const baseProps = {
@@ -27,7 +32,12 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+afterEach(() => {
+  cleanup();
+});
+
 const AGE = 'Am cel puțin 16 ani';
+const NAME = 'Cum te numești?';
 const HEALTH = 'Sunt de acord ca alergiile și dieta mea să fie păstrate în cont';
 
 function tickBothConsents() {
@@ -37,6 +47,7 @@ function tickBothConsents() {
 
 function fillSignUp() {
   fireEvent.press(screen.getByText('Creează cont'));
+  fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
   fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
   fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
 }
@@ -82,22 +93,63 @@ describe('AuthModal', () => {
     expect(cloudSyncService.signInWithEmail).toHaveBeenCalledWith('a@b.ro', 'parola');
   });
 
-  test('înregistrarea folosește alt apel și spune să confirmi emailul', async () => {
+  /**
+   * With "Confirm email" on, Supabase creates the account but opens no session until the
+   * address is confirmed. Treating that as signed in let someone into the app with an
+   * account that could do nothing in the cloud.
+   */
+  test('când serverul cere confirmare, nu te consideră conectat și îți spune ce urmează', async () => {
     (cloudSyncService.signUpWithEmail as jest.Mock).mockResolvedValue({
       user: { email: 'nou@b.ro' },
       error: null,
+      needsConfirmation: true,
     });
-    render(<AuthModal {...baseProps} />);
+    const onUserChanged = jest.fn();
+    const onClose = jest.fn();
+    render(<AuthModal {...baseProps} onUserChanged={onUserChanged} onClose={onClose} />);
 
     fireEvent.press(screen.getByText('Creează cont'));
+
+    fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
     fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
-    // Has to satisfy the policy now, or it never reaches the server.
     fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
     tickBothConsents();
     fireEvent.press(screen.getByText('Înregistrare'));
 
-    await waitFor(() => expect(screen.getByText(/Verifică email-ul/i)).toBeTruthy());
-    expect(cloudSyncService.signUpWithEmail).toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText(/Verifică emailul/i)).toBeTruthy());
+    expect(onUserChanged).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    // Back on the sign-in tab, with the address kept, ready for after the confirmation.
+    expect(screen.getByText('Conectare')).toBeTruthy();
+  });
+
+  /**
+   * Without a confirmation step the account is open straight away. The window has to close
+   * as it does after signing in; left open, it came back over the plan on its own.
+   */
+  test('cont nou fără confirmare: te conectează și închide fereastra', async () => {
+    (cloudSyncService.signUpWithEmail as jest.Mock).mockResolvedValue({
+      user: { email: 'nou@b.ro' },
+      error: null,
+      needsConfirmation: false,
+    });
+    const onUserChanged = jest.fn();
+    const onClose = jest.fn();
+    render(<AuthModal {...baseProps} onUserChanged={onUserChanged} onClose={onClose} />);
+
+    fireEvent.press(screen.getByText('Creează cont'));
+
+    fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
+    tickBothConsents();
+    fireEvent.press(screen.getByText('Înregistrare'));
+
+    await waitFor(() => expect(onUserChanged).toHaveBeenCalledWith('nou@b.ro'));
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(onClose).toHaveBeenCalled();
   });
 
   test('o excepție de rețea devine un mesaj, nu un ecran alb', async () => {
@@ -406,6 +458,7 @@ describe('resetarea parolei', () => {
   test('înregistrarea refuză o parolă slabă înainte de server', async () => {
     render(<AuthModal {...baseProps} />);
     fireEvent.press(screen.getByText('Creează cont'));
+    fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
     fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
     fireEvent.changeText(screen.getByPlaceholderText('••••••••'), '123456');
     fireEvent.press(screen.getByText('Înregistrare'));
@@ -478,10 +531,168 @@ describe('AuthModal, acordul la cont nou', () => {
     fireEvent.press(screen.getByText('Înregistrare'));
 
     await waitFor(() =>
-      expect(cloudSyncService.signUpWithEmail).toHaveBeenCalledWith('nou@b.ro', 'Muntele7Verde', {
-        isAtLeast16: true,
-        healthDataConsent: true,
-      })
+      expect(cloudSyncService.signUpWithEmail).toHaveBeenCalledWith(
+        'nou@b.ro',
+        'Muntele7Verde',
+        { isAtLeast16: true, healthDataConsent: true },
+        'Ana'
+      )
     );
+  });
+});
+
+/** An error that stays on screen after the person has fixed it reads as a second error. */
+describe('AuthModal, mesajul de eroare', () => {
+  test('dispare când bifezi căsuța care lipsea', async () => {
+    render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    fireEvent.press(screen.getByText('Înregistrare'));
+    await waitFor(() => expect(screen.getByText(/trebuie să ai cel puțin 16 ani/i)).toBeTruthy());
+
+    fireEvent.press(screen.getByLabelText(AGE));
+
+    expect(screen.queryByText(/trebuie să ai cel puțin 16 ani/i)).toBeNull();
+  });
+
+  test('dispare când corectezi parola', async () => {
+    render(<AuthModal {...baseProps} />);
+    fireEvent.press(screen.getByText('Creează cont'));
+    fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'nou@b.ro');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), '123');
+    fireEvent.press(screen.getByText('Înregistrare'));
+    await waitFor(() => expect(screen.getByText(/10 caractere/i)).toBeTruthy());
+
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
+
+    expect(screen.queryByText(/10 caractere/i)).toBeNull();
+  });
+});
+
+/**
+ * After signing in or up, the form kept the password in its state, and the consent boxes
+ * stayed ticked. Signing out showed it all again, on a shared phone, to whoever came next:
+ * the password ready to use and consent already given in someone else's name.
+ */
+describe('AuthModal, formularul după conectare', () => {
+  test('după cont nou, parola și bifele nu mai sunt în formular', async () => {
+    (cloudSyncService.signUpWithEmail as jest.Mock).mockResolvedValue({
+      user: { email: 'nou@b.ro' },
+      error: null,
+      needsConfirmation: false,
+    });
+    const { rerender } = render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    tickBothConsents();
+    fireEvent.press(screen.getByText('Înregistrare'));
+    await waitFor(() => expect(baseProps.onUserChanged).toHaveBeenCalled());
+
+    // Signed in, then signed out again: the same window, back to the form.
+    rerender(<AuthModal {...baseProps} userEmail="nou@b.ro" />);
+    rerender(<AuthModal {...baseProps} userEmail={null} />);
+
+    expect(screen.getByText('Conectare')).toBeTruthy();
+    expect(screen.getByPlaceholderText('••••••••').props.value).toBe('');
+    fireEvent.press(screen.getByText('Creează cont'));
+    expect(screen.getByLabelText(AGE).props.accessibilityState.checked).toBe(false);
+    expect(screen.getByLabelText(NAME).props.value).toBe('');
+  });
+});
+
+/**
+ * The account window was taller than a phone screen and did not scroll: the title was cut
+ * off at the top and "Închide" and "Șterge contul" fell below the bottom edge, out of reach.
+ */
+describe('AuthModal, fereastra de cont', () => {
+  test('are un buton de închidere sus, mereu la îndemână', () => {
+    const onClose = jest.fn();
+    render(<AuthModal {...baseProps} userEmail="a@b.ro" onClose={onClose} />);
+
+    fireEvent.press(screen.getByLabelText('Închide fereastra de cont'));
+
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  test('conținutul se poate derula', () => {
+    render(<AuthModal {...baseProps} userEmail="a@b.ro" />);
+
+    expect(screen.getByTestId('account-scroll')).toBeTruthy();
+  });
+});
+
+/** "Cum te numești?" — asked once, when the account is opened, and kept in the profile. */
+describe('AuthModal, numele la cont nou', () => {
+  test('câmpul apare doar la cont nou', () => {
+    render(<AuthModal {...baseProps} />);
+    expect(screen.queryByLabelText(NAME)).toBeNull();
+
+    fireEvent.press(screen.getByText('Creează cont'));
+
+    expect(screen.getByLabelText(NAME)).toBeTruthy();
+  });
+
+  test('fără nume, nimic nu pleacă spre server', async () => {
+    render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    fireEvent.changeText(screen.getByLabelText(NAME), '   ');
+    tickBothConsents();
+
+    fireEvent.press(screen.getByText('Înregistrare'));
+
+    await waitFor(() => expect(screen.getByText('Scrie cum te numești.')).toBeTruthy());
+    expect(cloudSyncService.signUpWithEmail).not.toHaveBeenCalled();
+  });
+
+  test('numele pleacă curățat de spații în plus', async () => {
+    (cloudSyncService.signUpWithEmail as jest.Mock).mockResolvedValue({
+      user: { email: 'nou@b.ro' },
+      error: null,
+    });
+    render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    fireEvent.changeText(screen.getByLabelText(NAME), '  Ana   Maria ');
+    tickBothConsents();
+
+    fireEvent.press(screen.getByText('Înregistrare'));
+
+    await waitFor(() =>
+      expect((cloudSyncService.signUpWithEmail as jest.Mock).mock.calls[0][3]).toBe('Ana Maria')
+    );
+  });
+
+  test('eroarea despre nume dispare când îl scrii', async () => {
+    render(<AuthModal {...baseProps} />);
+    fillSignUp();
+    fireEvent.changeText(screen.getByLabelText(NAME), '');
+    fireEvent.press(screen.getByText('Înregistrare'));
+    await waitFor(() => expect(screen.getByText('Scrie cum te numești.')).toBeTruthy());
+
+    fireEvent.changeText(screen.getByLabelText(NAME), 'Ana');
+
+    expect(screen.queryByText('Scrie cum te numești.')).toBeNull();
+  });
+});
+
+/**
+ * The full-screen login is replaced the moment somebody signs in. The delayed close must die
+ * with it, not fire into a screen that is gone.
+ */
+describe('AuthModal, închiderea după conectare', () => {
+  test('dacă fereastra dispare înainte, închiderea întârziată nu mai rulează', async () => {
+    (cloudSyncService.signInWithEmail as jest.Mock).mockResolvedValue({
+      user: { email: 'a@b.ro' },
+      error: null,
+    });
+    const onClose = jest.fn();
+    const { unmount } = render(<AuthModal {...baseProps} onClose={onClose} />);
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'a@b.ro');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
+    fireEvent.press(screen.getByText('Conectare'));
+    await waitFor(() => expect(baseProps.onUserChanged).toHaveBeenCalledWith('a@b.ro'));
+
+    unmount();
+    jest.advanceTimersByTime(1000);
+
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

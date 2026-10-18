@@ -61,7 +61,7 @@ describe('MealBoardScreen', () => {
 
   test('reshuffling produces a plan again', () => {
     render(<MealBoardScreen isDark={false} />);
-    fireEvent.press(screen.getByText(/Amestecă/i));
+    fireEvent.press(screen.getByText(/Regenerează Meniul/i));
     expect(useAppStore.getState().currentPlan).not.toBeNull();
   });
 

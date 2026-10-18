@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Appliance, DayOfWeek, MoodTag, UserPreferences } from '../types';
+import { Appliance, DayOfWeek, HealthGoalTag, MoodTag, UserPreferences } from '../types';
+import { HEALTH_GOALS_CATALOG } from '../data/healthTags';
 import { getAppTheme } from '../styles/theme';
 
 interface QuickFiltersModalProps {
@@ -70,6 +71,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
   const [budgetRon, setBudgetRon] = useState<number>(preferences.budgetRon);
   const [moodTags, setMoodTags] = useState<MoodTag[]>(preferences.moodTags);
   const [appliances, setAppliances] = useState<Appliance[]>(preferences.appliances || ['hob', 'oven']);
+  const [healthGoalTags, setHealthGoalTags] = useState<HealthGoalTag[]>(preferences.healthGoalTags || []);
   const [budgetInputText, setBudgetInputText] = useState<string>(String(preferences.budgetRon));
 
   if (!visible) return null;
@@ -87,8 +89,10 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
 
   const toggleMood = (mood: MoodTag) => {
     if (moodTags.includes(mood)) {
+      if (moodTags.length <= 1) return; // Must have at least 1 mood
       setMoodTags(moodTags.filter((m) => m !== mood));
     } else {
+      if (moodTags.length >= 5) return; // Max 5 moods
       setMoodTags([...moodTags, mood]);
     }
   };
@@ -102,6 +106,14 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
     }
   };
 
+  const toggleHealthGoal = (tag: HealthGoalTag) => {
+    if (healthGoalTags.includes(tag)) {
+      setHealthGoalTags(healthGoalTags.filter((t) => t !== tag));
+    } else {
+      setHealthGoalTags([...healthGoalTags, tag]);
+    }
+  };
+
   const handleSave = () => {
     const finalBudget = Math.max(50, Number(budgetInputText) || budgetRon);
     onApplyFilters({
@@ -110,30 +122,32 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
       budgetRon: finalBudget,
       moodTags,
       appliances,
+      healthGoalTags,
     });
     onClose();
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Header */}
-        <View style={[styles.header, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Închide" onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
-            <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Filtre & Preferințe Meniu</Text>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={handleSave}
-            style={[styles.saveHeaderBtn, { backgroundColor: theme.primary }]}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.saveHeaderBtnText, { color: theme.primaryText }]}>Aplică ✓</Text>
-          </TouchableOpacity>
-        </View>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          {/* Header */}
+          <View style={[styles.header, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Închide" onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
+              <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Filtre & Preferințe Meniu</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={handleSave}
+              style={[styles.saveHeaderBtn, { backgroundColor: theme.primary }]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.saveHeaderBtnText, { color: theme.primaryText }]}>Aplică ✓</Text>
+            </TouchableOpacity>
+          </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={[styles.contentWrapper, { maxWidth: 560 }]}>
             {/* Section 1: Zile de Gătit */}
             <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -360,6 +374,51 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
               </View>
             </View>
 
+            {/* Section 6: Obiective de Sănătate & Stil de Viață */}
+            <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>🩺 Obiective de Sănătate & Nutriție</Text>
+                <Text style={[styles.sectionSubtitle, { color: theme.textMuted }]}>
+                  {healthGoalTags.length} active
+                </Text>
+              </View>
+
+              <View style={styles.moodGrid}>
+                {HEALTH_GOALS_CATALOG.map((goal) => {
+                  const isActive = healthGoalTags.includes(goal.id);
+                  return (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      key={goal.id}
+                      onPress={() => toggleHealthGoal(goal.id)}
+                      style={[
+                        styles.moodChip,
+                        {
+                          backgroundColor: isActive ? theme.primaryLight : theme.btnBg,
+                          borderColor: isActive ? theme.primary : theme.border,
+                        },
+                      ]}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={styles.moodChipIcon}>{goal.icon}</Text>
+                      <Text
+                        style={[
+                          styles.moodChipText,
+                          {
+                            color: isActive ? theme.primary : theme.text,
+                            fontWeight: isActive ? '800' : '600',
+                          },
+                        ]}
+                      >
+                        {goal.shortBadgeRo}
+                      </Text>
+                      {isActive && <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '900', marginLeft: 4 }}>✓</Text>}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
             {/* Actions Bottom Bar */}
             <View style={styles.bottomActionsCol}>
               <TouchableOpacity
@@ -387,12 +446,33 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
             </View>
           </View>
         </ScrollView>
-      </SafeAreaView>
+        </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 600,
+    maxHeight: '88%',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 20,
+  },
   container: {
     flex: 1,
   },

@@ -6,6 +6,7 @@ import {
   DietType,
   FoodTier,
   GroceryListItem,
+  HealthGoalTag,
   MealPlan,
   MealPlanDay,
   MealSlot,
@@ -46,7 +47,14 @@ import { parseReminderSettings, parseUserPreferences } from '../utils/preference
 import { reminderScheduler } from '../services/reminderScheduler';
 import { storageService } from '../services/storage';
 import { cloudSyncService } from '../services/supabase';
-import { areDietsCompatible, isRecipeMatchingDiets } from '../utils/dietCompatibility';
+import { checkReauth } from '../services/reauth';
+import { describeFailure } from '../services/authErrors';
+import {
+  areDietsCompatible,
+  isRecipeMatchingDiets,
+  isBaseDiet,
+  isModifierDiet,
+} from '../utils/dietCompatibility';
 
 export type ActiveView = 'onboarding' | 'generating' | 'meals' | 'grocery';
 
@@ -80,12 +88,43 @@ export interface AppState {
    *
    * `checking` until the stored session has been read, so the gate never flashes in front of
    * somebody who is already signed in. `guest` is a deliberate choice the user made, not an
-   * absence of one -- the app works fully without an account.
+   * absence of one -- the app works fully without an account. `locked` is a signed-in
+   * account last verified more than thirty days ago (services/reauth.ts): the session is
+   * still valid, but the app waits for Face ID, the password or an emailed code.
    */
-  authStatus: 'checking' | 'signedIn' | 'guest';
-  continueAsGuest: () => void;
+  authStatus: 'checking' | 'signedIn' | 'guest' | 'locked';
+  continueAsGuest: () => Promise<void>;
+  /**
+   * The only way out of `locked`: it opens the app if, and only if, the keychain holds a
+   * verification inside the month (services/reauth.ts). Every sign-in service records one,
+   * so a real sign-in unlocks and nothing else does.
+   */
+  unlock: () => Promise<void>;
+  /** Locks a signed-in app that has been open, or in the background, past the month. */
+  recheckLock: () => Promise<void>;
+  /** "Deconectează-te" at the monthly lock: ends the session and goes back to the login. */
+  signOutToLogin: () => Promise<void>;
   isSyncing: boolean;
   lastSyncedAt: string | null;
+  globalLoadingMessage: string | null;
+  setGlobalLoading: (loading: boolean, message?: string | null) => void;
+  isReloading: boolean;
+  reloadConfig: {
+    title?: string;
+    subtitle?: string;
+    icon?: string;
+    steps?: string[];
+  } | null;
+  triggerReload: (
+    opts?: {
+      title?: string;
+      subtitle?: string;
+      icon?: string;
+      steps?: string[];
+      durationMs?: number;
+    },
+    task?: () => Promise<void> | void
+  ) => Promise<void>;
 
   // Pending confirmation for a destructive action
   confirmRequest: ConfirmActionId | null;
@@ -125,6 +164,7 @@ export interface AppState {
   setCookingDays: (days: DayOfWeek[]) => void;
   setBudget: (budget: number) => void;
   toggleMoodTag: (tag: MoodTag) => void;
+  setMoodTags: (tags: MoodTag[]) => void;
   setDietType: (diet: DietType) => void;
   toggleDietType: (diet: DietType) => void;
   setDietTypes: (diets: DietType[]) => void;
@@ -137,10 +177,14 @@ export interface AppState {
   toggleFavouriteRecipe: (recipeId: string) => void;
   clearPantryStock: () => void;
   toggleAvoidedAllergen: (allergen: Allergen) => void;
+  toggleHealthGoalTag: (tag: HealthGoalTag) => void;
+  setHealthGoalTags: (tags: HealthGoalTag[]) => void;
+  setSnackTastePreference: (preference: 'sweet' | 'savory' | 'both') => void;
   toggleAppliance: (appliance: Appliance) => void;
   setExcludePantryStaples: (exclude: boolean) => void;
   setMealSlots: (slots: MealSlot[]) => void;
   setMealsPerDayCount: (count: 1 | 2 | 3) => void;
+  setDailyMealSlots: (dailySlots: Partial<Record<DayOfWeek, MealSlot[]>>, count?: 1 | 2 | 3) => void;
   setFoodTier: (tier: FoodTier) => void;
   toggleExtraSlot: (slot: 'dessert') => void;
   addExtraMealToDay: (dayOfWeek: DayOfWeek, slot: 'dessert') => void;
@@ -166,6 +210,7 @@ export interface AppState {
   updatePreferencesAndRebuild: (newPrefs: Partial<UserPreferences>) => void;
   swapMeal: (dayOfWeek: DayOfWeek, slot?: MealSlot) => void;
   replaceMealWithRecipe: (dayOfWeek: DayOfWeek, newRecipe: Recipe, slot?: MealSlot) => void;
+  toggleEatOut: (dayOfWeek: DayOfWeek, slot?: MealSlot) => void;
   toggleGroceryItem: (ingredientId: string) => void;
   setActiveView: (view: 'onboarding' | 'generating' | 'meals' | 'grocery') => void;
 
@@ -179,6 +224,21 @@ export interface AppState {
   reminders: ReminderSettings;
   updateReminders: (patch: Partial<ReminderSettings>) => void;
   loadRemindersFromCloud: () => Promise<void>;
+}
+
+/**
+ * Without a Supabase project there is no cloud to sync with, only the local account
+ * simulation. Saying "session expired" there sent someone who was signed in round a loop
+ * with no exit; this says what is actually true.
+ */
+function syncUnavailableNotice() {
+  return {
+    id: Date.now().toString(),
+    title: 'Sincronizare indisponibilă',
+    message:
+      'Sincronizarea între telefoane nu e disponibilă pe această versiune. Planul tău e salvat pe acest dispozitiv.',
+    type: 'info' as const,
+  };
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -373,8 +433,9 @@ function collectMealsFromDays(days: MealPlanDay[]): { recipe: Recipe; servings: 
   const meals: { recipe: Recipe; servings: number }[] = [];
   days.forEach((day) =>
     day.meals.forEach((meal) => {
-      // A reheated portion was already shopped for on the day it was cooked.
-      if (!meal.isLeftover) meals.push({ recipe: meal.recipe, servings: meal.servings });
+      // A reheated portion or eaten out meal was not shopped for.
+      if (!meal.isLeftover && !meal.isEatenOut)
+        meals.push({ recipe: meal.recipe, servings: meal.servings });
     })
   );
   return meals;
@@ -384,8 +445,9 @@ function collectPlanMeals(plan: MealPlan): { recipe: Recipe; servings: number }[
   const meals: { recipe: Recipe; servings: number }[] = [];
   plan.days.forEach((day) => {
     day.meals.forEach((meal) => {
-      // A reheated portion was already shopped for on the day it was cooked.
-      if (!meal.isLeftover) meals.push({ recipe: meal.recipe, servings: meal.servings });
+      // A reheated portion or eaten out meal was not shopped for.
+      if (!meal.isLeftover && !meal.isEatenOut)
+        meals.push({ recipe: meal.recipe, servings: meal.servings });
     });
   });
   return meals;
@@ -720,15 +782,45 @@ function applyPreferenceStep(state: AppState, nextPrefs: UserPreferences): Parti
 export const useAppStore = create<AppState>((set, get) => ({
   currentStep: 1,
   maxVisitedStep: 1,
-  totalSteps: 9,
+  totalSteps: 8,
   activeView: 'onboarding',
   isHydrated: false,
-  themeMode: 'system',
+  themeMode: 'dark',
   reminders: { ...DEFAULT_REMINDERS },
   userEmail: null,
   authStatus: 'checking',
   isSyncing: false,
   lastSyncedAt: null,
+  globalLoadingMessage: null,
+  setGlobalLoading: (loading: boolean, message?: string | null) =>
+    set({ globalLoadingMessage: loading ? message || 'Se actualizează...' : null }),
+  isReloading: false,
+  reloadConfig: null,
+  triggerReload: async (opts, task) => {
+    const durationMs = opts?.durationMs ?? 650;
+    set({
+      isReloading: true,
+      reloadConfig: {
+        title: opts?.title || 'Se reîncarcă datele...',
+        subtitle: opts?.subtitle || 'Actualizăm planul de mese și ingredientele...',
+        icon: opts?.icon || '🔄',
+        steps: opts?.steps,
+      },
+    });
+    const startTime = Date.now();
+    try {
+      if (task) {
+        await task();
+      }
+    } finally {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, durationMs - elapsed);
+      if (remaining > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remaining));
+      }
+      set({ isReloading: false, reloadConfig: null });
+    }
+  },
   preferences: { ...DEFAULT_PREFERENCES },
   currentPlan: null,
   groceryItems: [],
@@ -777,6 +869,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Read the session before anything renders, so the gate never flashes in front of
       // somebody who signed in three weeks ago and is still within their thirty days.
       const signedInEmail = await cloudSyncService.currentEmail();
+      // checkReauth does not throw; if it ever did, the safe answer is the lock.
+      const isLocked = signedInEmail
+        ? await checkReauth(signedInEmail).then(
+            (verdict) => verdict === 'due',
+            () => true
+          )
+        : false;
 
       // Storage is untrusted, and on web it is localStorage: editable by hand, by another
       // tab, or by an extension. Everything is whitelisted against its catalog before any of
@@ -974,16 +1073,13 @@ export const useAppStore = create<AppState>((set, get) => ({
           forceOnboarding && !isNaN(targetStep)
             ? Math.max(state.maxVisitedStep, targetStep)
             : state.maxVisitedStep,
-        themeMode:
-          storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
-            ? storedTheme
-            : state.themeMode,
+        themeMode: storedTheme === 'light' ? 'light' : 'dark',
         reminders: storedReminders,
         userEmail: signedInEmail ?? state.userEmail,
         // Not signed in means the gate, on every start. "Without an account" is chosen per
         // session and never stored: remembering it hid the sign-in screen for good after one
         // tap, and a refresh then went straight into the planner.
-        authStatus: signedInEmail ? 'signedIn' : 'checking',
+        authStatus: signedInEmail ? (isLocked ? 'locked' : 'signedIn') : 'checking',
         activeNotice:
           (repairedPrefsNotice?.type === 'warning' ? repairedPrefsNotice : null) ??
           planSafetyNotice ??
@@ -1056,8 +1152,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   cycleThemeMode: () => {
     set((state) => {
-      const order: ThemeMode[] = ['system', 'light', 'dark'];
-      const next = order[(order.indexOf(state.themeMode) + 1) % order.length];
+      const next: ThemeMode = state.themeMode === 'light' ? 'dark' : 'light';
       void storageService.saveThemeMode(next);
       return { themeMode: next };
     });
@@ -1068,12 +1163,58 @@ export const useAppStore = create<AppState>((set, get) => ({
    * guideline 5.1.1(i) requires an app whose core works offline to be usable without an
    * account -- and because a meal planner genuinely is useful without one.
    */
-  continueAsGuest: () => {
+  continueAsGuest: async () => {
+    // From the monthly lock, "without an account" means without this one: the session is
+    // ended rather than left open behind a guest screen, which would be a way round the lock.
+    // Awaited, so a quick sign-in afterwards cannot be undone by this sign-out landing late.
+    if (get().authStatus === 'locked') {
+      await cloudSyncService.signOut();
+      get().setUserEmail(null);
+      return;
+    }
     set({ authStatus: 'guest' });
   },
 
+  unlock: async () => {
+    const { authStatus, userEmail } = get();
+    if (authStatus !== 'locked' || !userEmail) return;
+    const verdict = await checkReauth(userEmail);
+    // Still the same locked account once the keychain has answered.
+    if (verdict === 'ok' && get().authStatus === 'locked' && get().userEmail === userEmail) {
+      set({ authStatus: 'signedIn' });
+    }
+  },
+
+  recheckLock: async () => {
+    const { authStatus, userEmail } = get();
+    if (authStatus !== 'signedIn' || !userEmail) return;
+    const verdict = await checkReauth(userEmail);
+    if (verdict === 'due' && get().authStatus === 'signedIn' && get().userEmail === userEmail) {
+      set({ authStatus: 'locked' });
+    }
+  },
+
+  signOutToLogin: async () => {
+    try {
+      await cloudSyncService.signOut();
+    } finally {
+      // One step, never through 'guest', which would show the plan for an instant; and
+      // whatever the sign-out did, this device stops showing the account.
+      set({ userEmail: null, authStatus: 'checking' });
+      void reminderScheduler.cancelAll();
+    }
+  },
+
   setUserEmail: (email: string | null) => {
-    set({ userEmail: email, authStatus: email ? 'signedIn' : 'guest' });
+    // At the lock, a sign-in does not open the app by itself: unlock checks that it was
+    // recorded as a verification. Anything else calling this with an address cannot be a
+    // way past the lock.
+    if (email && get().authStatus === 'locked') {
+      set({ userEmail: email });
+      void get().unlock();
+    } else {
+      set({ userEmail: email, authStatus: email ? 'signedIn' : 'guest' });
+    }
 
     if (email) {
       // A second phone starts from what the account already knows.
@@ -1085,8 +1226,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   syncWithCloud: async () => {
-    const { userEmail, currentPlan, groceryItems, preferences } = get();
-    if (!userEmail) return;
+    const { userEmail, currentPlan, groceryItems, preferences, authStatus } = get();
+    // Not from behind the monthly lock: the account has not been verified yet.
+    if (!userEmail || authStatus === 'locked') return;
+    if (!cloudSyncService.isConfigured()) {
+      set({ activeNotice: syncUnavailableNotice() });
+      return;
+    }
 
     set({ isSyncing: true });
     try {
@@ -1126,7 +1272,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (e: unknown) {
       // A rejected call used to escape this action entirely, surfacing as an unhandled
       // rejection with nothing shown to the user.
-      const message = e instanceof Error ? e.message : 'Eroare neașteptată la sincronizare.';
+      const message = describeFailure(e, 'Eroare neașteptată la sincronizare.');
       set({
         activeNotice: {
           id: Date.now().toString(),
@@ -1145,8 +1291,12 @@ export const useAppStore = create<AppState>((set, get) => ({
    * user saying so -- the fetched plan waits in `pendingCloudPlan` until they confirm.
    */
   syncFromCloud: async () => {
-    const { userEmail } = get();
-    if (!userEmail) return;
+    const { userEmail, authStatus } = get();
+    if (!userEmail || authStatus === 'locked') return;
+    if (!cloudSyncService.isConfigured()) {
+      set({ activeNotice: syncUnavailableNotice() });
+      return;
+    }
 
     set({ isSyncing: true });
     try {
@@ -1204,7 +1354,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       set({ pendingCloudPlan: pending, confirmRequest: 'apply_cloud_plan' });
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Eroare neașteptată la descărcare.';
+      const message = describeFailure(e, 'Eroare neașteptată la descărcare.');
       set({
         activeNotice: {
           id: Date.now().toString(),
@@ -1502,6 +1652,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
+  setMoodTags: (tags: MoodTag[]) => {
+    set((state) => {
+      const validTags = tags.slice(0, 5);
+      const nextPrefs = {
+        ...state.preferences,
+        moodTags: validTags.length > 0 ? validTags : (['healthy_comfort'] as MoodTag[]),
+      };
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
+    });
+  },
+
   setDietType: (diet: DietType) => {
     set((state) => {
       const nextPrefs = {
@@ -1520,21 +1682,31 @@ export const useAppStore = create<AppState>((set, get) => ({
           ? state.preferences.dietTypes
           : [state.preferences.dietType];
 
-      if (current.includes(diet)) {
-        if (current.length === 1) {
-          return {
-            ...state,
-            activeNotice: {
-              id: Date.now().toString(),
-              title: 'Cel puțin o orientare alimentară',
-              message:
-                'Planul tău are nevoie de cel puțin o dietă de bază (ex: Omnivor sau Vegetarian) pentru a genera rețete conforme.',
-              type: 'info',
-            },
-          };
+      // CASE 1: The user selected a BASE DIET (omnivore, vegetarian, vegan, pescatarian)
+      if (isBaseDiet(diet)) {
+        // If already selected as the only base diet, keep it
+        if (current[0] === diet && current.length === 1) {
+          return state;
         }
+
+        // Keep existing modifiers that are compatible with the new base diet
+        const existingModifiers = current.filter(isModifierDiet);
+        const compatibleModifiers = existingModifiers.filter((m) => areDietsCompatible(diet, m));
+
+        const nextDiets: DietType[] = [diet, ...compatibleModifiers];
+        const nextPrefs: UserPreferences = {
+          ...state.preferences,
+          dietType: diet,
+          dietTypes: nextDiets,
+        };
+        return applyPreferenceStep(state, nextPrefs);
+      }
+
+      // CASE 2: The user selected a MODIFIER DIET (gluten_free, keto)
+      if (current.includes(diet)) {
+        // Deselecting modifier: remove it cleanly
         const nextDiets = current.filter((d) => d !== diet);
-        const primaryDiet = nextDiets[0] || 'omnivore';
+        const primaryDiet = nextDiets.find(isBaseDiet) || 'omnivore';
         const nextPrefs: UserPreferences = {
           ...state.preferences,
           dietType: primaryDiet,
@@ -1543,52 +1715,51 @@ export const useAppStore = create<AppState>((set, get) => ({
         return applyPreferenceStep(state, nextPrefs);
       }
 
-      // Check compatibility with existing selected diets
-      const incompatibleDiets = current.filter((d) => !areDietsCompatible(d, diet));
-      if (incompatibleDiets.length > 0) {
+      // Adding modifier: check compatibility with the active base diet
+      const baseDiet = current.find(isBaseDiet) || 'omnivore';
+      if (!areDietsCompatible(baseDiet, diet)) {
         return {
           ...state,
           activeNotice: {
             id: Date.now().toString(),
-            title: 'Diete incompatibile',
-            message:
-              'Dieta selectată nu se poate combina cu dieta deja activă (de exemplu nu se poate combina Omnivor cu Vegan sau Post). Debifează opțiunea incompatibilă pentru a o alege pe aceasta.',
+            title: 'Dietă incompatibilă',
+            message: `Opțiunea ${diet === 'keto' ? 'Low-Carb / Keto' : 'Fără Gluten'} nu este compatibilă cu alimentația ${baseDiet === 'vegan' ? 'Vegană' : baseDiet}.`,
             type: 'warning',
           },
         };
       }
 
-      if (current.length >= 2) {
+      // Check max limits (1 base diet + up to 2 modifiers)
+      const modifiers = current.filter(isModifierDiet);
+      if (modifiers.length >= 2) {
         return {
           ...state,
           activeNotice: {
             id: Date.now().toString(),
-            title: 'Limită de 2 diete',
-            message:
-              'Poți combina maximum 2 diete simultan (de exemplu Vegetarian + Fără Gluten) pentru a garanta rețete disponibile în catalog.',
+            title: 'Limită restricții speciale',
+            message: 'Poți combina maximum 2 restricții speciale simultan.',
             type: 'warning',
           },
         };
       }
 
-      const nextDiets = [...current, diet];
-      const primaryDiet = nextDiets[0] || 'omnivore';
+      const nextDiets: DietType[] = [...current, diet];
       const nextPrefs: UserPreferences = {
         ...state.preferences,
-        dietType: primaryDiet,
+        dietType: baseDiet,
         dietTypes: nextDiets,
       };
-
       return applyPreferenceStep(state, nextPrefs);
     });
   },
 
   setDietTypes: (diets: DietType[]) => {
     set((state) => {
-      const safeDiets = diets.length > 0 ? diets.slice(0, 2) : (['omnivore'] as DietType[]);
+      const safeDiets = diets.length > 0 ? diets : (['omnivore'] as DietType[]);
+      const primaryDiet = safeDiets.find(isBaseDiet) || safeDiets[0] || 'omnivore';
       const nextPrefs: UserPreferences = {
         ...state.preferences,
-        dietType: safeDiets[0],
+        dietType: primaryDiet,
         dietTypes: safeDiets,
       };
       return applyPreferenceStep(state, nextPrefs);
@@ -1623,6 +1794,39 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (rejection) return rejection;
 
       return applyPreferencesWithRebuild(state, nextPrefs);
+    });
+  },
+
+  toggleHealthGoalTag: (tag: HealthGoalTag) => {
+    set((state) => {
+      const current = state.preferences.healthGoalTags || [];
+      const updated = current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag];
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        healthGoalTags: updated,
+      };
+      return applyPreferenceStep(state, nextPrefs);
+    });
+  },
+
+  setHealthGoalTags: (tags: HealthGoalTag[]) => {
+    set((state) => {
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        healthGoalTags: tags,
+      };
+      return applyPreferenceStep(state, nextPrefs);
+    });
+  },
+
+  setSnackTastePreference: (preference: 'sweet' | 'savory' | 'both') => {
+    set((state) => {
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        snackTastePreference: preference,
+      };
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
     });
   },
 
@@ -1670,8 +1874,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         };
       }
 
-      const target = nextDay.meals.find((m) => m.slot === source.slot) ?? nextDay.meals[0];
-      if (!target) return state;
+      const existingTarget = nextDay.meals.find((m) => m.slot === source.slot);
 
       const days = plan.days.map((day, index) => {
         if (index === dayIndex) {
@@ -1683,18 +1886,38 @@ export const useAppStore = create<AppState>((set, get) => ({
           return { ...day, meals, ...rebuildDayShape(meals, day) };
         }
         if (index === dayIndex + 1) {
-          const meals = day.meals.map((m) =>
-            m.id === target.id
-              ? {
-                  ...m,
-                  recipe: source.recipe,
-                  isLeftover: true,
-                  leftoverFromMealId: source.id,
-                  estimatedCostRon: 0,
-                }
-              : m
-          );
-          return { ...day, meals, ...rebuildDayShape(meals, day) };
+          if (existingTarget) {
+            const meals = day.meals.map((m) =>
+              m.id === existingTarget.id
+                ? {
+                    ...m,
+                    recipe: source.recipe,
+                    isLeftover: true,
+                    leftoverFromMealId: source.id,
+                    leftoverFromDay: dayOfWeek,
+                    estimatedCostRon: 0,
+                  }
+                : m
+            );
+            return { ...day, meals, ...rebuildDayShape(meals, day) };
+          } else {
+            // Append a new leftover meal so unrelated slots (e.g. dinner) are not overwritten
+            const newLeftoverMeal: PlannedMeal = {
+              id: `${nextDay.dayOfWeek}-${source.slot}-leftover-${Date.now()}`,
+              slot: source.slot,
+              slotLabelRo:
+                source.slotLabelRo || (source.slot === 'dessert' ? 'Desert' : source.slot),
+              recipe: source.recipe,
+              servings: state.preferences.peopleCount || source.servings,
+              estimatedCostRon: 0,
+              isLeftover: true,
+              leftoverFromMealId: source.id,
+              leftoverFromDay: dayOfWeek,
+              isAddedLeftover: true,
+            };
+            const meals = [...day.meals, newLeftoverMeal];
+            return { ...day, meals, ...rebuildDayShape(meals, day) };
+          }
         }
         return day;
       });
@@ -1752,6 +1975,10 @@ export const useAppStore = create<AppState>((set, get) => ({
           return { ...day, meals, ...rebuildDayShape(meals, day) };
         }
         if (index === dayIndex) {
+          if (leftover.isAddedLeftover || leftover.slot === 'dessert') {
+            const meals = day.meals.filter((m) => m.id !== mealId);
+            return { ...day, meals, ...rebuildDayShape(meals, day) };
+          }
           const meals = day.meals.map((m) =>
             m.id === mealId
               ? {
@@ -1800,6 +2027,24 @@ export const useAppStore = create<AppState>((set, get) => ({
             ),
           };
         }
+      }
+
+      if (isRemoving) {
+        void storageService.savePreferences(nextPrefs);
+        return { preferences: nextPrefs };
+      }
+
+      if (state.currentPlan) {
+        const { days: safeDays } = makePlanSafeForPreferences(state.currentPlan.days, nextPrefs);
+        const days = safeDays.map((d) => ({
+          ...d,
+          ...rebuildDayShape(d.meals, d),
+        }));
+        void storageService.savePreferences(nextPrefs);
+        return {
+          preferences: nextPrefs,
+          ...withRecalculatedCart(state, days, null),
+        };
       }
 
       return applyPreferencesWithRebuild(state, nextPrefs);
@@ -1890,7 +2135,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => {
       // recalculateCartForPreferences persists the preferences itself; saving here too wrote
       // the same blob twice on one tap.
-      const nextPrefs: UserPreferences = { ...state.preferences, pantryStock: {}, pendingPantryStock: {} };
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        pantryStock: {},
+        pendingPantryStock: {},
+      };
       return recalculateCartForPreferences(state, nextPrefs);
     });
   },
@@ -1927,7 +2176,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setMealSlots: (slots: MealSlot[]) => {
-    const safeSlots: MealSlot[] = slots.length > 0 ? slots : ['dinner'];
+    const CANONICAL_ORDER: Record<string, number> = {
+      breakfast: 1,
+      lunch: 2,
+      dinner: 3,
+      snack: 4,
+      dessert: 5,
+    };
+    const rawSlots: MealSlot[] = slots.length > 0 ? slots : ['dinner'];
+    const safeSlots = [...rawSlots].sort(
+      (a, b) => (CANONICAL_ORDER[a] ?? 99) - (CANONICAL_ORDER[b] ?? 99)
+    );
     set((state) => {
       const nextPrefs = { ...state.preferences, mealSlots: safeSlots };
       void storageService.savePreferences(nextPrefs);
@@ -1950,7 +2209,38 @@ export const useAppStore = create<AppState>((set, get) => ({
       );
       const combinedSlots: MealSlot[] = [...baseSlots, ...activeExtras];
 
-      const nextPrefs = { ...state.preferences, mealSlots: combinedSlots };
+      const nextPrefs = { ...state.preferences, mealSlots: combinedSlots, dailyMealSlots: undefined };
+      return applyPreferencesWithRebuild(state, nextPrefs);
+    });
+  },
+
+  setDailyMealSlots: (dailySlots: Partial<Record<DayOfWeek, MealSlot[]>>, _count?: 1 | 2 | 3) => {
+    set((state) => {
+      const allSlotsUsed = new Set<MealSlot>();
+      Object.values(dailySlots).forEach((slots) => {
+        slots?.forEach((s) => allSlotsUsed.add(s));
+      });
+      const activeExtras = state.preferences.mealSlots.filter(
+        (s) => s === 'snack' || s === 'dessert'
+      );
+      activeExtras.forEach((s) => allSlotsUsed.add(s));
+
+      const CANONICAL_ORDER: Record<string, number> = {
+        breakfast: 1,
+        lunch: 2,
+        dinner: 3,
+        snack: 4,
+        dessert: 5,
+      };
+      const combinedSlots: MealSlot[] = Array.from(allSlotsUsed).sort(
+        (a, b) => (CANONICAL_ORDER[a] ?? 99) - (CANONICAL_ORDER[b] ?? 99)
+      );
+
+      const nextPrefs: UserPreferences = {
+        ...state.preferences,
+        dailyMealSlots: dailySlots,
+        mealSlots: combinedSlots.length > 0 ? combinedSlots : ['dinner'],
+      };
       return applyPreferencesWithRebuild(state, nextPrefs);
     });
   },
@@ -2098,6 +2388,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         return {
           ...day,
           meals: updatedMeals,
+          servings: day.recipe.id === mealId ? safeServings : day.servings,
           estimatedCostRon: Math.round(daySum * 100) / 100,
         };
       });
@@ -2693,16 +2984,27 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     // The freshly aggregated totals are the ones shown to the user, so the plan has to
     // carry them: the engine's own figures do not know about pantry stock.
+    // Ensure the initial plan budget cleanly matches or accommodates the realistic cart cost
+    // so the user is not greeted with an artificial deficit on the very first screen.
+    const resolvedBudgetRon = Math.max(plan.totalBudgetRon, aggregated.totalCartCostRon);
+
     const savedPlan: MealPlan = {
       ...plan,
+      totalBudgetRon: resolvedBudgetRon,
       totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
       totalCartCostRon: aggregated.totalCartCostRon,
       extraProducts: getActiveExtraProducts(preferences),
     };
 
+    const finalPreferences = {
+      ...preferences,
+      budgetRon: resolvedBudgetRon,
+    };
+    void storageService.savePreferences(finalPreferences);
     void storageService.savePlanAndGrocery(savedPlan, aggregated.items);
 
     set(() => ({
+      preferences: finalPreferences,
       currentPlan: savedPlan,
       groceryItems: aggregated.items,
       activeView: 'meals',
@@ -2976,41 +3278,86 @@ export const useAppStore = create<AppState>((set, get) => ({
     const targetSlot: MealSlot =
       slot || (targetDay.meals && targetDay.meals.length > 0 ? targetDay.meals[0].slot : 'dinner');
 
+    const originalMeal = targetDay.meals?.find((m) => m.slot === targetSlot && !m.isLeftover);
+    const originalMealId = originalMeal?.id;
+    const effectiveServings = originalMeal ? originalMeal.servings : currentPlan.peopleCount;
+
     const newCost = calculateRecipePortionCost(
       canonical,
-      currentPlan.peopleCount,
+      effectiveServings,
       preferences.supermarketId,
       preferences.excludePantryStaples
     );
 
-    const updatedDays = [...currentPlan.days];
-    const updatedMeals = (targetDay.meals || []).map((m) => {
-      // Same rule as a swap: a reheated portion belongs to the day it was cooked on.
-      if (m.slot === targetSlot && !m.isLeftover) {
+    const updatedDays = currentPlan.days.map((day, dIdx) => {
+      if (dIdx === dayIndex) {
+        const updatedMeals = (day.meals || []).map((m) => {
+          // Same rule as a swap: a reheated portion belongs to the day it was cooked on.
+          if (m.slot === targetSlot && !m.isLeftover) {
+            return {
+              ...m,
+              recipe: canonical,
+              estimatedCostRon: newCost,
+            };
+          }
+          return m;
+        });
+
+        const primaryMeal =
+          updatedMeals.find((m) => m.slot === 'dinner') ||
+          updatedMeals[0] || {
+            recipe: canonical,
+            estimatedCostRon: newCost,
+          };
+        const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
+
         return {
-          ...m,
-          recipe: canonical,
-          estimatedCostRon: newCost,
+          ...day,
+          meals: updatedMeals,
+          recipe: primaryMeal.recipe,
+          estimatedCostRon: Math.round(dayCostSum * 100) / 100,
         };
       }
-      return m;
+
+      // Check if this other day has a leftover linked to the replaced meal
+      const hasDependentLeftover = day.meals?.some(
+        (m) =>
+          m.isLeftover &&
+          (m.leftoverFromMealId === originalMealId ||
+            (originalMeal && m.recipe.id === originalMeal.recipe.id) ||
+            (m.slot === targetSlot && (dIdx === dayIndex + 1 || m.leftoverFromDay === dayOfWeek)))
+      );
+
+      if (hasDependentLeftover) {
+        const updatedMeals = (day.meals || []).map((m) => {
+          if (
+            m.isLeftover &&
+            (m.leftoverFromMealId === originalMealId ||
+              (originalMeal && m.recipe.id === originalMeal.recipe.id) ||
+              (m.slot === targetSlot && (dIdx === dayIndex + 1 || m.leftoverFromDay === dayOfWeek)))
+          ) {
+            return {
+              ...m,
+              recipe: canonical,
+              estimatedCostRon: 0,
+            };
+          }
+          return m;
+        });
+
+        const primaryMeal = updatedMeals.find((m) => m.slot === 'dinner') || updatedMeals[0];
+        const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
+
+        return {
+          ...day,
+          meals: updatedMeals,
+          recipe: primaryMeal?.recipe || day.recipe,
+          estimatedCostRon: Math.round(dayCostSum * 100) / 100,
+        };
+      }
+
+      return day;
     });
-
-    const primaryMeal = updatedMeals.find((m) => m.slot === 'dinner') ||
-      updatedMeals[0] || {
-        recipe: canonical,
-        estimatedCostRon: newCost,
-      };
-    const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
-
-    updatedDays[dayIndex] = {
-      ...targetDay,
-      meals: updatedMeals,
-      recipe: primaryMeal.recipe,
-      // Two decimals, like every meal cost and every sibling day total. One decimal
-      // here let a day drift from the sum of its own meals by up to five bani.
-      estimatedCostRon: Math.round(dayCostSum * 100) / 100,
-    };
 
     const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
     updatedDays.forEach((d) => {
@@ -3034,6 +3381,85 @@ export const useAppStore = create<AppState>((set, get) => ({
       totalCartCostRon: aggregated.totalCartCostRon,
       extraProducts: getActiveExtraProducts(preferences),
       days: updatedDays,
+    };
+
+    void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);
+
+    set(() => ({
+      currentPlan: updatedPlan,
+      groceryItems: aggregated.items,
+    }));
+  },
+
+  toggleEatOut: (dayOfWeek: DayOfWeek, slot?: MealSlot) => {
+    const { currentPlan, preferences } = get();
+    if (!currentPlan) return;
+
+    const dayIndex = currentPlan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
+    if (dayIndex === -1) return;
+
+    const targetDay = currentPlan.days[dayIndex];
+    const targetSlot: MealSlot =
+      slot || (targetDay.meals && targetDay.meals.length > 0 ? targetDay.meals[0].slot : 'dinner');
+
+    let wasUpdated = false;
+    const updatedDays = currentPlan.days.map((d) => {
+      if (d.dayOfWeek !== dayOfWeek) return d;
+      const nextMeals = (d.meals || []).map((m) => {
+        if (m.slot !== targetSlot) return m;
+        wasUpdated = true;
+        const newEatenOut = !m.isEatenOut;
+        const cost = newEatenOut
+          ? 0
+          : m.isLeftover
+            ? 0
+            : calculateRecipePortionCost(
+                m.recipe,
+                m.servings,
+                preferences.supermarketId,
+                preferences.excludePantryStaples
+              );
+        return {
+          ...m,
+          isEatenOut: newEatenOut,
+          estimatedCostRon: cost,
+        };
+      });
+
+      const dayTotalCost = nextMeals.reduce((sum, meal) => sum + meal.estimatedCostRon, 0);
+
+      return {
+        ...d,
+        meals: nextMeals,
+        estimatedCostRon: Math.round(dayTotalCost * 100) / 100,
+      };
+    });
+
+    if (!wasUpdated) return;
+
+    const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
+    updatedDays.forEach((d) => {
+      d.meals.forEach((m) => {
+        if (!m.isLeftover && !m.isEatenOut) {
+          allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+        }
+      });
+    });
+
+    const aggregated = aggregateGroceryList(
+      allMealsToAggregate,
+      preferences.supermarketId,
+      preferences.excludePantryStaples,
+      getActiveExtraProductIds(preferences),
+      preferences.pantryInventory || [],
+      preferences.pantryStock || {}
+    );
+
+    const updatedPlan: MealPlan = {
+      ...currentPlan,
+      days: updatedDays,
+      totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+      totalCartCostRon: aggregated.totalCartCostRon,
     };
 
     void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);

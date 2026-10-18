@@ -78,7 +78,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   const targetMeal = slot ? currentMealDay?.meals?.find((m) => m.slot === slot) : null;
   const currentRecipe = targetMeal ? targetMeal.recipe : currentMealDay?.recipe;
   const currentRecipeId = currentRecipe?.id;
-  const slotTitle = targetMeal ? ` ${targetMeal.slotLabelRo}` : '';
+  const slotTitle = targetMeal?.slotLabelRo || '';
 
   // Filter eligible recipes suitable for this specific meal slot
   const eligible = getEligibleRecipes(preferences);
@@ -109,9 +109,9 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   const appTheme = getAppTheme(isDark);
   const theme = {
     ...appTheme,
-    aiBg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
-    aiBorder: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.12)',
-    aiText: isDark ? '#ffffff' : '#000000',
+    aiBg: isDark ? 'rgba(230, 167, 86, 0.12)' : '#fef9c3',
+    aiBorder: isDark ? 'rgba(230, 167, 86, 0.35)' : '#fde047',
+    aiText: appTheme.text,
   };
 
   const handleAskAi = async () => {
@@ -130,20 +130,21 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Header */}
-        <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Închide" onPress={onClose} style={styles.closeBtn}>
-            <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>
-            Schimbă{slotTitle ? ` ${slotTitle}` : ''} de {DAY_LABELS[dayOfWeek]}
-          </Text>
-          <View style={{ width: 60 }} />
-        </View>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          {/* Header */}
+          <View style={[styles.header, { borderBottomColor: theme.border }]}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Închide" onPress={onClose} style={styles.closeBtn}>
+              <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>
+              Schimbă{slotTitle ? ` ${slotTitle}` : ''} de {DAY_LABELS[dayOfWeek]}
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.innerBox}>
             {/* Currently Selected Note */}
             {currentMealDay && (
@@ -152,7 +153,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                   Rețetă curentă în plan:
                 </Text>
                 <Text style={[styles.currentTitle, { color: theme.text }]}>
-                  {currentMealDay.recipe.title}
+                  {currentRecipe?.title || currentMealDay.recipe.title}
                 </Text>
               </View>
             )}
@@ -277,12 +278,33 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
             </View>
           </View>
         </ScrollView>
-      </SafeAreaView>
+        </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 600,
+    maxHeight: '88%',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 20,
+  },
   container: {
     flex: 1,
   },
@@ -355,8 +377,10 @@ const styles = StyleSheet.create({
   },
   aiTriggerBtn: {
     borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    minHeight: 44,
+    minWidth: 80,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -422,7 +446,9 @@ const styles = StyleSheet.create({
   },
   selectBtn: {
     borderRadius: 12,
+    minHeight: 44,
     paddingVertical: 10,
+    paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },

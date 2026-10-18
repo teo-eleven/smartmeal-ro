@@ -30,3 +30,35 @@ jest.mock('expo-notifications', () => ({
   scheduleNotificationAsync: async () => 'stub-id',
   cancelScheduledNotificationAsync: async () => undefined,
 }));
+
+// Face ID and fingerprint are native code. Each test sets the answers it needs; by default the
+// device has a sensor with a fingerprint enrolled and every check succeeds.
+jest.mock('expo-local-authentication', () => ({
+  AuthenticationType: { FINGERPRINT: 1, FACIAL_RECOGNITION: 2, IRIS: 3 },
+  hasHardwareAsync: jest.fn(async () => true),
+  isEnrolledAsync: jest.fn(async () => true),
+  supportedAuthenticationTypesAsync: jest.fn(async () => [1]),
+  authenticateAsync: jest.fn(async () => ({ success: true })),
+}));
+
+// RevenueCat's SDK is native code. Each test sets the answers it needs on this object.
+jest.mock('react-native-purchases', () => {
+  const empty = { entitlements: { active: {} }, managementURL: null };
+  const Purchases = {
+    configure: jest.fn(),
+    isConfigured: jest.fn(async () => true),
+    getCustomerInfo: jest.fn(async () => empty),
+    getOfferings: jest.fn(async () => ({ current: null })),
+    purchasePackage: jest.fn(),
+    restorePurchases: jest.fn(async () => empty),
+    logIn: jest.fn(async () => ({ customerInfo: empty, created: false })),
+    logOut: jest.fn(async () => empty),
+  };
+  const PURCHASES_ERROR_CODE = {
+    PURCHASE_CANCELLED_ERROR: '1',
+    PRODUCT_ALREADY_PURCHASED_ERROR: '6',
+    NETWORK_ERROR: '10',
+    PAYMENT_PENDING_ERROR: '20',
+  };
+  return { __esModule: true, default: Purchases, PURCHASES_ERROR_CODE };
+});

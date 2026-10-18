@@ -30,11 +30,13 @@ nu sunt protejate.
 - [ ] `supabase login` și `supabase link --project-ref <ref>`
 - [ ] `supabase db push` — rulează migrațiile **0001** (tabela planurilor, RLS, limite de
       mărime), **0002** (limita de rată partajată pentru AI), **0003** (mementourile),
-      **0004** (mementourile pe email: frecvența și ultima trimitere) și
-      **0005** (acordul de la crearea contului, înghețat într-o tabelă pe care utilizatorul
-      n-o poate modifica)
+      **0004** (mementourile pe email: frecvența și ultima trimitere),
+      **0005** (acordul de la crearea contului), **0006** (profiluri și nume afișat),
+      **0007** (tabela dispozitivelor și revocare la distanță) și **0008** (întărire drepturi acorduri)
 - [ ] Authentication → Sign In / Providers → Email: activează **Confirm email**
 - [ ] Authentication → **Email Templates**, lipește șabloanele din repo:
+      - **Magic Link** ← `supabase/templates/magic_link.html`. **Obligatoriu.** Trimite codul OTP
+        (`{{ .Token }}`) pentru conectare fără parolă.
       - **Reset Password** ← `supabase/templates/recovery.html`. **Obligatoriu.** Șablonul
         implicit trimite un *link*, iar aplicația cere un *cod* (`{{ .Token }}`). Cu șablonul
         implicit, nimeni nu-și poate reseta parola.
@@ -154,6 +156,10 @@ eas env:set --environment production --visibility plaintext \
   --name EXPO_PUBLIC_SUPABASE_URL --value https://<ref>.supabase.co
 eas env:set --environment production --visibility plaintext \
   --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <cheia anon>
+# Adresa la care ai publicat PRIVACY.md (§3). Apple cere ca politica să poată fi deschisă
+# din aplicație; linkul apare pe ecranul de start și lângă bifa de acord.
+eas env:set --environment production --visibility plaintext \
+  --name EXPO_PUBLIC_PRIVACY_POLICY_URL --value https://<domeniul-tau>/privacy
 eas env:list --environment production   # verifică
 
 eas build --platform android --profile production

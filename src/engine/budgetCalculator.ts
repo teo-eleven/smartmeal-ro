@@ -71,18 +71,22 @@ export function calculateMinimumViableBudget(
   }
   const recipesToEvaluate = tierFiltered.length >= 3 ? tierFiltered : mainRecipes;
 
-  const economicalCosts = recipesToEvaluate.map((r) =>
-    calculateRecipePortionCost(r, peopleCount, supermarketId, excludePantryStaples)
-  )
-    .sort((a, b) => a - b)
-    .slice(0, 5);
+  const sortedCosts = recipesToEvaluate
+    .map((r) => calculateRecipePortionCost(r, peopleCount, supermarketId, excludePantryStaples))
+    .sort((a, b) => a - b);
 
-  const avgEconomicalMealCost =
-    economicalCosts.reduce((sum, cost) => sum + cost, 0) / economicalCosts.length;
+  // Take the realistic central distribution (25th to 65th percentile) representing typical meals picked by the planner
+  const startIdx = Math.floor(sortedCosts.length * 0.25);
+  const endIdx = Math.max(startIdx + 1, Math.floor(sortedCosts.length * 0.65));
+  const realisticSlice = sortedCosts.slice(startIdx, endIdx);
+  const avgRealisticMealCost =
+    realisticSlice.reduce((sum, cost) => sum + cost, 0) / realisticSlice.length;
 
-  // Add a 20% packaging buffer to account for whole supermarket packages
-  const baseline = avgEconomicalMealCost * daysCount * safeMealsPerDay * 1.2;
+  // Real-world packaging factor at Romanian supermarkets: when buying whole packs (meat 500g, veggies 1kg, oils, spices),
+  // small baskets incur an overhead between 1.25x and 1.38x
+  const basketOverhead = peopleCount === 1 ? 1.38 : peopleCount === 2 ? 1.30 : 1.24;
+  const baseline = avgRealisticMealCost * daysCount * safeMealsPerDay * basketOverhead;
 
   // Round up to nearest 5 RON for clean UI slider display
-  return Math.max(25 * safeMealsPerDay, Math.ceil(baseline / 5) * 5);
+  return Math.max(30 * safeMealsPerDay, Math.ceil(baseline / 5) * 5);
 }

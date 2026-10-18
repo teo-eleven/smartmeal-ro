@@ -2,7 +2,8 @@ import { RetailProduct, RetailProductCategory } from '../types';
 
 /**
  * Supermarket Retail Products Catalog (Snacks & Drinks)
- * Authentic prices matching Romanian supermarket catalogs & flyers (Lidl, Kaufland, Carrefour, Mega Image).
+ * Typical shelf prices, estimated per chain. Not live data, and no chain supplied them: the
+ * app has no relationship with any of the chains named here.
  */
 export const RETAIL_PRODUCTS: RetailProduct[] = [
   // ==========================================

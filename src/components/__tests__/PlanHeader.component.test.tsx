@@ -27,7 +27,6 @@ describe('PlanHeader budget messaging', () => {
         plan={buildPlan({
           budgetStatus: { isWithinBudget: true, minimumAchievableRon: 150, swapsApplied: 0 },
         })}
-        onRebuildPlan={noop}
         onResetOnboarding={noop}
         isDark={false}
       />
@@ -45,7 +44,6 @@ describe('PlanHeader budget messaging', () => {
           totalCartCostRon: 195,
           budgetStatus: { isWithinBudget: true, minimumAchievableRon: 195, swapsApplied: 3 },
         })}
-        onRebuildPlan={noop}
         onResetOnboarding={noop}
         isDark={false}
       />
@@ -65,7 +63,6 @@ describe('PlanHeader budget messaging', () => {
           totalCartCostRon: 182.4,
           budgetStatus: { isWithinBudget: false, minimumAchievableRon: 182.4, swapsApplied: 9 },
         })}
-        onRebuildPlan={noop}
         onResetOnboarding={noop}
         onRaiseBudget={onRaiseBudget}
         isDark={false}
@@ -88,7 +85,6 @@ describe('PlanHeader budget messaging', () => {
           totalCartCostRon: 182.4,
           budgetStatus: { isWithinBudget: false, minimumAchievableRon: 182.4, swapsApplied: 9 },
         })}
-        onRebuildPlan={noop}
         onResetOnboarding={noop}
         isDark={false}
       />
@@ -107,7 +103,6 @@ describe('PlanHeader budget messaging', () => {
           totalCartCostRon: 240,
           budgetStatus: { isWithinBudget: false, minimumAchievableRon: 182.4, swapsApplied: 9 },
         })}
-        onRebuildPlan={noop}
         onResetOnboarding={noop}
         onRaiseBudget={jest.fn()}
         isDark={false}
@@ -119,42 +114,40 @@ describe('PlanHeader budget messaging', () => {
     expect(screen.queryByText(/minimul realist/i)).toBeNull();
   });
 
-  test('rebuilding the plan reaches the store', () => {
+  test('triggers filter opening when filters button is pressed', () => {
     // Arrange
-    const onRebuildPlan = jest.fn();
+    const onOpenFilters = jest.fn();
     render(
       <PlanHeader
         plan={buildPlan()}
-        onRebuildPlan={onRebuildPlan}
+        onOpenFilters={onOpenFilters}
         onResetOnboarding={noop}
         isDark={false}
       />
     );
 
     // Act
-    fireEvent.press(screen.getByText(/Amestecă/i));
+    fireEvent.press(screen.getByText(/Filtre ⚙️/i));
 
     // Assert
-    expect(onRebuildPlan).toHaveBeenCalledTimes(1);
+    expect(onOpenFilters).toHaveBeenCalledTimes(1);
   });
 
-  test('the confirmation timer does not outlive the screen', () => {
+  test('falls back to reset onboarding when no filters handler is supplied', () => {
     // Arrange
-    const warn = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    const view = render(
-      <PlanHeader plan={buildPlan()} onRebuildPlan={jest.fn()} onResetOnboarding={noop} isDark={false} />
+    const onResetOnboarding = jest.fn();
+    render(
+      <PlanHeader
+        plan={buildPlan()}
+        onResetOnboarding={onResetOnboarding}
+        isDark={false}
+      />
     );
 
-    // Act: start the feedback, then leave before it fades
-    fireEvent.press(screen.getByText(/Amestecă/i));
-    view.unmount();
-    jest.advanceTimersByTime(5000);
+    // Act
+    fireEvent.press(screen.getByText(/Filtre ⚙️/i));
 
-    // Assert: no "state update on an unmounted component" warning
-    const complaints = warn.mock.calls.filter(([first]) =>
-      String(first).includes('unmounted component')
-    );
-    expect(complaints).toHaveLength(0);
-    warn.mockRestore();
+    // Assert
+    expect(onResetOnboarding).toHaveBeenCalledTimes(1);
   });
 });

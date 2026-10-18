@@ -43,7 +43,7 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
 
   const content = (
     <View style={styles.content} pointerEvents="none">
-      <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={compact ? 2 : 3}>
+      <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={2}>
         {recipe.title}
       </Text>
 
@@ -58,16 +58,10 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
     </View>
   );
 
-  const corners = (
-    <>
-      <View style={styles.cornerLeft}>
-        <Text style={styles.cornerText}>{palette.labelRo}</Text>
-      </View>
-      <View style={styles.cornerRight}>
-        <Text style={styles.cornerText}>⏱ {minutes} min</Text>
-      </View>
-    </>
-  );
+  // No corner badges here. Every screen that shows this picture lays its own over it, time
+  // included, in the same corners: drawing them here too put the time on a card twice, one
+  // label under another, and on the 74 px week cards they ran into the title. The kind of
+  // dish and the time stay in the accessibility label.
 
   // No backdrop exists for this archetype, so the gradient carries the card on its own.
   if (!backdrop) {
@@ -80,7 +74,6 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
           style={StyleSheet.absoluteFill}
         />
         {content}
-        {corners}
       </View>
     );
   }
@@ -92,19 +85,18 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
       style={[styles.fill, style]}
       accessibilityLabel={accessibilityLabel}
     >
-      {/* Tints the backdrop toward the archetype's colour and keeps the title readable. */}
+      {/* Clean cinematic scrim that keeps the photo visible, bright and legible */}
       <LinearGradient
         colors={
           isDark
-            ? ['rgba(0,0,0,0.30)', `${palette.darkColors[1]}E6`]
-            : ['rgba(0,0,0,0.25)', `${palette.darkColors[0]}D9`]
+            ? ['rgba(0,0,0,0.10)', 'rgba(19, 25, 20, 0.75)']
+            : ['rgba(0,0,0,0.05)', 'rgba(30, 38, 32, 0.65)']
         }
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
       {content}
-      {corners}
     </ImageBackground>
   );
 };
@@ -118,24 +110,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
+    width: '100%',
+    maxWidth: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 22,
+    paddingHorizontal: 16,
   },
   title: {
+    width: '100%',
+    maxWidth: '100%',
     color: '#ffffff',
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '800',
     textAlign: 'center',
-    lineHeight: 25,
+    lineHeight: 23,
     letterSpacing: -0.3,
-    textShadowColor: 'rgba(0,0,0,0.55)',
+    textShadowColor: 'rgba(0,0,0,0.65)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 6,
   },
   titleCompact: {
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 18,
   },
   rule: {
     width: 46,
@@ -150,29 +146,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.1,
     textAlign: 'center',
-  },
-  cornerLeft: {
-    position: 'absolute',
-    left: 10,
-    bottom: 10,
-    backgroundColor: 'rgba(0,0,0,0.42)',
-    borderRadius: 7,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  cornerRight: {
-    position: 'absolute',
-    right: 10,
-    bottom: 10,
-    backgroundColor: 'rgba(0,0,0,0.42)',
-    borderRadius: 7,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  cornerText: {
-    color: 'rgba(255,255,255,0.92)',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.2,
   },
 });

@@ -79,7 +79,7 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({
               style={[
                 styles.name,
                 {
-                  color: theme.text,
+                  color: item.isPurchased ? theme.textMuted : theme.text,
                   textDecorationLine: item.isPurchased ? 'line-through' : 'none',
                 },
               ]}
@@ -102,7 +102,7 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({
             Necesar: <Text style={{ fontWeight: '700' }}>{item.neededAmount}{item.unit}</Text>
           {(item.leftoverAmount ?? 0) > 0 && !item.isFromPantry && (
             <Text style={[styles.leftover, { color: theme.textMuted }]} numberOfLines={1}>
-              ↻ îți rămân {item.leftoverAmount}{item.unit} pentru săptămâna viitoare
+              {' • '}îți rămân {item.leftoverAmount}{item.unit} pentru săptămâna viitoare
             </Text>
           )} • {item.isFromPantry ? 'Ai deja în cămară (0 lei la casă)' : item.packsToBuy === 0 ? `Acoperit din cămară (${item.fromStockAmount}${item.unit})` : `Cumperi: ${item.packsToBuy} × pachet ${item.packSize}${item.unit}`}
           </Text>
@@ -170,11 +170,13 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 8,
   },
   name: {
     fontSize: 15,
     fontWeight: '700',
+    flexShrink: 1,
   },
   stapleBadge: {
     paddingHorizontal: 8,

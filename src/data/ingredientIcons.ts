@@ -26,10 +26,12 @@ export const INGREDIENT_ICONS: Record<string, string> = {
   varza_alba: '🥬',
   avocado: '🥑',
   banane: '🍌',
+  fasole_verde_congelata: '🫛',
 
   // Meat & fish
   piept_pui_file: '🍗',
   pulpe_pui_dezosate: '🍗',
+  ficatei_pui_proaspeti: '🍗',
   carne_tocata_amestec: '🥩',
   muschiulet_porc: '🥩',
   antricot_vita_angus: '🥩',
@@ -59,6 +61,7 @@ export const INGREDIENT_ICONS: Record<string, string> = {
   lapte_vegetal_ovaz: '🥛',
   lapte_cocos: '🥥',
   unt_82: '🧈',
+  tofu_clasic: '🧈',
 
   // Pantry
   orez_basmati: '🍚',
@@ -85,6 +88,7 @@ export const INGREDIENT_ICONS: Record<string, string> = {
   fructe_padure_congelate: '🫐',
   scortisoara_macinata: '🌰',
   naut_conserva: '🫘',
+  linte_verde_uscata: '🫘',
   fasole_rosie_conserva: '🫘',
   fasole_boabe_conserva: '🫘',
   mazare_congelata: '🫛',
@@ -107,6 +111,19 @@ export const INGREDIENT_ICONS: Record<string, string> = {
   busuioc_uscat: '🌿',
   piper_negru: '🧂',
   sare_fina: '🧂',
+  turmeric_macinat: '🟡',
+  quinoa_alba: '🌾',
+  seminte_dovleac: '🎃',
+  piept_curcan: '🦃',
+  file_cod_congelat: '🐟',
+  pastrav_proaspat: '🐟',
+  conopida_proaspata: '🥦',
+  lapte_migdale_fara_zahar: '🥛',
+  afine_congelate: '🫐',
+  ghimbir_proaspat: '🫚',
+  masline_kalamata: '🫒',
+  cimbru_uscat: '🌿',
+  rozmarin_proaspat: '🌿',
 };
 
 /** Ingredients too generic to say anything about a dish, so never shown as its icons. */

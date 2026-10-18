@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  AppState,
   Platform,
   SafeAreaView,
   StatusBar,
@@ -18,37 +19,44 @@ import { GeneratingPlanModal } from './src/screens/onboarding/GeneratingPlanModa
 import { MealBoardScreen } from './src/screens/MealBoardScreen';
 import { GroceryScreen } from './src/screens/GroceryScreen';
 import { AuthModal } from './src/screens/AuthModal';
-import { WelcomeGate } from './src/screens/WelcomeGate';
+import { AuthGate, isGateShowing } from './src/screens/AuthGate';
+import { BiometricOptInPrompt } from './src/components/BiometricOptInPrompt';
 import { InformativeNoticeModal } from './src/components/InformativeNoticeModal';
 import { ConfirmDialog } from './src/components/ConfirmDialog';
 import { SUPERMARKETS } from './src/data/supermarkets';
 import { useResponsive } from './src/hooks/useResponsive';
+import { useAccountSession } from './src/hooks/useAccountSession';
 import { injectEmeraldGlassStyles, getAppTheme } from './src/styles/theme';
 import { glass } from './src/styles/glass';
 import { UndoBanner } from './src/components/UndoBanner';
+import { PaywallScreen } from './src/screens/PaywallScreen';
+import { useSubscriptionStore } from './src/store/subscriptionStore';
+import { cloudSyncService } from './src/services/supabase';
+import { AppLoadingScreen } from './src/components/AppLoadingScreen';
+import { LoadingToast } from './src/components/LoadingToast';
 
-const THEME_ICONS: Record<ThemeMode, string> = { system: '🌗', light: '☀️', dark: '🌙' };
+const THEME_ICONS: Record<ThemeMode, string> = { system: '🌙', light: '☀️', dark: '🌙' };
 const THEME_LABELS: Record<ThemeMode, string> = {
-  system: 'ca telefonul',
+  system: 'întunecată',
   light: 'luminoasă',
   dark: 'întunecată',
 };
 
 function AppShell() {
-  const colorScheme = useColorScheme();
   const [authModalVisible, setAuthModalVisible] = useState(false);
 
   const {
     authStatus,
-    continueAsGuest,
     isHydrated,
     themeMode,
-    cycleThemeMode,
     activeView,
     currentPlan,
     groceryItems,
     userEmail,
     isSyncing,
+    globalLoadingMessage,
+    isReloading,
+    reloadConfig,
     lastSyncedAt,
     activeNotice,
     clearNotice,
@@ -68,10 +76,10 @@ function AppShell() {
     generatePlan,
   } = useAppStore();
 
-  // The phone's setting is the default; an explicit choice overrides it.
-  const isDark = themeMode === 'system' ? colorScheme === 'dark' : themeMode === 'dark';
+  // Permanently locked to the luxury Warm Forest & Amber Lantern theme
+  const isDark = true;
 
-  const { isDesktop, contentMaxWidth } = useResponsive();
+  const { isDesktop, isMobile, contentMaxWidth } = useResponsive();
 
   const viewFadeAnim = useRef(new Animated.Value(1)).current;
   const viewSlideAnim = useRef(new Animated.Value(0)).current;
@@ -83,6 +91,35 @@ function AppShell() {
   useEffect(() => {
     void hydrateStorage();
   }, [hydrateStorage]);
+
+  const subscription = useSubscriptionStore((s) => s.status);
+  const isSubscriptionChecked = useSubscriptionStore((s) => s.isChecked);
+
+  // Read once the stored session is known, then again whenever the app comes back to the
+  // foreground, so a renewal or an expiry shows without a restart.
+  useEffect(() => {
+    if (!isHydrated) return;
+    const { isChecked, refresh } = useSubscriptionStore.getState();
+    if (!isChecked) void refresh();
+    const listener = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void useSubscriptionStore.getState().refresh();
+    });
+    return () => listener.remove();
+  }, [isHydrated]);
+
+  useAccountSession(isHydrated, userEmail);
+
+  // The subscription follows the account: on sign-in it is linked to the account's id, so a
+  // second phone signed in to it is unlocked too; on sign-out it is unlinked.
+  const previousEmail = useRef(userEmail);
+  useEffect(() => {
+    if (!isHydrated || previousEmail.current === userEmail) return;
+    previousEmail.current = userEmail;
+    void (async () => {
+      const user = userEmail ? await cloudSyncService.getCurrentUser() : null;
+      await useSubscriptionStore.getState().switchAccount(user?.id ?? null);
+    })();
+  }, [userEmail, isHydrated]);
 
   useEffect(() => {
     viewFadeAnim.setValue(0.35);
@@ -105,20 +142,27 @@ function AppShell() {
   // Apple iOS Black & White Minimalist Theme Tokens
   const theme = getAppTheme(isDark);
 
-  // If in onboarding wizard
-  // Nothing renders until the stored session has been read, so the gate cannot flash in
-  // front of somebody who signed in three weeks ago.
-  if (!isHydrated || authStatus === 'checking') {
+  // Nothing of the app shows until there is someone to show it to: a spinner while the
+  // stored session is read, the login for nobody, the re-verification past the month.
+  if (isGateShowing(isHydrated, authStatus)) {
+    return <AuthGate isDark={isDark} />;
+  }
+
+  if (activeView === 'onboarding') {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <SafeAreaView
+        style={[
+          styles.safeArea,
+          { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background },
+        ]}
+        {...glass('root')}
+      >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-        {isHydrated && (
-          <WelcomeGate
-            onOpenAuth={() => setAuthModalVisible(true)}
-            onContinueAsGuest={continueAsGuest}
-            isDark={isDark}
-          />
-        )}
+        <OnboardingWizard
+          isDark={isDark}
+          onPlanGenerated={() => setActiveView('meals')}
+          onOpenAccount={() => setAuthModalVisible(true)}
+        />
         <AuthModal
           visible={authModalVisible}
           onClose={() => setAuthModalVisible(false)}
@@ -130,18 +174,6 @@ function AppShell() {
           isSyncing={isSyncing}
           lastSyncedAt={lastSyncedAt}
         />
-      </SafeAreaView>
-    );
-  }
-
-  if (activeView === 'onboarding') {
-    return (
-      <SafeAreaView
-        style={[styles.safeArea, { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background }]}
-        {...glass('root')}
-      >
-        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-        <OnboardingWizard isDark={isDark} onPlanGenerated={() => setActiveView('meals')} />
         <UndoBanner
           visible={Boolean(lastDiscardedPlan)}
           message="Planul săptămânal a fost șters."
@@ -151,6 +183,57 @@ function AppShell() {
           isDark={isDark}
         />
         <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
+        <BiometricOptInPrompt
+          isDark={isDark}
+          isSuppressed={authModalVisible || Boolean(activeNotice)}
+        />
+        <LoadingToast
+          visible={isSyncing || Boolean(globalLoadingMessage)}
+          message={globalLoadingMessage || 'Se sincronizează...'}
+          isDark={isDark}
+        />
+        {isReloading && (
+          <AppLoadingScreen
+            isDark={isDark}
+            overlay
+            title={reloadConfig?.title || 'Se reîncarcă datele...'}
+            subtitle={reloadConfig?.subtitle}
+            icon={reloadConfig?.icon || '🔄'}
+            steps={reloadConfig?.steps}
+            accessibilityLabel="Se reîncarcă datele"
+          />
+        )}
+      </SafeAreaView>
+    );
+  }
+
+  // Past the questionnaire, which stays free, the app needs the subscription. Until it has
+  // been read, a branded loading screen: a paying person must never see the paywall flash on start.
+  if (!isSubscriptionChecked) {
+    return (
+      <AppLoadingScreen
+        isDark={isDark}
+        title="Se verifică abonamentul..."
+        subtitle="Validăm starea contului tău SmartMeal."
+        accessibilityLabel="Se verifică abonamentul"
+        onRetry={() => {
+          void useSubscriptionStore.getState().refresh();
+        }}
+        retryLabel="Reîncearcă verificarea"
+      />
+    );
+  }
+
+  if (!subscription.isActive) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <PaywallScreen isDark={isDark} onBackToQuestions={() => setActiveView('onboarding')} />
+        <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
+        <BiometricOptInPrompt
+          isDark={isDark}
+          isSuppressed={authModalVisible || Boolean(activeNotice)}
+        />
       </SafeAreaView>
     );
   }
@@ -159,7 +242,10 @@ function AppShell() {
   if (activeView === 'generating') {
     return (
       <SafeAreaView
-        style={[styles.safeArea, { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background }]}
+        style={[
+          styles.safeArea,
+          { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background },
+        ]}
         {...glass('root')}
       >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
@@ -183,7 +269,10 @@ function AppShell() {
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background }]}
+      style={[
+        styles.safeArea,
+        { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background },
+      ]}
       {...glass('root')}
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
@@ -195,6 +284,9 @@ function AppShell() {
           {...glass('card')}
           style={[
             styles.topBar,
+            // On a phone the row held about 426 px of header in 390 (360 on many Samsungs),
+            // and "+ Plan Nou" was cut off at the edge.
+            isMobile && styles.topBarPhone,
             {
               backgroundColor: theme.card,
               borderColor: theme.border,
@@ -202,12 +294,23 @@ function AppShell() {
             },
           ]}
         >
-          <View style={styles.brandContainer}>
+          <View style={[styles.brandContainer, isMobile && styles.brandContainerPhone]}>
             <View style={styles.brandRow}>
               <Text style={[styles.brandTitle, { color: theme.text }]}>SmartMeal</Text>
-              <View style={[styles.brandBadge, { backgroundColor: theme.surfaceTertiary, borderColor: theme.border, borderWidth: 1 }]}>
-                <Text style={[styles.brandBadgeText, { color: theme.text }]}>RO 🇷🇴</Text>
-              </View>
+              {!isMobile && (
+                <View
+                  style={[
+                    styles.brandBadge,
+                    {
+                      backgroundColor: theme.surfaceTertiary,
+                      borderColor: theme.border,
+                      borderWidth: 1,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.brandBadgeText, { color: theme.text }]}>RO 🇷🇴</Text>
+                </View>
+              )}
             </View>
             <Text style={[styles.brandSubtitle, { color: theme.textMuted }]}>
               {market ? `${market.name} • ${currentPlan?.peopleCount} pers` : 'Meniu activ'}
@@ -218,7 +321,10 @@ function AppShell() {
           {isDesktop && (
             <View
               {...glass('dock')}
-              style={[styles.desktopTabsDock, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
+              style={[
+                styles.desktopTabsDock,
+                { backgroundColor: theme.btnBg, borderColor: theme.border },
+              ]}
             >
               <TouchableOpacity
                 accessibilityRole="button"
@@ -277,19 +383,7 @@ function AppShell() {
           <View style={styles.topBarActions}>
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel={`Temă: ${THEME_LABELS[themeMode]}. Apasă pentru a schimba.`}
-              onPress={cycleThemeMode}
-              {...glass('pill')}
-              style={[styles.syncBtn, { backgroundColor: theme.accentBg, borderColor: theme.border }]}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.syncBtnText, { color: theme.textMuted }]}>
-                {THEME_ICONS[themeMode]}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              accessibilityRole="button"
+              accessibilityLabel="Contul meu"
               onPress={() => setAuthModalVisible(true)}
               {...glass('pill')}
               style={[
@@ -302,12 +396,10 @@ function AppShell() {
               activeOpacity={0.7}
             >
               <Text
-                style={[
-                  styles.syncBtnText,
-                  { color: userEmail ? theme.text : theme.textMuted },
-                ]}
+                style={[styles.syncBtnText, { color: userEmail ? theme.text : theme.textMuted }]}
               >
-                {userEmail ? '☁️ Sincron' : '☁️ Cloud'}
+                {/* It opens the account window, which is what the label now says. */}
+                👤 Cont
               </Text>
             </TouchableOpacity>
 
@@ -352,7 +444,7 @@ function AppShell() {
                     },
                   ]}
                 >
-                  🍽️ Mese ({currentPlan?.days.length ?? 0})
+                  🍽️ Mese ({currentPlan?.days.length ?? 0} zile)
                 </Text>
               </TouchableOpacity>
 
@@ -415,15 +507,19 @@ function AppShell() {
 
       {/* Global Informative Notice Pop-up */}
       <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
+      <BiometricOptInPrompt
+        isDark={isDark}
+        isSuppressed={authModalVisible || Boolean(activeNotice)}
+      />
 
-        <UndoBanner
-          visible={Boolean(lastDiscardedPlan)}
-          message="Planul săptămânal a fost șters."
-          actionLabel="Anulează ștergerea"
-          onAction={undoReset}
-          onDismiss={dismissUndo}
-          isDark={isDark}
-        />
+      <UndoBanner
+        visible={Boolean(lastDiscardedPlan)}
+        message="Planul săptămânal a fost șters."
+        actionLabel="Anulează ștergerea"
+        onAction={undoReset}
+        onDismiss={dismissUndo}
+        isDark={isDark}
+      />
 
       {/* Replacing a live plan with the one another device saved */}
       <ConfirmDialog
@@ -453,6 +549,24 @@ function AppShell() {
         onCancel={cancelConfirm}
         isDark={isDark}
       />
+
+      <LoadingToast
+        visible={isSyncing || Boolean(globalLoadingMessage)}
+        message={globalLoadingMessage || 'Se sincronizează...'}
+        isDark={isDark}
+      />
+
+      {isReloading && (
+        <AppLoadingScreen
+          isDark={isDark}
+          overlay
+          title={reloadConfig?.title || 'Se reîncarcă datele...'}
+          subtitle={reloadConfig?.subtitle}
+          icon={reloadConfig?.icon || '🔄'}
+          steps={reloadConfig?.steps}
+          accessibilityLabel="Se reîncarcă datele"
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -460,6 +574,10 @@ function AppShell() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  centered: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dashboardContainer: {
     flex: 1,
@@ -482,6 +600,14 @@ const styles = StyleSheet.create({
   },
   brandContainer: {
     minWidth: 140,
+  },
+  brandContainerPhone: {
+    minWidth: 0,
+    flexShrink: 1,
+  },
+  topBarPhone: {
+    paddingHorizontal: 16,
+    gap: 8,
   },
   desktopTabsDock: {
     flexDirection: 'row',

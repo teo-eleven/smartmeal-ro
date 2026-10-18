@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -9,8 +10,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SUPERMARKETS } from '../data/supermarkets';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Appliance, Recipe, SupermarketId } from '../types';
+import { Appliance, DayOfWeek, MealSlot, Recipe, SupermarketId } from '../types';
 import { INGREDIENTS } from '../data/ingredients';
 import { MacroBar } from '../components/MacroBar';
 import { useResponsive } from '../hooks/useResponsive';
@@ -20,6 +22,10 @@ import { RecipeVisual } from '../components/RecipeVisual';
 import { getAppTheme } from '../styles/theme';
 import { getRecipeAllergens } from '../utils/allergenFilter';
 import { ALLERGEN_CATALOG } from '../data/allergens';
+import { getEligibleRecipes } from '../engine/plannerEngine';
+import { calculateRecipePortionCost } from '../engine/budgetCalculator';
+import { formatIngredientWithHousehold } from '../utils/householdUnits';
+import { getHealthGoalMeta } from '../data/healthTags';
 
 function getStoreBadgeBg(store?: SupermarketId): string {
   switch (store) {
@@ -50,7 +56,10 @@ interface RecipeDetailModalProps {
   visible: boolean;
   onClose: () => void;
   onSwap: () => void;
+  onChangeServings?: (servings: number) => void;
   isDark: boolean;
+  targetDay?: DayOfWeek | null;
+  targetSlot?: MealSlot | null;
 }
 
 const APPLIANCE_MAP: Record<Appliance, { name: string; icon: string }> = {
@@ -108,16 +117,77 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   visible,
   onClose,
   onSwap,
+  onChangeServings,
   isDark,
+  targetDay,
+  targetSlot,
 }) => {
   const [personalNotes, setPersonalNotes] = useState('');
   const [activeServings, setActiveServings] = useState(initialServings);
   const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>({});
   const [checkedIngredients, setCheckedIngredients] = useState<Record<string, boolean>>({});
 
+  const handleServingsChange = (newServings: number) => {
+    const clamped = Math.max(1, Math.min(12, newServings));
+    setActiveServings(clamped);
+    if (onChangeServings) {
+      onChangeServings(clamped);
+    }
+  };
+
   const { isDesktop, isTablet, contentMaxWidth } = useResponsive();
   const isWide = isDesktop || isTablet;
-  const { preferences, toggleFavouriteRecipe, toggleDislikedRecipe } = useAppStore();
+  const {
+    preferences,
+    currentPlan,
+    replaceMealWithRecipe,
+    toggleFavouriteRecipe,
+    toggleDislikedRecipe,
+    toggleEatOut,
+    showNotice,
+  } = useAppStore();
+
+  const targetMeal = useMemo(() => {
+    if (!currentPlan || !targetDay) return null;
+    const dayPlan = currentPlan.days.find((d) => d.dayOfWeek === targetDay);
+    if (!dayPlan) return null;
+    return dayPlan.meals.find((m) => (targetSlot ? m.slot === targetSlot : m.recipe.id === recipe?.id));
+  }, [currentPlan, targetDay, targetSlot, recipe]);
+
+  const isEatenOut = Boolean(targetMeal?.isEatenOut);
+
+  const suggestedReplacement = useMemo(() => {
+    if (!recipe) return null;
+    const eligible = getEligibleRecipes(preferences);
+    const target = targetSlot || (recipe.suitableSlots && recipe.suitableSlots[0]) || 'dinner';
+    const slotFiltered = eligible.filter(
+      (r) => r.id !== recipe.id && (r.suitableSlots ? r.suitableSlots.includes(target) : true)
+    );
+    const baseCandidates =
+      slotFiltered.length > 0 ? slotFiltered : eligible.filter((r) => r.id !== recipe.id);
+
+    const usedRecipeIds = new Set<string>();
+    if (currentPlan) {
+      currentPlan.days.forEach((d) => {
+        d.meals?.forEach((m) => usedRecipeIds.add(m.recipe.id));
+      });
+    }
+
+    const unusedCandidates = baseCandidates.filter((r) => !usedRecipeIds.has(r.id));
+    const pool = unusedCandidates.length > 0 ? unusedCandidates : baseCandidates;
+
+    if (pool.length === 0) return null;
+
+    // Prioritize favorites if any
+    const favs = pool.filter((r) => (preferences.favouriteRecipeIds ?? []).includes(r.id));
+    if (favs.length > 0) return favs[0];
+
+    // Prioritize same tier
+    const sameTier = pool.filter((r) => r.tier === recipe.tier);
+    if (sameTier.length > 0) return sameTier[0];
+
+    return pool[0];
+  }, [recipe, preferences, currentPlan, targetSlot]);
 
   useEffect(() => {
     setActiveServings(initialServings);
@@ -135,9 +205,9 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const appTheme = getAppTheme(isDark);
   const theme = {
     ...appTheme,
-    stepDoneBg: isDark ? 'rgba(255, 255, 255, 0.10)' : '#f0fdf4',
+    stepDoneBg: isDark ? 'rgba(230, 167, 86, 0.15)' : '#f0fdf4',
     badgeBg: isDark ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9',
-    accentCard: isDark ? '#2c2c2e' : '#f8fafc',
+    accentCard: isDark ? '#243027' : '#f8fafc',
   };
 
   const totalTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
@@ -177,10 +247,11 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const formattedTotalCost = (parseFloat(formattedCostPerServing) * activeServings).toFixed(2);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Floating Top Navigation Header */}
-        <View style={[styles.topBar, { backgroundColor: theme.glassBg, borderBottomColor: theme.border }]}>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalCard, isWide && styles.modalCardWide, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          {/* Floating Top Navigation Header */}
+          <View style={[styles.topBar, { backgroundColor: theme.glassBg, borderBottomColor: theme.border }]}>
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Închide"
@@ -195,19 +266,59 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
             <Text style={[styles.headerTitle, { color: theme.text }]} numberOfLines={1}>
               {recipe.title}
             </Text>
-            <Text style={[styles.headerSubtitle, { color: theme.primary }]}>
-              ⏱️ {totalTime} min • ~{formattedCostPerServing} lei/porție ({preferences.supermarketId.toUpperCase()})
+            <Text style={[styles.headerSubtitle, { color: theme.primary }]} numberOfLines={1}>
+              ⏱️ {totalTime} min • ~{formattedCostPerServing} lei/porție
             </Text>
           </View>
 
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityLabel="Înlocuiește rețeta"
             onPress={onSwap}
             style={[styles.swapHeaderBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
             activeOpacity={0.7}
           >
             <Text style={[styles.swapHeaderText, { color: theme.text }]}>🔄 Înlocuiește</Text>
           </TouchableOpacity>
+
+          {targetDay && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănânc în oraș'}
+              onPress={() => {
+                const effectiveSlot = targetSlot || targetMeal?.slot || 'dinner';
+                toggleEatOut(targetDay, effectiveSlot);
+                showNotice(
+                  isEatenOut ? 'Gătești acasă' : 'Mâncat în oraș',
+                  isEatenOut
+                    ? `Am reintrodus masa în planul de gătit și în lista de cumpărături.`
+                    : `Am marcat masa ca mâncată în oraș. Ingredientele au fost scoase din lista de cumpărături.`,
+                  'info'
+                );
+              }}
+              style={[
+                styles.swapHeaderBtn,
+                {
+                  backgroundColor: isEatenOut
+                    ? (isDark ? 'rgba(234, 179, 8, 0.2)' : '#fef9c3')
+                    : theme.btnBg,
+                  borderColor: isEatenOut
+                    ? (isDark ? '#ca8a04' : '#eab308')
+                    : theme.border,
+                },
+              ]}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.swapHeaderText,
+                  { color: isEatenOut ? (isDark ? '#facc15' : '#854d0e') : theme.text },
+                ]}
+              >
+                {isEatenOut ? '↺ Acasă' : '🍽️ În oraș'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <ScrollView
@@ -256,14 +367,45 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 <Text style={[styles.title, { color: theme.text }]}>{recipe.title}</Text>
                 <Text style={[styles.description, { color: theme.textMuted }]}>{recipe.description}</Text>
 
+                {/* Health & Wellness Badges Strip */}
+                {recipe.healthTags && recipe.healthTags.filter((t) => t !== 'pork_free').length > 0 && (
+                  <View style={styles.healthTagsRow}>
+                    {recipe.healthTags
+                      .filter((t) => t !== 'pork_free')
+                      .map((tag) => {
+                        const meta = getHealthGoalMeta(tag);
+                        if (!meta) return null;
+                        return (
+                          <View
+                            key={tag}
+                            style={[
+                              styles.healthTagBadge,
+                              {
+                                backgroundColor: isDark ? 'rgba(52, 199, 89, 0.15)' : '#e8f5e9',
+                                borderColor: isDark ? 'rgba(52, 199, 89, 0.35)' : '#a5d6a7',
+                              },
+                            ]}
+                          >
+                            <Text style={styles.healthTagIcon}>{meta.icon}</Text>
+                            <Text style={[styles.healthTagText, { color: isDark ? '#4ade80' : '#2e7d32' }]}>
+                              {meta.shortBadgeRo}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                  </View>
+                )}
+
                 {/* Price transparent indicator */}
                 <View style={[styles.priceBox, { backgroundColor: theme.primaryLight, borderColor: theme.primary }]}>
-                  <View>
+                  {/* flex: 1 lets the text wrap. Without it the block kept its full width and
+                      pushed the price itself off the card on a 360 px phone. */}
+                  <View style={styles.rowText}>
                     <Text style={[styles.priceBoxLabel, { color: theme.primary }]}>COST TOTAL ESTIMAT ({activeServings} PORȚII)</Text>
                     <Text style={[styles.priceBoxSub, { color: theme.textMuted }]}>
-                      Prețuri reale {preferences.supermarketId.toUpperCase()}
+                      Prețuri estimate la {SUPERMARKETS[preferences.supermarketId]?.name ?? preferences.supermarketId}
                       {recipe.availableSupermarkets && recipe.availableSupermarkets.length > 0
-                        ? ` • Exclusiv: ${recipe.availableSupermarkets.map((s) => s.toUpperCase()).join(', ')}`
+                        ? ` • Doar la: ${recipe.availableSupermarkets.map((s) => SUPERMARKETS[s]?.name ?? s).join(', ')}`
                         : ' • Disponibil în toate magazinele'}
                     </Text>
                   </View>
@@ -273,7 +415,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
               {/* Servings Stepper */}
               <View style={[styles.stepperCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                <View>
+                <View style={styles.rowText}>
                   <Text style={[styles.stepperLabel, { color: theme.text }]}>Porții calculate</Text>
                   <Text style={[styles.stepperSubtext, { color: theme.primary }]}>
                     Ingredientele se scalează automat
@@ -283,7 +425,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 <View style={styles.stepperControls}>
                   <TouchableOpacity
                     accessibilityRole="button"
-                    onPress={() => setActiveServings((s) => Math.max(1, s - 1))}
+                    accessibilityLabel="Scade o porție"
+                    onPress={() => handleServingsChange(activeServings - 1)}
                     style={[styles.stepBtn, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
                     activeOpacity={0.7}
                   >
@@ -296,7 +439,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
                   <TouchableOpacity
                     accessibilityRole="button"
-                    onPress={() => setActiveServings((s) => Math.min(12, s + 1))}
+                    accessibilityLabel="Adaugă o porție"
+                    onPress={() => handleServingsChange(activeServings + 1)}
                     style={[styles.stepBtn, { backgroundColor: theme.inputBg, borderColor: theme.border }]}
                     activeOpacity={0.7}
                   >
@@ -340,7 +484,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   </Text>
                 </View>
 
-                <View style={styles.ingredientsList}>
+                <View style={[styles.ingredientsList, isWide && styles.ingredientsListWide]}>
                   {recipe.ingredients.map((ing, i) => {
                     const dbIng = INGREDIENTS[ing.ingredientId];
                     const scaledAmount = Math.round(ing.amountPerServing * activeServings * 10) / 10;
@@ -354,7 +498,9 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                         activeOpacity={0.7}
                         style={[
                           styles.ingredientRow,
-                          i < recipe.ingredients.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border },
+                          isWide && styles.ingredientRowWide,
+                          !isWide && i < recipe.ingredients.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border },
+                          isWide && { borderColor: theme.border, borderWidth: 1, borderRadius: 12 },
                           isChecked && { backgroundColor: theme.stepDoneBg },
                         ]}
                       >
@@ -378,13 +524,14 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                               textDecorationLine: isChecked ? 'line-through' : 'none',
                             },
                           ]}
+                          numberOfLines={2}
                         >
                           {dbIng ? dbIng.name : ing.ingredientId}
                         </Text>
 
                         <View style={[styles.amountBadge, { backgroundColor: theme.inputBg }]}>
-                          <Text style={[styles.ingredientAmount, { color: theme.primary }]}>
-                            {scaledAmount} {ing.unit}
+                          <Text style={[styles.ingredientAmount, { color: theme.primary }]} numberOfLines={2}>
+                            {formatIngredientWithHousehold(ing.ingredientId, scaledAmount, ing.unit)}
                           </Text>
                         </View>
                       </TouchableOpacity>
@@ -612,6 +759,123 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 </TouchableOpacity>
               </View>
 
+              {/* Intelligent Automatic Replacement Suggestion when Disliked */}
+              {isDisliked && suggestedReplacement && (
+                <View
+                  style={[
+                    styles.dislikeSuggestionCard,
+                    {
+                      backgroundColor: isDark ? '#1C241E' : '#f8fafc',
+                      borderColor: isDark ? 'rgba(239, 68, 68, 0.4)' : '#fca5a5',
+                    },
+                  ]}
+                >
+                  <View style={styles.dislikeSuggestionHeader}>
+                    <Text style={styles.dislikeSuggestionBadge}>💡 Sugestie de înlocuire recomandată</Text>
+                  </View>
+                  <Text style={[styles.dislikeSuggestionSubtext, { color: theme.textMuted }]}>
+                    Rețeta „{recipe.title}” a fost exclusă definitiv de pe acest cont. Iată alternativa optimă pentru acest loc:
+                  </Text>
+
+                  <View
+                    style={[
+                      styles.suggestedDishBox,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                  >
+                    <View style={styles.suggestedDishHeader}>
+                      <Text style={[styles.suggestedDishTitle, { color: theme.text }]}>
+                        {suggestedReplacement.title}
+                      </Text>
+                      {suggestedReplacement.tier && (
+                        <View style={[styles.suggestedTierBadge, { backgroundColor: theme.inputBg }]}>
+                          <Text style={[styles.suggestedTierText, { color: theme.textMuted }]}>
+                            {suggestedReplacement.tier === 'basic'
+                              ? '🥉 Basic'
+                              : suggestedReplacement.tier === 'medium'
+                                ? '🥈 Medium'
+                                : '🥇 Premium'}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <Text style={[styles.suggestedDishDesc, { color: theme.textMuted }]} numberOfLines={2}>
+                      {suggestedReplacement.description}
+                    </Text>
+
+                    <View style={styles.suggestedMetaRow}>
+                      <View style={[styles.suggestedMetaPill, { backgroundColor: theme.inputBg }]}>
+                        <Text style={[styles.suggestedMetaText, { color: theme.text }]}>
+                          ⏱️ {suggestedReplacement.prepTimeMinutes} min
+                        </Text>
+                      </View>
+                      <View style={[styles.suggestedMetaPill, { backgroundColor: theme.inputBg }]}>
+                        <Text style={[styles.suggestedMetaText, { color: theme.text }]}>
+                          🔥 {suggestedReplacement.nutritionPerServing.calories} kcal
+                        </Text>
+                      </View>
+                      <View style={[styles.suggestedMetaPill, { backgroundColor: theme.primaryLight }]}>
+                        <Text style={[styles.suggestedMetaText, { color: theme.primary }]}>
+                          💰 ~
+                          {Math.round(
+                            calculateRecipePortionCost(
+                              suggestedReplacement,
+                              activeServings,
+                              preferences.supermarketId,
+                              preferences.excludePantryStaples
+                            )
+                          )}{' '}
+                          lei
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.suggestedActionsColumn}>
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={`Înlocuiește cu ${suggestedReplacement.title}`}
+                      onPress={() => {
+                        if (targetDay) {
+                          replaceMealWithRecipe(targetDay, suggestedReplacement, targetSlot || undefined);
+                          showNotice(
+                            'Rețetă înlocuită',
+                            `Am adăugat „${suggestedReplacement.title}” în meniul tău.`,
+                            'success'
+                          );
+                          onClose();
+                        } else {
+                          onSwap();
+                        }
+                      }}
+                      style={[styles.confirmReplacementBtn, { backgroundColor: '#16a34a' }]}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.confirmReplacementBtnText}>✓ Înlocuiește cu această rețetă</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel="Alege altceva din catalog"
+                      onPress={onSwap}
+                      style={[
+                        styles.browseCatalogBtn,
+                        { backgroundColor: theme.btnBg, borderColor: theme.border },
+                      ]}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.browseCatalogBtnText, { color: theme.text }]}>
+                        🔄 Alege altceva din catalog
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
               {/* Actions Row */}
               <View style={styles.actionButtonsContainer}>
                 <TouchableOpacity
@@ -622,6 +886,45 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 >
                   <Text style={[styles.bigSwapBtnText, { color: theme.primary }]}>🔄 Schimbă cu alt preparat</Text>
                 </TouchableOpacity>
+
+                {targetDay && (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănâncă în oraș'}
+                    onPress={() => {
+                      const effectiveSlot = targetSlot || targetMeal?.slot || 'dinner';
+                      toggleEatOut(targetDay, effectiveSlot);
+                      showNotice(
+                        isEatenOut ? 'Gătești acasă' : 'Mâncat în oraș',
+                        isEatenOut
+                          ? `Am reintrodus masa în planul de gătit și în lista de cumpărături.`
+                          : `Am marcat masa ca mâncată în oraș. Ingredientele au fost scoase din lista de cumpărături.`,
+                        'info'
+                      );
+                    }}
+                    style={[
+                      styles.bigSwapBtn,
+                      {
+                        backgroundColor: isEatenOut
+                          ? (isDark ? 'rgba(234, 179, 8, 0.2)' : '#fef9c3')
+                          : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#f3f4f6'),
+                        borderColor: isEatenOut
+                          ? (isDark ? '#ca8a04' : '#eab308')
+                          : theme.border,
+                      },
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.bigSwapBtnText,
+                        { color: isEatenOut ? (isDark ? '#facc15' : '#854d0e') : theme.text },
+                      ]}
+                    >
+                      {isEatenOut ? '↺ Gătește acasă această masă' : '🍽️ Mâncat în oraș la această masă'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
                 <TouchableOpacity
                   accessibilityRole="button"
@@ -637,12 +940,37 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
           </View>
         </ScrollView>
-      </SafeAreaView>
+        </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 680,
+    maxHeight: '90%',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 20,
+  },
+  modalCardWide: {
+    maxWidth: 1140,
+    maxHeight: '92%',
+  },
   verdictRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   verdictBtn: {
     flex: 1,
@@ -671,6 +999,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   closeIcon: {
     fontSize: 13,
@@ -690,12 +1019,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginTop: 2,
+    textAlign: 'center',
   },
   swapHeaderBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1.5,
+    flexShrink: 0,
   },
   swapHeaderText: {
     fontSize: 12,
@@ -791,6 +1122,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 14,
+  },
+  healthTagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  healthTagBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  healthTagIcon: {
+    fontSize: 13,
+  },
+  healthTagText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  rowText: {
+    flex: 1,
+    paddingRight: 10,
   },
   priceBox: {
     flexDirection: 'row',
@@ -893,12 +1250,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   ingredientsList: {},
+  ingredientsListWide: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    padding: 12,
+  },
   ingredientRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    gap: 12,
+    gap: 10,
+  },
+  ingredientRowWide: {
+    flexBasis: '48%',
+    flexGrow: 0,
+    width: '48.5%',
+    maxWidth: '50%',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    gap: 8,
   },
   ingCheckSquare: {
     width: 20,
@@ -907,6 +1279,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   checkMark: {
     color: '#ffffff',
@@ -915,17 +1288,23 @@ const styles = StyleSheet.create({
   },
   ingredientName: {
     flex: 1,
-    fontSize: 14,
+    flexShrink: 1,
+    fontSize: 13,
     fontWeight: '600',
+    marginRight: 6,
   },
   amountBadge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    flexShrink: 0,
+    maxWidth: '52%',
+    alignSelf: 'center',
   },
   ingredientAmount: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
+    textAlign: 'right',
   },
   cardSection: {
     padding: 20,
@@ -1137,5 +1516,97 @@ const styles = StyleSheet.create({
   aiIngredientsList: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  dislikeSuggestionCard: {
+    padding: 16,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    marginTop: 14,
+    gap: 12,
+  },
+  dislikeSuggestionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dislikeSuggestionBadge: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#ef4444',
+  },
+  dislikeSuggestionSubtext: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  suggestedDishBox: {
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 8,
+  },
+  suggestedDishHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  suggestedDishTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    flex: 1,
+  },
+  suggestedTierBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  suggestedTierText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  suggestedDishDesc: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  suggestedMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  suggestedMetaPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  suggestedMetaText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  suggestedActionsColumn: {
+    gap: 8,
+    marginTop: 4,
+  },
+  confirmReplacementBtn: {
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmReplacementBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  browseCatalogBtn: {
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  browseCatalogBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

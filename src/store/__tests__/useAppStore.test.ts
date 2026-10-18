@@ -11,7 +11,7 @@ describe('Zustand App Store & Onboarding Flow (Phase 4)', () => {
     it('initializes with default values at step 1', () => {
       const state = useAppStore.getState();
       expect(state.currentStep).toBe(1);
-      expect(state.totalSteps).toBe(9);
+      expect(state.totalSteps).toBe(8);
       expect(state.activeView).toBe('onboarding');
       expect(state.preferences.peopleCount).toBe(2);
       expect(state.preferences.supermarketId).toBe('lidl');
@@ -278,7 +278,7 @@ describe('Zustand App Store & Onboarding Flow (Phase 4)', () => {
       expect(useAppStore.getState().currentStep).toBe(1);
 
       store.goToStep(100);
-      expect(useAppStore.getState().currentStep).toBe(9);
+      expect(useAppStore.getState().currentStep).toBe(8);
     });
 
     it('manages retail snacks, drinks and 18+ alcohol selections in grocery aggregation', () => {

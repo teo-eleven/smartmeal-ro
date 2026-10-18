@@ -85,4 +85,46 @@ describe('verdictul asupra unei rețete', () => {
     expect(prefs.favouriteRecipeIds ?? []).not.toContain(recipe.id);
     expect(prefs.dislikedRecipeIds ?? []).toContain(recipe.id);
   });
+
+  test('la apăsarea pe „nu mai propune", apare sugestia de înlocuire automată și permite înlocuirea', () => {
+    useAppStore.setState({
+      preferences: { ...PREFS },
+      currentPlan: null,
+      groceryItems: [],
+      savedPlans: [],
+      activeNotice: null,
+    });
+    useAppStore.getState().generatePlan();
+
+    const plan = useAppStore.getState().currentPlan!;
+    const targetMeal = plan.days[0].meals[0];
+
+    const mockClose = jest.fn();
+    render(
+      <RecipeDetailModal
+        visible
+        recipe={targetMeal.recipe}
+        servings={2}
+        targetDay={plan.days[0].dayOfWeek}
+        targetSlot={targetMeal.slot}
+        onClose={mockClose}
+        onSwap={jest.fn()}
+        isDark={false}
+      />
+    );
+
+    fireEvent.press(screen.getByLabelText('Nu mai propune rețeta'));
+
+    // Sugestia automată este afișată
+    expect(screen.getByText('💡 Sugestie de înlocuire recomandată')).toBeTruthy();
+    expect(screen.getByText('✓ Înlocuiește cu această rețetă')).toBeTruthy();
+
+    // Apăsăm pe înlocuire
+    fireEvent.press(screen.getByText('✓ Înlocuiește cu această rețetă'));
+
+    // Modalul se închide și rețeta din acea zi a fost înlocuită
+    expect(mockClose).toHaveBeenCalled();
+    const updatedDay = useAppStore.getState().currentPlan!.days[0];
+    expect(updatedDay.meals[0].recipe.id).not.toBe(targetMeal.recipe.id);
+  });
 });

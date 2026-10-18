@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
+  RefreshControl,
   ScrollView,
   StyleProp,
   StyleSheet,
@@ -13,20 +13,21 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { PlanHeader } from '../components/PlanHeader';
 import { MealCard } from '../components/MealCard';
-import { WeekOverview } from '../components/WeekOverview';
 import { RecipeDetailModal } from './RecipeDetailModal';
 import { MealSwapModal } from './MealSwapModal';
 import { QuickFiltersModal } from './QuickFiltersModal';
 import { PantryInventoryModal } from './PantryInventoryModal';
 import { MealPrepModal } from './MealPrepModal';
 import { WeeklyMacroModal } from './WeeklyMacroModal';
-import { SUPERMARKET_LIST } from '../data/supermarkets';
+import { MealsPerDayModal } from './MealsPerDayModal';
+import { BudgetOverrunModal } from './BudgetOverrunModal';
 import { DayOfWeek, FoodTier, MealSlot, Recipe } from '../types';
 import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
 import { StoreComparisonModal } from './StoreComparisonModal';
 import { SavedPlansModal } from './SavedPlansModal';
+import { AppLoadingScreen } from '../components/AppLoadingScreen';
 
 interface AnimatedMealSlotProps {
   children: React.ReactNode;
@@ -114,10 +115,13 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     addExtraMealToDay,
     removeMealFromDay,
     setMealServings,
+    isReloading,
+    triggerReload,
     savedPlans,
     saveCurrentPlan,
     restoreSavedPlan,
     deleteSavedPlan,
+    toggleEatOut,
   } = useAppStore();
 
   const [filtersModalVisible, setFiltersModalVisible] = useState(false);
@@ -133,13 +137,13 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
   const getTierColor = (tier?: FoodTier): string => {
     switch (tier) {
       case 'basic':
-        return isDark ? '#ffffff' : '#000000';
+        return theme.textMuted;
       case 'medium':
-        return '#0a84ff';
+        return theme.primary;
       case 'premium':
-        return '#ffd60a';
+        return isDark ? '#F3C06D' : '#C88232';
       default:
-        return '#0a84ff';
+        return theme.primary;
     }
   };
 
@@ -150,7 +154,22 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
   const [detailTarget, setDetailTarget] = useState<{ dayOfWeek: DayOfWeek; slot: MealSlot } | null>(
     null
   );
-  const [boardView, setBoardView] = useState<'list' | 'week'>('list');
+
+  const [mealsModalVisible, setMealsModalVisible] = useState(false);
+  const [mealsModalInitialCount, setMealsModalInitialCount] = useState<1 | 2 | 3>(1);
+  const [budgetOverrunModalVisible, setBudgetOverrunModalVisible] = useState(false);
+  const lastOverrunPromptCostRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!currentPlan) return;
+    if (
+      currentPlan.totalCartCostRon > currentPlan.totalBudgetRon &&
+      lastOverrunPromptCostRef.current !== currentPlan.totalCartCostRon
+    ) {
+      lastOverrunPromptCostRef.current = currentPlan.totalCartCostRon;
+      setBudgetOverrunModalVisible(true);
+    }
+  }, [currentPlan?.totalCartCostRon, currentPlan?.totalBudgetRon]);
 
   // Attempted only once per mount: a plan that cannot be built must not re-trigger the
   // effect on every render, which previously turned an impossible setup into a crash loop.
@@ -170,28 +189,14 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
 
   if (!currentPlan) {
     return (
-      <View style={[styles.emptyContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.primary} />
-        <Text style={[styles.emptyText, { color: theme.text, marginTop: 16 }]}>
-          Se încarcă meniul săptămânal...
-        </Text>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={() => generatePlan()}
-          style={{
-            backgroundColor: theme.primary,
-            marginTop: 18,
-            paddingHorizontal: 22,
-            paddingVertical: 12,
-            borderRadius: 12,
-          }}
-          activeOpacity={0.8}
-        >
-          <Text style={{ color: theme.primaryText, fontWeight: '700', fontSize: 15 }}>
-            Generează Rețetele Acum
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <AppLoadingScreen
+        isDark={isDark}
+        title="Se încarcă meniul săptămânal..."
+        subtitle="Construim recomandările personalizate conform preferințelor tale."
+        onRetry={() => generatePlan()}
+        retryLabel="Generează Rețetele Acum"
+        showRetryAfterMs={1200}
+      />
     );
   }
 
@@ -231,15 +236,42 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isReloading}
+            onRefresh={() => {
+              void triggerReload({
+                title: 'Se reîmprospătează meniul...',
+                subtitle: 'Sincronizăm stocurile și verificăm lista de cumpărături...',
+                icon: '🔄',
+              });
+            }}
+            tintColor={theme.primary}
+            colors={[theme.primary]}
+          />
+        }
+      >
         {/* Financial Overview Header */}
         <View style={[styles.planHeaderWrapper, { maxWidth: contentMaxWidth }]}>
           <PlanHeader
             plan={currentPlan}
-            onRebuildPlan={reshufflePlan}
             onResetOnboarding={() => requestConfirm('reset_onboarding')}
             onOpenFilters={() => setFiltersModalVisible(true)}
-            onRaiseBudget={(amountRon) => updatePreferencesAndRebuild({ budgetRon: amountRon })}
+            onRaiseBudget={(amountRon) => {
+              void triggerReload(
+                {
+                  title: 'Recalculăm meniul pentru noul buget...',
+                  subtitle: `Ajustăm ingredientele conform bugetului de ${amountRon} lei...`,
+                  icon: '💰',
+                },
+                () => {
+                  updatePreferencesAndRebuild({ budgetRon: amountRon });
+                }
+              );
+            }}
             isDark={isDark}
           />
         </View>
@@ -252,6 +284,42 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
             { backgroundColor: theme.card, borderColor: theme.border, maxWidth: contentMaxWidth },
           ]}
         >
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Reîncarcă și regenerează meniul săptămânal"
+            onPress={() => {
+              void triggerReload(
+                {
+                  title: 'Regenerăm meniul săptămânal...',
+                  subtitle: 'Selectăm variante culinare noi adaptate preferințelor tale...',
+                  icon: '🔄',
+                  steps: [
+                    'Verificăm ingredientele la preț de magazin',
+                    'Asigurăm varietatea meselor fără repetiții',
+                    'Actualizăm lista de cumpărături pe 7 raioane',
+                  ],
+                },
+                () => {
+                  reshufflePlan();
+                }
+              );
+            }}
+            {...glass('pill')}
+            style={[
+              styles.quickActionBtn,
+              { backgroundColor: theme.btnBg, borderColor: theme.border },
+            ]}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.quickActionIcon}>🔄</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.quickActionTitle, { color: theme.text }]}>Regenerează Meniul</Text>
+              <Text style={[styles.quickActionSub, { color: theme.textMuted }]}>
+                Variante noi pe săptămână
+              </Text>
+            </View>
+          </TouchableOpacity>
+
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Planurile mele salvate"
@@ -379,16 +447,27 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
             { backgroundColor: theme.card, borderColor: theme.border, maxWidth: contentMaxWidth },
           ]}
         >
-          <View style={[styles.toolbarControlsWrapper, isLargeScreen && styles.toolbarDesktopRow]}>
+          <View style={[styles.toolbarControlsWrapper, isDesktop && styles.toolbarDesktopRow]}>
             {/* Section 1: Meals per Day */}
-            <View style={[styles.toolbarSection, isLargeScreen && styles.toolbarSectionDesktop]}>
+            <View style={[styles.toolbarSection, isDesktop && styles.toolbarSectionDesktop]}>
               <View style={styles.mealsPerDayHeader}>
                 <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>Mese pe zi:</Text>
-                <Text style={[styles.mealsPerDaySubtitle, { color: theme.text }]}>
-                  {baseMealsCount === 1 && '1 Masă (Cină)'}
-                  {baseMealsCount === 2 && '2 Mese (Prânz + Cină)'}
-                  {baseMealsCount === 3 && '3 Mese (Complet)'}
-                </Text>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setMealsModalInitialCount((baseMealsCount as 1 | 2 | 3) || 1);
+                    setMealsModalVisible(true);
+                  }}
+                  style={[
+                    styles.customizeDaysBtn,
+                    { backgroundColor: theme.surfaceSecondary, borderColor: theme.border },
+                  ]}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.customizeDaysBtnText, { color: theme.primary }]}>
+                    ⚙️ Personalizează pe zile
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               <View
@@ -401,7 +480,14 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                   <TouchableOpacity
                     accessibilityRole="button"
                     key={cnt}
-                    onPress={() => setMealsPerDayCount(cnt)}
+                    onPress={() => {
+                      if (cnt === 3) {
+                        setMealsPerDayCount(3);
+                      } else {
+                        setMealsModalInitialCount(cnt);
+                        setMealsModalVisible(true);
+                      }
+                    }}
                     {...glass(baseMealsCount === cnt ? 'pill-active' : 'pill')}
                     style={[
                       styles.segmentBtn,
@@ -429,12 +515,12 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
             </View>
 
             {/* Desktop Vertical Divider */}
-            {isLargeScreen && (
+            {isDesktop && (
               <View style={[styles.toolbarDividerV, { backgroundColor: theme.border }]} />
             )}
 
             {/* Section 2: Food Tier */}
-            <View style={[styles.toolbarSection, isLargeScreen && styles.toolbarSectionDesktop]}>
+            <View style={[styles.toolbarSection, isDesktop && styles.toolbarSectionDesktop]}>
               <View style={styles.mealsPerDayHeader}>
                 <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>
                   Nivel ingrediente:
@@ -465,7 +551,10 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                     <TouchableOpacity
                       accessibilityRole="button"
                       key={tier}
-                      onPress={() => setFoodTier(tier)}
+                      onPress={() => {
+                        if (preferences.foodTier === tier) return;
+                        setFoodTier(tier);
+                      }}
                       {...glass(isActive ? 'pill-active' : 'pill')}
                       style={[
                         styles.segmentBtn,
@@ -474,24 +563,20 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                           {
                             backgroundColor:
                               tier === 'basic'
-                                ? isDark
-                                  ? '#ffffff'
-                                  : '#000000'
+                                ? theme.surfaceSecondary
                                 : tier === 'medium'
-                                  ? isDark
-                                    ? 'rgba(10, 132, 255, 0.24)'
-                                    : '#eff6ff'
+                                  ? theme.primaryLight
                                   : isDark
-                                    ? 'rgba(234, 179, 8, 0.2)'
-                                    : '#fefce8',
+                                    ? 'rgba(243, 192, 109, 0.22)'
+                                    : 'rgba(200, 130, 50, 0.16)',
                             borderColor:
                               tier === 'basic'
-                                ? isDark
-                                  ? '#ffffff'
-                                  : '#000000'
+                                ? theme.borderStrong
                                 : tier === 'medium'
-                                  ? '#0a84ff'
-                                  : '#eab308',
+                                  ? theme.primary
+                                  : isDark
+                                    ? '#F3C06D'
+                                    : '#C88232',
                           },
                         ],
                       ]}
@@ -503,12 +588,12 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                           {
                             color: isActive
                               ? tier === 'basic'
-                                ? isDark
-                                  ? '#000000'
-                                  : '#ffffff'
+                                ? theme.text
                                 : tier === 'medium'
-                                  ? '#0a84ff'
-                                  : '#eab308'
+                                  ? theme.primary
+                                  : isDark
+                                    ? '#F3C06D'
+                                    : '#C88232'
                               : theme.textMuted,
                             fontWeight: isActive ? '800' : '600',
                           },
@@ -521,110 +606,22 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                 })}
               </View>
             </View>
-
-            {/* Desktop Vertical Divider */}
-            {isLargeScreen && (
-              <View style={[styles.toolbarDividerV, { backgroundColor: theme.border }]} />
-            )}
-
-            {/* Section 3: Supermarkets with Official Prices */}
-            <View style={[styles.toolbarSection, isLargeScreen && styles.toolbarSectionDesktop]}>
-              <View style={styles.mealsPerDayHeader}>
-                <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>
-                  Prețuri reale magazin:
-                </Text>
-                <Text style={[styles.mealsPerDaySubtitle, { color: theme.primary }]}>
-                  {preferences.supermarketId.toUpperCase()} (Oficial)
-                </Text>
-              </View>
-
-              <View style={styles.supermarketPillsRow}>
-                {SUPERMARKET_LIST.map((market) => {
-                  const isActive = preferences.supermarketId === market.id;
-                  return (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      key={market.id}
-                      onPress={() => setSupermarket(market.id)}
-                      {...glass(isActive ? 'pill-active' : 'pill')}
-                      style={[
-                        styles.marketPill,
-                        isActive
-                          ? { backgroundColor: market.brandColor, borderColor: market.brandColor }
-                          : { backgroundColor: theme.btnBg, borderColor: theme.border },
-                      ]}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.marketPillText,
-                          {
-                            color: isActive ? '#ffffff' : theme.text,
-                            fontWeight: isActive ? '800' : '600',
-                          },
-                        ]}
-                      >
-                        {market.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
           </View>
         </View>
-
-        {/* One card per meal is right for deciding about a dinner and wrong for judging a
-            week; the overview trades the detail for the shape of the week. */}
-        <View style={[styles.viewToggle, { maxWidth: contentMaxWidth }]}>
-          {(
-            [
-              ['list', '📋 Zi cu zi'],
-              ['week', '🗓️ Săptămâna'],
-            ] as const
-          ).map(([mode, label]) => (
-            <TouchableOpacity
-              key={mode}
-              accessibilityRole="button"
-              accessibilityLabel={mode === 'week' ? 'Vezi toată săptămâna' : 'Vezi zi cu zi'}
-              onPress={() => setBoardView(mode)}
-              style={[
-                styles.viewToggleBtn,
-                {
-                  backgroundColor: boardView === mode ? theme.primary : theme.btnBg,
-                  borderColor: boardView === mode ? theme.primary : theme.border,
-                },
-              ]}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.viewToggleText,
-                  { color: boardView === mode ? theme.primaryText : theme.textMuted },
-                ]}
-              >
-                {label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {boardView === 'week' && (
-          <View style={[styles.feed, { maxWidth: contentMaxWidth }]}>
-            <WeekOverview
-              days={currentPlan.days}
-              onPressMeal={(dayOfWeek, meal) =>
-                handleOpenDetail(meal.recipe, meal.servings, dayOfWeek, meal.slot)
-              }
-              isDark={isDark}
-            />
-          </View>
-        )}
 
         {/* Day-by-day Meal Cards Feed: Zilele una după cealaltă pe linii, mesele orizontal full-width */}
-        <View style={[styles.feed, { maxWidth: contentMaxWidth, display: boardView === 'list' ? 'flex' : 'none' }]}>
+        <View style={[styles.feed, { maxWidth: contentMaxWidth }]}>
           {currentPlan.days.map((day, dayIdx) => {
-            const visibleMeals = day.meals.filter((m) => m.slot !== 'snack');
+            const CANONICAL_ORDER: Record<string, number> = {
+              breakfast: 1,
+              lunch: 2,
+              dinner: 3,
+              snack: 4,
+              dessert: 5,
+            };
+            const visibleMeals = day.meals
+              .filter((m) => m.slot !== 'snack')
+              .sort((a, b) => (CANONICAL_ORDER[a.slot] ?? 99) - (CANONICAL_ORDER[b.slot] ?? 99));
             const hasDessert = visibleMeals.some((m) => m.slot === 'dessert');
 
             return (
@@ -740,6 +737,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                         onChangeServings={(servings) =>
                           setMealServings(day.dayOfWeek, meal.id, servings)
                         }
+                        onToggleEatOut={() => toggleEatOut(day.dayOfWeek, meal.slot)}
                         isDark={isDark}
                       />
                     </AnimatedMealSlot>
@@ -756,6 +754,8 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
         visible={Boolean(selectedRecipe)}
         recipe={selectedRecipe}
         servings={detailServings}
+        targetDay={detailTarget?.dayOfWeek}
+        targetSlot={detailTarget?.slot}
         onClose={() => {
           setSelectedRecipe(null);
           setDetailTarget(null);
@@ -766,6 +766,16 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
           setDetailTarget(null);
           if (target) {
             handleOpenSwap(target.dayOfWeek, target.slot);
+          }
+        }}
+        onChangeServings={(newServings) => {
+          setDetailServings(newServings);
+          if (detailTarget) {
+            const day = currentPlan.days.find((d) => d.dayOfWeek === detailTarget.dayOfWeek);
+            const meal = day?.meals.find((m) => m.slot === detailTarget.slot);
+            if (meal) {
+              setMealServings(detailTarget.dayOfWeek, meal.id, newServings);
+            }
           }
         }}
         isDark={isDark}
@@ -805,7 +815,10 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
         savedPlans={savedPlans}
         canSaveCurrent={Boolean(currentPlan)}
         onSaveCurrent={saveCurrentPlan}
-        onRestore={restoreSavedPlan}
+        onRestore={(savedPlanId) => {
+          restoreSavedPlan(savedPlanId);
+          setSavedPlansVisible(false);
+        }}
         onDelete={deleteSavedPlan}
         onClose={() => setSavedPlansVisible(false)}
         isDark={isDark}
@@ -843,6 +856,36 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
         plan={currentPlan}
         isDark={isDark}
       />
+
+      {/* Meals Per Day Customization Modal */}
+      <MealsPerDayModal
+        visible={mealsModalVisible}
+        initialCount={mealsModalInitialCount}
+        onClose={() => setMealsModalVisible(false)}
+        isDark={isDark}
+      />
+
+      {/* Informative Budget Overrun Modal */}
+      <BudgetOverrunModal
+        visible={budgetOverrunModalVisible}
+        currentCostRon={currentPlan?.totalCartCostRon ?? 0}
+        currentBudgetRon={currentPlan?.totalBudgetRon ?? preferences.budgetRon}
+        onConfirmIncrease={(newBudget) => {
+          setBudgetOverrunModalVisible(false);
+          void triggerReload(
+            {
+              title: 'Actualizăm bugetul...',
+              subtitle: `Configurăm noul buget la ${newBudget} lei...`,
+              icon: '💰',
+            },
+            () => {
+              updatePreferencesAndRebuild({ budgetRon: newBudget });
+            }
+          );
+        }}
+        onDismiss={() => setBudgetOverrunModalVisible(false)}
+        isDark={isDark}
+      />
     </View>
   );
 };
@@ -874,13 +917,17 @@ const styles = StyleSheet.create({
   toolbarDesktopRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 18,
   },
   toolbarSection: {
-    flex: 1,
     width: '100%',
   },
+  // flex: 1 only where the sections sit side by side. Stacked on a phone, it gave each one a
+  // basis of 0 on the web, so the card stopped growing with its content and the second row
+  // of supermarkets hung out below it.
   toolbarSectionDesktop: {
+    flex: 1,
     minWidth: 250,
   },
   toolbarDividerV: {
@@ -901,6 +948,16 @@ const styles = StyleSheet.create({
   },
   mealsPerDaySubtitle: {
     fontSize: 12,
+    fontWeight: '800',
+  },
+  customizeDaysBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  customizeDaysBtnText: {
+    fontSize: 11,
     fontWeight: '800',
   },
   segmentedControl: {
@@ -968,20 +1025,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  viewToggle: {
-    width: '100%',
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 14,
-  },
-  viewToggleBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  viewToggleText: { fontSize: 12, fontWeight: '800' },
   feed: {
     width: '100%',
     gap: 24,
@@ -1070,6 +1113,7 @@ const styles = StyleSheet.create({
   mealsRow: {
     flexDirection: 'row',
     alignItems: 'stretch',
+    flexWrap: 'wrap',
     gap: 16,
     width: '100%',
   },
@@ -1077,8 +1121,11 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   mealCol: {
-    flex: 1,
-    minWidth: 0,
+    flexGrow: 1,
+    flexShrink: 0,
+    flexBasis: 320,
+    minWidth: 300,
+    maxWidth: 460,
     transition: 'all 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
   },
   emptyContainer: {
@@ -1090,33 +1137,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '700',
-    textAlign: 'center',
-  },
-  tierSectionContainer: {
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-  },
-  supermarketPillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  marketPill: {
-    flex: 1,
-    minWidth: 68,
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  marketPillText: {
-    fontSize: 11,
-    // "Mega Image" is the only name that wraps, and without this it sat left-aligned while
-    // every single-line neighbour looked centred.
     textAlign: 'center',
   },
   quickActionsBar: {

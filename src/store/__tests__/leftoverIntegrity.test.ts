@@ -146,4 +146,18 @@ describe('integritatea meselor reîncălzite', () => {
     useAppStore.getState().setSupermarket('penny');
     expect(Math.abs(cartSum() - useAppStore.getState().currentPlan!.totalCartCostRon)).toBeLessThan(0.02);
   });
+
+  test('schimbarea sau înlocuirea mesei sursă din luni actualizează automat masa reîncălzită dependentă din marți', () => {
+    const source = bootWithLeftover();
+    const replacementRecipe = RECIPES.find((r) => r.id !== source.recipe.id && r.suitableSlots?.includes(source.slot))!;
+
+    useAppStore.getState().replaceMealWithRecipe('monday', replacementRecipe, source.slot);
+
+    const mondayMeal = days()[0].meals.find((m) => m.slot === source.slot)!;
+    const tuesdayLeftover = days()[1].meals.find((m) => m.isLeftover && m.slot === source.slot)!;
+
+    expect(mondayMeal.recipe.id).toBe(replacementRecipe.id);
+    expect(tuesdayLeftover.recipe.id).toBe(replacementRecipe.id);
+    expect(tuesdayLeftover.estimatedCostRon).toBe(0);
+  });
 });

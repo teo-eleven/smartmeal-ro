@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { reminderScheduler } from '../reminderScheduler';
 import { useAppStore } from '../../store/useAppStore';
-import { DayOfWeek, ReminderSettings, UserPreferences } from '../../types';
+import { DayOfWeek, DEFAULT_REMINDERS, ReminderSettings, UserPreferences } from '../../types';
 
 jest.mock('expo-notifications', () => {
   const scheduled: { identifier: string; content: { data?: Record<string, unknown> } }[] = [];
@@ -158,3 +158,34 @@ describe('programarea mementourilor', () => {
     expect(count).toBe(1);
   });
 });
+
+/**
+ * A browser cannot schedule the app's notifications. The scheduler used to try anyway: every
+ * change logged "not available on web", and the switches showed "on" for a reminder that
+ * would never ring.
+ */
+describe('mementourile pe web', () => {
+  const g = globalThis as { document?: unknown };
+  afterEach(() => {
+    delete g.document;
+  });
+
+  test('pe web nu sunt disponibile și nu se programează nimic', async () => {
+    g.document = {};
+    jest.clearAllMocks();
+
+    expect(reminderScheduler.isSupported()).toBe(false);
+    const count = await reminderScheduler.reschedule(
+      { ...DEFAULT_REMINDERS, cookingEnabled: true },
+      null
+    );
+
+    expect(count).toBe(0);
+    expect(Notifications.getAllScheduledNotificationsAsync).not.toHaveBeenCalled();
+  });
+
+  test('pe telefon sunt disponibile', () => {
+    expect(reminderScheduler.isSupported()).toBe(true);
+  });
+});
+

@@ -5,6 +5,7 @@ import { Allergen, DayOfWeek, UserPreferences } from '../../types';
 
 jest.mock('../../services/supabase', () => ({
   cloudSyncService: {
+    isConfigured: jest.fn(() => true),
     getCurrentUser: jest.fn(),
     loadMealPlan: jest.fn(),
     saveMealPlan: jest.fn(),
@@ -243,7 +244,9 @@ describe('syncWithCloud când apelul aruncă', () => {
 
     await expect(useAppStore.getState().syncWithCloud()).resolves.toBeUndefined();
 
-    expect(useAppStore.getState().activeNotice!.message).toContain('cablu scos');
+    // The failure is reported, in Romanian; the raw error goes to the log, not the screen.
+    expect(useAppStore.getState().activeNotice!.message).toMatch(/Verifică conexiunea/);
+    expect(useAppStore.getState().activeNotice!.message).not.toContain('cablu scos');
     expect(useAppStore.getState().isSyncing).toBe(false);
   });
 });

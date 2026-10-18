@@ -3,6 +3,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react-native';
 import App from '../../App';
 import { useAppStore } from '../store/useAppStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { asSubscriber } from './helpers/subscriber';
 
 /**
  * The closest automated stand-in for walking through the app by hand: it mounts the real
@@ -11,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  */
 describe('a full journey through the real app', () => {
   beforeEach(async () => {
+    asSubscriber();
     await AsyncStorage.clear();
     useAppStore.setState({
       // The app now opens on a sign-in gate; these tests are about what is behind it.
@@ -29,7 +31,7 @@ describe('a full journey through the real app', () => {
 
   test('the app mounts on the onboarding screen', () => {
     render(<App />);
-    expect(screen.getByText(/Alege magazinul tău/i)).toBeTruthy();
+    expect(screen.getByText(/Ai preferințe dietetice\?/i)).toBeTruthy();
   });
 
   test('quick start takes the user from a cold app to a usable plan', () => {
@@ -133,6 +135,7 @@ describe('a full journey through the real app', () => {
 
 describe('walking the onboarding end to end, step by step', () => {
   beforeEach(async () => {
+    asSubscriber();
     await AsyncStorage.clear();
     useAppStore.getState().resetOnboarding();
     useAppStore.getState().dismissUndo();
@@ -140,14 +143,14 @@ describe('walking the onboarding end to end, step by step', () => {
     useAppStore.setState({ authStatus: 'guest', isHydrated: true });
   });
 
-  test('every one of the nine steps renders and can be reached', () => {
+  test('every one of the eight steps renders and can be reached', () => {
     render(<App />);
 
-    for (let step = 1; step <= 9; step += 1) {
+    for (let step = 1; step <= 8; step += 1) {
       act(() => {
         useAppStore.getState().goToStep(step);
       });
-      expect(screen.getByText(new RegExp(`Pasul ${step} din 9`, 'i'))).toBeTruthy();
+      expect(screen.getByText(new RegExp(`Pasul ${step} din 8`, 'i'))).toBeTruthy();
     }
   });
 
@@ -158,7 +161,7 @@ describe('walking the onboarding end to end, step by step', () => {
       useAppStore.getState().setSupermarket('penny');
       useAppStore.getState().setPeopleCount(4);
       useAppStore.getState().setCookingDays(['monday', 'tuesday', 'wednesday']);
-      useAppStore.getState().goToStep(9);
+      useAppStore.getState().goToStep(8);
     });
 
     act(() => {
@@ -175,7 +178,7 @@ describe('walking the onboarding end to end, step by step', () => {
     render(<App />);
 
     act(() => {
-      useAppStore.getState().goToStep(7);
+      useAppStore.getState().goToStep(1);
     });
     fireEvent.press(screen.getByLabelText(/Evită Lactate/i));
 
@@ -204,6 +207,7 @@ describe('walking the onboarding end to end, step by step', () => {
 
 describe('the screens reachable from the meal board', () => {
   beforeEach(async () => {
+    asSubscriber();
     await AsyncStorage.clear();
     useAppStore.getState().resetOnboarding();
     useAppStore.getState().dismissUndo();

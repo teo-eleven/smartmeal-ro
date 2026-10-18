@@ -6,6 +6,7 @@ import { DayOfWeek, UserPreferences } from '../../types';
 
 jest.mock('../../services/supabase', () => ({
   cloudSyncService: {
+    isConfigured: jest.fn(() => true),
     getCurrentUser: jest.fn(),
     loadMealPlan: jest.fn(),
     saveMealPlan: jest.fn(),

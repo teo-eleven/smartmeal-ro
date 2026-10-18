@@ -91,6 +91,14 @@ export interface RecipeNutrition {
   fatGrams: number;
 }
 
+export type HealthGoalTag =
+  | 'anti_inflammatory' // Antiinflamator
+  | 'pcos_friendly' // Potrivit pentru SOP (Sindrom Ovar Polichistic)
+  | 'diabetic_friendly' // Potrivit pentru Diabet (indice glicemic mic)
+  | 'high_fiber' // Bogat în fibre
+  | 'heart_healthy' // Bun pentru inimă
+  | 'pork_free'; // Fără carne de porc (Halal)
+
 export interface Recipe {
   id: string;
   title: string;
@@ -100,6 +108,7 @@ export interface Recipe {
   dietType: DietType;
   appliances: Appliance[];
   moodTags: MoodTag[];
+  healthTags?: HealthGoalTag[];
   nutritionPerServing: RecipeNutrition;
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
@@ -198,6 +207,17 @@ export interface PlannedMeal {
    * at all once the source had been swapped.
    */
   leftoverFromMealId?: string;
+  leftoverFromDay?: DayOfWeek;
+  /**
+   * True when this leftover meal was appended dynamically (e.g. for desserts where the
+   * target day didn't originally have that meal slot). When undone, this meal is removed
+   * rather than reset to an empty state.
+   */
+  isAddedLeftover?: boolean;
+  /**
+   * Eaten out at a restaurant, event, or work. Excluded from grocery cart and cost calculations.
+   */
+  isEatenOut?: boolean;
 }
 
 export interface UserPreferences {
@@ -206,6 +226,8 @@ export interface UserPreferences {
   cookingDays: DayOfWeek[];
   budgetRon: number;
   moodTags: MoodTag[];
+  healthGoalTags?: HealthGoalTag[];
+  snackTastePreference?: 'sweet' | 'savory' | 'both';
   dietType: DietType;
   dietTypes?: DietType[]; // up to 2 compatible diets
   appliances: Appliance[];
@@ -235,6 +257,7 @@ export interface UserPreferences {
   /** Allergens to exclude entirely. Treated as a hard constraint, never relaxed. */
   avoidedAllergens?: Allergen[];
   mealSlots: MealSlot[];
+  dailyMealSlots?: Partial<Record<DayOfWeek, MealSlot[]>>;
   foodTier?: FoodTier;
   selectedSnackIds?: string[];
   selectedDrinkIds?: string[];

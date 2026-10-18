@@ -34,6 +34,8 @@ Acestea sunt stocate local. Le poți șterge oricând din aplicație, prin „Re
 - **adresa de email**, pentru autentificare și, dacă o ceri, pentru mementouri
 - planul, lista de cumpărături și preferințele de mai sus, ca să le regăsești pe alt telefon
 - alegerea ta privind mementourile: dacă le vrei, la ce oră, și la câte zile pe email
+- **numele** pe care ni-l dai la crearea contului, ca să te salutăm; îl poți schimba din Cont
+- **lista dispozitivelor** conectate la cont: un identificator aleator al instalării, tipul (iPhone, Android, browser) și când a fost folosit ultima dată, ca să poți deconecta un dispozitiv din Cont → Dispozitive
 
 Parola nu ne este niciodată vizibilă: autentificarea e gestionată de Supabase, care stochează
 doar o amprentă criptografică a ei.
@@ -76,7 +78,7 @@ email îți arată și propriul buton „Dezabonare".
 ## Cât păstrăm datele
 
 Local: până le ștergi tu sau dezinstalezi aplicația.
-În cloud: până îți ștergi contul. Planul se șterge automat odată cu el.
+În cloud: până îți ștergi contul. Planul, numele și lista dispozitivelor se șterg automat odată cu el.
 
 ## Drepturile tale
 

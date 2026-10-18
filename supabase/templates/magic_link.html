@@ -1,0 +1,31 @@
+<!--
+  Supabase → Authentication → Email Templates → "Magic Link".
+  Subject: Codul tău de conectare — SmartMeal RO
+
+  It must use {{ .Token }}, the code, and not {{ .ConfirmationURL }}, the link. The app asks
+  for the code (Conectare → "Primește un cod pe email" → verifyOtp type 'email'); the
+  default template sends a link, which the app cannot open.
+
+  The app asks for this email with shouldCreateUser: false, so it only ever reaches an
+  address that already has an account. A new address goes through "Cont nou", which carries
+  the consent and the name.
+-->
+<h2 style="font-family: sans-serif; margin: 0 0 12px">Conectare în SmartMeal RO</h2>
+<p style="font-family: sans-serif">Scrie codul de mai jos în aplicație ca să intri în cont:</p>
+<p
+  style="
+    font-family: monospace;
+    font-size: 28px;
+    font-weight: bold;
+    letter-spacing: 6px;
+    margin: 20px 0;
+  "
+>
+  {{ .Token }}
+</p>
+<p style="font-family: sans-serif; color: #555; font-size: 13px">
+  Codul poate fi folosit o singură dată și expiră în scurt timp.
+</p>
+<p style="font-family: sans-serif; color: #555; font-size: 13px">
+  Dacă nu tu ai cerut asta, ignoră emailul. Nimeni nu poate intra în cont fără acest cod.
+</p>

@@ -42,7 +42,7 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
   // in three and then divided by the number of days, so the "medie zilnică" it presents as
   // nutritional guidance came out at about a third of what the week actually contains.
   plan.days
-    .flatMap((day) => day.meals)
+    .flatMap((day) => day.meals || [])
     .forEach((meal) => {
       const nutrition = meal.recipe.nutritionPerServing;
       totalCalories += nutrition.calories;
@@ -66,39 +66,39 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
   const carbsPct = Math.round((calFromCarbs / macroCalSum) * 100);
   const fatPct = Math.max(0, 100 - proteinPct - carbsPct);
 
-  // Nutritional balance score (target: ~25-35% P, 40-55% C, 20-35% F)
-  const pDiff = Math.abs(proteinPct - 30);
-  const cDiff = Math.abs(carbsPct - 45);
-  const fDiff = Math.abs(fatPct - 25);
-  const balanceScore = Math.max(65, Math.min(98, Math.round(100 - (pDiff + cDiff + fDiff) * 0.8)));
+  // No "nutrition score". The one here was clamped to 65–98, so it could never report a
+  // badly balanced week: a health claim built to look good, whatever the plan contained.
 
   const theme = getAppTheme(isDark);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Top Header */}
-        <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-          <View style={styles.titleGroup}>
-            <Text style={[styles.title, { color: theme.text }]}>📊 Nutriție & Macro Săptămânale</Text>
-            <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-              Analiza caloriilor și a macronutrienților pentru {totalDays} zile ({people} {people === 1 ? 'persoană' : 'persoane'}).
-            </Text>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          {/* Top Header */}
+          <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <View style={styles.titleGroup}>
+              <Text style={[styles.title, { color: theme.text }]}>📊 Nutriție & Macro Săptămânale</Text>
+              <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+                {totalDays} zile ({people} {people === 1 ? 'persoană' : 'persoane'})
+              </Text>
+            </View>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Închide"
+              onPress={onClose}
+              style={[styles.closeBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Închide"
-            onPress={onClose}
-            style={[styles.closeBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
-          </TouchableOpacity>
-        </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={[styles.contentCard, { maxWidth: contentMaxWidth }]}>
-            {/* Main Daily Calorie Highlight Card */}
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.contentCard}>
+            {/* What the plan's own dishes add up to, per portion per day. A dinner-only week is
+                not a day's intake, and calling it "calorii medii zilnice" read as one, and a
+                dangerously low one. */}
             <View
               style={[
                 styles.calorieCard,
@@ -108,21 +108,16 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
                 },
               ]}
             >
-              <View>
+              <View style={styles.calorieTexts}>
                 <Text style={[styles.calorieCardLabel, { color: theme.text }]}>
-                  CALORII MEDII ZILNICE / PERSOANĂ
+                  DIN MESELE PLANIFICATE · O PORȚIE PE ZI
                 </Text>
                 <Text style={[styles.calorieCardVal, { color: theme.text }]}>
-                  ~{avgDailyCalories} <Text style={styles.calorieUnit}>kcal / zi</Text>
+                  ~{avgDailyCalories} <Text style={styles.calorieUnit}>kcal</Text>
                 </Text>
                 <Text style={[styles.calorieCardSub, { color: theme.textMuted }]}>
-                  Calculat din rețetele pregătite acasă pentru toată săptămâna.
+                  Doar felurile din plan, în medie pe zi. Nu e tot ce mănânci într-o zi.
                 </Text>
-              </View>
-
-              <View style={[styles.balanceScoreBadge, { backgroundColor: theme.primary }]}>
-                <Text style={[styles.balanceScoreLbl, { color: theme.primaryText }]}>Scor Nutriție</Text>
-                <Text style={[styles.balanceScoreVal, { color: theme.primaryText }]}>{balanceScore}/100</Text>
               </View>
             </View>
 
@@ -134,7 +129,7 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
               <View style={styles.segmentedMacroTrack}>
                 <View style={[styles.macroSegment, { width: `${proteinPct}%`, backgroundColor: '#3b82f6' }]} />
                 <View style={[styles.macroSegment, { width: `${carbsPct}%`, backgroundColor: '#eab308' }]} />
-                <View style={[styles.macroSegment, { width: `${fatPct}%`, backgroundColor: '#ef4444' }]} />
+                <View style={[styles.macroSegment, { width: `${fatPct}%`, backgroundColor: '#f59e0b' }]} />
               </View>
 
               {/* Macro Cards Grid */}
@@ -177,13 +172,13 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
               </View>
             </View>
 
-            {/* Nutrition Insights Card */}
+            {/* This card used to hold three fixed health claims, identical for every plan. What
+                can honestly be said is where the numbers come from. */}
             <View style={[styles.insightsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <Text style={[styles.insightsTitle, { color: theme.text }]}>🥗 Evaluare Nutrițională SmartMeal</Text>
+              <Text style={[styles.insightsTitle, { color: theme.text }]}>De unde vin cifrele</Text>
               <Text style={[styles.insightsBody, { color: theme.textMuted }]}>
-                ✓ Raport echilibrat între proteine calitative și fibre din legume proaspete.{'\n'}
-                ✓ Fără exces de grăsimi hidrogenate sau adaosuri artificiale de zahăr.{'\n'}
-                ✓ Cantitățile sunt calibrate pentru energie susținută pe tot parcursul zilei.
+                Valori estimate din rețete, pe o porție. Diferă după mărcile și cantitățile pe care
+                le folosești. Nu înlocuiesc sfatul unui medic sau nutriționist.
               </Text>
             </View>
 
@@ -198,12 +193,33 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </SafeAreaView>
+        </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 620,
+    maxHeight: '88%',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 20,
+  },
   container: {
     flex: 1,
   },
@@ -273,24 +289,8 @@ const styles = StyleSheet.create({
   calorieCardSub: {
     fontSize: 12,
   },
-  balanceScoreBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
-    alignItems: 'center',
-    minWidth: 110,
-  },
-  balanceScoreLbl: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  balanceScoreVal: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '900',
-    marginTop: 2,
+  calorieTexts: {
+    flex: 1,
   },
   macrosCard: {
     borderRadius: 20,
@@ -315,28 +315,34 @@ const styles = StyleSheet.create({
   },
   macroGrid: {
     flexDirection: 'row',
-    gap: 10,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   macroItem: {
-    flex: 1,
-    padding: 12,
+    flexGrow: 1,
+    flexBasis: 88,
+    minWidth: 88,
+    padding: 10,
     borderRadius: 14,
     borderWidth: 1,
   },
   macroItemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     marginBottom: 6,
+    flexWrap: 'nowrap',
   },
   macroDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
+    flexShrink: 0,
   },
   macroName: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
+    flexShrink: 1,
   },
   macroAmount: {
     fontSize: 18,

@@ -1,16 +1,17 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, screen, cleanup } from '@testing-library/react-native';
 import App from '../../App';
 import { useAppStore } from '../store/useAppStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { asSubscriber } from './helpers/subscriber';
 
-/** Following the phone is the right default; a kitchen at night is not a kitchen at noon. */
-describe('alegerea temei', () => {
+/** Enforce permanent luxury Warm Forest & Amber Lantern theme without toggle */
+describe('tematica permanentă a aplicației', () => {
   beforeEach(async () => {
+    asSubscriber();
     await AsyncStorage.clear();
-    // The app now opens on a sign-in gate; this test is about what is behind it.
     useAppStore.setState({
-      themeMode: 'system',
+      themeMode: 'dark',
       activeView: 'meals',
       activeNotice: null,
       authStatus: 'guest',
@@ -19,32 +20,16 @@ describe('alegerea temei', () => {
     useAppStore.getState().generatePlan();
   });
 
-  test('pornește urmând telefonul', () => {
-    render(<App />);
-
-    expect(screen.getByLabelText(/Temă: ca telefonul/i)).toBeTruthy();
+  afterEach(() => {
+    cleanup();
   });
 
-  test('apăsările o rotesc prin cele trei stări și se întorc', () => {
+  test('pornește direct în tematica unică de lux Warm Forest fără buton de toggle', () => {
     render(<App />);
 
-    fireEvent.press(screen.getByLabelText(/Temă: ca telefonul/i));
-    expect(useAppStore.getState().themeMode).toBe('light');
-
-    fireEvent.press(screen.getByLabelText(/Temă: luminoasă/i));
-    expect(useAppStore.getState().themeMode).toBe('dark');
-
-    fireEvent.press(screen.getByLabelText(/Temă: întunecată/i));
-    expect(useAppStore.getState().themeMode).toBe('system');
-  });
-
-  test('alegerea se ține minte între porniri', async () => {
-    render(<App />);
-    fireEvent.press(screen.getByLabelText(/Temă: ca telefonul/i));
-
-    useAppStore.setState({ themeMode: 'system', isHydrated: false, authStatus: 'guest' });
-    await useAppStore.getState().hydrateStorage();
-
-    expect(useAppStore.getState().themeMode).toBe('light');
+    expect(screen.queryByLabelText(/Temă: întunecată/i)).toBeNull();
+    expect(screen.queryByLabelText(/Temă: luminoasă/i)).toBeNull();
+    expect(screen.getByLabelText(/Contul meu/i)).toBeTruthy();
   });
 });
+

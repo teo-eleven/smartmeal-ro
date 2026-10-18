@@ -80,29 +80,30 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
   }, 0);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Top Header */}
-        <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-          <View style={styles.titleGroup}>
-            <Text style={[styles.title, { color: theme.text }]}>🏠 Ce am deja în Cămară & Frigider</Text>
-            <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-              Bifează ingredientele pe care le ai deja acasă pentru a nu le mai cumpăra din magazin.
-            </Text>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          {/* Top Header */}
+          <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <View style={styles.titleGroup}>
+              <Text style={[styles.title, { color: theme.text }]}>🏠 Ce am deja în Cămară & Frigider</Text>
+              <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+                Bifează ingredientele pe care le ai deja acasă.
+              </Text>
+            </View>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Închide"
+              onPress={onClose}
+              style={[styles.closeBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Închide"
-            onPress={onClose}
-            style={[styles.closeBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
-          </TouchableOpacity>
-        </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={[styles.contentCard, { maxWidth: contentMaxWidth }]}>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.contentCard}>
             {/* Savings Luminous Card */}
             <View
               style={[
@@ -113,7 +114,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
                 },
               ]}
             >
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={[styles.savingsTitle, { color: theme.text }]}>
                   {currentPantry.length === 0
                     ? 'Nu ai bifat ingrediente din cămară'
@@ -124,12 +125,33 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
                 </Text>
               </View>
 
-              {totalSavedEstimate > 0 && (
-                <View style={[styles.savingsBadge, { backgroundColor: theme.primary }]}>
-                  <Text style={[styles.savingsBadgeLabel, { color: theme.primaryText }]}>Economie estimată</Text>
-                  <Text style={[styles.savingsBadgeVal, { color: theme.primaryText }]}>~{Math.round(totalSavedEstimate)} LEI</Text>
-                </View>
-              )}
+              <View
+                style={[
+                  styles.savingsBadge,
+                  {
+                    backgroundColor: totalSavedEstimate > 0 ? theme.primary : theme.surfaceSecondary,
+                    borderWidth: 1,
+                    borderColor: totalSavedEstimate > 0 ? theme.primary : theme.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.savingsBadgeLabel,
+                    { color: totalSavedEstimate > 0 ? theme.primaryText : theme.textMuted },
+                  ]}
+                >
+                  {totalSavedEstimate > 0 ? 'Economie estimată' : 'Fără economii'}
+                </Text>
+                <Text
+                  style={[
+                    styles.savingsBadgeVal,
+                    { color: totalSavedEstimate > 0 ? theme.primaryText : theme.text },
+                  ]}
+                >
+                  {totalSavedEstimate > 0 ? `~${Math.round(totalSavedEstimate)} LEI` : '0 LEI'}
+                </Text>
+              </View>
             </View>
 
             {/* Quick Bulk Actions */}
@@ -181,7 +203,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
                           styles.stapleName,
                           {
                             color: theme.text,
-                            fontWeight: isSelected ? '800' : '600',
+                            fontWeight: '700',
                           },
                         ]}
                       >
@@ -219,12 +241,33 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </SafeAreaView>
+        </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 620,
+    maxHeight: '88%',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 20,
+  },
   container: {
     flex: 1,
   },
@@ -271,11 +314,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     padding: 16,
     borderRadius: 18,
     borderWidth: 1.5,
     marginBottom: 16,
     gap: 12,
+    minHeight: 82,
   },
   savingsTitle: {
     fontSize: 15,

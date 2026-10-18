@@ -15,6 +15,7 @@ import { calculateRecipePortionCost } from './budgetCalculator';
 import { aggregateGroceryList } from './groceryAggregator';
 import { isRecipeMatchingDiets } from '../utils/dietCompatibility';
 import { isRecipeSafeForAllergies } from '../utils/allergenFilter';
+import { recipeContainsPork } from '../data/healthTags';
 
 export function getSlotLabelRo(slot: MealSlot): string {
   switch (slot) {
@@ -81,10 +82,17 @@ export function getEligibleRecipes(preferences: UserPreferences): Recipe[] {
       : [preferences.dietType];
 
   const rejected = new Set(preferences.dislikedRecipeIds ?? []);
+  const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
+  const activeHealthGoals = (preferences.healthGoalTags || []).filter(
+    (g) => g !== 'pork_free'
+  );
 
   return RECIPES.filter(
     (recipe) =>
       !rejected.has(recipe.id) &&
+      (!requirePorkFree || !recipeContainsPork(recipe)) &&
+      (!activeHealthGoals.length ||
+        activeHealthGoals.some((g) => (recipe.healthTags || []).includes(g))) &&
       isRecipeMatchingDiets(recipe, activeDiets) &&
       isRecipeSafeForAllergies(recipe, preferences.avoidedAllergens) &&
       hasRequiredAppliances(recipe.appliances, preferences.appliances) &&
@@ -216,6 +224,10 @@ export function getAlternativeRecipes(
     const bStoreMatch =
       preferences.supermarketId && b.storeSignature === preferences.supermarketId ? 1 : 0;
     if (bStoreMatch !== aStoreMatch) return bStoreMatch - aStoreMatch;
+
+    const aHealthMatches = (a.healthTags || []).filter((t) => preferences.healthGoalTags?.includes(t)).length;
+    const bHealthMatches = (b.healthTags || []).filter((t) => preferences.healthGoalTags?.includes(t)).length;
+    if (bHealthMatches !== aHealthMatches) return bHealthMatches - aHealthMatches;
 
     const aMatch = a.tier === effectiveTier ? 1 : 0;
     const bMatch = b.tier === effectiveTier ? 1 : 0;
@@ -421,15 +433,28 @@ export function generateMealPlan(
       ? preferences.dietTypes
       : [preferences.dietType];
 
+  const CANONICAL_SLOT_ORDER: Record<string, number> = {
+    breakfast: 1,
+    lunch: 2,
+    dinner: 3,
+    snack: 4,
+    dessert: 5,
+  };
   const rawSlots: MealSlot[] =
     preferences.mealSlots && preferences.mealSlots.length > 0 ? preferences.mealSlots : ['dinner'];
-  const slots: MealSlot[] = rawSlots.filter((s) => s !== 'snack');
+  const slots: MealSlot[] = rawSlots
+    .filter((s) => s !== 'snack')
+    .sort((a, b) => (CANONICAL_SLOT_ORDER[a] ?? 99) - (CANONICAL_SLOT_ORDER[b] ?? 99));
 
   const effectiveTier = preferences.foodTier || 'medium';
 
   // The relaxation ladder below rebuilds candidates from the whole catalog when a slot runs
   // dry. It relaxes the store and the slot -- never a dish the user asked never to see again.
   const rejectedIds = new Set(preferences.dislikedRecipeIds ?? []);
+  const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
+  const activeHealthGoals = (preferences.healthGoalTags || []).filter(
+    (g) => g !== 'pork_free'
+  );
 
   // Score each recipe based on mood tags, food tier preference, and portion cost
   const scoredRecipes = eligibleRecipes.map((recipe) => {
@@ -444,6 +469,14 @@ export function generateMealPlan(
       recipe.moodTags.forEach((tag) => {
         if (preferences.moodTags.includes(tag)) {
           score += 15;
+        }
+      });
+    }
+
+    if (preferences.healthGoalTags && preferences.healthGoalTags.length > 0) {
+      recipe.healthTags?.forEach((tag) => {
+        if (preferences.healthGoalTags?.includes(tag)) {
+          score += 25;
         }
       });
     }
@@ -511,31 +544,50 @@ export function generateMealPlan(
     let candidates = scoredRecipes.filter((s) => matchesSlot(s.recipe, slot));
 
     if (candidates.length === 0) {
-      // 1. Drop the supermarket requirement, keep diet + appliances + slot.
+      // 1. Drop the supermarket requirement, keep diet + appliances + slot + health goals.
       const ignoringStore = RECIPES.filter(
         (r) =>
           !rejectedIds.has(r.id) &&
           matchesSlot(r, slot) &&
+          (!activeHealthGoals.length ||
+            activeHealthGoals.some((g) => (r.healthTags || []).includes(g))) &&
           isRecipeMatchingDiets(r, activeDiets) &&
           isRecipeSafeForAllergies(r, preferences.avoidedAllergens) &&
-          hasRequiredAppliances(r.appliances, preferences.appliances)
+          hasRequiredAppliances(r.appliances, preferences.appliances) &&
+          (!requirePorkFree || !recipeContainsPork(r))
       );
 
       if (ignoringStore.length > 0) {
         candidates = scoreFallbackRecipes(ignoringStore);
       } else {
-        // 2. Drop slot suitability too, but still only dishes the user can cook and eat.
-        //    Reached when the catalog has no dish at all for this slot under this diet
-        //    (for example: there is no vegan breakfast recipe).
-        const cookableAndEdible = RECIPES.filter(
+        // 2. Drop slot suitability too, keeping health goals.
+        const ignoringSlot = RECIPES.filter(
           (r) =>
             !rejectedIds.has(r.id) &&
+            (!activeHealthGoals.length ||
+              activeHealthGoals.some((g) => (r.healthTags || []).includes(g))) &&
             isRecipeMatchingDiets(r, activeDiets) &&
             isRecipeSafeForAllergies(r, preferences.avoidedAllergens) &&
-            hasRequiredAppliances(r.appliances, preferences.appliances)
+            hasRequiredAppliances(r.appliances, preferences.appliances) &&
+            (!requirePorkFree || !recipeContainsPork(r))
         );
-        candidates =
-          cookableAndEdible.length > 0 ? scoreFallbackRecipes(cookableAndEdible) : scoredRecipes;
+
+        if (ignoringSlot.length > 0) {
+          candidates = scoreFallbackRecipes(ignoringSlot);
+        } else {
+          // 3. Reached when the catalog has no health-tagged dish under this diet/appliance constraint.
+          // Relax health goals (except pork_free, which is strict dietary/religious).
+          const cookableAndEdible = RECIPES.filter(
+            (r) =>
+              !rejectedIds.has(r.id) &&
+              isRecipeMatchingDiets(r, activeDiets) &&
+              isRecipeSafeForAllergies(r, preferences.avoidedAllergens) &&
+              hasRequiredAppliances(r.appliances, preferences.appliances) &&
+              (!requirePorkFree || !recipeContainsPork(r))
+          );
+          candidates =
+            cookableAndEdible.length > 0 ? scoreFallbackRecipes(cookableAndEdible) : scoredRecipes;
+        }
       }
     }
 
@@ -640,7 +692,12 @@ export function generateMealPlan(
 
   // Construct MealPlanDay entries
   const days: MealPlanDay[] = preferences.cookingDays.map((dayOfWeek) => {
-    const dayMeals: PlannedMeal[] = slots.map((slot) => {
+    const rawDaySlots = preferences.dailyMealSlots?.[dayOfWeek] ?? slots;
+    const daySlots = [...rawDaySlots]
+      .filter((s) => s !== 'snack')
+      .sort((a, b) => (CANONICAL_SLOT_ORDER[a] ?? 99) - (CANONICAL_SLOT_ORDER[b] ?? 99));
+
+    const dayMeals: PlannedMeal[] = daySlots.map((slot) => {
       const recipe = pickBestRecipeForSlot(slot);
       const cost = calculateRecipePortionCost(
         recipe,
@@ -761,14 +818,16 @@ export function swapMealInPlan(
     throw new Error('[PlannerEngine] Nu există alte rețete compatibile pentru swap.');
   }
 
-  // Pick the best replacement matching foodTier and mood preferences
+  // Pick the best replacement matching foodTier, mood and health preferences
   const effectiveTier = preferences.foodTier || 'medium';
   availableCandidates.sort((a, b) => {
     const aTier = a.tier === effectiveTier ? 20 : 0;
     const bTier = b.tier === effectiveTier ? 20 : 0;
     const aMatches = a.moodTags.filter((t) => preferences.moodTags.includes(t)).length;
     const bMatches = b.moodTags.filter((t) => preferences.moodTags.includes(t)).length;
-    return bTier + bMatches - (aTier + aMatches);
+    const aHealth = (a.healthTags || []).filter((t) => preferences.healthGoalTags?.includes(t)).length;
+    const bHealth = (b.healthTags || []).filter((t) => preferences.healthGoalTags?.includes(t)).length;
+    return bTier + bMatches * 10 + bHealth * 15 - (aTier + aMatches * 10 + aHealth * 15);
   });
 
   const replacementRecipe = availableCandidates[0];
@@ -779,34 +838,78 @@ export function swapMealInPlan(
     preferences.excludePantryStaples
   );
 
-  const updatedDays = [...currentPlan.days];
-  const updatedMeals = (targetDay.meals || []).map((m) => {
-    // A reheated portion belongs to the day it was cooked on. Swapping it kept the
-    // "reheated" flag on a different dish, so the card claimed yesterday's leftovers while
-    // showing something else entirely -- and nothing was bought for it.
-    if (m.slot === slotToSwap && !m.isLeftover) {
+  const originalMeal = targetDay.meals?.find((m) => m.slot === slotToSwap && !m.isLeftover);
+  const originalMealId = originalMeal?.id;
+
+  const updatedDays = currentPlan.days.map((day, dIdx) => {
+    if (dIdx === dayIndex) {
+      const updatedMeals = (day.meals || []).map((m) => {
+        // A reheated portion belongs to the day it was cooked on. Swapping it kept the
+        // "reheated" flag on a different dish, so the card claimed yesterday's leftovers while
+        // showing something else entirely -- and nothing was bought for it.
+        if (m.slot === slotToSwap && !m.isLeftover) {
+          return {
+            ...m,
+            recipe: replacementRecipe,
+            estimatedCostRon: newCost,
+          };
+        }
+        return m;
+      });
+
+      const primaryMeal =
+        updatedMeals.find((m) => m.slot === 'dinner') ||
+        updatedMeals[0] || {
+          recipe: replacementRecipe,
+          estimatedCostRon: newCost,
+        };
+      const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
+
       return {
-        ...m,
-        recipe: replacementRecipe,
-        estimatedCostRon: newCost,
+        ...day,
+        meals: updatedMeals,
+        recipe: primaryMeal.recipe,
+        estimatedCostRon: Math.round(dayCostSum * 100) / 100,
       };
     }
-    return m;
+
+    // Cascade to dependent leftovers on other days (e.g. cooked double for tomorrow)
+    const hasDependentLeftover = day.meals?.some(
+      (m) =>
+        m.isLeftover &&
+        (m.leftoverFromMealId === originalMealId ||
+          (m.slot === slotToSwap && (dIdx === dayIndex + 1 || m.leftoverFromDay === dayToSwap)))
+    );
+
+    if (hasDependentLeftover) {
+      const updatedMeals = (day.meals || []).map((m) => {
+        if (
+          m.isLeftover &&
+          (m.leftoverFromMealId === originalMealId ||
+            (m.slot === slotToSwap && (dIdx === dayIndex + 1 || m.leftoverFromDay === dayToSwap)))
+        ) {
+          return {
+            ...m,
+            recipe: replacementRecipe,
+            estimatedCostRon: 0,
+          };
+        }
+        return m;
+      });
+
+      const primaryMeal = updatedMeals.find((m) => m.slot === 'dinner') || updatedMeals[0];
+      const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
+
+      return {
+        ...day,
+        meals: updatedMeals,
+        recipe: primaryMeal?.recipe || day.recipe,
+        estimatedCostRon: Math.round(dayCostSum * 100) / 100,
+      };
+    }
+
+    return day;
   });
-
-  const primaryMeal = updatedMeals.find((m) => m.slot === 'dinner') ||
-    updatedMeals[0] || {
-      recipe: replacementRecipe,
-      estimatedCostRon: newCost,
-    };
-  const dayCostSum = updatedMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
-
-  updatedDays[dayIndex] = {
-    ...targetDay,
-    meals: updatedMeals,
-    recipe: primaryMeal.recipe,
-    estimatedCostRon: Math.round(dayCostSum * 100) / 100,
-  };
 
   // Re-aggregate full grocery list
   const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];

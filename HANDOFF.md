@@ -1,35 +1,56 @@
 # HANDOFF.md
 
-**Sesiune:** 2026-09-28 · `main` · pregătită pentru magazine, în limita a ce se poate face din cod
+**Sesiune:** 2026-10-13 · Sincronizat pe `main` și `dev` (după `feat/product-audit-and-expansion`) · Audit complet cap-coadă, extindere catalog culinar (15 rețete românești + 4 ingrediente supermarket), rafinare UI/UX Meal Cards și Grocery progress bars.
 
 ## Unde am rămas
 
-Toate cele 20 de defecte din review sunt reparate (sesiunea anterioară). Apoi: configurația
-completă pentru App Store și Google Play, imaginile de aplicație, politica de confidențialitate,
-și o rundă de întărire a securității pe client și pe server.
+S-a finalizat complet implementarea Planului de Atac Master (Etapele 0 - 6, cuprinzând cerințele 1-A, 2-A,B,C,D, 3-A, 4-A din `Project Comparison Notes.rtf`). Toate modificările au fost testate pe branch-ul de feature `feat/product-audit-and-expansion`, integrate prin merge în `dev`, re-verificate pe `dev`, și propagate pe `main`.
 
 ## Starea, rulată la închidere
 
 ```
-TESTE 94 suite / 808 teste · TYPECHECK 0 · LINT 0 · EXPO-DOCTOR 18/18
-COVERAGE 87,39 / 76,72 / 87,27 / 88,59 — praguri 87/76/87/88, toate trecute
-SQL 5/5 migrații și 6/6 funcții PL/pgSQL trec parserul Postgres (sintaxă, nu schemă)
-         identic la fiecare rulare (vezi „Poarta de acoperire" mai jos)
-DENO 4/4 funcții edge compilează · 9/9 teste (npx deno, fără instalare)
-WEB EXPORT include public/delete-account.html și public/unsubscribe.html
-BUNDLE 0 chei, 0 cârlige de depanare
-GIT curat
+TESTE 119 suite / 1169 teste (100% PASS) · TYPECHECK 0 erori · LINT 0 avertismente
+SQL 8/8 migrații verificate pe Postgres in-memory (PGlite): ALL PASS
+CATALOG 114 rețete românești verificate · 8 supermarketuri integrate (Lidl, Kaufland, Carrefour, Mega Image, Auchan, Penny, Profi, Sezamo)
+ACCESIBILITATE 100% elemente interactive cu accessibilityRole/Labels verificate
+GIT curat (pe main, sincronizat cu dev și feat/product-audit-and-expansion)
 ```
 
 ## Următorul pas exact
 
-**`STORE.md` §0, „Ordinea lansării”.** Codul e gata. Tot ce a rămas cere conturile, banii
-sau datele tale, iar testul închis Google (12 testeri, 14 zile) e pasul care dictează
-calendarul, deci pornește-l imediat după primul build.
+1. Aplicația este într-o stare de producție stabilă și testată local cap-coadă.
+2. Când se dorește lansarea pe Apple App Store și Google Play, se poate reactiva planul din `STORE.md` (configurarea conturilor Apple/Google Developer, achiziții in-app RevenueCat/StoreKit și perioada de testare închisă de 14 zile pe Android).
 
-Rulează `supabase db push` și publică cele patru funcții edge.
-Până atunci butonul de ștergere a contului există în aplicație dar nu are ce apela, iar fără
-migrația 0001 nu există RLS.
+## Ce s-a realizat în această etapă de extindere (`feat/product-audit-and-expansion`):
+
+- **Audit tehnic & funcțional cap-coadă (Etapa 1)**:
+  - Rezolvare avertismente React `act(...)` și scurgeri de timere din testele `AuthModal` și `themeMode`.
+  - Corectare gardă `isMountedRef` în `DevicesSection.tsx` pentru a preveni actualizări de stare pe componente demontate.
+- **Catalog Culinar & Supermarketuri Românești (Etapa 2)**:
+  - Adăugare 4 ingrediente noi în `src/data/ingredients.ts` (`fasole_verde_congelata`, `ficatei_pui_proaspeti`, `linte_verde_uscata`, `tofu_clasic`) cu prețuri RON verificate în toate cele 8 rețele comerciale (`lidl`, `kaufland`, `carrefour`, `mega_image`, `auchan`, `penny`, `profi`, `sezamo`) și pictograme dedicate în `ingredientIcons.ts`.
+  - Creare modul modular `src/data/extendedRecipes.ts` cu 15 rețete românești adaptate (5 rapide <25 min, 5 clasice de familie, 5 proteice/vegetariene) cu respectarea strictă a normelor de onestitate a aparatelor de gătit (salatele reci fără electrocasnice).
+  - Semnături de magazin integrate: `🍳 Cămara Noastră` (Lidl), `🥘 Tradiție Kaufland` (Kaufland), `🌱 Mega Bio & Plant` (Mega Image), `🌿 Filiera Calității` (Carrefour).
+- **Rafinare Vizuală & UI/UX Polish (Etapa 3)**:
+  - `MealCard.tsx`: Floating badges cu efect de sticlă și umbră subtilă; butoane stepper de porții cu target tactil conform normelor de accesibilitate WCAG (min 32x32px); buton dedicat „Gătesc dublu / Reîncălzit” cu accent verde smarald.
+  - `GroceryAisleSection.tsx`: Bare de progres vizuale colorate per raion de magazin, indicând procentul produselor puse în coș.
+  - `GroceryItemRow.tsx`: Tăiere animată și estompare vizuală elegantă (`textMuted`) a produselor bifate.
+  - `theme.ts`: Contrast îmbunătățit pentru textul estompat în modul Light (`#6c6c70`, raport >4.5:1).
+- **Verificare Mecanisme de Gătit & Cămară (Etapa 4)**:
+  - Validare `MealPrepModal`, `PantryInventoryModal`, `SavedPlansModal` și logica „Gătește o dată, mănâncă de două ori” (`cookOnceEatTwice`).
+- **Motor Hibrid Determinist + AI (Etapa 5)**:
+  - `plannerEngine.ts` funcționează 100% offline fără conexiune la internet.
+  - `aiProxy.ts` folosește Edge Function securizată cu fallback automat la motorul local în caz de timeout sau lipsă de semnal.
+
+## Ce s-a făcut în această etapă (`feat/login-screen`)
+
+- **Ecran complet de intrare**: `LoginScreen` și `AuthGate` înlocuiesc vechiul `WelcomeGate`. Tab-uri „Conectare | Cont nou”, „Continuă fără cont” (Apple 5.1.1(i)), link „Am uitat parola”.
+- **Conectare fără parolă prin cod pe email**: `src/services/authCode.ts`, `EmailCodeForm.tsx`. Suportă cod OTP din 6 cifre, rate limiting la 5 încercări greșite, răspuns identic la adrese necunoscute împotriva enumerării. Simulare locală pe codul `123456`. Șablon nou: `supabase/templates/magic_link.html`.
+- **Nume utilizator**: Întrebarea „Cum te numești?” la înregistrare, salvată în tabela `profiles` (migrația 0006) prin trigger pe `auth.users`, editabilă direct din secțiunea „Contul tău”.
+- **Reverificare la 30 de zile**: `ReauthScreen` și `reauth.ts`. Starea `authStatus: 'locked'` blochează accesul la date până la reverificare dacă au trecut 30 de zile de la ultima conectare completă.
+- **Biometrie**: `expo-local-authentication` oferă deblocare prin Face ID / Touch ID / amprentă pentru poarta de 30 de zile. Propunere unică după prima conectare (`BiometricOptInPrompt.tsx`). Comutator în ecranul de Cont.
+- **Managementul dispozitivelor**: Tabela `user_devices` (migrația 0007), funcții securizate `register_device` și `revoke_device`. În ecranul de Cont (`DevicesSection.tsx`) se pot vedea toate dispozitivele active și se pot deconecta alte sesiuni de la distanță.
+- **Refactorizare `AuthModal`**: Redus de la 760 de linii la sub 265 de linii prin împărțire în `useAuthForm`, `AuthForm`, `EmailCodeForm`, `ResetPasswordFlow` în `src/screens/auth/`.
+- **Confidențialitate**: `PRIVACY.md` și `app.json` declară Name și Device ID conform cerințelor Apple Privacy Manifest.
 
 ## Ce s-a făcut
 
@@ -77,6 +98,30 @@ la `NSUserDefaults` · App Transport Security fără excepții · Android cu o s
 - **Berea 0.0%** rămânea în coș, ascunsă, după închiderea secțiunii 18+. Mutată la sucuri.
 - **Resetarea parolei fără internet** spunea „cod trimis". `supabase-js` întoarce eroarea
   de rețea în loc s-o arunce, iar codul nu se uita la ea.
+
+### Testarea ca utilizator (2026-09-28)
+
+Aplicația a fost parcursă cap-coadă într-un browser controlat de un script (Playwright), la
+lățimi de telefon de 360 și 390 px, apăsând fiecare buton. Toate capturile au fost verificate
+vizual. Au ieșit 19 probleme, toate reparate, fiecare cu testul ei:
+
+- **Funcționale:** fereastra de cont redeschisă peste plan după cont nou; contul marcat
+  conectat înainte de confirmarea emailului; „Sesiune expirată” fals la sincronizare;
+  formularul care păstra parola și bifele după deconectare; „Mese (5)” care număra zile.
+- **Magazin / legal:** „prețuri reale / oficial” (de fapt estimate); caloriile prezentate ca
+  aport zilnic; un „scor de nutriție” forțat să nu scadă sub 65 și afirmații de sănătate
+  fixe; lipsa linkului spre politica de confidențialitate; erori de la server în engleză.
+- **Pe telefon:** antet tăiat, magazine ieșite din card, etichete suprapuse pe carduri,
+  prețul și „+” ieșite din card pe ecranul de rețetă la 360 px.
+- **Accesibilitate:** dialoguri și carduri construite ca buton-în-buton, deci butoanele din
+  ele nu puteau fi atinse cu cititorul de ecran.
+- **Web:** mementouri de telefon oferite pe web, unde nu pot suna.
+
+Două reguli automate păzesc de-acum: nicio interfață nu mai poate pretinde prețuri „reale” /
+„oficiale”, și orice element apăsabil trebuie să aibă rol pentru cititorul de ecran.
+
+Scripturile de test din browser nu sunt în repo. Au rulat pe serverul de dezvoltare, iar
+unele pași depind de simularea locală de conturi.
 
 ### A treia parte: blocaje de lansare găsite și închise
 

@@ -28,6 +28,8 @@ interface SimAccount {
   email: string;
   passwordHash: string;
   createdAt: string;
+  /** Normalised by the caller (utils/displayName); absent on accounts from before names. */
+  displayName?: string;
 }
 
 interface SimSession {
@@ -66,14 +68,24 @@ async function writeAccounts(accounts: Record<string, SimAccount>): Promise<void
 
 export const localAuthSimulation = {
   /**
-   * Only when there is no real backend and this is not a production build. Both conditions,
+   * Only when there is no real backend and this is not a production build. All conditions,
    * so a missing environment variable in a release can never silently open the simulation.
    */
   isActive(): boolean {
-    return !env.isCloudSyncConfigured && env.appEnv !== 'production';
+    // NODE_ENV as well: a release bundle is always built with 'production', so a build that
+    // forgot EXPO_PUBLIC_APP_ENV still cannot open a sign-in that takes the code 123456.
+    return (
+      !env.isCloudSyncConfigured &&
+      env.appEnv !== 'production' &&
+      process.env.NODE_ENV !== 'production'
+    );
   },
 
-  async signUp(email: string, password: string): Promise<{ email: string | null; error: string | null }> {
+  async signUp(
+    email: string,
+    password: string,
+    displayName?: string | null
+  ): Promise<{ email: string | null; error: string | null }> {
     const key = email.trim().toLowerCase();
     const accounts = await readAccounts();
 
@@ -81,7 +93,12 @@ export const localAuthSimulation = {
       return { email: null, error: 'Există deja un cont cu această adresă. Conectează-te.' };
     }
 
-    accounts[key] = { email: key, passwordHash: weakHash(password), createdAt: new Date().toISOString() };
+    accounts[key] = {
+      email: key,
+      passwordHash: weakHash(password),
+      createdAt: new Date().toISOString(),
+      ...(displayName ? { displayName } : {}),
+    };
     await writeAccounts(accounts);
     await this.startSession(key);
     return { email: key, error: null };
@@ -125,6 +142,21 @@ export const localAuthSimulation = {
     }
   },
 
+  /**
+   * Stands in for the JWT's session_id in the device list: each sign-in writes a new session
+   * with its own expiry, so the expiry tells one sign-in on this device from the next.
+   */
+  async currentSessionId(): Promise<string | null> {
+    if (!(await this.currentEmail())) return null;
+    try {
+      const raw = await AsyncStorage.getItem(SESSION_KEY);
+      const session = raw ? (JSON.parse(raw) as Partial<SimSession>) : null;
+      return typeof session?.expiresAt === 'number' ? String(session.expiresAt) : null;
+    } catch {
+      return null;
+    }
+  },
+
   async signOut(): Promise<void> {
     await AsyncStorage.removeItem(SESSION_KEY);
   },
@@ -142,6 +174,36 @@ export const localAuthSimulation = {
 
   /** Resetting a password without an inbox: the code is always the same six digits. */
   SIMULATED_RESET_CODE: '123456',
+
+  /** Signing in with an emailed code, likewise. */
+  SIMULATED_LOGIN_CODE: '123456',
+
+  /**
+   * One answer for a wrong code and for an address with no account, as Supabase gives, so
+   * the form cannot be used to find out who has one.
+   */
+  async signInWithCode(email: string, code: string): Promise<{ email: string | null; error: string | null }> {
+    const key = email.trim().toLowerCase();
+    const account = (await readAccounts())[key];
+    // No message of its own: the caller shows the same one for both cases.
+    if (!account || code.trim() !== this.SIMULATED_LOGIN_CODE) {
+      return { email: null, error: null };
+    }
+    await this.startSession(key);
+    return { email: key, error: null };
+  },
+
+  async displayNameOf(email: string): Promise<string | null> {
+    return (await readAccounts())[email.trim().toLowerCase()]?.displayName ?? null;
+  },
+
+  async setDisplayName(email: string, displayName: string): Promise<boolean> {
+    const key = email.trim().toLowerCase();
+    const accounts = await readAccounts();
+    if (!accounts[key]) return false;
+    await writeAccounts({ ...accounts, [key]: { ...accounts[key], displayName } });
+    return true;
+  },
 
   async resetPassword(email: string, newPassword: string): Promise<boolean> {
     const key = email.trim().toLowerCase();

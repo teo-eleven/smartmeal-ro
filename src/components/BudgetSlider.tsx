@@ -13,6 +13,7 @@ interface BudgetSliderProps {
   isDark: boolean;
   mealsPerDay?: number;
   foodTier?: FoodTier;
+  extrasCost?: number;
 }
 
 export const BudgetSlider: React.FC<BudgetSliderProps> = ({
@@ -24,8 +25,10 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
   isDark,
   mealsPerDay = 1,
   foodTier = 'medium',
+  extrasCost = 0,
 }) => {
-  const minFloor = calculateMinimumViableBudget(peopleCount, daysCount, supermarketId, true, mealsPerDay, foodTier);
+  const baseFloor = calculateMinimumViableBudget(peopleCount, daysCount, supermarketId, true, mealsPerDay, foodTier);
+  const minFloor = baseFloor + Math.ceil(extrasCost);
   const isBelowFloor = budget < minFloor;
 
   const [customText, setCustomText] = useState(String(budget));
@@ -139,7 +142,7 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
               </Text>
             </Text>
             <Text style={[styles.suggestedSubtitle, { color: theme.textMuted }]}>
-              Calculat pentru {peopleCount} {peopleCount === 1 ? 'persoană' : 'persoane'}, {daysCount} {daysCount === 1 ? 'zi' : 'zile'}, {mealsPerDay} {mealsPerDay === 1 ? 'masă' : 'mese'}/zi.
+              Calculat pentru {peopleCount} {peopleCount === 1 ? 'persoană' : 'persoane'}, {daysCount} {daysCount === 1 ? 'zi' : 'zile'}, {mealsPerDay} {mealsPerDay === 1 ? 'masă' : 'mese'}/zi{extrasCost > 0 ? ` + gustări & băuturi (~${Math.round(extrasCost)} lei)` : ''}.
             </Text>
           </View>
         </View>
@@ -148,15 +151,15 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
           style={[
             styles.suggestedActionBtn,
             {
-              backgroundColor: budget === minFloor ? (isDark ? '#ffffff' : '#000000') : theme.surfaceSecondary,
-              borderColor: theme.border,
+              backgroundColor: budget === minFloor ? theme.primary : theme.surfaceSecondary,
+              borderColor: budget === minFloor ? theme.primary : theme.border,
             },
           ]}
         >
           <Text
             style={[
               styles.suggestedActionText,
-              { color: budget === minFloor ? (isDark ? '#000000' : '#ffffff') : theme.text },
+              { color: budget === minFloor ? theme.primaryText : theme.text },
             ]}
           >
             {budget === minFloor ? '✓ Aplicat' : 'Aplică'}
@@ -179,96 +182,102 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    paddingVertical: 12,
+    paddingVertical: 6,
   },
   tightStepperRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 6,
+    marginBottom: 6,
   },
   tightStepBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    flexShrink: 0,
+    borderRadius: 12,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tightStepBtnText: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '700',
-    lineHeight: 30,
+    lineHeight: 24,
   },
   tightCenterInputBox: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    height: 56,
-    minWidth: 160,
-    maxWidth: 220,
-    borderRadius: 16,
+    paddingHorizontal: 12,
+    height: 44,
+    flexShrink: 1,
+    minWidth: 100,
+    maxWidth: 200,
+    borderRadius: 12,
     borderWidth: 1.5,
-    gap: 8,
+    gap: 6,
   },
   tightInputField: {
-    fontSize: 30,
+    fontSize: 22,
     fontWeight: '900',
     textAlign: 'center',
     paddingVertical: 0,
     marginVertical: 0,
-    minWidth: 70,
+    minWidth: 60,
   },
   tightCurrencyLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   hintText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 10,
   },
   suggestedCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
     borderWidth: 1.5,
-    marginBottom: 14,
-    gap: 12,
+    marginBottom: 8,
+    gap: 10,
   },
   suggestedLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     flex: 1,
   },
   suggestedIcon: {
-    fontSize: 24,
+    fontSize: 20,
   },
   suggestedInfo: {
     flex: 1,
   },
   suggestedTitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   suggestedSubtitle: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
   },
   suggestedActionBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minHeight: 34,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
     borderWidth: 1,
   },
   suggestedActionText: {

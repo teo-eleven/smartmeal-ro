@@ -1,0 +1,147 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppStore } from '../useAppStore';
+import { cloudSyncService } from '../../services/supabase';
+import { forgetThisRunForTests, markVerified } from '../../services/reauth';
+
+const DAY = 24 * 60 * 60 * 1000;
+const CONSENT = { isAtLeast16: true, healthDataConsent: true };
+
+/** Lets queued promises (an unlock started by setUserEmail) run. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+/** Reopens the app: the stored session is read again, as on a cold start. */
+async function reopen() {
+  forgetThisRunForTests();
+  useAppStore.setState({ isHydrated: false, authStatus: 'checking', userEmail: null });
+  await useAppStore.getState().hydrateStorage();
+  return useAppStore.getState();
+}
+
+/**
+ * The monthly lock, through the real store and the local simulation: a session that is still
+ * valid but was last verified more than thirty days ago opens on the lock, not on the plan.
+ */
+describe('blocarea lunară la pornire', () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    await cloudSyncService.signUpWithEmail('ana@b.ro', 'Muntele7Verde', CONSENT);
+  });
+
+  test('verificat acum 3 zile: aplicația se deschide direct', async () => {
+    await markVerified('ana@b.ro', Date.now() - 3 * DAY);
+
+    const state = await reopen();
+
+    expect(state.authStatus).toBe('signedIn');
+    expect(state.userEmail).toBe('ana@b.ro');
+  });
+
+  test('verificat acum 31 de zile: aplicația se deschide blocată, dar știe al cui e contul', async () => {
+    await markVerified('ana@b.ro', Date.now() - 31 * DAY);
+
+    const state = await reopen();
+
+    expect(state.authStatus).toBe('locked');
+    expect(state.userEmail).toBe('ana@b.ro');
+  });
+
+  test('fără sesiune: ecranul de intrare, ca înainte', async () => {
+    await cloudSyncService.signOut();
+
+    const state = await reopen();
+
+    expect(state.authStatus).toBe('checking');
+    expect(state.userEmail).toBeNull();
+  });
+
+  test('deblocarea deschide aplicația', async () => {
+    await markVerified('ana@b.ro', Date.now() - 31 * DAY);
+    await reopen();
+    await markVerified('ana@b.ro');
+
+    await useAppStore.getState().unlock();
+
+    expect(useAppStore.getState().authStatus).toBe('signedIn');
+  });
+
+  /** The lock lifts on a recorded verification, never on being asked to. */
+  test('fără o verificare nouă, deblocarea nu deschide nimic', async () => {
+    await markVerified('ana@b.ro', Date.now() - 31 * DAY);
+    await reopen();
+
+    await useAppStore.getState().unlock();
+    useAppStore.getState().setUserEmail('ana@b.ro');
+    await settle();
+
+    expect(useAppStore.getState().authStatus).toBe('locked');
+  });
+
+  test('o aplicație lăsată deschisă peste lună se blochează la revenire', async () => {
+    await markVerified('ana@b.ro', Date.now() - 3 * DAY);
+    await reopen();
+    await markVerified('ana@b.ro', Date.now() - 31 * DAY);
+    forgetThisRunForTests();
+
+    await useAppStore.getState().recheckLock();
+
+    expect(useAppStore.getState().authStatus).toBe('locked');
+  });
+
+  test('din blocare nu se sincronizează nimic', async () => {
+    await markVerified('ana@b.ro', Date.now() - 31 * DAY);
+    await reopen();
+
+    await useAppStore.getState().syncFromCloud();
+    await useAppStore.getState().syncWithCloud();
+
+    expect(useAppStore.getState().isSyncing).toBe(false);
+    expect(useAppStore.getState().activeNotice).toBeNull();
+  });
+
+  /** unlock is the way out of the lock, not a way into an account. */
+  test('deblocarea nu face nimic dacă aplicația nu e blocată', () => {
+    useAppStore.setState({ authStatus: 'guest', userEmail: null });
+
+    useAppStore.getState().unlock();
+
+    expect(useAppStore.getState().authStatus).toBe('guest');
+  });
+
+  test('conectarea cu parola la blocare deschide aplicația', async () => {
+    await markVerified('ana@b.ro', Date.now() - 31 * DAY);
+    await reopen();
+
+    const { user } = await cloudSyncService.signInWithEmail('ana@b.ro', 'Muntele7Verde');
+    useAppStore.getState().setUserEmail(user?.email ?? null);
+    await settle();
+
+    expect(useAppStore.getState().authStatus).toBe('signedIn');
+    // And the month starts again, so the next start is not locked.
+    expect((await reopen()).authStatus).toBe('signedIn');
+  });
+
+  /** The lock must not have a side door: without an account means without this account. */
+  test('„Continuă fără cont” din blocare deconectează contul', async () => {
+    await markVerified('ana@b.ro', Date.now() - 31 * DAY);
+    await reopen();
+
+    await useAppStore.getState().continueAsGuest();
+
+    expect(useAppStore.getState()).toMatchObject({ authStatus: 'guest', userEmail: null });
+    expect(await cloudSyncService.currentEmail()).toBeNull();
+  });
+
+  /** Straight to the login: an instant of 'guest' would show the plan to whoever holds it. */
+  test('„Deconectează-te” din blocare nu trece prin „fără cont”', async () => {
+    await markVerified('ana@b.ro', Date.now() - 31 * DAY);
+    await reopen();
+    const seen: string[] = [];
+    const stop = useAppStore.subscribe((state) => seen.push(state.authStatus));
+
+    await useAppStore.getState().signOutToLogin();
+    stop();
+
+    expect(seen).not.toContain('guest');
+    expect(useAppStore.getState()).toMatchObject({ authStatus: 'checking', userEmail: null });
+  });
+});
