@@ -216,3 +216,21 @@ describe('OnboardingWizard, pasul de buget (pasul 9)', () => {
     expect(screen.getByLabelText(/Folosește bugetul sugerat/i)).toBeTruthy();
   });
 });
+
+describe('OnboardingWizard, pasul de pofte (pasul 5 cu FoodMoodSwiper)', () => {
+  beforeEach(() => {
+    reset();
+    useAppStore.getState().goToStep(5);
+  });
+
+  test('afișează swiperul interactiv de pofte și permite like/selectare', () => {
+    render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
+    expect(screen.getByText(/Ce pofte ai săptămâna asta\?/i)).toBeTruthy();
+    expect(screen.getByText('🃏 Swipe Carduri')).toBeTruthy();
+    expect(screen.getByText('📱 Grilă Clasică')).toBeTruthy();
+
+    // Like first card (speedy)
+    fireEvent.press(screen.getByText('Îmi place'));
+    expect(useAppStore.getState().preferences.moodTags).toContain('speedy');
+  });
+});

@@ -15,7 +15,6 @@ import { ApplianceSelector } from '../../components/ApplianceSelector';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getRetailProductsByCategory, RETAIL_PRODUCTS_MAP } from '../../data/retailProducts';
 import { useResponsive } from '../../hooks/useResponsive';
-import { MOOD_OPTIONS_CATALOG } from '../../utils/moodCatalog';
 import { DIET_OPTIONS_CATALOG, areDietsCompatible } from '../../utils/dietCompatibility';
 import { getAppTheme } from '../../styles/theme';
 import { glass } from '../../styles/glass';
@@ -23,6 +22,7 @@ import { EligibilityMeter } from '../../components/EligibilityMeter';
 import { AllergenSelector } from '../../components/AllergenSelector';
 import { HEALTH_GOALS_CATALOG } from '../../data/healthTags';
 import { PreGenerationSummaryCard } from '../../components/PreGenerationSummaryCard';
+import { FoodMoodSwiper } from '../../components/FoodMoodSwiper';
 
 interface OnboardingWizardProps {
   isDark: boolean;
@@ -794,63 +794,22 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             </View>
           )}
 
-          {/* STEP 5: MOOD & STYLES (POFTE VARIATE) */}
+          {/* STEP 5: MOOD & STYLES (POFTE VARIATE CU TINDER-STYLE FOOD SWIPER) */}
           {currentStep === 5 && (
             <View style={styles.stepSection}>
               <Text style={[styles.questionTitle, { color: theme.text }]}>
                 Ce pofte ai săptămâna asta?
               </Text>
               <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Alege stilurile culinare dorite (selectate: {preferences.moodTags.length}/5). Poți alege până la 5 pofte pentru un meniu săptămânal variat.
+                Alege stilurile culinare dorite (selectate: {preferences.moodTags.length}/5). Trage cardurile ca pe Tinder (dreapta = Îmi place, stânga = Pas) sau folosește butoanele tactile!
               </Text>
 
-              <View style={[styles.moodGrid, isLargeScreen && styles.moodGridDesktop]}>
-                {MOOD_OPTIONS_CATALOG.map((mood) => {
-                  const isSelected = preferences.moodTags.includes(mood.id);
-                  return (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      key={mood.id}
-                      onPress={() => toggleMoodTag(mood.id)}
-                      activeOpacity={0.75}
-                      style={[
-                        styles.moodCard,
-                        isLargeScreen && styles.moodCardDesktop,
-                        {
-                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
-                          borderColor: isSelected ? theme.primary : theme.border,
-                        },
-                      ]}
-                    >
-                      <Text style={styles.moodIcon}>{mood.icon}</Text>
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={[
-                            styles.moodLabel,
-                            { color: isSelected ? theme.primary : theme.text, fontWeight: isSelected ? '800' : '600' },
-                          ]}
-                        >
-                          {mood.label}
-                        </Text>
-                        <Text style={[styles.moodVibeText, { color: theme.textMuted }]}>
-                          {mood.desc}
-                        </Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.moodCheckPill,
-                          {
-                            backgroundColor: isSelected ? theme.primary : 'transparent',
-                            borderColor: isSelected ? theme.primary : theme.border,
-                          },
-                        ]}
-                      >
-                        {isSelected && <Text style={{ color: theme.primaryText, fontSize: 11, fontWeight: '900' }}>✓</Text>}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+              <FoodMoodSwiper
+                selectedMoods={preferences.moodTags}
+                onToggleMood={toggleMoodTag}
+                maxMoods={5}
+                isDark={isDark}
+              />
             </View>
           )}
 

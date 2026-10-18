@@ -159,6 +159,7 @@ export interface AppState {
   setCookingDays: (days: DayOfWeek[]) => void;
   setBudget: (budget: number) => void;
   toggleMoodTag: (tag: MoodTag) => void;
+  setMoodTags: (tags: MoodTag[]) => void;
   setDietType: (diet: DietType) => void;
   toggleDietType: (diet: DietType) => void;
   setDietTypes: (diets: DietType[]) => void;
@@ -1639,6 +1640,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
 
       const nextPrefs = { ...state.preferences, moodTags: [...current, tag] };
+      void storageService.savePreferences(nextPrefs);
+      return { preferences: nextPrefs };
+    });
+  },
+
+  setMoodTags: (tags: MoodTag[]) => {
+    set((state) => {
+      const validTags = tags.slice(0, 5);
+      const nextPrefs = {
+        ...state.preferences,
+        moodTags: validTags.length > 0 ? validTags : (['healthy_comfort'] as MoodTag[]),
+      };
       void storageService.savePreferences(nextPrefs);
       return { preferences: nextPrefs };
     });
