@@ -223,9 +223,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
   const currentItem =
     currentIndex < MOOD_OPTIONS_CATALOG.length ? MOOD_OPTIONS_CATALOG[currentIndex] : null;
   const nextItem =
-    currentIndex + 1 < MOOD_OPTIONS_CATALOG.length
-      ? MOOD_OPTIONS_CATALOG[currentIndex + 1]
-      : null;
+    currentIndex + 1 < MOOD_OPTIONS_CATALOG.length ? MOOD_OPTIONS_CATALOG[currentIndex + 1] : null;
 
   const isCurrentSelected = currentItem ? selectedMoods.includes(currentItem.id) : false;
 
@@ -250,12 +248,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
               style={[
                 styles.segmentText,
                 {
-                  color:
-                    viewMode === 'swipe'
-                      ? isDark
-                        ? '#000000'
-                        : '#ffffff'
-                      : theme.textMuted,
+                  color: viewMode === 'swipe' ? (isDark ? '#000000' : '#ffffff') : theme.textMuted,
                   fontWeight: viewMode === 'swipe' ? '800' : '600',
                 },
               ]}
@@ -280,12 +273,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
               style={[
                 styles.segmentText,
                 {
-                  color:
-                    viewMode === 'grid'
-                      ? isDark
-                        ? '#000000'
-                        : '#ffffff'
-                      : theme.textMuted,
+                  color: viewMode === 'grid' ? (isDark ? '#000000' : '#ffffff') : theme.textMuted,
                   fontWeight: viewMode === 'grid' ? '800' : '600',
                 },
               ]}
@@ -427,18 +415,10 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Reia selecția de pofte de la început"
                 onPress={handleRestart}
-                style={[
-                  styles.restartBtn,
-                  { backgroundColor: isDark ? '#ffffff' : '#000000' },
-                ]}
+                style={[styles.restartBtn, { backgroundColor: isDark ? '#ffffff' : '#000000' }]}
                 activeOpacity={0.75}
               >
-                <Text
-                  style={[
-                    styles.restartBtnText,
-                    { color: isDark ? '#000000' : '#ffffff' },
-                  ]}
-                >
+                <Text style={[styles.restartBtnText, { color: isDark ? '#000000' : '#ffffff' }]}>
                   ↺ Reia de la început
                 </Text>
               </TouchableOpacity>
@@ -453,11 +433,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
               accessibilityLabel="Nu-mi place sau pas"
               onPress={() => swipeCard('left')}
               disabled={!currentItem}
-              style={[
-                styles.actionBtn,
-                styles.nopeBtn,
-                { opacity: currentItem ? 1 : 0.4 },
-              ]}
+              style={[styles.actionBtn, styles.nopeBtn, { opacity: currentItem ? 1 : 0.4 }]}
               activeOpacity={0.75}
             >
               <Text style={styles.actionIconNope}>✕</Text>
@@ -489,11 +465,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
               accessibilityLabel="Îmi place acest stil culinar"
               onPress={() => swipeCard('right')}
               disabled={!currentItem}
-              style={[
-                styles.actionBtn,
-                styles.likeBtn,
-                { opacity: currentItem ? 1 : 0.4 },
-              ]}
+              style={[styles.actionBtn, styles.likeBtn, { opacity: currentItem ? 1 : 0.4 }]}
               activeOpacity={0.75}
             >
               <Text style={styles.actionIconLike}>💚</Text>
@@ -630,11 +602,7 @@ function renderCardBody(
       {/* Top Media Header */}
       <View style={styles.cardMediaArea}>
         {backdrop ? (
-          <ImageBackground
-            source={backdrop}
-            resizeMode="cover"
-            style={StyleSheet.absoluteFill}
-          >
+          <ImageBackground source={backdrop} resizeMode="cover" style={StyleSheet.absoluteFill}>
             <LinearGradient
               colors={
                 isDark
@@ -658,9 +626,7 @@ function renderCardBody(
             style={[
               styles.vibePill,
               {
-                backgroundColor: isDark
-                  ? 'rgba(0,0,0,0.75)'
-                  : 'rgba(255,255,255,0.92)',
+                backgroundColor: isDark ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.92)',
                 borderColor: theme.border,
               },
             ]}

@@ -1,12 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppStore } from '../../store/useAppStore';
 import { SUPERMARKET_LIST } from '../../data/supermarkets';
 import { DayOfWeek, DietType, FoodTier, MealSlot, SupermarketId } from '../../types';
@@ -111,7 +104,13 @@ const MEAL_MOMENT_OPTIONS: {
   },
 ];
 
-const FOOD_TIER_OPTIONS: { id: FoodTier; label: string; icon: string; priceEst: string; desc: string }[] = [
+const FOOD_TIER_OPTIONS: {
+  id: FoodTier;
+  label: string;
+  icon: string;
+  priceEst: string;
+  desc: string;
+}[] = [
   {
     id: 'basic',
     label: 'Basic (Economic & Buget)',
@@ -135,7 +134,11 @@ const FOOD_TIER_OPTIONS: { id: FoodTier; label: string; icon: string; priceEst: 
   },
 ];
 
-export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPlanGenerated, onOpenAccount }) => {
+export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
+  isDark,
+  onPlanGenerated,
+  onOpenAccount,
+}) => {
   const {
     currentStep,
     maxVisitedStep,
@@ -191,8 +194,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
         setActiveView('generating');
       } catch (err) {
         console.error('[OnboardingWizard] generatePlan error:', err);
-        const reason =
-          err instanceof Error ? err.message : 'Nu s-a putut genera planul de mese.';
+        const reason = err instanceof Error ? err.message : 'Nu s-a putut genera planul de mese.';
         showNotice('Eroare Planificare', reason, 'error');
       }
     }
@@ -203,33 +205,51 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
   return (
     <View
       {...glass('root')}
-      style={[styles.container, { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background }]}
+      style={[
+        styles.container,
+        { backgroundColor: Platform.OS === 'web' ? 'transparent' : theme.background },
+      ]}
     >
       {/* Top Header: Stepped Water Flow for Desktop/Tablet, or Compact for Mobile */}
       {isLargeScreen ? (
         <View
           {...glass('card')}
-          style={[styles.desktopHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}
+          style={[
+            styles.desktopHeader,
+            { backgroundColor: theme.card, borderBottomColor: theme.border },
+          ]}
         >
           <View style={[styles.desktopHeaderInner, { maxWidth: containerMaxWidth }]}>
             {/* Top Brand & Status Line */}
             <View style={styles.desktopTopRow}>
               <View style={styles.brandGroup}>
                 <Text style={[styles.logoText, { color: theme.text }]}>SmartMeal</Text>
-                <View style={[styles.brandBadge, { backgroundColor: theme.surfaceTertiary, borderColor: theme.border, borderWidth: 1 }]}>
+                <View
+                  style={[
+                    styles.brandBadge,
+                    {
+                      backgroundColor: theme.surfaceTertiary,
+                      borderColor: theme.border,
+                      borderWidth: 1,
+                    },
+                  ]}
+                >
                   <Text style={[styles.brandBadgeText, { color: theme.text }]}>RO 🇷🇴</Text>
                 </View>
                 {onOpenAccount && (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel="Contul meu"
-                  onPress={onOpenAccount}
-                  style={[styles.accountBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.accountBtnText, { color: theme.text }]}>👤 Cont</Text>
-                </TouchableOpacity>
-              )}
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Contul meu"
+                    onPress={onOpenAccount}
+                    style={[
+                      styles.accountBtn,
+                      { borderColor: theme.border, backgroundColor: theme.accentBg },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.accountBtnText, { color: theme.text }]}>👤 Cont</Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               <View style={styles.desktopStepInfo}>
@@ -245,7 +265,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 <TouchableOpacity
                   accessibilityRole="button"
                   onPress={prevStep}
-                  style={[styles.desktopBackBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
+                  style={[
+                    styles.desktopBackBtn,
+                    { borderColor: theme.border, backgroundColor: theme.accentBg },
+                  ]}
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.backButtonText, { color: theme.text }]}>← Înapoi</Text>
@@ -259,17 +282,33 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={[styles.waterFlowTrack, { minWidth: isDesktop ? '100%' : 860 }]}
+              contentContainerStyle={[
+                styles.waterFlowTrack,
+                { minWidth: isDesktop ? '100%' : 860 },
+              ]}
             >
               {ONBOARDING_STEPS_META.map((stepItem, idx) => {
                 const isCurrent = stepItem.step === currentStep;
-                const isCompleted = stepItem.step < currentStep || (stepItem.step <= maxVisitedStep && !isCurrent);
+                const isCompleted =
+                  stepItem.step < currentStep || (stepItem.step <= maxVisitedStep && !isCurrent);
                 const isUpcoming = stepItem.step > maxVisitedStep;
 
                 return (
                   <React.Fragment key={stepItem.step}>
                     {idx > 0 && (
-                      <View style={[styles.flowStreamLine, { backgroundColor: isCompleted || isCurrent ? (isDark ? '#ffffff' : '#000000') : theme.border }]}>
+                      <View
+                        style={[
+                          styles.flowStreamLine,
+                          {
+                            backgroundColor:
+                              isCompleted || isCurrent
+                                ? isDark
+                                  ? '#ffffff'
+                                  : '#000000'
+                                : theme.border,
+                          },
+                        ]}
+                      >
                         {(isCompleted || isCurrent) && (
                           <LinearGradient
                             colors={isDark ? ['#ffffff', '#8e8e93'] : ['#000000', '#636366']}
@@ -292,19 +331,45 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                       activeOpacity={0.7}
                       style={[
                         styles.stepNode,
-                        isCurrent && [styles.stepNodeActive, { borderColor: isDark ? '#ffffff' : '#000000', backgroundColor: isDark ? '#ffffff' : '#000000' }],
-                        isCompleted && [styles.stepNodeCompleted, { borderColor: theme.border, backgroundColor: theme.surfaceSecondary }],
-                        isUpcoming && [styles.stepNodeUpcoming, { borderColor: theme.border, backgroundColor: theme.accentBg }],
+                        isCurrent && [
+                          styles.stepNodeActive,
+                          {
+                            borderColor: isDark ? '#ffffff' : '#000000',
+                            backgroundColor: isDark ? '#ffffff' : '#000000',
+                          },
+                        ],
+                        isCompleted && [
+                          styles.stepNodeCompleted,
+                          { borderColor: theme.border, backgroundColor: theme.surfaceSecondary },
+                        ],
+                        isUpcoming && [
+                          styles.stepNodeUpcoming,
+                          { borderColor: theme.border, backgroundColor: theme.accentBg },
+                        ],
                       ]}
                     >
-                      <Text style={[styles.stepNodeIcon, isCurrent && { color: isDark ? '#000000' : '#ffffff' }, isCompleted && { color: theme.text, fontWeight: '900' }]}>
+                      <Text
+                        style={[
+                          styles.stepNodeIcon,
+                          isCurrent && { color: isDark ? '#000000' : '#ffffff' },
+                          isCompleted && { color: theme.text, fontWeight: '900' },
+                        ]}
+                      >
                         {isCompleted ? '✓' : stepItem.icon}
                       </Text>
                       <Text
                         numberOfLines={1}
                         style={[
                           styles.stepNodeLabel,
-                          { color: isCurrent ? (isDark ? '#000000' : '#ffffff') : isCompleted ? theme.text : theme.textMuted },
+                          {
+                            color: isCurrent
+                              ? isDark
+                                ? '#000000'
+                                : '#ffffff'
+                              : isCompleted
+                                ? theme.text
+                                : theme.textMuted,
+                          },
                           (isCurrent || isCompleted) && { fontWeight: '800' },
                         ]}
                       >
@@ -318,7 +383,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
           </View>
         </View>
       ) : (
-        <View style={[styles.header, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
+        <View
+          style={[styles.header, { borderBottomColor: theme.border, backgroundColor: theme.card }]}
+        >
           <View style={styles.topRow}>
             {currentStep > 1 ? (
               <TouchableOpacity
@@ -338,15 +405,18 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 Pasul {currentStep} din {totalSteps}
               </Text>
               {onOpenAccount && (
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel="Contul meu"
-                onPress={onOpenAccount}
-                style={[styles.accountBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.accountBtnText, { color: theme.text }]}>👤 Cont</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Contul meu"
+                  onPress={onOpenAccount}
+                  style={[
+                    styles.accountBtn,
+                    { borderColor: theme.border, backgroundColor: theme.accentBg },
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.accountBtnText, { color: theme.text }]}>👤 Cont</Text>
+                </TouchableOpacity>
               )}
             </View>
           </View>
@@ -367,7 +437,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View
           {...glass('card')}
-          style={[styles.contentCard, { backgroundColor: theme.card, borderColor: theme.border, maxWidth: containerMaxWidth }]}
+          style={[
+            styles.contentCard,
+            { backgroundColor: theme.card, borderColor: theme.border, maxWidth: containerMaxWidth },
+          ]}
         >
           {/* STEP 1: SUPERMARKET */}
           {currentStep === 1 && (
@@ -406,7 +479,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 Calculăm meniul și coșul săptămânal pe prețurile estimate ale magazinului ales.
               </Text>
 
-              <View style={[styles.supermarketGrid, isLargeScreen && styles.supermarketGridDesktop]}>
+              <View
+                style={[styles.supermarketGrid, isLargeScreen && styles.supermarketGridDesktop]}
+              >
                 {SUPERMARKET_LIST.map((market) => {
                   const isSelected = preferences.supermarketId === market.id;
                   return (
@@ -444,7 +519,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                           },
                         ]}
                       >
-                        {isSelected && <Text style={[styles.supermarketRadioCheck, { color: theme.primaryText }]}>✓</Text>}
+                        {isSelected && (
+                          <Text
+                            style={[styles.supermarketRadioCheck, { color: theme.primaryText }]}
+                          >
+                            ✓
+                          </Text>
+                        )}
                       </View>
                     </TouchableOpacity>
                   );
@@ -467,7 +548,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 <TouchableOpacity
                   accessibilityRole="button"
                   onPress={() => setPeopleCount(preferences.peopleCount - 1)}
-                  style={[styles.circleBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
+                  style={[
+                    styles.circleBtn,
+                    { borderColor: theme.border, backgroundColor: theme.accentBg },
+                  ]}
                 >
                   <Text style={[styles.circleBtnText, { color: theme.text }]}>−</Text>
                 </TouchableOpacity>
@@ -484,7 +568,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 <TouchableOpacity
                   accessibilityRole="button"
                   onPress={() => setPeopleCount(preferences.peopleCount + 1)}
-                  style={[styles.circleBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
+                  style={[
+                    styles.circleBtn,
+                    { borderColor: theme.border, backgroundColor: theme.accentBg },
+                  ]}
                 >
                   <Text style={[styles.circleBtnText, { color: theme.text }]}>+</Text>
                 </TouchableOpacity>
@@ -502,7 +589,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                       style={[
                         styles.peoplePresetPill,
                         {
-                          backgroundColor: isActive ? (isDark ? '#ffffff' : '#000000') : theme.accentBg,
+                          backgroundColor: isActive
+                            ? isDark
+                              ? '#ffffff'
+                              : '#000000'
+                            : theme.accentBg,
                           borderColor: isActive ? (isDark ? '#ffffff' : '#000000') : theme.border,
                         },
                       ]}
@@ -529,7 +620,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
           {/* STEP 3: COOKING DAYS */}
           {currentStep === 3 && (
             <View style={styles.stepSection}>
-              <Text style={[styles.questionTitle, { color: theme.text }]}>În ce zile vei găti?</Text>
+              <Text style={[styles.questionTitle, { color: theme.text }]}>
+                În ce zile vei găti?
+              </Text>
               <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
                 Alege zilele din săptămână pentru care dorești rețete planificate.
               </Text>
@@ -585,7 +678,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                         ]}
                       >
                         {isSelected && (
-                          <Text style={[styles.dayCheckboxText, { color: theme.primaryText }]}>✓</Text>
+                          <Text style={[styles.dayCheckboxText, { color: theme.primaryText }]}>
+                            ✓
+                          </Text>
                         )}
                       </View>
                     </TouchableOpacity>
@@ -644,7 +739,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                           },
                         ]}
                       >
-                        {isSelected && <Text style={[styles.dayCheckboxText, { color: theme.primaryText }]}>✓</Text>}
+                        {isSelected && (
+                          <Text style={[styles.dayCheckboxText, { color: theme.primaryText }]}>
+                            ✓
+                          </Text>
+                        )}
                       </View>
                     </TouchableOpacity>
                   );
@@ -673,7 +772,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                       onPress={() => {
                         if (isSelected) {
                           const remaining = preferences.mealSlots.filter((s) => s !== option.slot);
-                          if (remaining.filter((s) => ['breakfast', 'lunch', 'dinner'].includes(s)).length === 0) {
+                          if (
+                            remaining.filter((s) => ['breakfast', 'lunch', 'dinner'].includes(s))
+                              .length === 0
+                          ) {
                             showNotice(
                               'Cel puțin o masă pe zi',
                               'Trebuie să selectezi cel puțin o masă principală pe zi (Mic Dejun, Prânz sau Cină) pentru a genera meniul.',
@@ -724,7 +826,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                         ]}
                       >
                         {isSelected && (
-                          <Text style={[styles.dayCheckboxText, { color: theme.primaryText }]}>✓</Text>
+                          <Text style={[styles.dayCheckboxText, { color: theme.primaryText }]}>
+                            ✓
+                          </Text>
                         )}
                       </View>
                     </TouchableOpacity>
@@ -732,7 +836,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 })}
               </View>
 
-              <Text style={[styles.customizeSlotsHeading, { color: theme.textMuted, marginTop: 26 }]}>
+              <Text
+                style={[styles.customizeSlotsHeading, { color: theme.textMuted, marginTop: 26 }]}
+              >
                 Nivelul ingredientelor & rețetelor (Food Tier):
               </Text>
 
@@ -768,7 +874,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                           >
                             {tierOpt.label}
                           </Text>
-                          <Text style={[styles.tierCardPrice, { color: isSelected ? theme.primary : theme.textMuted }]}>
+                          <Text
+                            style={[
+                              styles.tierCardPrice,
+                              { color: isSelected ? theme.primary : theme.textMuted },
+                            ]}
+                          >
                             {tierOpt.priceEst}
                           </Text>
                         </View>
@@ -781,7 +892,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                             },
                           ]}
                         >
-                          {isSelected && <Text style={[styles.extraCheckmark, { color: theme.primaryText }]}>✓</Text>}
+                          {isSelected && (
+                            <Text style={[styles.extraCheckmark, { color: theme.primaryText }]}>
+                              ✓
+                            </Text>
+                          )}
                         </View>
                       </View>
                       <Text style={[styles.tierCardDesc, { color: theme.textMuted }]}>
@@ -801,7 +916,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 Ce pofte ai săptămâna asta?
               </Text>
               <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Alege stilurile culinare dorite (selectate: {preferences.moodTags.length}/5). Trage cardurile ca pe Tinder (dreapta = Îmi place, stânga = Pas) sau folosește butoanele tactile!
+                Alege stilurile culinare dorite (selectate: {preferences.moodTags.length}/5). Trage
+                cardurile ca pe Tinder (dreapta = Îmi place, stânga = Pas) sau folosește butoanele
+                tactile!
               </Text>
 
               <FoodMoodSwiper
@@ -814,113 +931,34 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
           )}
 
           {/* STEP 6: DIETARY RESTRICTIONS (MAX 2 COMPATIBLE) */}
-          {currentStep === 6 && (() => {
-            const selectedDiets: DietType[] =
-              preferences.dietTypes && preferences.dietTypes.length > 0
-                ? preferences.dietTypes
-                : [preferences.dietType];
+          {currentStep === 6 &&
+            (() => {
+              const selectedDiets: DietType[] =
+                preferences.dietTypes && preferences.dietTypes.length > 0
+                  ? preferences.dietTypes
+                  : [preferences.dietType];
 
-            return (
-              <View style={styles.stepSection}>
-                <Text style={[styles.questionTitle, { color: theme.text }]}>
-                  Ai preferințe dietetice?
-                </Text>
-                <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                  Poți selecta până la 2 diete compatibile (selectate: {selectedDiets.length}/2). De exemplu: Vegetarian + Fără Gluten, sau Omnivor + Low-Carb.
-                </Text>
-
-                <View style={[styles.dietList, isLargeScreen && styles.dietListDesktop]}>
-                  {DIET_OPTIONS_CATALOG.map((diet) => {
-                    const isSelected = selectedDiets.includes(diet.id);
-                    const isIncompatible =
-                      !isSelected && selectedDiets.some((d) => !areDietsCompatible(d, diet.id));
-
-                    return (
-                      <TouchableOpacity
-                        accessibilityRole="button"
-                        key={diet.id}
-                        onPress={() => toggleDietType(diet.id)}
-                        activeOpacity={0.75}
-                        style={[
-                          styles.dietCard,
-                          isLargeScreen && styles.dietCardDesktop,
-                          {
-                            backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
-                            borderColor: isSelected ? theme.primary : theme.border,
-                            opacity: isIncompatible ? 0.45 : 1,
-                          },
-                        ]}
-                      >
-                        <Text style={styles.dietIcon}>{diet.icon}</Text>
-                        <View style={styles.dietInfo}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <Text style={[styles.dietLabel, { color: theme.text }]}>
-                              {diet.label}
-                            </Text>
-                            {isIncompatible && (
-                              <View style={[styles.incompatibleBadge, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2' }]}>
-                                <Text style={{ fontSize: 10, color: '#ef4444', fontWeight: '800' }}>Incompatibil</Text>
-                              </View>
-                            )}
-                            {isSelected && (
-                              <View style={[styles.incompatibleBadge, { backgroundColor: theme.surfaceTertiary, borderColor: theme.border, borderWidth: 1 }]}>
-                                <Text style={{ fontSize: 10, color: theme.text, fontWeight: '800' }}>Activ</Text>
-                              </View>
-                            )}
-                          </View>
-                          <Text style={[styles.dietDesc, { color: theme.textMuted }]}>
-                            {diet.desc}
-                          </Text>
-                        </View>
-                        <View
-                          style={[
-                            styles.dietRadio,
-                            {
-                              borderColor: isSelected ? theme.primary : theme.border,
-                              backgroundColor: isSelected ? theme.primary : 'transparent',
-                            },
-                          ]}
-                        >
-                          {isSelected && <Text style={{ color: theme.primaryText, fontSize: 12, fontWeight: '900' }}>✓</Text>}
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
-                <View style={styles.allergenBlock}>
-                  <Text style={[styles.questionTitle, { color: theme.text, fontSize: 17 }]}>
-                    Ai alergii alimentare?
+              return (
+                <View style={styles.stepSection}>
+                  <Text style={[styles.questionTitle, { color: theme.text }]}>
+                    Ai preferințe dietetice?
                   </Text>
                   <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                    Opțional, dar important: orice alergen bifat aici este eliminat complet din
-                    toate rețetele propuse.
-                  </Text>
-
-                  <AllergenSelector
-                    avoidedAllergens={preferences.avoidedAllergens || []}
-                    onToggleAllergen={toggleAvoidedAllergen}
-                    isDark={isDark}
-                  />
-                </View>
-
-                {/* HEALTH & WELLNESS GOALS */}
-                <View style={styles.healthGoalsBlock}>
-                  <Text style={[styles.questionTitle, { color: theme.text, fontSize: 17 }]}>
-                    🩺 Obiective de sănătate & stil de viață
-                  </Text>
-                  <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                    Opțional: filtre speciale nutriționale și medicale populare în România. Meniul recomandat va prioritiza aceste criterii.
+                    Poți selecta până la 2 diete compatibile (selectate: {selectedDiets.length}/2).
+                    De exemplu: Vegetarian + Fără Gluten, sau Omnivor + Low-Carb.
                   </Text>
 
                   <View style={[styles.dietList, isLargeScreen && styles.dietListDesktop]}>
-                    {HEALTH_GOALS_CATALOG.map((goal) => {
-                      const isSelected = (preferences.healthGoalTags || []).includes(goal.id);
+                    {DIET_OPTIONS_CATALOG.map((diet) => {
+                      const isSelected = selectedDiets.includes(diet.id);
+                      const isIncompatible =
+                        !isSelected && selectedDiets.some((d) => !areDietsCompatible(d, diet.id));
+
                       return (
                         <TouchableOpacity
                           accessibilityRole="button"
-                          key={goal.id}
-                          onPress={() => toggleHealthGoalTag(goal.id)}
+                          key={diet.id}
+                          onPress={() => toggleDietType(diet.id)}
                           activeOpacity={0.75}
                           style={[
                             styles.dietCard,
@@ -928,23 +966,55 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                             {
                               backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
                               borderColor: isSelected ? theme.primary : theme.border,
+                              opacity: isIncompatible ? 0.45 : 1,
                             },
                           ]}
                         >
-                          <Text style={styles.dietIcon}>{goal.icon}</Text>
+                          <Text style={styles.dietIcon}>{diet.icon}</Text>
                           <View style={styles.dietInfo}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                               <Text style={[styles.dietLabel, { color: theme.text }]}>
-                                {goal.labelRo}
+                                {diet.label}
                               </Text>
+                              {isIncompatible && (
+                                <View
+                                  style={[
+                                    styles.incompatibleBadge,
+                                    {
+                                      backgroundColor: isDark
+                                        ? 'rgba(239, 68, 68, 0.2)'
+                                        : '#fee2e2',
+                                    },
+                                  ]}
+                                >
+                                  <Text
+                                    style={{ fontSize: 10, color: '#ef4444', fontWeight: '800' }}
+                                  >
+                                    Incompatibil
+                                  </Text>
+                                </View>
+                              )}
                               {isSelected && (
-                                <View style={[styles.incompatibleBadge, { backgroundColor: theme.surfaceTertiary, borderColor: theme.border, borderWidth: 1 }]}>
-                                  <Text style={{ fontSize: 10, color: theme.text, fontWeight: '800' }}>Activ</Text>
+                                <View
+                                  style={[
+                                    styles.incompatibleBadge,
+                                    {
+                                      backgroundColor: theme.surfaceTertiary,
+                                      borderColor: theme.border,
+                                      borderWidth: 1,
+                                    },
+                                  ]}
+                                >
+                                  <Text
+                                    style={{ fontSize: 10, color: theme.text, fontWeight: '800' }}
+                                  >
+                                    Activ
+                                  </Text>
                                 </View>
                               )}
                             </View>
                             <Text style={[styles.dietDesc, { color: theme.textMuted }]}>
-                              {goal.descriptionRo}
+                              {diet.desc}
                             </Text>
                           </View>
                           <View
@@ -956,18 +1026,127 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                               },
                             ]}
                           >
-                            {isSelected && <Text style={{ color: theme.primaryText, fontSize: 12, fontWeight: '900' }}>✓</Text>}
+                            {isSelected && (
+                              <Text
+                                style={{
+                                  color: theme.primaryText,
+                                  fontSize: 12,
+                                  fontWeight: '900',
+                                }}
+                              >
+                                ✓
+                              </Text>
+                            )}
                           </View>
                         </TouchableOpacity>
                       );
                     })}
                   </View>
-                </View>
 
-                <EligibilityMeter preferences={preferences} isDark={isDark} />
-              </View>
-            );
-          })()}
+                  <View style={styles.allergenBlock}>
+                    <Text style={[styles.questionTitle, { color: theme.text, fontSize: 17 }]}>
+                      Ai alergii alimentare?
+                    </Text>
+                    <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
+                      Opțional, dar important: orice alergen bifat aici este eliminat complet din
+                      toate rețetele propuse.
+                    </Text>
+
+                    <AllergenSelector
+                      avoidedAllergens={preferences.avoidedAllergens || []}
+                      onToggleAllergen={toggleAvoidedAllergen}
+                      isDark={isDark}
+                    />
+                  </View>
+
+                  {/* HEALTH & WELLNESS GOALS */}
+                  <View style={styles.healthGoalsBlock}>
+                    <Text style={[styles.questionTitle, { color: theme.text, fontSize: 17 }]}>
+                      🩺 Obiective de sănătate & stil de viață
+                    </Text>
+                    <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
+                      Opțional: filtre speciale nutriționale și medicale populare în România. Meniul
+                      recomandat va prioritiza aceste criterii.
+                    </Text>
+
+                    <View style={[styles.dietList, isLargeScreen && styles.dietListDesktop]}>
+                      {HEALTH_GOALS_CATALOG.map((goal) => {
+                        const isSelected = (preferences.healthGoalTags || []).includes(goal.id);
+                        return (
+                          <TouchableOpacity
+                            accessibilityRole="button"
+                            key={goal.id}
+                            onPress={() => toggleHealthGoalTag(goal.id)}
+                            activeOpacity={0.75}
+                            style={[
+                              styles.dietCard,
+                              isLargeScreen && styles.dietCardDesktop,
+                              {
+                                backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                                borderColor: isSelected ? theme.primary : theme.border,
+                              },
+                            ]}
+                          >
+                            <Text style={styles.dietIcon}>{goal.icon}</Text>
+                            <View style={styles.dietInfo}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <Text style={[styles.dietLabel, { color: theme.text }]}>
+                                  {goal.labelRo}
+                                </Text>
+                                {isSelected && (
+                                  <View
+                                    style={[
+                                      styles.incompatibleBadge,
+                                      {
+                                        backgroundColor: theme.surfaceTertiary,
+                                        borderColor: theme.border,
+                                        borderWidth: 1,
+                                      },
+                                    ]}
+                                  >
+                                    <Text
+                                      style={{ fontSize: 10, color: theme.text, fontWeight: '800' }}
+                                    >
+                                      Activ
+                                    </Text>
+                                  </View>
+                                )}
+                              </View>
+                              <Text style={[styles.dietDesc, { color: theme.textMuted }]}>
+                                {goal.descriptionRo}
+                              </Text>
+                            </View>
+                            <View
+                              style={[
+                                styles.dietRadio,
+                                {
+                                  borderColor: isSelected ? theme.primary : theme.border,
+                                  backgroundColor: isSelected ? theme.primary : 'transparent',
+                                },
+                              ]}
+                            >
+                              {isSelected && (
+                                <Text
+                                  style={{
+                                    color: theme.primaryText,
+                                    fontSize: 12,
+                                    fontWeight: '900',
+                                  }}
+                                >
+                                  ✓
+                                </Text>
+                              )}
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+
+                  <EligibilityMeter preferences={preferences} isDark={isDark} />
+                </View>
+              );
+            })()}
 
           {/* STEP 7: KITCHEN APPLIANCES */}
           {currentStep === 7 && (
@@ -997,15 +1176,23 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 🍿 Ronțăieli & 🥤 Băuturi de Magazin
               </Text>
               <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Alege gustările pentru meci/film și băuturile preferate, cu prețuri estimate la magazinul ales.
+                Alege gustările pentru meci/film și băuturile preferate, cu prețuri estimate la
+                magazinul ales.
               </Text>
 
               {/* Supermarket Banner */}
-              <View style={[styles.retailSupermarketBanner, { backgroundColor: theme.primaryLight, borderColor: theme.primary }]}>
+              <View
+                style={[
+                  styles.retailSupermarketBanner,
+                  { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                ]}
+              >
                 <Text style={styles.retailBannerIcon}>🛒</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.retailBannerTitle, { color: theme.primary }]}>
-                    Produse la {SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId)?.name || 'magazinul ales'}
+                    Produse la{' '}
+                    {SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId)?.name ||
+                      'magazinul ales'}
                   </Text>
                   <Text style={[styles.retailBannerSubtitle, { color: theme.textMuted }]}>
                     Prețuri estimate după prețurile obișnuite la raft. La casă pot diferi.
@@ -1014,7 +1201,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
               </View>
 
               {/* SNACK TASTE SELECTOR [Dulce] vs [Sărat] vs [Ambele] */}
-              <View style={[styles.snackTasteBox, { backgroundColor: theme.accentBg, borderColor: theme.border }]}>
+              <View
+                style={[
+                  styles.snackTasteBox,
+                  { backgroundColor: theme.accentBg, borderColor: theme.border },
+                ]}
+              >
                 <Text style={[styles.snackTasteTitle, { color: theme.text }]}>
                   Ce fel de gustări preferi de obicei?
                 </Text>
@@ -1029,7 +1221,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                       <TouchableOpacity
                         accessibilityRole="button"
                         key={tab.id}
-                        onPress={() => setSnackTastePreference(tab.id as 'sweet' | 'savory' | 'both')}
+                        onPress={() =>
+                          setSnackTastePreference(tab.id as 'sweet' | 'savory' | 'both')
+                        }
                         style={[
                           styles.snackTasteTab,
                           {
@@ -1042,7 +1236,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                         <Text
                           style={[
                             styles.snackTasteTabLabel,
-                            { color: isCurrent ? theme.primary : theme.text, fontWeight: isCurrent ? '800' : '600' },
+                            {
+                              color: isCurrent ? theme.primary : theme.text,
+                              fontWeight: isCurrent ? '800' : '600',
+                            },
                           ]}
                         >
                           {tab.label}
@@ -1063,7 +1260,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                     <Text style={[styles.retailSectionHeading, { color: theme.text }]}>
                       🍿 Chipsuri & Snacks sărate
                     </Text>
-                    <View style={[styles.retailCardsGrid, isLargeScreen && styles.retailCardsGridDesktop]}>
+                    <View
+                      style={[
+                        styles.retailCardsGrid,
+                        isLargeScreen && styles.retailCardsGridDesktop,
+                      ]}
+                    >
                       {getRetailProductsByCategory('snack_savory').map((prod) => {
                         const isSelected = (preferences.selectedSnackIds || []).includes(prod.id);
                         const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
@@ -1084,7 +1286,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                           >
                             <Text style={styles.retailProductIcon}>{prod.icon}</Text>
                             <View style={{ flex: 1 }}>
-                              <Text style={[styles.retailProductTitle, { color: isSelected ? theme.primary : theme.text }]}>
+                              <Text
+                                style={[
+                                  styles.retailProductTitle,
+                                  { color: isSelected ? theme.primary : theme.text },
+                                ]}
+                              >
                                 {prod.name}
                               </Text>
                               <Text style={[styles.retailProductBrand, { color: theme.textMuted }]}>
@@ -1092,7 +1299,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                               </Text>
                             </View>
                             <View style={styles.retailPriceBox}>
-                              <Text style={[styles.retailProductPrice, { color: isSelected ? theme.primary : theme.text }]}>
+                              <Text
+                                style={[
+                                  styles.retailProductPrice,
+                                  { color: isSelected ? theme.primary : theme.text },
+                                ]}
+                              >
                                 {price.toFixed(2)} lei
                               </Text>
                               <View
@@ -1104,7 +1316,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                                   },
                                 ]}
                               >
-                                {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
+                                {isSelected && (
+                                  <Text
+                                    style={[styles.retailCheckmark, { color: theme.primaryText }]}
+                                  >
+                                    ✓
+                                  </Text>
+                                )}
                               </View>
                             </View>
                           </TouchableOpacity>
@@ -1119,7 +1337,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                     <Text style={[styles.retailSectionHeading, { color: theme.text }]}>
                       🍫 Ciocolată & Dulciuri
                     </Text>
-                    <View style={[styles.retailCardsGrid, isLargeScreen && styles.retailCardsGridDesktop]}>
+                    <View
+                      style={[
+                        styles.retailCardsGrid,
+                        isLargeScreen && styles.retailCardsGridDesktop,
+                      ]}
+                    >
                       {getRetailProductsByCategory('snack_sweet').map((prod) => {
                         const isSelected = (preferences.selectedSnackIds || []).includes(prod.id);
                         const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
@@ -1140,7 +1363,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                           >
                             <Text style={styles.retailProductIcon}>{prod.icon}</Text>
                             <View style={{ flex: 1 }}>
-                              <Text style={[styles.retailProductTitle, { color: isSelected ? theme.primary : theme.text }]}>
+                              <Text
+                                style={[
+                                  styles.retailProductTitle,
+                                  { color: isSelected ? theme.primary : theme.text },
+                                ]}
+                              >
                                 {prod.name}
                               </Text>
                               <Text style={[styles.retailProductBrand, { color: theme.textMuted }]}>
@@ -1148,7 +1376,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                               </Text>
                             </View>
                             <View style={styles.retailPriceBox}>
-                              <Text style={[styles.retailProductPrice, { color: isSelected ? theme.primary : theme.text }]}>
+                              <Text
+                                style={[
+                                  styles.retailProductPrice,
+                                  { color: isSelected ? theme.primary : theme.text },
+                                ]}
+                              >
                                 {price.toFixed(2)} lei
                               </Text>
                               <View
@@ -1160,7 +1393,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                                   },
                                 ]}
                               >
-                                {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
+                                {isSelected && (
+                                  <Text
+                                    style={[styles.retailCheckmark, { color: theme.primaryText }]}
+                                  >
+                                    ✓
+                                  </Text>
+                                )}
                               </View>
                             </View>
                           </TouchableOpacity>
@@ -1179,7 +1418,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
               <Text style={[styles.retailSectionHeading, { color: theme.text, marginTop: 20 }]}>
                 🥤 Băuturi Răcoritoare & Apă
               </Text>
-              <View style={[styles.retailCardsGrid, isLargeScreen && styles.retailCardsGridDesktop]}>
+              <View
+                style={[styles.retailCardsGrid, isLargeScreen && styles.retailCardsGridDesktop]}
+              >
                 {getRetailProductsByCategory('drink_soft').map((prod) => {
                   const isSelected = (preferences.selectedDrinkIds || []).includes(prod.id);
                   const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
@@ -1200,7 +1441,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                     >
                       <Text style={styles.retailProductIcon}>{prod.icon}</Text>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.retailProductTitle, { color: isSelected ? theme.primary : theme.text }]}>
+                        <Text
+                          style={[
+                            styles.retailProductTitle,
+                            { color: isSelected ? theme.primary : theme.text },
+                          ]}
+                        >
                           {prod.name}
                         </Text>
                         <Text style={[styles.retailProductBrand, { color: theme.textMuted }]}>
@@ -1208,7 +1454,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                         </Text>
                       </View>
                       <View style={styles.retailPriceBox}>
-                        <Text style={[styles.retailProductPrice, { color: isSelected ? theme.primary : theme.text }]}>
+                        <Text
+                          style={[
+                            styles.retailProductPrice,
+                            { color: isSelected ? theme.primary : theme.text },
+                          ]}
+                        >
                           {price.toFixed(2)} lei
                         </Text>
                         <View
@@ -1220,7 +1471,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                             },
                           ]}
                         >
-                          {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
+                          {isSelected && (
+                            <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>
+                              ✓
+                            </Text>
+                          )}
                         </View>
                       </View>
                     </TouchableOpacity>
@@ -1272,12 +1527,20 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                     },
                   ]}
                 >
-                  {preferences.includeAlcohol && <Text style={[styles.retailCheckmark, { color: '#ffffff' }]}>✓</Text>}
+                  {preferences.includeAlcohol && (
+                    <Text style={[styles.retailCheckmark, { color: '#ffffff' }]}>✓</Text>
+                  )}
                 </View>
               </TouchableOpacity>
 
               {preferences.includeAlcohol && (
-                <View style={[styles.retailCardsGrid, isLargeScreen && styles.retailCardsGridDesktop, { marginTop: 10 }]}>
+                <View
+                  style={[
+                    styles.retailCardsGrid,
+                    isLargeScreen && styles.retailCardsGridDesktop,
+                    { marginTop: 10 },
+                  ]}
+                >
                   {getRetailProductsByCategory('drink_alcoholic').map((prod) => {
                     const isSelected = (preferences.selectedDrinkIds || []).includes(prod.id);
                     const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
@@ -1298,7 +1561,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                       >
                         <Text style={styles.retailProductIcon}>{prod.icon}</Text>
                         <View style={{ flex: 1 }}>
-                          <Text style={[styles.retailProductTitle, { color: isSelected ? theme.primary : theme.text }]}>
+                          <Text
+                            style={[
+                              styles.retailProductTitle,
+                              { color: isSelected ? theme.primary : theme.text },
+                            ]}
+                          >
                             {prod.name}
                           </Text>
                           <Text style={[styles.retailProductBrand, { color: theme.textMuted }]}>
@@ -1306,7 +1574,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                           </Text>
                         </View>
                         <View style={styles.retailPriceBox}>
-                          <Text style={[styles.retailProductPrice, { color: isSelected ? theme.primary : theme.text }]}>
+                          <Text
+                            style={[
+                              styles.retailProductPrice,
+                              { color: isSelected ? theme.primary : theme.text },
+                            ]}
+                          >
                             {price.toFixed(2)} lei
                           </Text>
                           <View
@@ -1318,7 +1591,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                               },
                             ]}
                           >
-                            {isSelected && <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>✓</Text>}
+                            {isSelected && (
+                              <Text style={[styles.retailCheckmark, { color: theme.primaryText }]}>
+                                ✓
+                              </Text>
+                            )}
                           </View>
                         </View>
                       </TouchableOpacity>
@@ -1328,10 +1605,20 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
               )}
 
               {/* Total Extras Summary Pill */}
-              {((preferences.selectedSnackIds?.length || 0) + (preferences.selectedDrinkIds?.length || 0) > 0) && (
-                <View style={[styles.retailSummaryPill, { backgroundColor: theme.primaryLight, borderColor: theme.primary }]}>
+              {(preferences.selectedSnackIds?.length || 0) +
+                (preferences.selectedDrinkIds?.length || 0) >
+                0 && (
+                <View
+                  style={[
+                    styles.retailSummaryPill,
+                    { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                  ]}
+                >
                   <Text style={[styles.retailSummaryText, { color: theme.primary }]}>
-                    ✨ {((preferences.selectedSnackIds?.length || 0) + (preferences.selectedDrinkIds?.length || 0))} gustări & băuturi selectate adăugate automat în lista de cumpărături
+                    ✨{' '}
+                    {(preferences.selectedSnackIds?.length || 0) +
+                      (preferences.selectedDrinkIds?.length || 0)}{' '}
+                    gustări & băuturi selectate adăugate automat în lista de cumpărături
                   </Text>
                 </View>
               )}
@@ -1345,7 +1632,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isDark, onPl
                 Care este bugetul tău?
               </Text>
               <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Suma totală pe care dorești să o cheltui la magazin pentru mesele și gustările din aceste zile.
+                Suma totală pe care dorești să o cheltui la magazin pentru mesele și gustările din
+                aceste zile.
               </Text>
 
               <BudgetSlider

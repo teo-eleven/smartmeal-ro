@@ -72,24 +72,32 @@ export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> =
       {/* Grid of Targets */}
       <View style={styles.metricsGrid}>
         {/* Metric 1: Diets & Health Goals */}
-        <View style={[styles.metricCard, { backgroundColor: theme.accentBg, borderColor: theme.border }]}>
+        <View
+          style={[
+            styles.metricCard,
+            { backgroundColor: theme.accentBg, borderColor: theme.border },
+          ]}
+        >
           <Text style={[styles.metricLabel, { color: theme.textMuted }]}>🎯 DIETĂ & SĂNĂTATE</Text>
           <View style={styles.badgesWrap}>
             {selectedDiets.map((d) => (
               <View
                 key={d}
-                style={[styles.badge, { backgroundColor: theme.primaryLight, borderColor: theme.primary }]}
+                style={[
+                  styles.badge,
+                  { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                ]}
               >
                 <Text style={[styles.badgeText, { color: theme.primary }]}>
                   {d === 'omnivore'
                     ? 'Omnivor'
                     : d === 'vegetarian'
-                    ? 'Vegetarian'
-                    : d === 'vegan'
-                    ? 'Vegan'
-                    : d === 'pescatarian'
-                    ? 'Pescatarian'
-                    : d}
+                      ? 'Vegetarian'
+                      : d === 'vegan'
+                        ? 'Vegan'
+                        : d === 'pescatarian'
+                          ? 'Pescatarian'
+                          : d}
                 </Text>
               </View>
             ))}
@@ -98,7 +106,10 @@ export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> =
               return (
                 <View
                   key={tagId}
-                  style={[styles.badge, { backgroundColor: theme.surfaceTertiary, borderColor: theme.border }]}
+                  style={[
+                    styles.badge,
+                    { backgroundColor: theme.surfaceTertiary, borderColor: theme.border },
+                  ]}
                 >
                   <Text style={[styles.badgeText, { color: theme.text }]}>
                     {meta?.icon} {meta?.shortBadgeRo || tagId}
@@ -110,19 +121,32 @@ export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> =
         </View>
 
         {/* Metric 2: Planning Scope */}
-        <View style={[styles.metricCard, { backgroundColor: theme.accentBg, borderColor: theme.border }]}>
+        <View
+          style={[
+            styles.metricCard,
+            { backgroundColor: theme.accentBg, borderColor: theme.border },
+          ]}
+        >
           <Text style={[styles.metricLabel, { color: theme.textMuted }]}>📅 VOLUM PLANIFICAT</Text>
           <Text style={[styles.metricValue, { color: theme.text }]}>
             {daysCount} {daysCount === 1 ? 'zi' : 'zile'} • {totalMeals} mese
           </Text>
           <Text style={[styles.metricSub, { color: theme.textMuted }]}>
-            👥 {peopleCount} {peopleCount === 1 ? 'persoană' : 'persoane'} • {totalPortions} porții totale
+            👥 {peopleCount} {peopleCount === 1 ? 'persoană' : 'persoane'} • {totalPortions} porții
+            totale
           </Text>
         </View>
 
         {/* Metric 3: Nutritional Targets */}
-        <View style={[styles.metricCard, { backgroundColor: theme.accentBg, borderColor: theme.border }]}>
-          <Text style={[styles.metricLabel, { color: theme.textMuted }]}>⚡ ȚINTE MEDII ZILNICE</Text>
+        <View
+          style={[
+            styles.metricCard,
+            { backgroundColor: theme.accentBg, borderColor: theme.border },
+          ]}
+        >
+          <Text style={[styles.metricLabel, { color: theme.textMuted }]}>
+            ⚡ ȚINTE MEDII ZILNICE
+          </Text>
           <View style={styles.macroTargetRow}>
             <View style={styles.macroPill}>
               <Text style={[styles.macroPillVal, { color: '#fb923c' }]}>~{targetCalories}</Text>
@@ -130,14 +154,21 @@ export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> =
             </View>
             <View style={[styles.macroDivider, { backgroundColor: theme.border }]} />
             <View style={styles.macroPill}>
-              <Text style={[styles.macroPillVal, { color: '#38bdf8' }]}>~{targetProteinGrams}g</Text>
+              <Text style={[styles.macroPillVal, { color: '#38bdf8' }]}>
+                ~{targetProteinGrams}g
+              </Text>
               <Text style={[styles.macroPillLbl, { color: theme.textMuted }]}>proteine/zi</Text>
             </View>
           </View>
         </View>
 
         {/* Metric 4: Supermarket & Budget */}
-        <View style={[styles.metricCard, { backgroundColor: theme.accentBg, borderColor: theme.border }]}>
+        <View
+          style={[
+            styles.metricCard,
+            { backgroundColor: theme.accentBg, borderColor: theme.border },
+          ]}
+        >
           <Text style={[styles.metricLabel, { color: theme.textMuted }]}>🛒 BUGET & MAGAZIN</Text>
           <Text style={[styles.metricValue, { color: theme.primary }]}>
             {preferences.budgetRon} lei max
@@ -150,10 +181,17 @@ export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> =
       </View>
 
       {/* Zero Waste Promise */}
-      <View style={[styles.zeroWasteBanner, { backgroundColor: theme.primaryLight, borderColor: theme.primary }]}>
+      <View
+        style={[
+          styles.zeroWasteBanner,
+          { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+        ]}
+      >
         <Text style={styles.zeroWasteIcon}>🌱</Text>
         <Text style={[styles.zeroWasteText, { color: theme.text }]}>
-          Algoritmul SmartMeal optimizează cumpărăturile pentru <Text style={{ fontWeight: '800', color: theme.primary }}>zero risipă alimentară</Text> și prețuri minime la raft.
+          Algoritmul SmartMeal optimizează cumpărăturile pentru{' '}
+          <Text style={{ fontWeight: '800', color: theme.primary }}>zero risipă alimentară</Text> și
+          prețuri minime la raft.
         </Text>
       </View>
     </View>

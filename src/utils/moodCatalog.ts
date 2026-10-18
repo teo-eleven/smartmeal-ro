@@ -39,7 +39,7 @@ export const MOOD_OPTIONS_CATALOG: MoodOptionInfo[] = [
     desc: 'Spaghete cremoase, penne al pomodoro, parmezan ras și busuioc proaspăt.',
     vibe: 'Confort Italian',
     archetype: 'pasta',
-    sampleDishes: ['Penne all\'Arrabbiata', 'Paste cremoase cu pui', 'Spaghetti cu busuioc'],
+    sampleDishes: ["Penne all'Arrabbiata", 'Paste cremoase cu pui', 'Spaghetti cu busuioc'],
     highlights: ['🍝 Confort italian', '🌿 Busuioc & Parmezan', '🇮🇹 Gust mediteranean'],
   },
   {

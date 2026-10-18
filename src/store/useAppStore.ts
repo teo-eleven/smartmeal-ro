@@ -428,7 +428,8 @@ function collectMealsFromDays(days: MealPlanDay[]): { recipe: Recipe; servings: 
   days.forEach((day) =>
     day.meals.forEach((meal) => {
       // A reheated portion or eaten out meal was not shopped for.
-      if (!meal.isLeftover && !meal.isEatenOut) meals.push({ recipe: meal.recipe, servings: meal.servings });
+      if (!meal.isLeftover && !meal.isEatenOut)
+        meals.push({ recipe: meal.recipe, servings: meal.servings });
     })
   );
   return meals;
@@ -439,7 +440,8 @@ function collectPlanMeals(plan: MealPlan): { recipe: Recipe; servings: number }[
   plan.days.forEach((day) => {
     day.meals.forEach((meal) => {
       // A reheated portion or eaten out meal was not shopped for.
-      if (!meal.isLeftover && !meal.isEatenOut) meals.push({ recipe: meal.recipe, servings: meal.servings });
+      if (!meal.isLeftover && !meal.isEatenOut)
+        meals.push({ recipe: meal.recipe, servings: meal.servings });
     });
   });
   return meals;
@@ -1065,8 +1067,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           forceOnboarding && !isNaN(targetStep)
             ? Math.max(state.maxVisitedStep, targetStep)
             : state.maxVisitedStep,
-        themeMode:
-          storedTheme === 'light' ? 'light' : 'dark',
+        themeMode: storedTheme === 'light' ? 'light' : 'dark',
         reminders: storedReminders,
         userEmail: signedInEmail ?? state.userEmail,
         // Not signed in means the gate, on every start. "Without an account" is chosen per
@@ -1784,9 +1785,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   toggleHealthGoalTag: (tag: HealthGoalTag) => {
     set((state) => {
       const current = state.preferences.healthGoalTags || [];
-      const updated = current.includes(tag)
-        ? current.filter((t) => t !== tag)
-        : [...current, tag];
+      const updated = current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag];
       const nextPrefs: UserPreferences = {
         ...state.preferences,
         healthGoalTags: updated,
@@ -1890,7 +1889,8 @@ export const useAppStore = create<AppState>((set, get) => ({
             const newLeftoverMeal: PlannedMeal = {
               id: `${nextDay.dayOfWeek}-${source.slot}-leftover-${Date.now()}`,
               slot: source.slot,
-              slotLabelRo: source.slotLabelRo || (source.slot === 'dessert' ? 'Desert' : source.slot),
+              slotLabelRo:
+                source.slotLabelRo || (source.slot === 'dessert' ? 'Desert' : source.slot),
               recipe: source.recipe,
               servings: state.preferences.peopleCount || source.servings,
               estimatedCostRon: 0,

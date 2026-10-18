@@ -56,9 +56,7 @@ describe('Planner Engine with Health Goals', () => {
 
     // At least one meal should carry the anti_inflammatory tag
     const allRecipes = plan.days.flatMap((d) => d.meals.map((m) => m.recipe));
-    const hasAntiInflammatory = allRecipes.some((r) =>
-      r.healthTags?.includes('anti_inflammatory')
-    );
+    const hasAntiInflammatory = allRecipes.some((r) => r.healthTags?.includes('anti_inflammatory'));
     expect(hasAntiInflammatory).toBe(true);
   });
 
