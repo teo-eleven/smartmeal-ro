@@ -111,6 +111,19 @@ export const INGREDIENT_ICONS: Record<string, string> = {
   busuioc_uscat: '🌿',
   piper_negru: '🧂',
   sare_fina: '🧂',
+  turmeric_macinat: '🟡',
+  quinoa_alba: '🌾',
+  seminte_dovleac: '🎃',
+  piept_curcan: '🦃',
+  file_cod_congelat: '🐟',
+  pastrav_proaspat: '🐟',
+  conopida_proaspata: '🥦',
+  lapte_migdale_fara_zahar: '🥛',
+  afine_congelate: '🫐',
+  ghimbir_proaspat: '🫚',
+  masline_kalamata: '🫒',
+  cimbru_uscat: '🌿',
+  rozmarin_proaspat: '🌿',
 };
 
 /** Ingredients too generic to say anything about a dish, so never shown as its icons. */

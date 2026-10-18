@@ -126,29 +126,30 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
   const theme = getAppTheme(isDark);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Top Header */}
-        <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-          <View style={styles.titleGroup}>
-            <Text style={[styles.title, { color: theme.text }]}>🍱 Ghid Meal Prep Săptămânal</Text>
-            <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-              Gătește {mealsCount} mese în avans duminică în ~90 de minute. Economisești timp în timpul săptămânii!
-            </Text>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          {/* Top Header */}
+          <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <View style={styles.titleGroup}>
+              <Text style={[styles.title, { color: theme.text }]}>🍱 Ghid Meal Prep Săptămânal</Text>
+              <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+                {mealsCount} mese în avans în ~90 de minute
+              </Text>
+            </View>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Închide"
+              onPress={onClose}
+              style={[styles.closeBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Închide"
-            onPress={onClose}
-            style={[styles.closeBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
-          </TouchableOpacity>
-        </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={[styles.contentCard, { maxWidth: contentMaxWidth }]}>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.contentCard}>
             {/* Overview Banner */}
             <View
               style={[
@@ -270,12 +271,33 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </SafeAreaView>
+        </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 640,
+    maxHeight: '88%',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 20,
+  },
   container: {
     flex: 1,
   },

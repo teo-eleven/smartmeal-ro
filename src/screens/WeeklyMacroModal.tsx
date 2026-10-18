@@ -72,29 +72,30 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
   const theme = getAppTheme(isDark);
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Top Header */}
-        <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-          <View style={styles.titleGroup}>
-            <Text style={[styles.title, { color: theme.text }]}>📊 Nutriție & Macro Săptămânale</Text>
-            <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-              Analiza caloriilor și a macronutrienților pentru {totalDays} zile ({people} {people === 1 ? 'persoană' : 'persoane'}).
-            </Text>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          {/* Top Header */}
+          <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <View style={styles.titleGroup}>
+              <Text style={[styles.title, { color: theme.text }]}>📊 Nutriție & Macro Săptămânale</Text>
+              <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+                {totalDays} zile ({people} {people === 1 ? 'persoană' : 'persoane'})
+              </Text>
+            </View>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Închide"
+              onPress={onClose}
+              style={[styles.closeBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Închide"
-            onPress={onClose}
-            style={[styles.closeBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
-          </TouchableOpacity>
-        </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={[styles.contentCard, { maxWidth: contentMaxWidth }]}>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.contentCard}>
             {/* What the plan's own dishes add up to, per portion per day. A dinner-only week is
                 not a day's intake, and calling it "calorii medii zilnice" read as one, and a
                 dangerously low one. */}
@@ -192,12 +193,33 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </SafeAreaView>
+        </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 620,
+    maxHeight: '88%',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 20,
+  },
   container: {
     flex: 1,
   },

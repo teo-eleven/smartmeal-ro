@@ -83,11 +83,16 @@ export function getEligibleRecipes(preferences: UserPreferences): Recipe[] {
 
   const rejected = new Set(preferences.dislikedRecipeIds ?? []);
   const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
+  const activeHealthGoals = (preferences.healthGoalTags || []).filter(
+    (g) => g !== 'pork_free'
+  );
 
   return RECIPES.filter(
     (recipe) =>
       !rejected.has(recipe.id) &&
       (!requirePorkFree || !recipeContainsPork(recipe)) &&
+      (!activeHealthGoals.length ||
+        activeHealthGoals.some((g) => (recipe.healthTags || []).includes(g))) &&
       isRecipeMatchingDiets(recipe, activeDiets) &&
       isRecipeSafeForAllergies(recipe, preferences.avoidedAllergens) &&
       hasRequiredAppliances(recipe.appliances, preferences.appliances) &&
@@ -447,6 +452,9 @@ export function generateMealPlan(
   // dry. It relaxes the store and the slot -- never a dish the user asked never to see again.
   const rejectedIds = new Set(preferences.dislikedRecipeIds ?? []);
   const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
+  const activeHealthGoals = (preferences.healthGoalTags || []).filter(
+    (g) => g !== 'pork_free'
+  );
 
   // Score each recipe based on mood tags, food tier preference, and portion cost
   const scoredRecipes = eligibleRecipes.map((recipe) => {
@@ -536,11 +544,13 @@ export function generateMealPlan(
     let candidates = scoredRecipes.filter((s) => matchesSlot(s.recipe, slot));
 
     if (candidates.length === 0) {
-      // 1. Drop the supermarket requirement, keep diet + appliances + slot.
+      // 1. Drop the supermarket requirement, keep diet + appliances + slot + health goals.
       const ignoringStore = RECIPES.filter(
         (r) =>
           !rejectedIds.has(r.id) &&
           matchesSlot(r, slot) &&
+          (!activeHealthGoals.length ||
+            activeHealthGoals.some((g) => (r.healthTags || []).includes(g))) &&
           isRecipeMatchingDiets(r, activeDiets) &&
           isRecipeSafeForAllergies(r, preferences.avoidedAllergens) &&
           hasRequiredAppliances(r.appliances, preferences.appliances) &&
@@ -550,19 +560,34 @@ export function generateMealPlan(
       if (ignoringStore.length > 0) {
         candidates = scoreFallbackRecipes(ignoringStore);
       } else {
-        // 2. Drop slot suitability too, but still only dishes the user can cook and eat.
-        //    Reached when the catalog has no dish at all for this slot under this diet
-        //    (for example: there is no vegan breakfast recipe).
-        const cookableAndEdible = RECIPES.filter(
+        // 2. Drop slot suitability too, keeping health goals.
+        const ignoringSlot = RECIPES.filter(
           (r) =>
             !rejectedIds.has(r.id) &&
+            (!activeHealthGoals.length ||
+              activeHealthGoals.some((g) => (r.healthTags || []).includes(g))) &&
             isRecipeMatchingDiets(r, activeDiets) &&
             isRecipeSafeForAllergies(r, preferences.avoidedAllergens) &&
             hasRequiredAppliances(r.appliances, preferences.appliances) &&
             (!requirePorkFree || !recipeContainsPork(r))
         );
-        candidates =
-          cookableAndEdible.length > 0 ? scoreFallbackRecipes(cookableAndEdible) : scoredRecipes;
+
+        if (ignoringSlot.length > 0) {
+          candidates = scoreFallbackRecipes(ignoringSlot);
+        } else {
+          // 3. Reached when the catalog has no health-tagged dish under this diet/appliance constraint.
+          // Relax health goals (except pork_free, which is strict dietary/religious).
+          const cookableAndEdible = RECIPES.filter(
+            (r) =>
+              !rejectedIds.has(r.id) &&
+              isRecipeMatchingDiets(r, activeDiets) &&
+              isRecipeSafeForAllergies(r, preferences.avoidedAllergens) &&
+              hasRequiredAppliances(r.appliances, preferences.appliances) &&
+              (!requirePorkFree || !recipeContainsPork(r))
+          );
+          candidates =
+            cookableAndEdible.length > 0 ? scoreFallbackRecipes(cookableAndEdible) : scoredRecipes;
+        }
       }
     }
 

@@ -456,7 +456,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       )}
 
       {/* Step Content */}
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        style={[{ flex: 1 }, Platform.OS === 'web' && ({ scrollbarWidth: 'none', msOverflowStyle: 'none' } as any)]}
+      >
         <View
           {...glass('card')}
           style={[
@@ -1899,24 +1903,24 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     width: '100%',
   },
   contentCard: {
     width: '100%',
-    borderRadius: 22,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: 20,
+    padding: 16,
   },
   stepSection: {
     width: '100%',
   },
   questionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     marginBottom: 4,
-    lineHeight: 28,
+    lineHeight: 26,
   },
   quickStartCard: {
     flexDirection: 'row',
@@ -1924,24 +1928,24 @@ const styles = StyleSheet.create({
     gap: 12,
     borderWidth: 1,
     borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginBottom: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 12,
   },
-  quickStartIcon: { fontSize: 20 },
-  quickStartTitle: { fontSize: 14, fontWeight: '800' },
-  quickStartSubtitle: { fontSize: 11, fontWeight: '500', marginTop: 2, lineHeight: 15 },
-  quickStartArrow: { fontSize: 18, fontWeight: '800' },
+  quickStartIcon: { fontSize: 18 },
+  quickStartTitle: { fontSize: 13, fontWeight: '800' },
+  quickStartSubtitle: { fontSize: 11, fontWeight: '500', marginTop: 1, lineHeight: 14 },
+  quickStartArrow: { fontSize: 16, fontWeight: '800' },
   allergenBlock: {
-    marginTop: 18,
-    paddingTop: 16,
+    marginTop: 14,
+    paddingTop: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(128,128,128,0.35)',
   },
   questionSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 16,
+    fontSize: 12,
+    lineHeight: 17,
+    marginBottom: 12,
   },
   supermarketGrid: {
     gap: 12,
@@ -1954,10 +1958,10 @@ const styles = StyleSheet.create({
   supermarketCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
+    padding: 10,
     borderRadius: 16,
     borderWidth: 2,
-    gap: 14,
+    gap: 10,
   },
   supermarketCardDesktop: {
     flex: 1,
@@ -2148,30 +2152,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 30,
-    gap: 28,
+    paddingVertical: 14,
+    gap: 16,
   },
   circleBtn: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   circleBtnText: {
-    fontSize: 30,
+    fontSize: 26,
     fontWeight: '700',
-    lineHeight: 32,
+    lineHeight: 28,
   },
   peopleValueBox: {
     alignItems: 'center',
-    minWidth: 100,
+    minWidth: 90,
   },
   peopleCountText: {
-    fontSize: 54,
+    fontSize: 42,
     fontWeight: '900',
-    lineHeight: 58,
+    lineHeight: 46,
   },
   peopleLabel: {
     fontSize: 15,
@@ -2196,8 +2200,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 14,
     borderWidth: 1.5,
   },
@@ -2249,10 +2253,10 @@ const styles = StyleSheet.create({
   mealCountCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: 12,
     borderRadius: 16,
     borderWidth: 2,
-    gap: 14,
+    gap: 12,
   },
   mealCountIcon: {
     fontSize: 28,

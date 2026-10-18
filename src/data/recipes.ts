@@ -1,5 +1,6 @@
 import { FoodTier, HealthGoalTag, MealSlot, Recipe, SupermarketId } from '../types';
 import { EXTENDED_RECIPES } from './extendedRecipes';
+import { HEALTH_SPECIALTY_RECIPES } from './healthSpecialtyRecipes';
 import { getRecipeHealthTags } from './healthTags';
 
 const BASE_RECIPES: Recipe[] = [
@@ -3382,6 +3383,24 @@ export const RECIPE_HEALTH_TAGS_MAP: Record<string, HealthGoalTag[]> = {
   omleta_taraneasca_telemea: ['diabetic_friendly', 'pcos_friendly'],
   toast_ou_avocado: ['anti_inflammatory', 'pcos_friendly', 'heart_healthy'],
   mix_nuci_seminte_miere: ['high_fiber', 'heart_healthy', 'anti_inflammatory'],
+
+  // Dedicated Health Specialty Recipes
+  somon_salbatic_sparanghel_turmeric: ['anti_inflammatory', 'heart_healthy', 'diabetic_friendly', 'pcos_friendly'],
+  supa_crema_conopida_turmeric_cocos: ['anti_inflammatory', 'heart_healthy', 'diabetic_friendly'],
+  smoothie_bowl_ghimbir_afine: ['anti_inflammatory', 'high_fiber', 'heart_healthy'],
+  salata_calda_linte_spanac_nuci: ['anti_inflammatory', 'high_fiber', 'diabetic_friendly', 'heart_healthy'],
+  bowl_curcan_quinoa_avocado: ['pcos_friendly', 'anti_inflammatory', 'diabetic_friendly', 'high_fiber'],
+  budinca_chia_migdale_scortisoara: ['pcos_friendly', 'diabetic_friendly', 'high_fiber', 'anti_inflammatory'],
+  tocanita_linte_ciuperci_naut_pcos: ['pcos_friendly', 'diabetic_friendly', 'high_fiber', 'heart_healthy'],
+  cod_cuptor_dovlecei_ierburi: ['pcos_friendly', 'diabetic_friendly', 'heart_healthy', 'anti_inflammatory'],
+  tocanita_fasole_verde_rosii_usturoi: ['diabetic_friendly', 'high_fiber', 'anti_inflammatory', 'heart_healthy'],
+  peste_alb_cuptor_ardei_masline: ['diabetic_friendly', 'anti_inflammatory', 'heart_healthy', 'pcos_friendly'],
+  omleta_ciuperci_branza_capra: ['diabetic_friendly', 'pcos_friendly'],
+  salata_castraveti_iaurt_grecesc_marar: ['diabetic_friendly', 'pcos_friendly', 'heart_healthy'],
+  chili_fasole_neagra_cartof_dulce: ['high_fiber', 'heart_healthy', 'anti_inflammatory'],
+  hummus_cremos_morcovi_seminte: ['high_fiber', 'anti_inflammatory', 'heart_healthy', 'diabetic_friendly'],
+  pastrav_gratar_marar_lamaie: ['heart_healthy', 'anti_inflammatory', 'diabetic_friendly', 'pcos_friendly'],
+  supa_mediteraneana_fasole_alba_ulei_masline: ['heart_healthy', 'high_fiber', 'anti_inflammatory'],
 };
 
 export const RECIPES: Recipe[] = [
@@ -3420,6 +3439,20 @@ export const RECIPES: Recipe[] = [
       ...recipe,
       suitableSlots: recipe.suitableSlots ?? ['lunch', 'dinner'],
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'basic',
+      healthTags: finalHealthTags,
+      availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
+      storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
+      storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
+    };
+  }),
+  ...HEALTH_SPECIALTY_RECIPES.map((recipe) => {
+    const storeSpec = RECIPE_STORE_SPEC_MAP[recipe.id];
+    const explicitHealth = RECIPE_HEALTH_TAGS_MAP[recipe.id] ?? recipe.healthTags;
+    const finalHealthTags = getRecipeHealthTags({ ...recipe, healthTags: explicitHealth });
+    return {
+      ...recipe,
+      suitableSlots: recipe.suitableSlots ?? ['lunch', 'dinner'],
+      tier: recipe.tier ?? 'medium',
       healthTags: finalHealthTags,
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,

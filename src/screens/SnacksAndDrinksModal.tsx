@@ -53,7 +53,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
           style={[
             styles.modalContainer,
             { backgroundColor: theme.card, borderColor: theme.border },
-            isLargeScreen && [styles.modalContainerDesktop, { maxWidth: Math.min(contentMaxWidth, 1200) }],
+            isLargeScreen && [styles.modalContainerDesktop, { maxWidth: 640 }],
           ]}
         >
           {/* Header */}
@@ -423,26 +423,27 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalOverlayDesktop: {
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 16,
+  },
+  modalOverlayDesktop: {
     padding: 24,
   },
   modalContainer: {
-    maxHeight: '90%',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderWidth: 1,
-    paddingBottom: 20,
+    width: '100%',
+    maxWidth: 640,
+    maxHeight: '88%',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    paddingBottom: 0,
   },
   modalContainerDesktop: {
-    width: '92%',
+    width: '100%',
+    maxWidth: 640,
     borderRadius: 24,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '85%',
+    maxHeight: '88%',
     shadowColor: '#000000',
     shadowOpacity: 0.35,
     shadowOffset: { width: 0, height: 16 },

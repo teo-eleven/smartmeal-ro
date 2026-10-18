@@ -163,32 +163,33 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-          <View style={styles.headerTitleGroup}>
-            <Text style={[styles.headerTitle, { color: theme.text }]}>
-              🍽️ Personalizează Mesele pe Zile
-            </Text>
-            <Text style={[styles.headerSubtitle, { color: theme.textMuted }]}>
-              {activeCount === 1 && 'Alege care masă vrei să fie gătită în fiecare zi (1 masă / zi).'}
-              {activeCount === 2 && 'Selectează cele 2 mese preferate pentru fiecare zi din săptămână.'}
-              {activeCount === 3 && 'Toate cele 3 mese principale (Mic Dejun, Prânz și Cină) sunt incluse.'}
-            </Text>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          {/* Header */}
+          <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <View style={styles.headerTitleGroup}>
+              <Text style={[styles.headerTitle, { color: theme.text }]}>
+                🍽️ Personalizează Mesele pe Zile
+              </Text>
+              <Text style={[styles.headerSubtitle, { color: theme.textMuted }]}>
+                {activeCount === 1 && 'Alege care masă vrei să fie gătită în fiecare zi (1 masă / zi).'}
+                {activeCount === 2 && 'Selectează cele 2 mese preferate pentru fiecare zi din săptămână.'}
+                {activeCount === 3 && 'Toate cele 3 mese principale (Mic Dejun, Prânz și Cină) sunt incluse.'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={onClose}
+              style={[styles.closeBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={onClose}
-            style={[styles.closeBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
-          </TouchableOpacity>
-        </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={[styles.innerContent, { maxWidth: contentMaxWidth }]}>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.innerContent}>
             {/* Frequency Segmented Switcher */}
             <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>
@@ -378,12 +379,33 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </SafeAreaView>
+        </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 620,
+    maxHeight: '88%',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 20,
+  },
   container: {
     flex: 1,
   },

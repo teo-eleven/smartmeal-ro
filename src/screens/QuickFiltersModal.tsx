@@ -128,25 +128,26 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Header */}
-        <View style={[styles.header, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Închide" onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
-            <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Filtre & Preferințe Meniu</Text>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={handleSave}
-            style={[styles.saveHeaderBtn, { backgroundColor: theme.primary }]}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.saveHeaderBtnText, { color: theme.primaryText }]}>Aplică ✓</Text>
-          </TouchableOpacity>
-        </View>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          {/* Header */}
+          <View style={[styles.header, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Închide" onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
+              <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Filtre & Preferințe Meniu</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={handleSave}
+              style={[styles.saveHeaderBtn, { backgroundColor: theme.primary }]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.saveHeaderBtnText, { color: theme.primaryText }]}>Aplică ✓</Text>
+            </TouchableOpacity>
+          </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={[styles.contentWrapper, { maxWidth: 560 }]}>
             {/* Section 1: Zile de Gătit */}
             <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -445,12 +446,33 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
             </View>
           </View>
         </ScrollView>
-      </SafeAreaView>
+        </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 600,
+    maxHeight: '88%',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 20,
+  },
   container: {
     flex: 1,
   },
