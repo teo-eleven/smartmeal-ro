@@ -235,6 +235,13 @@ describe('TESTARE EXHAUSTIVĂ: Toate butoanele și scenariile din aplicație', (
       useAppStore.getState().goToStep(7);
       render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
 
+      // Comutare între opțiunile exclusive: Sărat vs Dulce
+      fireEvent.press(screen.getByText('🍫 Gustări Dulci'));
+      expect(useAppStore.getState().preferences.snackTastePreference).toBe('sweet');
+
+      fireEvent.press(screen.getByText('🍿 Gustări Sărate'));
+      expect(useAppStore.getState().preferences.snackTastePreference).toBe('savory');
+
       // Deblocare alcool
       fireEvent.press(screen.getByText(/Activează secțiunea de băuturi alcoolice/i));
       expect(useAppStore.getState().preferences.includeAlcohol).toBe(true);
@@ -333,6 +340,15 @@ describe('TESTARE EXHAUSTIVĂ: Toate butoanele și scenariile din aplicație', (
 
       const mondayMeals = useAppStore.getState().currentPlan!.days[0].meals;
       expect(mondayMeals.some((m) => m.slot === 'dessert')).toBe(true);
+    });
+
+    test('ordonează mesele dintr-o zi în mod cronologic: mic dejun, prânz, cină, desert', () => {
+      useAppStore.getState().setMealSlots(['dinner', 'breakfast', 'lunch']);
+      useAppStore.getState().generatePlan();
+
+      const firstDayMeals = useAppStore.getState().currentPlan!.days[0].meals;
+      const slots = firstDayMeals.map((m) => m.slot);
+      expect(slots).toEqual(['breakfast', 'lunch', 'dinner']);
     });
   });
 

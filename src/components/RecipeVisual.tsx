@@ -85,12 +85,12 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
       style={[styles.fill, style]}
       accessibilityLabel={accessibilityLabel}
     >
-      {/* Tints the backdrop toward the archetype's colour and keeps the title readable. */}
+      {/* Clean cinematic scrim that keeps the photo visible, bright and legible */}
       <LinearGradient
         colors={
           isDark
-            ? ['rgba(0,0,0,0.30)', `${palette.darkColors[1]}E6`]
-            : ['rgba(0,0,0,0.25)', `${palette.darkColors[0]}D9`]
+            ? ['rgba(0,0,0,0.10)', 'rgba(19, 25, 20, 0.75)']
+            : ['rgba(0,0,0,0.05)', 'rgba(30, 38, 32, 0.65)']
         }
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}

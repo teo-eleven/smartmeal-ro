@@ -97,14 +97,14 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                 {[
                   { id: 'savory', label: '🍿 Sărat' },
                   { id: 'sweet', label: '🍫 Dulce' },
-                  { id: 'both', label: '⚖️ Ambele' },
                 ].map((tab) => {
-                  const isCurrent = (preferences.snackTastePreference || 'both') === tab.id;
+                  const activeTaste = preferences.snackTastePreference === 'sweet' ? 'sweet' : 'savory';
+                  const isCurrent = activeTaste === tab.id;
                   return (
                     <TouchableOpacity
                       accessibilityRole="button"
                       key={tab.id}
-                      onPress={() => setSnackTastePreference(tab.id as 'sweet' | 'savory' | 'both')}
+                      onPress={() => setSnackTastePreference(tab.id as 'sweet' | 'savory')}
                       style={[
                         styles.tasteFilterTab,
                         {
@@ -242,9 +242,8 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                 </View>
               );
 
-              return preferences.snackTastePreference === 'sweet'
-                ? [sweetSection, savorySection]
-                : [savorySection, sweetSection];
+              const activeTaste = preferences.snackTastePreference === 'sweet' ? 'sweet' : 'savory';
+              return activeTaste === 'sweet' ? [sweetSection] : [savorySection];
             })()}
 
             {/* SECTION 3: BĂUTURI RĂCORITOARE & APĂ */}
@@ -519,7 +518,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   productCard: {
     flexDirection: 'row',
@@ -530,9 +529,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   productCardDesktop: {
-    flexGrow: 1,
+    flexGrow: 0,
     flexShrink: 0,
-    width: '31.5%',
+    width: '31.8%',
     minWidth: 280,
     maxWidth: 360,
   },

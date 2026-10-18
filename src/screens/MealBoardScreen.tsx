@@ -636,7 +636,16 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
         {/* Day-by-day Meal Cards Feed: Zilele una după cealaltă pe linii, mesele orizontal full-width */}
         <View style={[styles.feed, { maxWidth: contentMaxWidth }]}>
           {currentPlan.days.map((day, dayIdx) => {
-            const visibleMeals = day.meals.filter((m) => m.slot !== 'snack');
+            const CANONICAL_ORDER: Record<string, number> = {
+              breakfast: 1,
+              lunch: 2,
+              dinner: 3,
+              snack: 4,
+              dessert: 5,
+            };
+            const visibleMeals = day.meals
+              .filter((m) => m.slot !== 'snack')
+              .sort((a, b) => (CANONICAL_ORDER[a.slot] ?? 99) - (CANONICAL_ORDER[b.slot] ?? 99));
             const hasDessert = visibleMeals.some((m) => m.slot === 'dessert');
 
             return (

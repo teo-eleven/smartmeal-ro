@@ -428,9 +428,18 @@ export function generateMealPlan(
       ? preferences.dietTypes
       : [preferences.dietType];
 
+  const CANONICAL_SLOT_ORDER: Record<string, number> = {
+    breakfast: 1,
+    lunch: 2,
+    dinner: 3,
+    snack: 4,
+    dessert: 5,
+  };
   const rawSlots: MealSlot[] =
     preferences.mealSlots && preferences.mealSlots.length > 0 ? preferences.mealSlots : ['dinner'];
-  const slots: MealSlot[] = rawSlots.filter((s) => s !== 'snack');
+  const slots: MealSlot[] = rawSlots
+    .filter((s) => s !== 'snack')
+    .sort((a, b) => (CANONICAL_SLOT_ORDER[a] ?? 99) - (CANONICAL_SLOT_ORDER[b] ?? 99));
 
   const effectiveTier = preferences.foodTier || 'medium';
 

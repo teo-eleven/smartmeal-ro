@@ -554,29 +554,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         >
                           <Text style={styles.dietIcon}>{diet.icon}</Text>
                           <View style={styles.dietInfo}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                              <Text style={[styles.dietLabel, { color: theme.text }]}>
-                                {diet.label}
-                              </Text>
-                              {isSelected && (
-                                <View
-                                  style={[
-                                    styles.incompatibleBadge,
-                                    {
-                                      backgroundColor: theme.surfaceTertiary,
-                                      borderColor: theme.border,
-                                      borderWidth: 1,
-                                    },
-                                  ]}
-                                >
-                                  <Text
-                                    style={{ fontSize: 10, color: theme.text, fontWeight: '800' }}
-                                  >
-                                    Activ
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
+                            <Text style={[styles.dietLabel, { color: theme.text }]}>
+                              {diet.label}
+                            </Text>
                             <Text style={[styles.dietDesc, { color: theme.textMuted }]}>
                               {diet.desc}
                             </Text>
@@ -663,24 +643,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                                   </Text>
                                 </View>
                               )}
-                              {isSelected && (
-                                <View
-                                  style={[
-                                    styles.incompatibleBadge,
-                                    {
-                                      backgroundColor: theme.surfaceTertiary,
-                                      borderColor: theme.border,
-                                      borderWidth: 1,
-                                    },
-                                  ]}
-                                >
-                                  <Text
-                                    style={{ fontSize: 10, color: theme.text, fontWeight: '800' }}
-                                  >
-                                    Activ
-                                  </Text>
-                                </View>
-                              )}
                             </View>
                             <Text style={[styles.dietDesc, { color: theme.textMuted }]}>
                               {diet.desc}
@@ -758,29 +720,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                           >
                             <Text style={styles.dietIcon}>{goal.icon}</Text>
                             <View style={styles.dietInfo}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                <Text style={[styles.dietLabel, { color: theme.text }]}>
-                                  {goal.labelRo}
-                                </Text>
-                                {isSelected && (
-                                  <View
-                                    style={[
-                                      styles.incompatibleBadge,
-                                      {
-                                        backgroundColor: theme.surfaceTertiary,
-                                        borderColor: theme.border,
-                                        borderWidth: 1,
-                                      },
-                                    ]}
-                                  >
-                                    <Text
-                                      style={{ fontSize: 10, color: theme.text, fontWeight: '800' }}
-                                    >
-                                      Activ
-                                    </Text>
-                                  </View>
-                                )}
-                              </View>
+                              <Text style={[styles.dietLabel, { color: theme.text }]}>
+                                {goal.labelRo}
+                              </Text>
                               <Text style={[styles.dietDesc, { color: theme.textMuted }]}>
                                 {goal.descriptionRo}
                               </Text>
@@ -1340,17 +1282,17 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 </Text>
                 <View style={styles.snackTasteSegmentedRow}>
                   {[
-                    { id: 'savory', label: '🍿 Sărat', desc: 'Chipsuri & alune' },
-                    { id: 'sweet', label: '🍫 Dulce', desc: 'Ciocolată & dulciuri' },
-                    { id: 'both', label: '⚖️ Ambele', desc: 'Sărat și dulce' },
+                    { id: 'savory', label: '🍿 Gustări Sărate', desc: 'Chipsuri, pufuleți & alune' },
+                    { id: 'sweet', label: '🍫 Gustări Dulci', desc: 'Ciocolată, biscuiți & napolitane' },
                   ].map((tab) => {
-                    const isCurrent = (preferences.snackTastePreference || 'both') === tab.id;
+                    const activeTaste = preferences.snackTastePreference === 'sweet' ? 'sweet' : 'savory';
+                    const isCurrent = activeTaste === tab.id;
                     return (
                       <TouchableOpacity
                         accessibilityRole="button"
                         key={tab.id}
                         onPress={() =>
-                          setSnackTastePreference(tab.id as 'sweet' | 'savory' | 'both')
+                          setSnackTastePreference(tab.id as 'sweet' | 'savory')
                         }
                         style={[
                           styles.snackTasteTab,
@@ -1537,9 +1479,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   </View>
                 );
 
-                return preferences.snackTastePreference === 'sweet'
-                  ? [sweetSection, savorySection]
-                  : [savorySection, sweetSection];
+                const activeTaste = preferences.snackTastePreference === 'sweet' ? 'sweet' : 'savory';
+                return activeTaste === 'sweet' ? [sweetSection] : [savorySection];
               })()}
 
               {/* SECTION 3: BĂUTURI RĂCORITOARE & APĂ */}
@@ -1958,24 +1899,24 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     width: '100%',
   },
   contentCard: {
     width: '100%',
-    borderRadius: 24,
+    borderRadius: 22,
     borderWidth: 1,
-    padding: 24,
+    padding: 20,
   },
   stepSection: {
     width: '100%',
   },
   questionTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
-    marginBottom: 6,
-    lineHeight: 30,
+    marginBottom: 4,
+    lineHeight: 28,
   },
   quickStartCard: {
     flexDirection: 'row',
@@ -1984,23 +1925,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 14,
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 24,
+    paddingVertical: 10,
+    marginBottom: 16,
   },
   quickStartIcon: { fontSize: 20 },
   quickStartTitle: { fontSize: 14, fontWeight: '800' },
   quickStartSubtitle: { fontSize: 11, fontWeight: '500', marginTop: 2, lineHeight: 15 },
   quickStartArrow: { fontSize: 18, fontWeight: '800' },
   allergenBlock: {
-    marginTop: 26,
-    paddingTop: 22,
+    marginTop: 18,
+    paddingTop: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(128,128,128,0.35)',
   },
   questionSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 24,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 16,
   },
   supermarketGrid: {
     gap: 12,
@@ -2141,21 +2082,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dietCardDesktop: {
-    flex: 1,
-    minWidth: 240,
+    flexGrow: 0,
+    flexShrink: 0,
+    width: '48.5%',
+    minWidth: 280,
+    maxWidth: 520,
   },
   retailCardsGridDesktop: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 14,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   retailProductCardDesktop: {
-    flexGrow: 1,
+    flexGrow: 0,
     flexShrink: 0,
-    width: '31.5%',
-    minWidth: 300,
-    maxWidth: 440,
+    width: '31.8%',
+    minWidth: 280,
+    maxWidth: 380,
   },
   footerInner: {
     width: '100%',
@@ -2481,10 +2425,12 @@ const styles = StyleSheet.create({
   dietCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderRadius: 16,
     borderWidth: 2,
     gap: 14,
+    minHeight: 74,
   },
   dietIcon: {
     fontSize: 26,

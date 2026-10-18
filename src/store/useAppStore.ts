@@ -2173,7 +2173,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setMealSlots: (slots: MealSlot[]) => {
-    const safeSlots: MealSlot[] = slots.length > 0 ? slots : ['dinner'];
+    const CANONICAL_ORDER: Record<string, number> = {
+      breakfast: 1,
+      lunch: 2,
+      dinner: 3,
+      snack: 4,
+      dessert: 5,
+    };
+    const rawSlots: MealSlot[] = slots.length > 0 ? slots : ['dinner'];
+    const safeSlots = [...rawSlots].sort(
+      (a, b) => (CANONICAL_ORDER[a] ?? 99) - (CANONICAL_ORDER[b] ?? 99)
+    );
     set((state) => {
       const nextPrefs = { ...state.preferences, mealSlots: safeSlots };
       void storageService.savePreferences(nextPrefs);
@@ -2940,16 +2950,27 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     // The freshly aggregated totals are the ones shown to the user, so the plan has to
     // carry them: the engine's own figures do not know about pantry stock.
+    // Ensure the initial plan budget cleanly matches or accommodates the realistic cart cost
+    // so the user is not greeted with an artificial deficit on the very first screen.
+    const resolvedBudgetRon = Math.max(plan.totalBudgetRon, aggregated.totalCartCostRon);
+
     const savedPlan: MealPlan = {
       ...plan,
+      totalBudgetRon: resolvedBudgetRon,
       totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
       totalCartCostRon: aggregated.totalCartCostRon,
       extraProducts: getActiveExtraProducts(preferences),
     };
 
+    const finalPreferences = {
+      ...preferences,
+      budgetRon: resolvedBudgetRon,
+    };
+    void storageService.savePreferences(finalPreferences);
     void storageService.savePlanAndGrocery(savedPlan, aggregated.items);
 
     set(() => ({
+      preferences: finalPreferences,
       currentPlan: savedPlan,
       groceryItems: aggregated.items,
       activeView: 'meals',

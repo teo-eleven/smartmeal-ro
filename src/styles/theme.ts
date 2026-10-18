@@ -284,20 +284,15 @@ export function injectEmeraldGlassStyles(isDark: boolean = true): void {
       filter: brightness(1.08);
     }
 
-    /* Apple Clean Dark Scrollbars */
+    /* Clean Modern Scrollbars: hidden track to remove lateral bar clutter */
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 0px;
+      height: 0px;
+      display: none;
     }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: ${isDark ? 'rgba(245, 239, 235, 0.22)' : 'rgba(30, 38, 32, 0.20)'};
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: ${isDark ? 'rgba(230, 167, 86, 0.42)' : 'rgba(200, 130, 50, 0.38)'};
+    * {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
   `;
 }

@@ -160,7 +160,7 @@ describe('OnboardingWizard, pasul de ronțăieli', () => {
   });
 
   test('alegerea unui snac se reține', () => {
-    const snack = getRetailProductsByCategory('snack_sweet')[0];
+    const snack = getRetailProductsByCategory('snack_savory')[0];
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
 
     fireEvent.press(screen.getByText(snack.name));
