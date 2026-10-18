@@ -204,9 +204,9 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const appTheme = getAppTheme(isDark);
   const theme = {
     ...appTheme,
-    stepDoneBg: isDark ? 'rgba(255, 255, 255, 0.10)' : '#f0fdf4',
+    stepDoneBg: isDark ? 'rgba(230, 167, 86, 0.15)' : '#f0fdf4',
     badgeBg: isDark ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9',
-    accentCard: isDark ? '#2c2c2e' : '#f8fafc',
+    accentCard: isDark ? '#243027' : '#f8fafc',
   };
 
   const totalTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
@@ -742,7 +742,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   style={[
                     styles.dislikeSuggestionCard,
                     {
-                      backgroundColor: isDark ? '#121212' : '#f8fafc',
+                      backgroundColor: isDark ? '#1C241E' : '#f8fafc',
                       borderColor: isDark ? 'rgba(239, 68, 68, 0.4)' : '#fca5a5',
                     },
                   ]}

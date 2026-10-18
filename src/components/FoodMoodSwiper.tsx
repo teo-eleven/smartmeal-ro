@@ -239,7 +239,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
             style={[
               styles.segmentBtn,
               viewMode === 'swipe' && {
-                backgroundColor: isDark ? '#ffffff' : '#000000',
+                backgroundColor: theme.primary,
               },
             ]}
             activeOpacity={0.7}
@@ -248,7 +248,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
               style={[
                 styles.segmentText,
                 {
-                  color: viewMode === 'swipe' ? (isDark ? '#000000' : '#ffffff') : theme.textMuted,
+                  color: viewMode === 'swipe' ? theme.primaryText : theme.textMuted,
                   fontWeight: viewMode === 'swipe' ? '800' : '600',
                 },
               ]}
@@ -264,7 +264,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
             style={[
               styles.segmentBtn,
               viewMode === 'grid' && {
-                backgroundColor: isDark ? '#ffffff' : '#000000',
+                backgroundColor: theme.primary,
               },
             ]}
             activeOpacity={0.7}
@@ -273,7 +273,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
               style={[
                 styles.segmentText,
                 {
-                  color: viewMode === 'grid' ? (isDark ? '#000000' : '#ffffff') : theme.textMuted,
+                  color: viewMode === 'grid' ? theme.primaryText : theme.textMuted,
                   fontWeight: viewMode === 'grid' ? '800' : '600',
                 },
               ]}
@@ -415,10 +415,10 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Reia selecția de pofte de la început"
                 onPress={handleRestart}
-                style={[styles.restartBtn, { backgroundColor: isDark ? '#ffffff' : '#000000' }]}
+                style={[styles.restartBtn, { backgroundColor: theme.primary }]}
                 activeOpacity={0.75}
               >
-                <Text style={[styles.restartBtnText, { color: isDark ? '#000000' : '#ffffff' }]}>
+                <Text style={[styles.restartBtnText, { color: theme.primaryText }]}>
                   ↺ Reia de la început
                 </Text>
               </TouchableOpacity>
@@ -606,7 +606,7 @@ function renderCardBody(
             <LinearGradient
               colors={
                 isDark
-                  ? ['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.75)', '#1c1c1e']
+                  ? ['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.75)', '#1C241E']
                   : ['rgba(0,0,0,0.10)', 'rgba(0,0,0,0.60)', '#ffffff']
               }
               locations={[0, 0.6, 1]}
@@ -615,7 +615,7 @@ function renderCardBody(
           </ImageBackground>
         ) : (
           <LinearGradient
-            colors={isDark ? ['#27272a', '#18181b'] : ['#f4f4f5', '#e4e4e7']}
+            colors={isDark ? ['#243027', '#1C241E'] : ['#f4f4f5', '#e4e4e7']}
             style={StyleSheet.absoluteFill}
           />
         )}
@@ -712,10 +712,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(128,128,128,0.1)',
   },
   segmentBtn: {
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    borderRadius: 9,
-    minHeight: 36,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },

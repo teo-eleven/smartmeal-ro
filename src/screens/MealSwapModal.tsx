@@ -109,9 +109,9 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   const appTheme = getAppTheme(isDark);
   const theme = {
     ...appTheme,
-    aiBg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
-    aiBorder: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.12)',
-    aiText: isDark ? '#ffffff' : '#000000',
+    aiBg: isDark ? 'rgba(230, 167, 86, 0.12)' : '#fef9c3',
+    aiBorder: isDark ? 'rgba(230, 167, 86, 0.35)' : '#fde047',
+    aiText: appTheme.text,
   };
 
   const handleAskAi = async () => {
@@ -355,8 +355,10 @@ const styles = StyleSheet.create({
   },
   aiTriggerBtn: {
     borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    minHeight: 44,
+    minWidth: 80,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -422,7 +424,9 @@ const styles = StyleSheet.create({
   },
   selectBtn: {
     borderRadius: 12,
+    minHeight: 44,
     paddingVertical: 10,
+    paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },

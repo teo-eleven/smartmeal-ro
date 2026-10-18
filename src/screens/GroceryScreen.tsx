@@ -74,11 +74,12 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
   const [shareCopiedFeedback, setShareCopiedFeedback] = useState(false);
   const { isDesktop, isTablet, contentMaxWidth } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;
+  const theme = getAppTheme(isDark);
 
   if (!currentPlan) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={[styles.emptyText, { color: isDark ? '#ffffff' : '#000000' }]}>
+        <Text style={[styles.emptyText, { color: theme.text }]}>
           Niciun meniu activ. Configurează preferințele pentru a genera lista de cumpărături.
         </Text>
       </View>
@@ -178,8 +179,6 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
     });
   };
 
-  const theme = getAppTheme(isDark);
-
   return (
     <ScrollView
       contentContainerStyle={styles.scrollContent}
@@ -246,7 +245,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
 
               <View style={[styles.progressTrack, { backgroundColor: theme.trackBg }]}>
                 <LinearGradient
-                  colors={isDark ? ['#ffffff', '#8e8e93'] : ['#000000', '#636366']}
+                  colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={[styles.progressBar, { width: `${progressPercent}%` }]}
@@ -709,6 +708,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   retailSnacksBtn: {
+    minHeight: 44,
+    minWidth: 72,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 10,

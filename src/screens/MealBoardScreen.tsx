@@ -136,13 +136,13 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
   const getTierColor = (tier?: FoodTier): string => {
     switch (tier) {
       case 'basic':
-        return isDark ? '#ffffff' : '#000000';
+        return theme.textMuted;
       case 'medium':
-        return '#0a84ff';
+        return theme.primary;
       case 'premium':
-        return isDark ? '#ffd60a' : '#b45309';
+        return isDark ? '#F3C06D' : '#C88232';
       default:
-        return '#0a84ff';
+        return theme.primary;
     }
   };
 
@@ -531,24 +531,20 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                           {
                             backgroundColor:
                               tier === 'basic'
-                                ? isDark
-                                  ? '#ffffff'
-                                  : '#000000'
+                                ? theme.surfaceSecondary
                                 : tier === 'medium'
-                                  ? isDark
-                                    ? 'rgba(10, 132, 255, 0.24)'
-                                    : '#eff6ff'
+                                  ? theme.primaryLight
                                   : isDark
-                                    ? 'rgba(234, 179, 8, 0.2)'
-                                    : '#fefce8',
+                                    ? 'rgba(243, 192, 109, 0.22)'
+                                    : 'rgba(200, 130, 50, 0.16)',
                             borderColor:
                               tier === 'basic'
-                                ? isDark
-                                  ? '#ffffff'
-                                  : '#000000'
+                                ? theme.borderStrong
                                 : tier === 'medium'
-                                  ? '#0a84ff'
-                                  : '#eab308',
+                                  ? theme.primary
+                                  : isDark
+                                    ? '#F3C06D'
+                                    : '#C88232',
                           },
                         ],
                       ]}
@@ -560,12 +556,12 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                           {
                             color: isActive
                               ? tier === 'basic'
-                                ? isDark
-                                  ? '#000000'
-                                  : '#ffffff'
+                                ? theme.text
                                 : tier === 'medium'
-                                  ? '#0a84ff'
-                                  : '#eab308'
+                                  ? theme.primary
+                                  : isDark
+                                    ? '#F3C06D'
+                                    : '#C88232'
                               : theme.textMuted,
                             fontWeight: isActive ? '800' : '600',
                           },

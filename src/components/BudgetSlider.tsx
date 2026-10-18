@@ -151,15 +151,15 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
           style={[
             styles.suggestedActionBtn,
             {
-              backgroundColor: budget === minFloor ? (isDark ? '#ffffff' : '#000000') : theme.surfaceSecondary,
-              borderColor: theme.border,
+              backgroundColor: budget === minFloor ? theme.primary : theme.surfaceSecondary,
+              borderColor: budget === minFloor ? theme.primary : theme.border,
             },
           ]}
         >
           <Text
             style={[
               styles.suggestedActionText,
-              { color: budget === minFloor ? (isDark ? '#000000' : '#ffffff') : theme.text },
+              { color: budget === minFloor ? theme.primaryText : theme.text },
             ]}
           >
             {budget === minFloor ? '✓ Aplicat' : 'Aplică'}
@@ -272,8 +272,11 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   suggestedActionBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 10,
     borderWidth: 1,
   },

@@ -35,15 +35,15 @@ function getSlotColor(slot?: MealSlot, isDark: boolean = true): string {
     case 'breakfast':
       return '#f59e0b';
     case 'lunch':
-      return '#0a84ff';
+      return isDark ? '#88B27A' : '#4E7A40';
     case 'dinner':
-      return isDark ? '#ffffff' : '#000000';
+      return isDark ? '#E6A756' : '#C88232';
     case 'snack':
       return '#ff9f0a';
     case 'dessert':
-      return '#ff375f';
+      return isDark ? '#F3C06D' : '#D98E3A';
     default:
-      return isDark ? '#ffffff' : '#000000';
+      return isDark ? '#E6A756' : '#C88232';
   }
 }
 
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     minHeight: 190,
     maxHeight: 380,
     position: 'relative',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#1C241E',
   },
   image: {
     width: '100%',
@@ -711,8 +711,8 @@ const styles = StyleSheet.create({
     minHeight: 34,
   },
   servingsStepBtn: {
-    minWidth: 32,
-    minHeight: 32,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
@@ -734,12 +734,14 @@ const styles = StyleSheet.create({
   actionButtonsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 8,
     width: '100%',
   },
   swapBtn: {
     flex: 1,
-    minHeight: 40,
+    minWidth: 85,
+    minHeight: 44,
     paddingVertical: 9,
     paddingHorizontal: 8,
     borderRadius: 12,
@@ -752,8 +754,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   removeBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    minHeight: 44,
+    minWidth: 44,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -764,7 +768,8 @@ const styles = StyleSheet.create({
   },
   viewBtn: {
     flex: 1.3,
-    minHeight: 40,
+    minWidth: 100,
+    minHeight: 44,
     paddingVertical: 9,
     paddingHorizontal: 10,
     borderRadius: 12,
@@ -778,7 +783,8 @@ const styles = StyleSheet.create({
   },
   eatOutBtn: {
     flex: 1,
-    minHeight: 40,
+    minWidth: 85,
+    minHeight: 44,
     paddingVertical: 9,
     paddingHorizontal: 8,
     borderRadius: 12,

@@ -125,8 +125,8 @@ export const PlanHeader: React.FC<PlanHeaderProps> = ({
               isOverBudget
                 ? ['#f59e0b', '#ef4444']
                 : isDark
-                  ? ['#ffffff', '#a1a1a6']
-                  : ['#000000', '#3a3a3c']
+                  ? ['#F3C06D', '#E6A756']
+                  : ['#D98E3A', '#C88232']
             }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
@@ -298,8 +298,10 @@ const styles = StyleSheet.create({
   raiseBudgetBtn: {
     marginTop: 10,
     alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
     borderRadius: 10,
   },
   raiseBudgetBtnText: {

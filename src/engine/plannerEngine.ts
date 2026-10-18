@@ -437,6 +437,7 @@ export function generateMealPlan(
   // The relaxation ladder below rebuilds candidates from the whole catalog when a slot runs
   // dry. It relaxes the store and the slot -- never a dish the user asked never to see again.
   const rejectedIds = new Set(preferences.dislikedRecipeIds ?? []);
+  const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
 
   // Score each recipe based on mood tags, food tier preference, and portion cost
   const scoredRecipes = eligibleRecipes.map((recipe) => {
@@ -533,7 +534,8 @@ export function generateMealPlan(
           matchesSlot(r, slot) &&
           isRecipeMatchingDiets(r, activeDiets) &&
           isRecipeSafeForAllergies(r, preferences.avoidedAllergens) &&
-          hasRequiredAppliances(r.appliances, preferences.appliances)
+          hasRequiredAppliances(r.appliances, preferences.appliances) &&
+          (!requirePorkFree || !recipeContainsPork(r))
       );
 
       if (ignoringStore.length > 0) {
@@ -547,7 +549,8 @@ export function generateMealPlan(
             !rejectedIds.has(r.id) &&
             isRecipeMatchingDiets(r, activeDiets) &&
             isRecipeSafeForAllergies(r, preferences.avoidedAllergens) &&
-            hasRequiredAppliances(r.appliances, preferences.appliances)
+            hasRequiredAppliances(r.appliances, preferences.appliances) &&
+            (!requirePorkFree || !recipeContainsPork(r))
         );
         candidates =
           cookableAndEdible.length > 0 ? scoreFallbackRecipes(cookableAndEdible) : scoredRecipes;

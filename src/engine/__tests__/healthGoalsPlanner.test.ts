@@ -73,4 +73,25 @@ describe('Planner Engine with Health Goals', () => {
     const topAlternative = alternatives[0];
     expect(topAlternative).toBeDefined();
   });
+
+  it('never introduces pork recipes during fallback relaxation', () => {
+    // Force a tight appliance constraint that might trigger fallback
+    const tightPrefs: UserPreferences = {
+      ...basePreferences,
+      appliances: ['hob'], // only hob
+      healthGoalTags: ['pork_free'],
+      cookingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+      mealSlots: ['lunch', 'dinner'],
+    };
+
+    const plan = generateMealPlan(tightPrefs);
+    const allRecipes = plan.days.flatMap((d) => d.meals.map((m) => m.recipe));
+    const hasPork = allRecipes.some(
+      (r) =>
+        r.id === 'muschiulet_porc_cuptor' ||
+        r.id === 'ciorba_fasole_afumatura_ceapa' ||
+        r.id === 'muschiulet_porc_sos_piper_verde'
+    );
+    expect(hasPork).toBe(false);
+  });
 });
