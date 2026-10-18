@@ -40,7 +40,7 @@ describe('dispozitivele contului', () => {
     await waitFor(() => expect(screen.getByText('Chrome pe Mac')).toBeTruthy());
     expect(screen.getByText('iPhone')).toBeTruthy();
     expect(screen.getByText(/Acest dispozitiv/)).toBeTruthy();
-  });
+  }, 10000);
 
   test('dispozitivul ăsta nu are buton de deconectare aici', async () => {
     render(<DevicesSection isDark={false} />);

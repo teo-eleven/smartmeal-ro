@@ -199,6 +199,7 @@ export interface AppState {
   updatePreferencesAndRebuild: (newPrefs: Partial<UserPreferences>) => void;
   swapMeal: (dayOfWeek: DayOfWeek, slot?: MealSlot) => void;
   replaceMealWithRecipe: (dayOfWeek: DayOfWeek, newRecipe: Recipe, slot?: MealSlot) => void;
+  toggleEatOut: (dayOfWeek: DayOfWeek, slot?: MealSlot) => void;
   toggleGroceryItem: (ingredientId: string) => void;
   setActiveView: (view: 'onboarding' | 'generating' | 'meals' | 'grocery') => void;
 
@@ -421,8 +422,8 @@ function collectMealsFromDays(days: MealPlanDay[]): { recipe: Recipe; servings: 
   const meals: { recipe: Recipe; servings: number }[] = [];
   days.forEach((day) =>
     day.meals.forEach((meal) => {
-      // A reheated portion was already shopped for on the day it was cooked.
-      if (!meal.isLeftover) meals.push({ recipe: meal.recipe, servings: meal.servings });
+      // A reheated portion or eaten out meal was not shopped for.
+      if (!meal.isLeftover && !meal.isEatenOut) meals.push({ recipe: meal.recipe, servings: meal.servings });
     })
   );
   return meals;
@@ -432,8 +433,8 @@ function collectPlanMeals(plan: MealPlan): { recipe: Recipe; servings: number }[
   const meals: { recipe: Recipe; servings: number }[] = [];
   plan.days.forEach((day) => {
     day.meals.forEach((meal) => {
-      // A reheated portion was already shopped for on the day it was cooked.
-      if (!meal.isLeftover) meals.push({ recipe: meal.recipe, servings: meal.servings });
+      // A reheated portion or eaten out meal was not shopped for.
+      if (!meal.isLeftover && !meal.isEatenOut) meals.push({ recipe: meal.recipe, servings: meal.servings });
     });
   });
   return meals;
@@ -3214,6 +3215,85 @@ export const useAppStore = create<AppState>((set, get) => ({
       totalCartCostRon: aggregated.totalCartCostRon,
       extraProducts: getActiveExtraProducts(preferences),
       days: updatedDays,
+    };
+
+    void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);
+
+    set(() => ({
+      currentPlan: updatedPlan,
+      groceryItems: aggregated.items,
+    }));
+  },
+
+  toggleEatOut: (dayOfWeek: DayOfWeek, slot?: MealSlot) => {
+    const { currentPlan, preferences } = get();
+    if (!currentPlan) return;
+
+    const dayIndex = currentPlan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
+    if (dayIndex === -1) return;
+
+    const targetDay = currentPlan.days[dayIndex];
+    const targetSlot: MealSlot =
+      slot || (targetDay.meals && targetDay.meals.length > 0 ? targetDay.meals[0].slot : 'dinner');
+
+    let wasUpdated = false;
+    const updatedDays = currentPlan.days.map((d) => {
+      if (d.dayOfWeek !== dayOfWeek) return d;
+      const nextMeals = (d.meals || []).map((m) => {
+        if (m.slot !== targetSlot) return m;
+        wasUpdated = true;
+        const newEatenOut = !m.isEatenOut;
+        const cost = newEatenOut
+          ? 0
+          : m.isLeftover
+            ? 0
+            : calculateRecipePortionCost(
+                m.recipe,
+                m.servings,
+                preferences.supermarketId,
+                preferences.excludePantryStaples
+              );
+        return {
+          ...m,
+          isEatenOut: newEatenOut,
+          estimatedCostRon: cost,
+        };
+      });
+
+      const dayTotalCost = nextMeals.reduce((sum, meal) => sum + meal.estimatedCostRon, 0);
+
+      return {
+        ...d,
+        meals: nextMeals,
+        estimatedCostRon: Math.round(dayTotalCost * 100) / 100,
+      };
+    });
+
+    if (!wasUpdated) return;
+
+    const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
+    updatedDays.forEach((d) => {
+      d.meals.forEach((m) => {
+        if (!m.isLeftover && !m.isEatenOut) {
+          allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
+        }
+      });
+    });
+
+    const aggregated = aggregateGroceryList(
+      allMealsToAggregate,
+      preferences.supermarketId,
+      preferences.excludePantryStaples,
+      getActiveExtraProductIds(preferences),
+      preferences.pantryInventory || [],
+      preferences.pantryStock || {}
+    );
+
+    const updatedPlan: MealPlan = {
+      ...currentPlan,
+      days: updatedDays,
+      totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
+      totalCartCostRon: aggregated.totalCartCostRon,
     };
 
     void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);

@@ -23,6 +23,7 @@ import { getRecipeAllergens } from '../utils/allergenFilter';
 import { ALLERGEN_CATALOG } from '../data/allergens';
 import { getEligibleRecipes } from '../engine/plannerEngine';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
+import { formatIngredientWithHousehold } from '../utils/householdUnits';
 
 function getStoreBadgeBg(store?: SupermarketId): string {
   switch (store) {
@@ -140,8 +141,18 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     replaceMealWithRecipe,
     toggleFavouriteRecipe,
     toggleDislikedRecipe,
+    toggleEatOut,
     showNotice,
   } = useAppStore();
+
+  const targetMeal = useMemo(() => {
+    if (!currentPlan || !targetDay) return null;
+    const dayPlan = currentPlan.days.find((d) => d.dayOfWeek === targetDay);
+    if (!dayPlan) return null;
+    return dayPlan.meals.find((m) => (targetSlot ? m.slot === targetSlot : m.recipe.id === recipe?.id));
+  }, [currentPlan, targetDay, targetSlot, recipe]);
+
+  const isEatenOut = Boolean(targetMeal?.isEatenOut);
 
   const suggestedReplacement = useMemo(() => {
     if (!recipe) return null;
@@ -266,6 +277,45 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           >
             <Text style={[styles.swapHeaderText, { color: theme.text }]}>🔄 Înlocuiește</Text>
           </TouchableOpacity>
+
+          {targetDay && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănânc în oraș'}
+              onPress={() => {
+                const effectiveSlot = targetSlot || targetMeal?.slot || 'dinner';
+                toggleEatOut(targetDay, effectiveSlot);
+                showNotice(
+                  isEatenOut ? 'Gătești acasă' : 'Mâncat în oraș',
+                  isEatenOut
+                    ? `Am reintrodus masa în planul de gătit și în lista de cumpărături.`
+                    : `Am marcat masa ca mâncată în oraș. Ingredientele au fost scoase din lista de cumpărături.`,
+                  'info'
+                );
+              }}
+              style={[
+                styles.swapHeaderBtn,
+                {
+                  backgroundColor: isEatenOut
+                    ? (isDark ? 'rgba(234, 179, 8, 0.2)' : '#fef9c3')
+                    : theme.btnBg,
+                  borderColor: isEatenOut
+                    ? (isDark ? '#ca8a04' : '#eab308')
+                    : theme.border,
+                },
+              ]}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.swapHeaderText,
+                  { color: isEatenOut ? (isDark ? '#facc15' : '#854d0e') : theme.text },
+                ]}
+              >
+                {isEatenOut ? '↺ Acasă' : '🍽️ În oraș'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <ScrollView
@@ -448,7 +498,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
                         <View style={[styles.amountBadge, { backgroundColor: theme.inputBg }]}>
                           <Text style={[styles.ingredientAmount, { color: theme.primary }]}>
-                            {scaledAmount} {ing.unit}
+                            {formatIngredientWithHousehold(ing.ingredientId, scaledAmount, ing.unit)}
                           </Text>
                         </View>
                       </TouchableOpacity>
@@ -803,6 +853,45 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 >
                   <Text style={[styles.bigSwapBtnText, { color: theme.primary }]}>🔄 Schimbă cu alt preparat</Text>
                 </TouchableOpacity>
+
+                {targetDay && (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănâncă în oraș'}
+                    onPress={() => {
+                      const effectiveSlot = targetSlot || targetMeal?.slot || 'dinner';
+                      toggleEatOut(targetDay, effectiveSlot);
+                      showNotice(
+                        isEatenOut ? 'Gătești acasă' : 'Mâncat în oraș',
+                        isEatenOut
+                          ? `Am reintrodus masa în planul de gătit și în lista de cumpărături.`
+                          : `Am marcat masa ca mâncată în oraș. Ingredientele au fost scoase din lista de cumpărături.`,
+                        'info'
+                      );
+                    }}
+                    style={[
+                      styles.bigSwapBtn,
+                      {
+                        backgroundColor: isEatenOut
+                          ? (isDark ? 'rgba(234, 179, 8, 0.2)' : '#fef9c3')
+                          : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#f3f4f6'),
+                        borderColor: isEatenOut
+                          ? (isDark ? '#ca8a04' : '#eab308')
+                          : theme.border,
+                      },
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.bigSwapBtnText,
+                        { color: isEatenOut ? (isDark ? '#facc15' : '#854d0e') : theme.text },
+                      ]}
+                    >
+                      {isEatenOut ? '↺ Gătește acasă această masă' : '🍽️ Mâncat în oraș la această masă'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
                 <TouchableOpacity
                   accessibilityRole="button"

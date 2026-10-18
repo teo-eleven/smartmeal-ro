@@ -120,6 +120,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     saveCurrentPlan,
     restoreSavedPlan,
     deleteSavedPlan,
+    toggleEatOut,
   } = useAppStore();
 
   const [filtersModalVisible, setFiltersModalVisible] = useState(false);
@@ -755,6 +756,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                         onChangeServings={(servings) =>
                           setMealServings(day.dayOfWeek, meal.id, servings)
                         }
+                        onToggleEatOut={() => toggleEatOut(day.dayOfWeek, meal.slot)}
                         isDark={isDark}
                       />
                     </AnimatedMealSlot>

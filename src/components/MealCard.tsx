@@ -20,6 +20,7 @@ interface MealCardProps {
   onPressRecipe: () => void;
   onSwapMeal: () => void;
   onRemoveMeal?: () => void;
+  onToggleEatOut?: () => void;
   /** Cook a double portion here and reheat it the next day. Absent when there is no next day. */
   onCookDouble?: () => void;
   /** Turn a reheated day back into a meal of its own. */
@@ -143,6 +144,7 @@ export const MealCard: React.FC<MealCardProps> = ({
   onCookDouble,
   onUndoCookDouble,
   onChangeServings,
+  onToggleEatOut,
   isDark,
 }) => {
   const recipe = meal ? meal.recipe : day.recipe;
@@ -176,6 +178,77 @@ export const MealCard: React.FC<MealCardProps> = ({
   };
 
   const theme = getAppTheme(isDark);
+
+  if (meal?.isEatenOut) {
+    return (
+      <View
+        {...glass('card')}
+        style={[
+          styles.card,
+          styles.eatenOutCard,
+          {
+            backgroundColor: isDark ? 'rgba(24, 24, 27, 0.75)' : 'rgba(249, 250, 251, 0.9)',
+            borderColor: isDark ? 'rgba(234, 179, 8, 0.35)' : '#fef08a',
+            borderStyle: 'dashed',
+          },
+        ]}
+      >
+        <View style={styles.eatenOutHeader}>
+          <View style={[styles.floatingBadge, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }]}>
+            <Text style={[styles.dayBadgeText, { color: theme.textMuted }]}>
+              {DAY_LABELS[day.dayOfWeek].toUpperCase()} • {effectiveSlotLabel ? effectiveSlotLabel.toUpperCase() : 'MASĂ'}
+            </Text>
+          </View>
+          <View style={[styles.pillBadge, { backgroundColor: isDark ? 'rgba(234, 179, 8, 0.2)' : '#fef9c3', borderColor: isDark ? '#ca8a04' : '#eab308' }]}>
+            <Text style={[styles.pillText, { color: isDark ? '#facc15' : '#854d0e', fontWeight: '800' }]}>
+              🍽️ MÂNCAT ÎN ORAȘ
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.eatenOutBody}>
+          <View style={[styles.eatenOutIconCircle, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)' }]}>
+            <Text style={styles.eatenOutIconText}>🍽️</Text>
+          </View>
+          <Text style={[styles.eatenOutTitle, { color: theme.text }]}>Mâncat în oraș</Text>
+          <Text style={[styles.eatenOutSubtitle, { color: theme.textMuted }]}>
+            Nu gătești acasă pentru această masă. Ingredientele au fost scoase automat din lista de cumpărături.
+          </Text>
+          <Text style={[styles.eatenOutOriginalRef, { color: theme.textMuted }]}>
+            Rețetă inițială: <Text style={{ fontWeight: '700', color: theme.text }}>{recipe.title}</Text>
+          </Text>
+        </View>
+
+        <View style={styles.eatenOutActionsRow}>
+          {onToggleEatOut && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Revino la gătit acasă"
+              onPress={onToggleEatOut}
+              style={[styles.revertEatOutBtn, { backgroundColor: theme.primary }]}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.revertEatOutBtnText, { color: theme.primaryText }]}>
+                ↺ Gătește acasă
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Vezi detaliile rețetei inițiale"
+            onPress={onPressRecipe}
+            style={[styles.viewOriginalBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.viewOriginalBtnText, { color: theme.text }]}>
+              Detalii rețetă →
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   const totalCookingTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
 
@@ -425,6 +498,18 @@ export const MealCard: React.FC<MealCardProps> = ({
                 </TouchableOpacity>
               )}
 
+              {onToggleEatOut && !meal?.isLeftover && (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Mănânc în oraș la această masă"
+                  onPress={onToggleEatOut}
+                  style={[styles.eatOutBtn, { backgroundColor: theme.accentBg, borderColor: theme.border }]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.swapBtnText, { color: theme.text }]}>🍽️ În oraș</Text>
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity
                 accessibilityRole="button"
                 onPress={onPressRecipe}
@@ -668,5 +753,96 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
+  },
+  eatOutBtn: {
+    flex: 1,
+    minHeight: 40,
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eatenOutCard: {
+    borderWidth: 1.5,
+    borderRadius: 20,
+    padding: 16,
+    minHeight: 280,
+    justifyContent: 'space-between',
+  },
+  eatenOutHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 16,
+  },
+  eatenOutBody: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    width: '100%',
+  },
+  eatenOutIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  eatenOutIconText: {
+    fontSize: 32,
+  },
+  eatenOutTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  eatenOutSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  eatenOutOriginalRef: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  eatenOutActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%',
+    marginTop: 14,
+  },
+  revertEatOutBtn: {
+    flex: 1.2,
+    minHeight: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+  },
+  revertEatOutBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  viewOriginalBtn: {
+    flex: 1.4,
+    minHeight: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+  },
+  viewOriginalBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 });
