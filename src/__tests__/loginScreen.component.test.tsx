@@ -350,7 +350,7 @@ describe('contul din configurator', () => {
     useAppStore.getState().resetOnboarding();
     useAppStore.setState({ authStatus: 'guest', isHydrated: true, activeNotice: null });
     render(<App />);
-    expect(screen.getByText(/Pasul 1 din 9/)).toBeTruthy();
+    expect(screen.getByText(/Pasul 1 din 8/)).toBeTruthy();
 
     fireEvent.press(screen.getByLabelText('Contul meu'));
 

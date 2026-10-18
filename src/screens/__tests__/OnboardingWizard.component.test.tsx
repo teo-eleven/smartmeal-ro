@@ -13,9 +13,9 @@ function reset() {
 describe('OnboardingWizard', () => {
   beforeEach(reset);
 
-  test('opens on the supermarket step', () => {
+  test('opens on the diet step', () => {
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
-    expect(screen.getByText(/Alege magazinul tău/i)).toBeTruthy();
+    expect(screen.getByText(/Ai preferințe dietetice\?/i)).toBeTruthy();
   });
 
   test('offers a quick start that skips the questionnaire', () => {
@@ -29,64 +29,63 @@ describe('OnboardingWizard', () => {
     expect(useAppStore.getState().currentPlan).not.toBeNull();
   });
 
-  test('shows progress through the nine steps', () => {
+  test('shows progress through the eight steps', () => {
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
-    expect(screen.getByText(/Pasul 1 din 9/i)).toBeTruthy();
+    expect(screen.getByText(/Pasul 1 din 8/i)).toBeTruthy();
   });
 
-  test('advancing reaches the people step', () => {
+  test('advancing reaches the cravings step', () => {
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
     fireEvent.press(screen.getByText(/Continuă|Următorul|Mai departe/i));
     expect(useAppStore.getState().currentStep).toBe(2);
   });
 
   test('the diet step offers the allergen selector', () => {
-    useAppStore.getState().goToStep(6);
+    useAppStore.getState().goToStep(1);
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
     expect(screen.getByText(/Ai alergii alimentare/i)).toBeTruthy();
   });
 
   test('the diet step reports how many recipes remain', () => {
-    useAppStore.getState().goToStep(6);
+    useAppStore.getState().goToStep(1);
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
     expect(screen.getByText(/rețete disponibile/i)).toBeTruthy();
   });
 
   test('choosing an allergy narrows the catalog', () => {
-    useAppStore.getState().goToStep(6);
+    useAppStore.getState().goToStep(1);
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
     fireEvent.press(screen.getByLabelText(/Evită Lactate/i));
     expect(useAppStore.getState().preferences.avoidedAllergens).toContain('lactate');
   });
 
   test('the appliance step also reports availability', () => {
-    useAppStore.getState().goToStep(7);
+    useAppStore.getState().goToStep(5);
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
     expect(screen.getByText(/Ce aparate ai în bucătărie/i)).toBeTruthy();
     expect(screen.getByText(/rețete disponibile/i)).toBeTruthy();
   });
 
   test('renders each step without crashing', () => {
-    for (let step = 1; step <= 9; step += 1) {
+    for (let step = 1; step <= 8; step += 1) {
       useAppStore.getState().goToStep(step);
       const view = render(<OnboardingWizard isDark={step % 2 === 0} onPlanGenerated={jest.fn()} />);
       expect(view.toJSON()).toBeTruthy();
       view.unmount();
     }
   });
+
   /**
-   * Nine screens of questions are worth nothing if the last button does not produce a plan.
-   * This walks the whole questionnaire the way a first-time user does, answering nothing,
-   * and asserts that the defaults alone are enough to finish.
+   * Eight screens of questions finish with plan generation.
    */
-  test('parcurgerea celor nouă pași se termină cu un meniu', () => {
+  test('parcurgerea celor opt pași se termină cu un meniu', () => {
     const onPlanGenerated = jest.fn();
     render(<OnboardingWizard isDark={false} onPlanGenerated={onPlanGenerated} />);
 
-    for (let step = 1; step < 9; step += 1) {
+    for (let step = 1; step < 8; step += 1) {
       fireEvent.press(screen.getByText('Continuă →'));
     }
-    expect(useAppStore.getState().currentStep).toBe(9);
+    expect(useAppStore.getState().currentStep).toBe(8);
     fireEvent.press(screen.getByText(/Generează Meniul Săptămânal/));
 
     expect(useAppStore.getState().currentPlan).not.toBeNull();
@@ -94,6 +93,7 @@ describe('OnboardingWizard', () => {
   });
 
   test('alegerea unui magazin se reține', () => {
+    useAppStore.getState().goToStep(6);
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
 
     fireEvent.press(screen.getByText('Kaufland'));
@@ -119,9 +119,7 @@ describe('OnboardingWizard', () => {
 });
 
 /**
- * On a wide screen the header becomes a row of step nodes that double as navigation. Letting
- * someone jump to step 8 from step 1 would skip the answers the later steps are priced
- * against, so a step never visited has to be inert.
+ * On a wide screen the header becomes a row of step nodes that double as navigation.
  */
 describe('OnboardingWizard pe ecran lat', () => {
   beforeEach(() => {
@@ -146,21 +144,19 @@ describe('OnboardingWizard pe ecran lat', () => {
     fireEvent.press(screen.getByText('Continuă →'));
     fireEvent.press(screen.getByText('Continuă →'));
 
-    fireEvent.press(screen.getByText('Magazin'));
+    fireEvent.press(screen.getByText('Dietă'));
 
     expect(useAppStore.getState().currentStep).toBe(1);
   });
 });
 
 /**
- * The last step sells things the planner does not cook: snacks, soft drinks and, behind a
- * gate, alcohol. The gate is the part worth testing — an 18+ section that renders before
- * anyone asks for it is a store rejection, not a styling detail.
+ * Step 7 sells snacks, soft drinks and, behind a gate, alcohol.
  */
 describe('OnboardingWizard, pasul de ronțăieli', () => {
   beforeEach(() => {
     reset();
-    useAppStore.getState().goToStep(8);
+    useAppStore.getState().goToStep(7);
   });
 
   test('alegerea unui snac se reține', () => {
@@ -204,10 +200,10 @@ describe('OnboardingWizard, pasul de ronțăieli', () => {
   });
 });
 
-describe('OnboardingWizard, pasul de buget (pasul 9)', () => {
+describe('OnboardingWizard, pasul de buget (pasul 8)', () => {
   beforeEach(() => {
     reset();
-    useAppStore.getState().goToStep(9);
+    useAppStore.getState().goToStep(8);
   });
 
   test('afișează sliderul de buget și permite setarea bugetului', () => {
@@ -217,10 +213,10 @@ describe('OnboardingWizard, pasul de buget (pasul 9)', () => {
   });
 });
 
-describe('OnboardingWizard, pasul de pofte (pasul 5 cu FoodMoodSwiper)', () => {
+describe('OnboardingWizard, pasul de pofte (pasul 2 cu FoodMoodSwiper)', () => {
   beforeEach(() => {
     reset();
-    useAppStore.getState().goToStep(5);
+    useAppStore.getState().goToStep(2);
   });
 
   test('afișează swiperul interactiv de pofte și permite like/selectare', () => {
@@ -235,10 +231,10 @@ describe('OnboardingWizard, pasul de pofte (pasul 5 cu FoodMoodSwiper)', () => {
   });
 });
 
-describe('OnboardingWizard, pasul de dietă (pasul 6)', () => {
+describe('OnboardingWizard, pasul de dietă (pasul 1)', () => {
   beforeEach(() => {
     reset();
-    useAppStore.getState().goToStep(6);
+    useAppStore.getState().goToStep(1);
   });
 
   test('afișează stilurile alimentare principale și permite selectarea Vegetarian fără blocaj', () => {

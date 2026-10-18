@@ -30,7 +30,7 @@ describe('blocarea fără abonament', () => {
     useAppStore.getState().resetOnboarding();
     render(<App />);
 
-    expect(screen.getByText(/Pasul 1 din 9/)).toBeTruthy();
+    expect(screen.getByText(/Pasul 1 din 8/)).toBeTruthy();
   });
 
   test('după configurator, fără abonament, apare ecranul de plată, nu planul', () => {
@@ -72,6 +72,6 @@ describe('blocarea fără abonament', () => {
       fireEvent.press(screen.getByLabelText('Înapoi la întrebări'));
     });
 
-    expect(screen.getByText(/Pasul \d din 9/)).toBeTruthy();
+    expect(screen.getByText(/Pasul \d din 8/)).toBeTruthy();
   });
 });

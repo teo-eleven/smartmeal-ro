@@ -31,7 +31,7 @@ describe('a full journey through the real app', () => {
 
   test('the app mounts on the onboarding screen', () => {
     render(<App />);
-    expect(screen.getByText(/Alege magazinul tău/i)).toBeTruthy();
+    expect(screen.getByText(/Ai preferințe dietetice\?/i)).toBeTruthy();
   });
 
   test('quick start takes the user from a cold app to a usable plan', () => {
@@ -143,14 +143,14 @@ describe('walking the onboarding end to end, step by step', () => {
     useAppStore.setState({ authStatus: 'guest', isHydrated: true });
   });
 
-  test('every one of the nine steps renders and can be reached', () => {
+  test('every one of the eight steps renders and can be reached', () => {
     render(<App />);
 
-    for (let step = 1; step <= 9; step += 1) {
+    for (let step = 1; step <= 8; step += 1) {
       act(() => {
         useAppStore.getState().goToStep(step);
       });
-      expect(screen.getByText(new RegExp(`Pasul ${step} din 9`, 'i'))).toBeTruthy();
+      expect(screen.getByText(new RegExp(`Pasul ${step} din 8`, 'i'))).toBeTruthy();
     }
   });
 
@@ -161,7 +161,7 @@ describe('walking the onboarding end to end, step by step', () => {
       useAppStore.getState().setSupermarket('penny');
       useAppStore.getState().setPeopleCount(4);
       useAppStore.getState().setCookingDays(['monday', 'tuesday', 'wednesday']);
-      useAppStore.getState().goToStep(9);
+      useAppStore.getState().goToStep(8);
     });
 
     act(() => {
@@ -178,7 +178,7 @@ describe('walking the onboarding end to end, step by step', () => {
     render(<App />);
 
     act(() => {
-      useAppStore.getState().goToStep(6);
+      useAppStore.getState().goToStep(1);
     });
     fireEvent.press(screen.getByLabelText(/Evită Lactate/i));
 

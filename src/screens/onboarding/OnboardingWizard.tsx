@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { Animated, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppStore } from '../../store/useAppStore';
 import { SUPERMARKET_LIST } from '../../data/supermarkets';
 import { DayOfWeek, DietType, FoodTier, MealSlot, SupermarketId } from '../../types';
@@ -26,8 +26,8 @@ interface OnboardingWizardProps {
   isDark: boolean;
   onPlanGenerated: () => void;
   /**
-   * Opens the account window. Nine steps is long to wait before being able to sign out or
-   * check which account is signed in.
+   * Opens the account window. Eight steps allows users to sign out or
+   * check which account is signed in at any point.
    */
   onOpenAccount?: () => void;
 }
@@ -40,15 +40,14 @@ interface StepMeta {
 }
 
 const ONBOARDING_STEPS_META: StepMeta[] = [
-  { step: 1, title: 'Magazin', icon: '🏪', shortDesc: 'Alegere retail' },
-  { step: 2, title: 'Persoane', icon: '👥', shortDesc: 'Porții' },
-  { step: 3, title: 'Zile', icon: '📅', shortDesc: 'Zile de gătit' },
-  { step: 4, title: 'Mese & Nivel', icon: '🍽️', shortDesc: 'Mese & Calitate' },
-  { step: 5, title: 'Pofte', icon: '⚡', shortDesc: 'Stiluri & Vibe' },
-  { step: 6, title: 'Dietă', icon: '🥗', shortDesc: 'Restricții' },
-  { step: 7, title: 'Aparate', icon: '🍳', shortDesc: 'Dotare bucătărie' },
-  { step: 8, title: 'Ronțăieli', icon: '🍿', shortDesc: 'Snacks & Băuturi' },
-  { step: 9, title: 'Buget', icon: '💰', shortDesc: 'Optimizare cost' },
+  { step: 1, title: 'Dietă', icon: '🥗', shortDesc: 'Restricții & Sănătate' },
+  { step: 2, title: 'Pofte', icon: '⚡', shortDesc: 'Stiluri & Vibe' },
+  { step: 3, title: 'Persoane', icon: '👥', shortDesc: 'Porții' },
+  { step: 4, title: 'Zile & Mese', icon: '🍽️', shortDesc: 'Program & Calitate' },
+  { step: 5, title: 'Aparate', icon: '🍳', shortDesc: 'Dotare bucătărie' },
+  { step: 6, title: 'Magazin', icon: '🏪', shortDesc: 'Alegere retail' },
+  { step: 7, title: 'Ronțăieli', icon: '🍿', shortDesc: 'Snacks & Băuturi' },
+  { step: 8, title: 'Buget', icon: '💰', shortDesc: 'Optimizare cost' },
 ];
 
 const DAY_LABELS: Record<DayOfWeek, string> = {
@@ -180,6 +179,27 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
 
   const theme = getAppTheme(isDark);
 
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    fadeAnim.setValue(0);
+    slideAnim.setValue(14);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 65,
+        friction: 11,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+    ]).start();
+  }, [currentStep]);
+
   const extrasCost = useMemo(() => {
     const snackIds = preferences.selectedSnackIds || [];
     const drinkIds = preferences.selectedDrinkIds || [];
@@ -307,16 +327,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                           {
                             backgroundColor:
                               isCompleted || isCurrent
-                                ? isDark
-                                  ? '#ffffff'
-                                  : '#000000'
+                                ? theme.primary
                                 : theme.border,
                           },
                         ]}
                       >
                         {(isCompleted || isCurrent) && (
                           <LinearGradient
-                            colors={isDark ? ['#ffffff', '#8e8e93'] : ['#000000', '#636366']}
+                            colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                             style={StyleSheet.absoluteFill}
@@ -339,8 +357,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         isCurrent && [
                           styles.stepNodeActive,
                           {
-                            borderColor: isDark ? '#ffffff' : '#000000',
-                            backgroundColor: isDark ? '#ffffff' : '#000000',
+                            borderColor: theme.primary,
+                            backgroundColor: theme.primary,
+                            shadowColor: '#E6A756',
                           },
                         ],
                         isCompleted && [
@@ -356,7 +375,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                       <Text
                         style={[
                           styles.stepNodeIcon,
-                          isCurrent && { color: isDark ? '#000000' : '#ffffff' },
+                          isCurrent && { color: theme.primaryText },
                           isCompleted && { color: theme.text, fontWeight: '900' },
                         ]}
                       >
@@ -368,9 +387,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                           styles.stepNodeLabel,
                           {
                             color: isCurrent
-                              ? isDark
-                                ? '#000000'
-                                : '#ffffff'
+                              ? theme.primaryText
                               : isCompleted
                                 ? theme.text
                                 : theme.textMuted,
@@ -429,7 +446,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
           {/* Progress Bar */}
           <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
             <LinearGradient
-              colors={isDark ? ['#ffffff', '#8e8e93'] : ['#000000', '#636366']}
+              colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.progressBar, { width: `${progressPercent}%` }]}
@@ -447,9 +464,28 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
             { backgroundColor: theme.card, borderColor: theme.border, maxWidth: containerMaxWidth },
           ]}
         >
-          {/* STEP 1: SUPERMARKET */}
-          {currentStep === 1 && (
-            <View style={styles.stepSection}>
+          <Animated.View
+            style={{
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+              width: '100%',
+            }}
+          >
+          {/* STEP 1: DIETARY RESTRICTIONS & HEALTH */}
+          {currentStep === 1 &&
+            (() => {
+              const selectedDiets: DietType[] =
+                preferences.dietTypes && preferences.dietTypes.length > 0
+                  ? preferences.dietTypes
+                  : [preferences.dietType];
+              const activeBaseDiet: DietType =
+                selectedDiets.find(isBaseDiet) || preferences.dietType || 'omnivore';
+
+              const baseDietOptions = DIET_OPTIONS_CATALOG.filter((d) => isBaseDiet(d.id));
+              const modifierDietOptions = DIET_OPTIONS_CATALOG.filter((d) => isModifierDiet(d.id));
+
+              return (
+                <View style={styles.stepSection}>
               <TouchableOpacity
                 accessibilityRole="button"
                 accessibilityLabel="Pornire rapidă: generează un plan cu setări implicite"
@@ -479,477 +515,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 <Text style={[styles.quickStartArrow, { color: theme.text }]}>→</Text>
               </TouchableOpacity>
 
-              <Text style={[styles.questionTitle, { color: theme.text }]}>Alege magazinul tău</Text>
-              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Calculăm meniul și coșul săptămânal pe prețurile estimate ale magazinului ales.
-              </Text>
-
-              <View
-                style={[styles.supermarketGrid, isLargeScreen && styles.supermarketGridDesktop]}
-              >
-                {SUPERMARKET_LIST.map((market) => {
-                  const isSelected = preferences.supermarketId === market.id;
-                  return (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      key={market.id}
-                      onPress={() => setSupermarket(market.id as SupermarketId)}
-                      activeOpacity={0.7}
-                      style={[
-                        styles.supermarketCard,
-                        isLargeScreen && styles.supermarketCardDesktop,
-                        {
-                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
-                          borderColor: isSelected ? theme.primary : theme.border,
-                        },
-                      ]}
-                    >
-                      <View style={[styles.marketBadge, { backgroundColor: market.brandColor }]}>
-                        <Text style={styles.marketBadgeText}>{market.name[0]}</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.supermarketName, { color: theme.text }]}>
-                          {market.name}
-                        </Text>
-                        <Text style={[styles.supermarketTagline, { color: theme.textMuted }]}>
-                          {market.tagline}
-                        </Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.supermarketRadio,
-                          {
-                            borderColor: isSelected ? theme.primary : theme.border,
-                            backgroundColor: isSelected ? theme.primary : 'transparent',
-                          },
-                        ]}
-                      >
-                        {isSelected && (
-                          <Text
-                            style={[styles.supermarketRadioCheck, { color: theme.primaryText }]}
-                          >
-                            ✓
-                          </Text>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          {/* STEP 2: PEOPLE COUNT */}
-          {currentStep === 2 && (
-            <View style={styles.stepSection}>
-              <Text style={[styles.questionTitle, { color: theme.text }]}>
-                Pentru câte persoane gătești?
-              </Text>
-              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Vom scala cantitățile ingredientelor și porțiile fiecărei cine.
-              </Text>
-
-              <View style={styles.peopleCounterContainer}>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={() => setPeopleCount(preferences.peopleCount - 1)}
-                  style={[
-                    styles.circleBtn,
-                    { borderColor: theme.border, backgroundColor: theme.accentBg },
-                  ]}
-                >
-                  <Text style={[styles.circleBtnText, { color: theme.text }]}>−</Text>
-                </TouchableOpacity>
-
-                <View style={styles.peopleValueBox}>
-                  <Text style={[styles.peopleCountText, { color: theme.text }]}>
-                    {preferences.peopleCount}
-                  </Text>
-                  <Text style={[styles.peopleLabel, { color: theme.textMuted }]}>
-                    {preferences.peopleCount === 1 ? 'persoană' : 'persoane'}
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={() => setPeopleCount(preferences.peopleCount + 1)}
-                  style={[
-                    styles.circleBtn,
-                    { borderColor: theme.border, backgroundColor: theme.accentBg },
-                  ]}
-                >
-                  <Text style={[styles.circleBtnText, { color: theme.text }]}>+</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Quick Select Presets Row */}
-              <View style={styles.peoplePresetsRow}>
-                {[1, 2, 3, 4, 5, 6].map((num) => {
-                  const isActive = preferences.peopleCount === num;
-                  return (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      key={num}
-                      onPress={() => setPeopleCount(num)}
-                      style={[
-                        styles.peoplePresetPill,
-                        {
-                          backgroundColor: isActive
-                            ? isDark
-                              ? '#ffffff'
-                              : '#000000'
-                            : theme.accentBg,
-                          borderColor: isActive ? (isDark ? '#ffffff' : '#000000') : theme.border,
-                        },
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={[
-                          styles.peoplePresetText,
-                          {
-                            color: isActive ? (isDark ? '#000000' : '#ffffff') : theme.text,
-                            fontWeight: isActive ? '800' : '600',
-                          },
-                        ]}
-                      >
-                        {num} {num === 1 ? 'pers.' : 'pers.'}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          {/* STEP 3: COOKING DAYS */}
-          {currentStep === 3 && (
-            <View style={styles.stepSection}>
-              <Text style={[styles.questionTitle, { color: theme.text }]}>
-                În ce zile vei găti?
-              </Text>
-              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Alege zilele din săptămână pentru care dorești rețete planificate.
-              </Text>
-
-              {/* Quick Preset Buttons Row */}
-              <View style={[styles.cookingDaysPresetRow, isLargeScreen && styles.daysGridDesktop]}>
-                {COOKING_DAY_PRESETS.map((preset) => {
-                  let isSelected = false;
-                  if (preset.id === 'all_week') {
-                    isSelected = preferences.cookingDays.length === 7;
-                  } else if (preset.id === 'workdays') {
-                    isSelected =
-                      preferences.cookingDays.length === 5 &&
-                      preferences.cookingDays.includes('monday') &&
-                      !preferences.cookingDays.includes('saturday');
-                  } else if (preset.id === 'weekend') {
-                    isSelected =
-                      preferences.cookingDays.length === 2 &&
-                      preferences.cookingDays.includes('saturday') &&
-                      preferences.cookingDays.includes('sunday');
-                  }
-
-                  return (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      key={preset.id}
-                      onPress={() => setCookingDays(preset.days)}
-                      activeOpacity={0.7}
-                      style={[
-                        styles.dayRow,
-                        isLargeScreen && styles.presetRowDesktop,
-                        {
-                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
-                          borderColor: isSelected ? theme.primary : theme.border,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.dayName,
-                          { color: theme.text, fontWeight: isSelected ? '700' : '500' },
-                        ]}
-                      >
-                        {preset.label}
-                      </Text>
-                      <View
-                        style={[
-                          styles.dayCheckbox,
-                          {
-                            backgroundColor: isSelected ? theme.primary : 'transparent',
-                            borderColor: isSelected ? theme.primary : theme.border,
-                          },
-                        ]}
-                      >
-                        {isSelected && (
-                          <Text style={[styles.dayCheckboxText, { color: theme.primaryText }]}>
-                            ✓
-                          </Text>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <View style={styles.daysCounterBadge}>
-                <Text style={[styles.daysCounterText, { color: theme.text }]}>
-                  {preferences.cookingDays.length}{' '}
-                  {preferences.cookingDays.length === 1 ? 'zi selectată' : 'zile selectate'}
-                </Text>
-              </View>
-
-              <View style={[styles.daysList, isLargeScreen && styles.daysGridDesktop]}>
-                {(
-                  [
-                    'monday',
-                    'tuesday',
-                    'wednesday',
-                    'thursday',
-                    'friday',
-                    'saturday',
-                    'sunday',
-                  ] as DayOfWeek[]
-                ).map((day) => {
-                  const isSelected = preferences.cookingDays.includes(day);
-                  return (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      key={day}
-                      onPress={() => toggleCookingDay(day)}
-                      style={[
-                        styles.dayRow,
-                        isLargeScreen && styles.dayRowDesktop,
-                        {
-                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
-                          borderColor: isSelected ? theme.primary : theme.border,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.dayName,
-                          { color: theme.text, fontWeight: isSelected ? '700' : '500' },
-                        ]}
-                      >
-                        {DAY_LABELS[day]}
-                      </Text>
-                      <View
-                        style={[
-                          styles.dayCheckbox,
-                          {
-                            backgroundColor: isSelected ? theme.primary : 'transparent',
-                            borderColor: isSelected ? theme.primary : theme.border,
-                          },
-                        ]}
-                      >
-                        {isSelected && (
-                          <Text style={[styles.dayCheckboxText, { color: theme.primaryText }]}>
-                            ✓
-                          </Text>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          {/* STEP 4: MEALS PER DAY & FOOD TIER */}
-          {currentStep === 4 && (
-            <View style={styles.stepSection}>
-              <Text style={[styles.questionTitle, { color: theme.text }]}>
-                Ce mese dorești să planifici în fiecare zi?
-              </Text>
-              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Selectează una, două sau toate cele trei mese principale (Mic Dejun, Prânz, Cină).
-              </Text>
-
-              <View style={[styles.mealCountGrid, isLargeScreen && styles.mealCountGridDesktop]}>
-                {MEAL_MOMENT_OPTIONS.map((option) => {
-                  const isSelected = preferences.mealSlots.includes(option.slot);
-                  return (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      key={option.slot}
-                      onPress={() => {
-                        if (isSelected) {
-                          const remaining = preferences.mealSlots.filter((s) => s !== option.slot);
-                          if (
-                            remaining.filter((s) => ['breakfast', 'lunch', 'dinner'].includes(s))
-                              .length === 0
-                          ) {
-                            showNotice(
-                              'Cel puțin o masă pe zi',
-                              'Trebuie să selectezi cel puțin o masă principală pe zi (Mic Dejun, Prânz sau Cină) pentru a genera meniul.',
-                              'info'
-                            );
-                            return;
-                          }
-                          setMealSlots(remaining);
-                        } else {
-                          const updated = [...preferences.mealSlots, option.slot];
-                          setMealSlots(updated);
-                        }
-                      }}
-                      activeOpacity={0.7}
-                      style={[
-                        styles.mealCountCard,
-                        isLargeScreen && styles.mealCountCardDesktop,
-                        {
-                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
-                          borderColor: isSelected ? theme.primary : theme.border,
-                        },
-                      ]}
-                    >
-                      <Text style={styles.mealCountIcon}>{option.icon}</Text>
-                      <View style={styles.mealCountInfo}>
-                        <Text
-                          style={[
-                            styles.mealCountTitle,
-                            {
-                              color: isSelected ? theme.primary : theme.text,
-                              fontWeight: isSelected ? '800' : '700',
-                            },
-                          ]}
-                        >
-                          {option.title}
-                        </Text>
-                        <Text style={[styles.mealCountSubtitle, { color: theme.textMuted }]}>
-                          {option.subtitle}
-                        </Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.dayCheckbox,
-                          {
-                            backgroundColor: isSelected ? theme.primary : 'transparent',
-                            borderColor: isSelected ? theme.primary : theme.border,
-                          },
-                        ]}
-                      >
-                        {isSelected && (
-                          <Text style={[styles.dayCheckboxText, { color: theme.primaryText }]}>
-                            ✓
-                          </Text>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <Text
-                style={[styles.customizeSlotsHeading, { color: theme.textMuted, marginTop: 26 }]}
-              >
-                Nivelul ingredientelor & rețetelor (Food Tier):
-              </Text>
-
-              <View style={[styles.tierCardsGrid, isLargeScreen && styles.tierCardsGridDesktop]}>
-                {FOOD_TIER_OPTIONS.map((tierOpt) => {
-                  const isSelected = (preferences.foodTier || 'medium') === tierOpt.id;
-                  return (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      key={tierOpt.id}
-                      onPress={() => setFoodTier(tierOpt.id)}
-                      activeOpacity={0.7}
-                      style={[
-                        styles.tierCard,
-                        isLargeScreen && styles.tierCardDesktop,
-                        {
-                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
-                          borderColor: isSelected ? theme.primary : theme.border,
-                        },
-                      ]}
-                    >
-                      <View style={styles.tierCardHeader}>
-                        <Text style={styles.tierCardIcon}>{tierOpt.icon}</Text>
-                        <View style={styles.tierCardTextContainer}>
-                          <Text
-                            style={[
-                              styles.tierCardTitle,
-                              {
-                                color: isSelected ? theme.primary : theme.text,
-                                fontWeight: isSelected ? '800' : '700',
-                              },
-                            ]}
-                          >
-                            {tierOpt.label}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.tierCardPrice,
-                              { color: isSelected ? theme.primary : theme.textMuted },
-                            ]}
-                          >
-                            {tierOpt.priceEst}
-                          </Text>
-                        </View>
-                        <View
-                          style={[
-                            styles.extraCheckbox,
-                            {
-                              backgroundColor: isSelected ? theme.primary : 'transparent',
-                              borderColor: isSelected ? theme.primary : theme.border,
-                            },
-                          ]}
-                        >
-                          {isSelected && (
-                            <Text style={[styles.extraCheckmark, { color: theme.primaryText }]}>
-                              ✓
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-                      <Text style={[styles.tierCardDesc, { color: theme.textMuted }]}>
-                        {tierOpt.desc}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          {/* STEP 5: MOOD & STYLES (POFTE VARIATE CU TINDER-STYLE FOOD SWIPER) */}
-          {currentStep === 5 && (
-            <View style={styles.stepSection}>
-              <Text style={[styles.questionTitle, { color: theme.text }]}>
-                Ce pofte ai săptămâna asta?
-              </Text>
-              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Alege stilurile culinare dorite (selectate: {preferences.moodTags.length}/5). Trage
-                cardurile ca pe Tinder (dreapta = Îmi place, stânga = Pas) sau folosește butoanele
-                tactile!
-              </Text>
-
-              <FoodMoodSwiper
-                selectedMoods={preferences.moodTags}
-                onToggleMood={toggleMoodTag}
-                maxMoods={5}
-                isDark={isDark}
-              />
-            </View>
-          )}
-
-          {/* STEP 6: DIETARY RESTRICTIONS (MAX 2 COMPATIBLE) */}
-          {currentStep === 6 &&
-            (() => {
-              const selectedDiets: DietType[] =
-                preferences.dietTypes && preferences.dietTypes.length > 0
-                  ? preferences.dietTypes
-                  : [preferences.dietType];
-              const activeBaseDiet: DietType =
-                selectedDiets.find(isBaseDiet) || preferences.dietType || 'omnivore';
-
-              const baseDietOptions = DIET_OPTIONS_CATALOG.filter((d) => isBaseDiet(d.id));
-              const modifierDietOptions = DIET_OPTIONS_CATALOG.filter((d) => isModifierDiet(d.id));
-
-              return (
-                <View style={styles.stepSection}>
                   <Text style={[styles.questionTitle, { color: theme.text }]}>
                     Ai preferințe dietetice?
                   </Text>
@@ -1252,8 +817,402 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               );
             })()}
 
-          {/* STEP 7: KITCHEN APPLIANCES */}
-          {currentStep === 7 && (
+          {/* STEP 2: MOOD & STYLES (POFTE VARIATE CU TINDER-STYLE FOOD SWIPER) */}
+          {currentStep === 2 && (
+            <View style={styles.stepSection}>
+              <Text style={[styles.questionTitle, { color: theme.text }]}>
+                Ce pofte ai săptămâna asta?
+              </Text>
+              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
+                Alege stilurile culinare dorite (selectate: {preferences.moodTags.length}/5). Trage
+                cardurile ca pe Tinder (dreapta = Îmi place, stânga = Pas) sau folosește butoanele
+                tactile!
+              </Text>
+
+              <FoodMoodSwiper
+                selectedMoods={preferences.moodTags}
+                onToggleMood={toggleMoodTag}
+                maxMoods={5}
+                isDark={isDark}
+              />
+            </View>
+          )}
+
+          {/* STEP 3: PEOPLE COUNT */}
+          {currentStep === 3 && (
+            <View style={styles.stepSection}>
+              <Text style={[styles.questionTitle, { color: theme.text }]}>
+                Pentru câte persoane gătești?
+              </Text>
+              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
+                Vom scala cantitățile ingredientelor și porțiile fiecărei cine.
+              </Text>
+
+              <View style={styles.peopleCounterContainer}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => setPeopleCount(preferences.peopleCount - 1)}
+                  style={[
+                    styles.circleBtn,
+                    { borderColor: theme.border, backgroundColor: theme.accentBg },
+                  ]}
+                >
+                  <Text style={[styles.circleBtnText, { color: theme.text }]}>−</Text>
+                </TouchableOpacity>
+
+                <View style={styles.peopleValueBox}>
+                  <Text style={[styles.peopleCountText, { color: theme.text }]}>
+                    {preferences.peopleCount}
+                  </Text>
+                  <Text style={[styles.peopleLabel, { color: theme.textMuted }]}>
+                    {preferences.peopleCount === 1 ? 'persoană' : 'persoane'}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => setPeopleCount(preferences.peopleCount + 1)}
+                  style={[
+                    styles.circleBtn,
+                    { borderColor: theme.border, backgroundColor: theme.accentBg },
+                  ]}
+                >
+                  <Text style={[styles.circleBtnText, { color: theme.text }]}>+</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Quick Select Presets Row */}
+              <View style={styles.peoplePresetsRow}>
+                {[1, 2, 3, 4, 5, 6].map((num) => {
+                  const isActive = preferences.peopleCount === num;
+                  return (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      key={num}
+                      onPress={() => setPeopleCount(num)}
+                      style={[
+                        styles.peoplePresetPill,
+                        {
+                          backgroundColor: isActive ? theme.primary : theme.accentBg,
+                          borderColor: isActive ? theme.primary : theme.border,
+                        },
+                      ]}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.peoplePresetText,
+                          {
+                            color: isActive ? theme.primaryText : theme.text,
+                            fontWeight: isActive ? '800' : '600',
+                          },
+                        ]}
+                      >
+                        {num} {num === 1 ? 'pers.' : 'pers.'}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* STEP 4: COOKING DAYS & MEALS & FOOD TIER */}
+          {currentStep === 4 && (
+            <View style={styles.stepSection}>
+              <Text style={[styles.questionTitle, { color: theme.text }]}>
+                Zile de gătit & Mese
+              </Text>
+              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
+                Stabilește ritmul săptămânii tale: în ce zile gătești, ce mese dorești și nivelul ingredientelor.
+              </Text>
+
+              <Text style={[styles.questionTitle, { color: theme.text }]}>
+                În ce zile vei găti?
+              </Text>
+              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
+                Alege zilele din săptămână pentru care dorești rețete planificate.
+              </Text>
+
+              {/* Quick Preset Buttons Row */}
+              <View style={[styles.cookingDaysPresetRow, isLargeScreen && styles.daysGridDesktop]}>
+                {COOKING_DAY_PRESETS.map((preset) => {
+                  let isSelected = false;
+                  if (preset.id === 'all_week') {
+                    isSelected = preferences.cookingDays.length === 7;
+                  } else if (preset.id === 'workdays') {
+                    isSelected =
+                      preferences.cookingDays.length === 5 &&
+                      preferences.cookingDays.includes('monday') &&
+                      !preferences.cookingDays.includes('saturday');
+                  } else if (preset.id === 'weekend') {
+                    isSelected =
+                      preferences.cookingDays.length === 2 &&
+                      preferences.cookingDays.includes('saturday') &&
+                      preferences.cookingDays.includes('sunday');
+                  }
+
+                  return (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      key={preset.id}
+                      onPress={() => setCookingDays(preset.days)}
+                      activeOpacity={0.7}
+                      style={[
+                        styles.dayRow,
+                        isLargeScreen && styles.presetRowDesktop,
+                        {
+                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                          borderColor: isSelected ? theme.primary : theme.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.dayName,
+                          { color: theme.text, fontWeight: isSelected ? '700' : '500' },
+                        ]}
+                      >
+                        {preset.label}
+                      </Text>
+                      <View
+                        style={[
+                          styles.dayCheckbox,
+                          {
+                            backgroundColor: isSelected ? theme.primary : 'transparent',
+                            borderColor: isSelected ? theme.primary : theme.border,
+                          },
+                        ]}
+                      >
+                        {isSelected && (
+                          <Text style={[styles.dayCheckboxText, { color: theme.primaryText }]}>
+                            ✓
+                          </Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={styles.daysCounterBadge}>
+                <Text style={[styles.daysCounterText, { color: theme.text }]}>
+                  {preferences.cookingDays.length}{' '}
+                  {preferences.cookingDays.length === 1 ? 'zi selectată' : 'zile selectate'}
+                </Text>
+              </View>
+
+              <View style={[styles.daysList, isLargeScreen && styles.daysGridDesktop]}>
+                {(
+                  [
+                    'monday',
+                    'tuesday',
+                    'wednesday',
+                    'thursday',
+                    'friday',
+                    'saturday',
+                    'sunday',
+                  ] as DayOfWeek[]
+                ).map((day) => {
+                  const isSelected = preferences.cookingDays.includes(day);
+                  return (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      key={day}
+                      onPress={() => toggleCookingDay(day)}
+                      style={[
+                        styles.dayRow,
+                        isLargeScreen && styles.dayRowDesktop,
+                        {
+                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                          borderColor: isSelected ? theme.primary : theme.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.dayName,
+                          { color: theme.text, fontWeight: isSelected ? '700' : '500' },
+                        ]}
+                      >
+                        {DAY_LABELS[day]}
+                      </Text>
+                      <View
+                        style={[
+                          styles.dayCheckbox,
+                          {
+                            backgroundColor: isSelected ? theme.primary : 'transparent',
+                            borderColor: isSelected ? theme.primary : theme.border,
+                          },
+                        ]}
+                      >
+                        {isSelected && (
+                          <Text style={[styles.dayCheckboxText, { color: theme.primaryText }]}>
+                            ✓
+                          </Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={[styles.questionTitle, { color: theme.text }]}>
+                Ce mese dorești să planifici în fiecare zi?
+              </Text>
+              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
+                Selectează una, două sau toate cele trei mese principale (Mic Dejun, Prânz, Cină).
+              </Text>
+
+              <View style={[styles.mealCountGrid, isLargeScreen && styles.mealCountGridDesktop]}>
+                {MEAL_MOMENT_OPTIONS.map((option) => {
+                  const isSelected = preferences.mealSlots.includes(option.slot);
+                  return (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      key={option.slot}
+                      onPress={() => {
+                        if (isSelected) {
+                          const remaining = preferences.mealSlots.filter((s) => s !== option.slot);
+                          if (
+                            remaining.filter((s) => ['breakfast', 'lunch', 'dinner'].includes(s))
+                              .length === 0
+                          ) {
+                            showNotice(
+                              'Cel puțin o masă pe zi',
+                              'Trebuie să selectezi cel puțin o masă principală pe zi (Mic Dejun, Prânz sau Cină) pentru a genera meniul.',
+                              'info'
+                            );
+                            return;
+                          }
+                          setMealSlots(remaining);
+                        } else {
+                          const updated = [...preferences.mealSlots, option.slot];
+                          setMealSlots(updated);
+                        }
+                      }}
+                      activeOpacity={0.7}
+                      style={[
+                        styles.mealCountCard,
+                        isLargeScreen && styles.mealCountCardDesktop,
+                        {
+                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                          borderColor: isSelected ? theme.primary : theme.border,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.mealCountIcon}>{option.icon}</Text>
+                      <View style={styles.mealCountInfo}>
+                        <Text
+                          style={[
+                            styles.mealCountTitle,
+                            {
+                              color: isSelected ? theme.primary : theme.text,
+                              fontWeight: isSelected ? '800' : '700',
+                            },
+                          ]}
+                        >
+                          {option.title}
+                        </Text>
+                        <Text style={[styles.mealCountSubtitle, { color: theme.textMuted }]}>
+                          {option.subtitle}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.dayCheckbox,
+                          {
+                            backgroundColor: isSelected ? theme.primary : 'transparent',
+                            borderColor: isSelected ? theme.primary : theme.border,
+                          },
+                        ]}
+                      >
+                        {isSelected && (
+                          <Text style={[styles.dayCheckboxText, { color: theme.primaryText }]}>
+                            ✓
+                          </Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text
+                style={[styles.customizeSlotsHeading, { color: theme.textMuted, marginTop: 26 }]}
+              >
+                Nivelul ingredientelor & rețetelor (Food Tier):
+              </Text>
+
+              <View style={[styles.tierCardsGrid, isLargeScreen && styles.tierCardsGridDesktop]}>
+                {FOOD_TIER_OPTIONS.map((tierOpt) => {
+                  const isSelected = (preferences.foodTier || 'medium') === tierOpt.id;
+                  return (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      key={tierOpt.id}
+                      onPress={() => setFoodTier(tierOpt.id)}
+                      activeOpacity={0.7}
+                      style={[
+                        styles.tierCard,
+                        isLargeScreen && styles.tierCardDesktop,
+                        {
+                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                          borderColor: isSelected ? theme.primary : theme.border,
+                        },
+                      ]}
+                    >
+                      <View style={styles.tierCardHeader}>
+                        <Text style={styles.tierCardIcon}>{tierOpt.icon}</Text>
+                        <View style={styles.tierCardTextContainer}>
+                          <Text
+                            style={[
+                              styles.tierCardTitle,
+                              {
+                                color: isSelected ? theme.primary : theme.text,
+                                fontWeight: isSelected ? '800' : '700',
+                              },
+                            ]}
+                          >
+                            {tierOpt.label}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.tierCardPrice,
+                              { color: isSelected ? theme.primary : theme.textMuted },
+                            ]}
+                          >
+                            {tierOpt.priceEst}
+                          </Text>
+                        </View>
+                        <View
+                          style={[
+                            styles.extraCheckbox,
+                            {
+                              backgroundColor: isSelected ? theme.primary : 'transparent',
+                              borderColor: isSelected ? theme.primary : theme.border,
+                            },
+                          ]}
+                        >
+                          {isSelected && (
+                            <Text style={[styles.extraCheckmark, { color: theme.primaryText }]}>
+                              ✓
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                      <Text style={[styles.tierCardDesc, { color: theme.textMuted }]}>
+                        {tierOpt.desc}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* STEP 5: KITCHEN APPLIANCES */}
+          {currentStep === 5 && (
             <View style={styles.stepSection}>
               <Text style={[styles.questionTitle, { color: theme.text }]}>
                 Ce aparate ai în bucătărie?
@@ -1273,8 +1232,73 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
             </View>
           )}
 
-          {/* STEP 8: RETAIL SNACKS & BEVERAGES */}
-          {currentStep === 8 && (
+          {/* STEP 6: SUPERMARKET */}
+          {currentStep === 6 && (
+            <View style={styles.stepSection}>
+              
+
+              <Text style={[styles.questionTitle, { color: theme.text }]}>Alege magazinul tău</Text>
+              <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
+                Calculăm meniul și coșul săptămânal pe prețurile estimate ale magazinului ales.
+              </Text>
+
+              <View
+                style={[styles.supermarketGrid, isLargeScreen && styles.supermarketGridDesktop]}
+              >
+                {SUPERMARKET_LIST.map((market) => {
+                  const isSelected = preferences.supermarketId === market.id;
+                  return (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      key={market.id}
+                      onPress={() => setSupermarket(market.id as SupermarketId)}
+                      activeOpacity={0.7}
+                      style={[
+                        styles.supermarketCard,
+                        isLargeScreen && styles.supermarketCardDesktop,
+                        {
+                          backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
+                          borderColor: isSelected ? theme.primary : theme.border,
+                        },
+                      ]}
+                    >
+                      <View style={[styles.marketBadge, { backgroundColor: market.brandColor }]}>
+                        <Text style={styles.marketBadgeText}>{market.name[0]}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.supermarketName, { color: theme.text }]}>
+                          {market.name}
+                        </Text>
+                        <Text style={[styles.supermarketTagline, { color: theme.textMuted }]}>
+                          {market.tagline}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.supermarketRadio,
+                          {
+                            borderColor: isSelected ? theme.primary : theme.border,
+                            backgroundColor: isSelected ? theme.primary : 'transparent',
+                          },
+                        ]}
+                      >
+                        {isSelected && (
+                          <Text
+                            style={[styles.supermarketRadioCheck, { color: theme.primaryText }]}
+                          >
+                            ✓
+                          </Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* STEP 7: RETAIL SNACKS & BEVERAGES */}
+          {currentStep === 7 && (
             <View style={styles.stepSection}>
               <Text style={[styles.questionTitle, { color: theme.text }]}>
                 🍿 Ronțăieli & 🥤 Băuturi de Magazin
@@ -1729,8 +1753,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
             </View>
           )}
 
-          {/* STEP 9: BUDGET SLIDER */}
-          {currentStep === 9 && (
+          {/* STEP 8: BUDGET SLIDER & PRE-GENERATION SUMMARY */}
+          {currentStep === 8 && (
             <View style={styles.stepSection}>
               <Text style={[styles.questionTitle, { color: theme.text }]}>
                 Care este bugetul tău?
@@ -1759,6 +1783,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               />
             </View>
           )}
+          </Animated.View>
         </View>
       </ScrollView>
 
@@ -1788,12 +1813,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
             style={[styles.footerContinueWrap, { flex: 1, maxWidth: isLargeScreen ? 460 : '100%' }]}
           >
             <LinearGradient
-              colors={isDark ? ['#ffffff', '#f2f2f7'] : ['#000000', '#1c1c1e']}
+              colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.continueButton}
             >
-              <Text style={[styles.continueButtonText, { color: isDark ? '#000000' : '#ffffff' }]}>
+              <Text style={[styles.continueButtonText, { color: isDark ? '#131914' : '#ffffff', fontWeight: '800' }]}>
                 {currentStep === totalSteps ? '✨ Generează Meniul Săptămânal' : 'Continuă →'}
               </Text>
             </LinearGradient>

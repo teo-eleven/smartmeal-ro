@@ -781,7 +781,7 @@ function applyPreferenceStep(state: AppState, nextPrefs: UserPreferences): Parti
 export const useAppStore = create<AppState>((set, get) => ({
   currentStep: 1,
   maxVisitedStep: 1,
-  totalSteps: 9,
+  totalSteps: 8,
   activeView: 'onboarding',
   isHydrated: false,
   themeMode: 'dark',
