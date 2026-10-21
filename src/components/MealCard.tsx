@@ -295,9 +295,9 @@ export const MealCard: React.FC<MealCardProps> = ({
         >
           <RecipeVisual recipe={recipe} isDark={isDark} style={styles.image} />
 
-          {/* Smooth Bottom Gradient for Contrast */}
+          {/* Smooth Bottom Subtle Edge Shading for Contrast */}
           <LinearGradient
-            colors={['transparent', isDark ? 'rgba(0, 0, 0, 0.88)' : 'rgba(0, 0, 0, 0.6)']}
+            colors={['transparent', isDark ? 'rgba(0, 0, 0, 0.30)' : 'rgba(0, 0, 0, 0.15)']}
             style={styles.gradientOverlay}
           />
 
@@ -610,7 +610,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 100,
+    height: 40,
   },
   floatingBadge: {
     position: 'absolute',

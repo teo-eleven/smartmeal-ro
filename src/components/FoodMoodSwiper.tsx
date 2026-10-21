@@ -4,25 +4,28 @@ import {
   Text,
   View,
   TouchableOpacity,
-  Animated,
-  PanResponder,
+  ScrollView,
   ImageBackground,
   Platform,
   Dimensions,
   ViewStyle,
-  Easing,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { DietType, MoodTag } from '../types';
 import { MOOD_OPTIONS_CATALOG, MoodOptionInfo } from '../utils/moodCatalog';
 import { ARCHETYPE_BACKDROPS } from '../../assets/recipes/backdrops';
+import { ARCHETYPE_PHOTO_URLS } from '../utils/recipePhotography';
+import { DishArchetype } from '../utils/recipeVisual';
 import { getAppTheme } from '../styles/theme';
 import { RECIPES } from '../data/recipes';
 import { isRecipeMatchingDiets } from '../utils/dietCompatibility';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const SWIPE_THRESHOLD = 90;
-const SWIPE_VELOCITY = 0.45;
+const CARD_WIDTH = Math.min(SCREEN_WIDTH - 56, 360);
+const CARD_SPACING = 14;
+const CARD_INTERVAL = CARD_WIDTH + CARD_SPACING;
 
 export interface FoodMoodSwiperProps {
   selectedMoods: MoodTag[];
@@ -44,7 +47,8 @@ interface SwipeHistoryItem {
 export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
   selectedMoods,
   onToggleMood,
-  maxMoods = 5,
+  onSetMoods,
+  maxMoods,
   isDark,
   onComplete,
   dietTypes,
@@ -54,8 +58,8 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [history, setHistory] = useState<SwipeHistoryItem[]>([]);
 
-  const pan = useRef(new Animated.ValueXY()).current;
-  const isAnimating = useRef(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const isProgrammaticScroll = useRef(false);
 
   // Pre-calculate matching recipe counts per mood according to user's diet preferences
   const moodRecipeMap = useMemo(() => {
@@ -74,14 +78,28 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
     return map;
   }, [dietTypes]);
 
-  const resetPosition = useCallback(() => {
-    Animated.spring(pan, {
-      toValue: { x: 0, y: 0 },
-      friction: 7,
-      tension: 50,
-      useNativeDriver: false,
-    }).start();
-  }, [pan]);
+  const scrollToCard = useCallback((index: number, animated = true) => {
+    const targetIndex = Math.max(0, Math.min(index, MOOD_OPTIONS_CATALOG.length - 1));
+    setCurrentIndex(targetIndex);
+    isProgrammaticScroll.current = true;
+    scrollViewRef.current?.scrollTo({
+      x: targetIndex * CARD_INTERVAL,
+      animated,
+    });
+    setTimeout(() => {
+      isProgrammaticScroll.current = false;
+    }, 250);
+  }, []);
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (isProgrammaticScroll.current) return;
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const computedIndex = Math.round(offsetX / CARD_INTERVAL);
+    const clamped = Math.max(0, Math.min(computedIndex, MOOD_OPTIONS_CATALOG.length - 1));
+    if (clamped !== currentIndex) {
+      setCurrentIndex(clamped);
+    }
+  };
 
   const advanceCard = useCallback(
     (action: 'liked' | 'passed', item: MoodOptionInfo) => {
@@ -89,7 +107,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 
       if (action === 'liked') {
         if (!wasSelected) {
-          if (selectedMoods.length < maxMoods) {
+          if (!maxMoods || selectedMoods.length < maxMoods) {
             onToggleMood(item.id);
           }
         }
@@ -109,48 +127,20 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
         },
       ]);
 
-      pan.setValue({ x: 0, y: 0 });
-      isAnimating.current = false;
       const nextIndex = currentIndex + 1;
-      setCurrentIndex(nextIndex);
-
-      if (nextIndex >= MOOD_OPTIONS_CATALOG.length && onComplete) {
-        onComplete();
+      if (nextIndex < MOOD_OPTIONS_CATALOG.length) {
+        scrollToCard(nextIndex);
+      } else {
+        if (onComplete) onComplete();
       }
     },
-    [currentIndex, maxMoods, onComplete, onToggleMood, pan, selectedMoods]
-  );
-
-  const swipeCard = useCallback(
-    (direction: 'left' | 'right', gestureDy: number = 0) => {
-      if (isAnimating.current || currentIndex >= MOOD_OPTIONS_CATALOG.length) return;
-      isAnimating.current = true;
-      const item = MOOD_OPTIONS_CATALOG[currentIndex];
-      const targetX = direction === 'right' ? SCREEN_WIDTH + 180 : -SCREEN_WIDTH - 180;
-      const targetY = gestureDy ? gestureDy * 1.4 : 20;
-
-      if (process.env.NODE_ENV === 'test') {
-        advanceCard(direction === 'right' ? 'liked' : 'passed', item);
-        return;
-      }
-
-      Animated.timing(pan, {
-        toValue: { x: targetX, y: targetY },
-        duration: 380,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }).start(() => {
-        advanceCard(direction === 'right' ? 'liked' : 'passed', item);
-      });
-    },
-    [advanceCard, currentIndex, pan]
+    [currentIndex, maxMoods, onComplete, onToggleMood, scrollToCard, selectedMoods]
   );
 
   const handleUndo = useCallback(() => {
-    if (history.length === 0 || isAnimating.current) return;
+    if (history.length === 0) return;
     const last = history[history.length - 1];
 
-    // Revert selection change if state changed
     const currentlySelected = selectedMoods.includes(last.moodId);
     if (last.action === 'liked' && !last.wasAlreadySelected && currentlySelected) {
       onToggleMood(last.moodId);
@@ -159,36 +149,28 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
     }
 
     setHistory((prev) => prev.slice(0, prev.length - 1));
-    pan.setValue({ x: 0, y: 0 });
-    setCurrentIndex(last.index);
-  }, [history, onToggleMood, pan, selectedMoods]);
+    scrollToCard(last.index);
+  }, [history, onToggleMood, scrollToCard, selectedMoods]);
 
-  const handleRestart = useCallback(() => {
-    setCurrentIndex(0);
-    setHistory([]);
-    pan.setValue({ x: 0, y: 0 });
-  }, [pan]);
-
-  // PanResponder for touch and mouse dragging
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gesture) =>
-        Math.abs(gesture.dx) > 8 || Math.abs(gesture.dy) > 8,
-      onPanResponderMove: (_, gesture) => {
-        pan.setValue({ x: gesture.dx, y: gesture.dy * 0.45 });
-      },
-      onPanResponderRelease: (_, gesture) => {
-        if (gesture.dx > SWIPE_THRESHOLD || gesture.vx > SWIPE_VELOCITY) {
-          swipeCard('right', gesture.dy);
-        } else if (gesture.dx < -SWIPE_THRESHOLD || gesture.vx < -SWIPE_VELOCITY) {
-          swipeCard('left', gesture.dy);
-        } else {
-          resetPosition();
+  const handleSelectAll = useCallback(() => {
+    if (onSetMoods) {
+      onSetMoods(MOOD_OPTIONS_CATALOG.map((m) => m.id));
+    } else {
+      MOOD_OPTIONS_CATALOG.forEach((m) => {
+        if (!selectedMoods.includes(m.id)) {
+          onToggleMood(m.id);
         }
-      },
-    })
-  ).current;
+      });
+    }
+  }, [onSetMoods, onToggleMood, selectedMoods]);
+
+  const handleClearAll = useCallback(() => {
+    if (onSetMoods) {
+      onSetMoods([]);
+    } else {
+      selectedMoods.forEach((id) => onToggleMood(id));
+    }
+  }, [onSetMoods, onToggleMood, selectedMoods]);
 
   // Keyboard shortcut listener on Web
   useEffect(() => {
@@ -197,9 +179,13 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (viewMode !== 'swipe') return;
       if (e.key === 'ArrowRight') {
-        swipeCard('right');
+        if (currentIndex < MOOD_OPTIONS_CATALOG.length - 1) {
+          scrollToCard(currentIndex + 1);
+        }
       } else if (e.key === 'ArrowLeft') {
-        swipeCard('left');
+        if (currentIndex > 0) {
+          scrollToCard(currentIndex - 1);
+        }
       } else if (e.key === 'z' || e.key === 'Backspace') {
         handleUndo();
       }
@@ -207,53 +193,19 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, swipeCard, viewMode]);
-
-  // Interpolated transforms for top card
-  const rotate = pan.x.interpolate({
-    inputRange: [-SCREEN_WIDTH * 0.75, 0, SCREEN_WIDTH * 0.75],
-    outputRange: ['-16deg', '0deg', '16deg'],
-    extrapolate: 'clamp',
-  });
-
-  const cardExitOpacity = pan.x.interpolate({
-    inputRange: [-SCREEN_WIDTH * 0.9, -SCREEN_WIDTH * 0.45, 0, SCREEN_WIDTH * 0.45, SCREEN_WIDTH * 0.9],
-    outputRange: [0, 1, 1, 1, 0],
-    extrapolate: 'clamp',
-  });
-
-  const animatedCardStyle = {
-    transform: [{ translateX: pan.x }, { translateY: pan.y }, { rotate }],
-    opacity: cardExitOpacity,
-  };
-
-  const likeOpacity = pan.x.interpolate({
-    inputRange: [20, 100],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
-
-  const nopeOpacity = pan.x.interpolate({
-    inputRange: [-100, -20],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
+  }, [currentIndex, handleUndo, scrollToCard, viewMode]);
 
   const currentItem =
     currentIndex < MOOD_OPTIONS_CATALOG.length ? MOOD_OPTIONS_CATALOG[currentIndex] : null;
-  const nextItem =
-    currentIndex + 1 < MOOD_OPTIONS_CATALOG.length ? MOOD_OPTIONS_CATALOG[currentIndex + 1] : null;
-
-  const isCurrentSelected = currentItem ? selectedMoods.includes(currentItem.id) : false;
 
   return (
     <View style={styles.container}>
-      {/* Top Mode Switcher Bar */}
+      {/* Top Header: Mode Switcher & Quick Bulk Select */}
       <View style={styles.topControlRow}>
         <View style={styles.modeSegment}>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Mod Tinder Swipe"
+            accessibilityLabel="Mod Swipe Carduri"
             onPress={() => setViewMode('swipe')}
             style={[
               styles.segmentBtn,
@@ -308,162 +260,175 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
             styles.counterBadge,
             {
               backgroundColor: theme.accentBg,
-              borderColor: selectedMoods.length >= maxMoods ? '#ff9f0a' : theme.border,
+              borderColor: selectedMoods.length > 0 ? '#30d158' : theme.border,
             },
           ]}
         >
           <Text style={[styles.counterText, { color: theme.text }]}>
-            {selectedMoods.length}/{maxMoods} pofte
+            {maxMoods && maxMoods < 12
+              ? `${selectedMoods.length}/${maxMoods} pofte`
+              : `${selectedMoods.length} ${
+                  selectedMoods.length === 1 ? 'poftă aleasă' : 'pofte alese'
+                } (Nelimitat ✨)`}
           </Text>
         </View>
       </View>
 
-      {/* SWIPE DECK VIEW */}
-      {viewMode === 'swipe' ? (
-        <View style={styles.deckSection}>
-          {currentItem ? (
-            <View style={styles.deckViewport}>
-              {/* Card 2: Next Card in deck (rendered behind with exact same 1:1 scale to eliminate jumping) */}
-              {nextItem && (
-                <View
-                  key={`card-next-${nextItem.id}`}
-                  style={[styles.cardWrapper, styles.cardBackdrop]}
-                  pointerEvents="none"
-                >
-                  <View
-                    style={[
-                      styles.cardInner,
-                      {
-                        backgroundColor: theme.card,
-                        borderColor: theme.border,
-                      },
-                    ]}
-                  >
-                    {renderCardBody(
-                      nextItem,
-                      isDark,
-                      selectedMoods.includes(nextItem.id),
-                      theme,
-                      moodRecipeMap.get(nextItem.id)
-                    )}
-                  </View>
-                </View>
-              )}
+      {/* Quick Action Chips Bar */}
+      <View style={styles.quickActionsRow}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Selectează toate poftele"
+          onPress={handleSelectAll}
+          style={[styles.quickChip, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.quickChipText, { color: theme.text }]}>⚡ Selectează toate (12)</Text>
+        </TouchableOpacity>
 
-              {/* Card 1: Top Active Card (Draggable) */}
-              <Animated.View
-                key={`card-top-${currentItem.id}`}
-                {...panResponder.panHandlers}
-                style={[styles.cardWrapper, animatedCardStyle]}
-              >
+        {selectedMoods.length > 0 && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Deselectează toate poftele"
+            onPress={handleClearAll}
+            style={[styles.quickChip, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.quickChipText, { color: theme.textMuted }]}>↺ Resetează</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* VIEW MODE 1: CULINARY COVERFLOW CAROUSEL */}
+      {viewMode === 'swipe' ? (
+        <View style={styles.carouselSection}>
+          {/* Snap Horizontal Carousel Track */}
+          <ScrollView
+            ref={scrollViewRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            decelerationRate="fast"
+            snapToInterval={CARD_INTERVAL}
+            snapToAlignment="start"
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            contentContainerStyle={styles.carouselScrollContent}
+            style={styles.carouselScrollView}
+          >
+            {MOOD_OPTIONS_CATALOG.map((item, index) => {
+              const isSelected = selectedMoods.includes(item.id);
+              const isActive = index === currentIndex;
+              const stats = moodRecipeMap.get(item.id);
+
+              return (
                 <View
+                  key={item.id}
                   style={[
-                    styles.cardInner,
-                    styles.topCardShadow,
+                    styles.carouselCardWrapper,
                     {
-                      backgroundColor: theme.card,
-                      borderColor: isCurrentSelected ? '#30d158' : theme.border,
+                      width: CARD_WIDTH,
+                      marginRight: CARD_SPACING,
+                      transform: [{ scale: isActive ? 1.0 : 0.94 }],
+                      opacity: isActive ? 1.0 : 0.85,
                     },
                   ]}
                 >
-                  {/* LIKE STAMP (Right Swipe) */}
-                  <Animated.View
-                    style={[styles.stampBadge, styles.likeStamp, { opacity: likeOpacity }]}
-                    pointerEvents="none"
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.label}, ${isSelected ? 'Selectat' : 'Neselectat'}`}
+                    onPress={() => {
+                      if (isActive) {
+                        onToggleMood(item.id);
+                      } else {
+                        scrollToCard(index);
+                      }
+                    }}
+                    activeOpacity={0.88}
+                    style={[
+                      styles.carouselCardInner,
+                      isActive && styles.activeCardShadow,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: isSelected
+                          ? '#30d158'
+                          : isActive
+                          ? isDark
+                            ? '#F3C06D'
+                            : '#D98E3A'
+                          : theme.border,
+                        borderWidth: isSelected ? 2 : isActive ? 1.5 : 1,
+                      },
+                    ]}
                   >
-                    <Text style={styles.likeStampText}>ÎMI PLACE 💚</Text>
-                  </Animated.View>
+                    {renderCardBody(item, isDark, isSelected, theme, stats)}
 
-                  {/* NOPE STAMP (Left Swipe) */}
-                  <Animated.View
-                    style={[styles.stampBadge, styles.nopeStamp, { opacity: nopeOpacity }]}
-                    pointerEvents="none"
-                  >
-                    <Text style={styles.nopeStampText}>PAS ✕</Text>
-                  </Animated.View>
-
-                  {/* Card Body */}
-                  {renderCardBody(
-                    currentItem,
-                    isDark,
-                    isCurrentSelected,
-                    theme,
-                    moodRecipeMap.get(currentItem.id)
-                  )}
+                    {/* Bottom Direct Selection Pill */}
+                    <View style={styles.cardSelectFooter}>
+                      <View
+                        style={[
+                          styles.toggleSelectPill,
+                          {
+                            backgroundColor: isSelected
+                              ? '#30d158'
+                              : isDark
+                              ? 'rgba(255,255,255,0.08)'
+                              : 'rgba(0,0,0,0.05)',
+                            borderColor: isSelected ? '#30d158' : theme.border,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.toggleSelectText,
+                            {
+                              color: isSelected ? '#000000' : theme.text,
+                              fontWeight: isSelected ? '900' : '700',
+                            },
+                          ]}
+                        >
+                          {isSelected ? '✓ În Meniul Tău' : 'Adaugă în Meniu +'}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
                 </View>
-              </Animated.View>
-            </View>
-          ) : (
-            /* Deck Finished Screen */
-            <View
-              style={[
-                styles.finishedCard,
-                { backgroundColor: theme.card, borderColor: theme.border },
-              ]}
-            >
-              <Text style={styles.finishedEmoji}>🎉</Text>
-              <Text style={[styles.finishedTitle, { color: theme.text }]}>
-                Ai parcurs toate stilurile culinare!
-              </Text>
-              <Text style={[styles.finishedSubtitle, { color: theme.textMuted }]}>
-                Ai selectat {selectedMoods.length} pofte pentru meniul tău săptămânal.
-              </Text>
+              );
+            })}
+          </ScrollView>
 
-              {/* Selected Pills */}
-              <View style={styles.finishedPillsWrap}>
-                {selectedMoods.map((mId) => {
-                  const m = MOOD_OPTIONS_CATALOG.find((o) => o.id === mId);
-                  if (!m) return null;
-                  return (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      accessibilityLabel={`Elimină pofta ${m.label}`}
-                      key={mId}
-                      onPress={() => onToggleMood(mId)}
-                      style={[
-                        styles.finishedPill,
-                        {
-                          backgroundColor: theme.primaryLight,
-                          borderColor: theme.primary,
-                        },
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.finishedPillText}>
-                        {m.icon} {m.label} ✕
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel="Reia selecția de pofte de la început"
-                onPress={handleRestart}
-                style={[styles.restartBtn, { backgroundColor: theme.primary }]}
-                activeOpacity={0.75}
-              >
-                <Text style={[styles.restartBtnText, { color: theme.primaryText }]}>
-                  ↺ Reia de la început
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Bottom Action Controls */}
+          {/* Carousel Interactive Controls Row */}
           <View style={styles.bottomActionsRow}>
-            {/* NOPE BUTTON */}
+            {/* NOPE / SKIP BUTTON */}
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel="Nu-mi place sau pas"
-              onPress={() => swipeCard('left')}
-              disabled={!currentItem}
-              style={[styles.actionBtn, styles.nopeBtn, { opacity: currentItem ? 1 : 0.4 }]}
+              onPress={() => {
+                if (currentItem) advanceCard('passed', currentItem);
+              }}
+              style={[styles.actionBtn, styles.nopeBtn]}
               activeOpacity={0.75}
             >
               <Text style={styles.actionIconNope}>✕</Text>
               <Text style={styles.actionLabelNope}>Pas</Text>
+            </TouchableOpacity>
+
+            {/* PREV CARD ARROW */}
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Cardul anterior"
+              onPress={() => scrollToCard(currentIndex - 1)}
+              disabled={currentIndex <= 0}
+              style={[
+                styles.actionBtnSmall,
+                {
+                  backgroundColor: theme.accentBg,
+                  borderColor: theme.border,
+                  opacity: currentIndex > 0 ? 1 : 0.4,
+                },
+              ]}
+              activeOpacity={0.75}
+            >
+              <Text style={[styles.actionIconNav, { color: theme.text }]}>‹</Text>
             </TouchableOpacity>
 
             {/* UNDO BUTTON */}
@@ -485,13 +450,33 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
               <Text style={[styles.actionIconUndo, { color: theme.text }]}>↺</Text>
             </TouchableOpacity>
 
-            {/* LIKE BUTTON */}
+            {/* NEXT CARD ARROW */}
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Cardul următor"
+              onPress={() => scrollToCard(currentIndex + 1)}
+              disabled={currentIndex >= MOOD_OPTIONS_CATALOG.length - 1}
+              style={[
+                styles.actionBtnSmall,
+                {
+                  backgroundColor: theme.accentBg,
+                  borderColor: theme.border,
+                  opacity: currentIndex < MOOD_OPTIONS_CATALOG.length - 1 ? 1 : 0.4,
+                },
+              ]}
+              activeOpacity={0.75}
+            >
+              <Text style={[styles.actionIconNav, { color: theme.text }]}>›</Text>
+            </TouchableOpacity>
+
+            {/* LIKE / ADD BUTTON */}
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel="Îmi place acest stil culinar"
-              onPress={() => swipeCard('right')}
-              disabled={!currentItem}
-              style={[styles.actionBtn, styles.likeBtn, { opacity: currentItem ? 1 : 0.4 }]}
+              onPress={() => {
+                if (currentItem) advanceCard('liked', currentItem);
+              }}
+              style={[styles.actionBtn, styles.likeBtn]}
               activeOpacity={0.75}
             >
               <Text style={styles.actionIconLike}>💚</Text>
@@ -501,13 +486,11 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 
           {/* Step Indicator under controls */}
           <Text style={[styles.deckStepHint, { color: theme.textMuted }]}>
-            {currentItem
-              ? `Cardul ${currentIndex + 1} din ${MOOD_OPTIONS_CATALOG.length} • Trage spre dreapta dacă îți place`
-              : 'Ai finalizat selecția poftelor!'}
+            Cardul {currentIndex + 1} din {MOOD_OPTIONS_CATALOG.length} • Glisează caruselul sau folosește butoanele
           </Text>
         </View>
       ) : (
-        /* CLASSIC GRID VIEW */
+        /* VIEW MODE 2: CLASSIC GRID VIEW */
         <View style={styles.gridSection}>
           <View style={styles.gridContainer}>
             {MOOD_OPTIONS_CATALOG.map((mood) => {
@@ -544,8 +527,18 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                       >
                         {mood.label}
                       </Text>
-                      <View style={[styles.gridCountBadge, { backgroundColor: isSelected ? theme.primary : theme.border }]}>
-                        <Text style={[styles.gridCountText, { color: isSelected ? theme.primaryText : theme.textMuted }]}>
+                      <View
+                        style={[
+                          styles.gridCountBadge,
+                          { backgroundColor: isSelected ? theme.primary : theme.border },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.gridCountText,
+                            { color: isSelected ? theme.primaryText : theme.textMuted },
+                          ]}
+                        >
                           {recipeCount} rețete
                         </Text>
                       </View>
@@ -585,47 +578,45 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
         </View>
       )}
 
-      {/* Selected Pills Summary Bar - Stable minHeight to prevent page jumps */}
-      {viewMode === 'swipe' && (
-        <View style={[styles.selectedPillsContainer, { borderTopColor: theme.border }]}>
-          <Text style={[styles.selectedPillsLabel, { color: theme.textMuted }]}>
-            Pofte alese pentru această săptămână ({selectedMoods.length}/{maxMoods}):
-          </Text>
-          <View style={styles.pillsRow}>
-            {selectedMoods.length > 0 ? (
-              selectedMoods.map((tag) => {
-                const item = MOOD_OPTIONS_CATALOG.find((m) => m.id === tag);
-                if (!item) return null;
-                return (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel={`Elimină pofta ${item.label}`}
-                    key={tag}
-                    onPress={() => onToggleMood(tag)}
-                    style={[
-                      styles.activeMoodPill,
-                      {
-                        backgroundColor: theme.accentBg,
-                        borderColor: theme.border,
-                      },
-                    ]}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.activeMoodPillText, { color: theme.text }]}>
-                      {item.icon} {item.label}
-                    </Text>
-                    <Text style={styles.activeMoodPillRemove}>✕</Text>
-                  </TouchableOpacity>
-                );
-              })
-            ) : (
-              <Text style={[styles.selectedPillsEmptyText, { color: theme.textMuted }]}>
-                Nicio poftă selectată încă • Trage cardul spre dreapta dacă îți place
-              </Text>
-            )}
-          </View>
+      {/* Selected Pills Summary Bar - Stable layout */}
+      <View style={[styles.selectedPillsContainer, { borderTopColor: theme.border }]}>
+        <Text style={[styles.selectedPillsLabel, { color: theme.textMuted }]}>
+          Pofte alese pentru această săptămână ({selectedMoods.length}):
+        </Text>
+        <View style={styles.pillsRow}>
+          {selectedMoods.length > 0 ? (
+            selectedMoods.map((tag) => {
+              const item = MOOD_OPTIONS_CATALOG.find((m) => m.id === tag);
+              if (!item) return null;
+              return (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={`Elimină pofta ${item.label}`}
+                  key={tag}
+                  onPress={() => onToggleMood(tag)}
+                  style={[
+                    styles.activeMoodPill,
+                    {
+                      backgroundColor: theme.accentBg,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.activeMoodPillText, { color: theme.text }]}>
+                    {item.icon} {item.label}
+                  </Text>
+                  <Text style={styles.activeMoodPillRemove}>✕</Text>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <Text style={[styles.selectedPillsEmptyText, { color: theme.textMuted }]}>
+              Nicio poftă selectată încă • Apasă pe un card sau folosește „Îmi place”
+            </Text>
+          )}
         </View>
-      )}
+      </View>
     </View>
   );
 };
@@ -638,26 +629,28 @@ function renderCardBody(
   theme: ReturnType<typeof getAppTheme>,
   stats?: { count: number; sampleTitles: string[] }
 ) {
-  const backdrop = item.archetype ? ARCHETYPE_BACKDROPS[item.archetype] : undefined;
+  const archetype = (item.archetype || 'stew') as DishArchetype;
+  const photoUrl = ARCHETYPE_PHOTO_URLS[archetype];
+  const backdrop = ARCHETYPE_BACKDROPS[archetype];
   const count = stats?.count ?? 0;
   const sampleDishes =
-    stats && stats.sampleTitles.length > 0
-      ? stats.sampleTitles
-      : (item.sampleDishes || []);
+    stats && stats.sampleTitles.length > 0 ? stats.sampleTitles : item.sampleDishes || [];
+
+  const imageSource = photoUrl ? { uri: photoUrl } : backdrop;
 
   return (
     <View style={styles.cardContent}>
-      {/* Top Media Header */}
+      {/* Top Media Header with appetizing food image */}
       <View style={styles.cardMediaArea}>
-        {backdrop ? (
-          <ImageBackground source={backdrop} resizeMode="cover" style={StyleSheet.absoluteFill}>
+        {imageSource ? (
+          <ImageBackground source={imageSource} resizeMode="cover" style={StyleSheet.absoluteFill}>
             <LinearGradient
               colors={
                 isDark
-                  ? ['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.75)', '#1C241E']
-                  : ['rgba(0,0,0,0.10)', 'rgba(0,0,0,0.60)', '#ffffff']
+                  ? ['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.35)', '#1C241E']
+                  : ['rgba(0,0,0,0.08)', 'rgba(0,0,0,0.25)', '#ffffff']
               }
-              locations={[0, 0.6, 1]}
+              locations={[0, 0.55, 1]}
               style={StyleSheet.absoluteFill}
             />
           </ImageBackground>
@@ -674,7 +667,7 @@ function renderCardBody(
             style={[
               styles.vibePill,
               {
-                backgroundColor: isDark ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.92)',
+                backgroundColor: isDark ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.92)',
                 borderColor: theme.border,
               },
             ]}
@@ -683,7 +676,7 @@ function renderCardBody(
             <Text style={[styles.vibeText, { color: theme.text }]}>{item.vibe}</Text>
           </View>
 
-          {/* Right side single unified indicator */}
+          {/* Right side recipe counter pill */}
           <View
             style={[
               styles.recipeCountPill,
@@ -710,7 +703,7 @@ function renderCardBody(
           </View>
         </View>
 
-        {/* Big Food Icon in Center (Pinned absolutely to prevent any layout shifts) */}
+        {/* Big Food Icon in Center */}
         <View style={styles.centerIconWrap} pointerEvents="none">
           <Text style={styles.bigFoodIcon}>{item.icon}</Text>
         </View>
@@ -774,7 +767,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   modeSegment: {
     flexDirection: 'row',
@@ -796,59 +789,68 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   counterBadge: {
-    paddingVertical: 4,
+    paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 16,
     borderWidth: 1,
   },
   counterText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
+  quickActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    width: '100%',
+    gap: 8,
+    marginBottom: 10,
+  },
+  quickChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  quickChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
 
-  /* Deck Layout */
-  deckSection: {
+  /* Carousel Section */
+  carouselSection: {
     width: '100%',
     alignItems: 'center',
   },
-  deckViewport: {
+  carouselScrollView: {
     width: '100%',
-    maxWidth: 390,
-    height: 330,
-    position: 'relative',
+  },
+  carouselScrollContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  cardWrapper: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    maxWidth: 390,
-    top: 0,
-    left: 0,
+  carouselCardWrapper: {
+    height: 335,
   },
-  cardBackdrop: {
-    opacity: 0.96,
-  },
-  cardInner: {
+  carouselCardInner: {
     width: '100%',
     height: '100%',
     borderRadius: 20,
-    borderWidth: 1.5,
     overflow: 'hidden',
   },
-  topCardShadow: {
+  activeCardShadow: {
     ...Platform.select({
       web: {
-        boxShadow: '0 12px 28px rgba(0,0,0,0.30)',
+        boxShadow: '0 10px 24px rgba(0,0,0,0.28)',
         userSelect: 'none',
       } as unknown as ViewStyle,
       default: {
         elevation: 6,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.30,
-        shadowRadius: 12,
+        shadowOpacity: 0.28,
+        shadowRadius: 10,
       },
     }),
   },
@@ -859,7 +861,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   cardMediaArea: {
-    height: 110,
+    height: 105,
     width: '100%',
     position: 'relative',
     padding: 10,
@@ -899,7 +901,7 @@ const styles = StyleSheet.create({
   },
   centerIconWrap: {
     position: 'absolute',
-    top: 48,
+    top: 45,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -907,7 +909,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   bigFoodIcon: {
-    fontSize: 34,
+    fontSize: 32,
     textAlign: 'center',
   },
 
@@ -915,40 +917,40 @@ const styles = StyleSheet.create({
   cardDetailsArea: {
     flex: 1,
     paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingTop: 8,
+    paddingBottom: 4,
     justifyContent: 'flex-start',
   },
   cardTitleBox: {
     height: 24,
     justifyContent: 'center',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     letterSpacing: -0.3,
   },
   cardDescBox: {
-    height: 36,
+    height: 34,
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   cardDesc: {
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 11,
+    lineHeight: 16,
   },
   highlightsRow: {
-    height: 26,
+    height: 24,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 8,
+    marginBottom: 6,
     overflow: 'hidden',
   },
   highlightTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
     borderRadius: 6,
     borderWidth: 1,
   },
@@ -957,14 +959,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   sampleDishesBox: {
-    height: 50,
-    paddingTop: 5,
+    height: 44,
+    paddingTop: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(128,128,128,0.2)',
     justifyContent: 'flex-start',
   },
   sampleDishesLabel: {
-    height: 14,
+    height: 13,
     fontSize: 9,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -972,45 +974,26 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   sampleDishesText: {
-    height: 32,
-    fontSize: 11,
+    height: 28,
+    fontSize: 10.5,
     fontWeight: '500',
-    lineHeight: 15,
+    lineHeight: 14,
   },
-
-  /* Swipe Dynamic Stamps */
-  stampBadge: {
-    position: 'absolute',
-    top: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  cardSelectFooter: {
+    paddingHorizontal: 14,
+    paddingBottom: 10,
+    width: '100%',
+  },
+  toggleSelectPill: {
+    width: '100%',
+    paddingVertical: 7,
     borderRadius: 12,
-    borderWidth: 3,
-    zIndex: 99,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  likeStamp: {
-    left: 20,
-    borderColor: '#30d158',
-    backgroundColor: 'rgba(48, 209, 88, 0.20)',
-    transform: [{ rotate: '-14deg' }],
-  },
-  likeStampText: {
-    color: '#30d158',
-    fontSize: 22,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  nopeStamp: {
-    right: 20,
-    borderColor: '#ff453a',
-    backgroundColor: 'rgba(255, 69, 58, 0.20)',
-    transform: [{ rotate: '14deg' }],
-  },
-  nopeStampText: {
-    color: '#ff453a',
-    fontSize: 22,
-    fontWeight: '900',
-    letterSpacing: 1,
+  toggleSelectText: {
+    fontSize: 12,
   },
 
   /* Bottom Actions */
@@ -1018,10 +1001,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 8,
     marginTop: 10,
     width: '100%',
-    maxWidth: 360,
+    maxWidth: 370,
   },
   actionBtn: {
     flex: 1,
@@ -1060,79 +1043,25 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   actionBtnSmall: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
   },
   actionIconUndo: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
+  },
+  actionIconNav: {
+    fontSize: 18,
+    fontWeight: '900',
   },
   deckStepHint: {
     fontSize: 11,
-    marginTop: 4,
+    marginTop: 6,
     textAlign: 'center',
-  },
-
-  /* Finished Deck Card */
-  finishedCard: {
-    width: '100%',
-    maxWidth: 420,
-    padding: 32,
-    borderRadius: 24,
-    borderWidth: 1,
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  finishedEmoji: {
-    fontSize: 56,
-    marginBottom: 12,
-  },
-  finishedTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  finishedSubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 20,
-  },
-  finishedPillsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  finishedPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  finishedPillText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#30d158',
-  },
-  restartBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 13,
-    borderRadius: 20,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  restartBtnText: {
-    fontSize: 14,
-    fontWeight: '800',
   },
 
   /* Grid View */

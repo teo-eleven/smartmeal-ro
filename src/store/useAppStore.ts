@@ -1633,19 +1633,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         return { preferences: nextPrefs };
       }
 
-      if (current.length >= 5) {
-        return {
-          ...state,
-          activeNotice: {
-            id: Date.now().toString(),
-            title: 'Limită de 5 pofte culinare',
-            message:
-              'Ai atins selecția maximă de 5 pofte! Debifează una din opțiunile existente dacă dorești să adaugi o altă poftă.',
-            type: 'warning',
-          },
-        };
-      }
-
       const nextPrefs = { ...state.preferences, moodTags: [...current, tag] };
       void storageService.savePreferences(nextPrefs);
       return { preferences: nextPrefs };
@@ -1654,10 +1641,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setMoodTags: (tags: MoodTag[]) => {
     set((state) => {
-      const validTags = tags.slice(0, 5);
       const nextPrefs = {
         ...state.preferences,
-        moodTags: validTags.length > 0 ? validTags : (['healthy_comfort'] as MoodTag[]),
+        moodTags: tags.length > 0 ? tags : (['healthy_comfort'] as MoodTag[]),
       };
       void storageService.savePreferences(nextPrefs);
       return { preferences: nextPrefs };

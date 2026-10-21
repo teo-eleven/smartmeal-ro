@@ -124,7 +124,7 @@ describe('Zustand App Store & Onboarding Flow (Phase 4)', () => {
 
   // EDGE CASES
   describe('Edge Cases: Boundaries and Limits', () => {
-    it('enforces maximum 5 mood tags and sets activeNotice', () => {
+    it('allows unlimited mood tags selections beyond previous limit', () => {
       const store = useAppStore.getState();
       // Clear existing
       useAppStore.setState({
@@ -138,12 +138,12 @@ describe('Zustand App Store & Onboarding Flow (Phase 4)', () => {
       store.toggleMoodTag('healthy_comfort');
       expect(useAppStore.getState().preferences.moodTags.length).toBe(5);
 
-      // Try adding a 6th
+      // Now adding a 6th and 7th is allowed without limit
       store.toggleMoodTag('fakeaway');
-      expect(useAppStore.getState().preferences.moodTags.length).toBe(5);
-      expect(useAppStore.getState().preferences.moodTags).not.toContain('fakeaway');
-      expect(useAppStore.getState().activeNotice).toBeDefined();
-      expect(useAppStore.getState().activeNotice?.title).toContain('5 pofte');
+      store.toggleMoodTag('pasta_italian');
+      expect(useAppStore.getState().preferences.moodTags.length).toBe(7);
+      expect(useAppStore.getState().preferences.moodTags).toContain('fakeaway');
+      expect(useAppStore.getState().preferences.moodTags).toContain('pasta_italian');
     });
 
     it('does not allow people count below 1 or above 10', () => {

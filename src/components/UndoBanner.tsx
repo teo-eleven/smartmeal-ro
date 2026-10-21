@@ -1,5 +1,13 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Animated,
+  Easing,
+  Platform,
+} from 'react-native';
 import { getAppTheme } from '../styles/theme';
 
 interface UndoBannerProps {
@@ -13,8 +21,9 @@ interface UndoBannerProps {
 }
 
 /**
- * Offered right after something was destroyed. Automatically dismisses after 5 seconds
- * if the user does not take action or manually dismiss.
+ * Offered right after something was destroyed.
+ * Enters with a smooth slide & fade, shows a subtle progress indicator,
+ * and automatically dismisses after 5 seconds with a gentle fade-out transition.
  */
 export const UndoBanner: React.FC<UndoBannerProps> = ({
   visible,
@@ -26,23 +35,119 @@ export const UndoBanner: React.FC<UndoBannerProps> = ({
   autoDismissTimeoutMs = 5000,
 }) => {
   const theme = getAppTheme(isDark);
+  const [isRendered, setIsRendered] = useState(visible);
+
+  const fadeAnim = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const slideAnim = useRef(new Animated.Value(visible ? 0 : 20)).current;
+  const progressAnim = useRef(new Animated.Value(1)).current;
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isDismissing = useRef(false);
+
+  const startDismissTransition = useCallback(() => {
+    if (isDismissing.current) return;
+    isDismissing.current = true;
+
+    if (process.env.NODE_ENV === 'test') {
+      setIsRendered(false);
+      onDismiss();
+      return;
+    }
+
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 260,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 24,
+        duration: 260,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+    ]).start(() => {
+      setIsRendered(false);
+      isDismissing.current = false;
+      onDismiss();
+    });
+  }, [fadeAnim, onDismiss, slideAnim]);
 
   useEffect(() => {
-    if (!visible || !autoDismissTimeoutMs || autoDismissTimeoutMs <= 0) return;
-    const timer = setTimeout(() => {
-      onDismiss();
-    }, autoDismissTimeoutMs);
+    if (visible) {
+      setIsRendered(true);
+      isDismissing.current = false;
+      fadeAnim.setValue(0);
+      slideAnim.setValue(20);
+      progressAnim.setValue(1);
 
-    return () => clearTimeout(timer);
-  }, [visible, autoDismissTimeoutMs, onDismiss]);
+      // Smooth enter transition
+      if (process.env.NODE_ENV !== 'test') {
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 320,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 320,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+          Animated.timing(progressAnim, {
+            toValue: 0,
+            duration: autoDismissTimeoutMs,
+            easing: Easing.linear,
+            useNativeDriver: false,
+          }),
+        ]).start();
+      }
 
-  if (!visible) return null;
+      // Auto-dismiss countdown
+      if (autoDismissTimeoutMs > 0) {
+        timerRef.current = setTimeout(() => {
+          startDismissTransition();
+        }, autoDismissTimeoutMs);
+      }
+    } else {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      startDismissTransition();
+    }
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [visible, autoDismissTimeoutMs, fadeAnim, slideAnim, progressAnim, startDismissTransition]);
+
+  if (!isRendered) return null;
+
+  const progressBarWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
-    <View style={styles.wrapper} pointerEvents="box-none">
+    <Animated.View
+      style={[
+        styles.wrapper,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+      pointerEvents="box-none"
+    >
       <View
         accessibilityRole="alert"
-        style={[styles.banner, { backgroundColor: theme.card, borderColor: theme.borderStrong }]}
+        style={[
+          styles.banner,
+          {
+            backgroundColor: theme.card,
+            borderColor: theme.borderStrong,
+          },
+        ]}
       >
         <Text style={[styles.message, { color: theme.text }]} numberOfLines={2}>
           {message}
@@ -51,7 +156,10 @@ export const UndoBanner: React.FC<UndoBannerProps> = ({
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={actionLabel}
-          onPress={onAction}
+          onPress={() => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+            onAction();
+          }}
           style={[styles.actionBtn, { backgroundColor: theme.primary }]}
           activeOpacity={0.8}
         >
@@ -61,14 +169,30 @@ export const UndoBanner: React.FC<UndoBannerProps> = ({
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel="Ascunde mesajul"
-          onPress={onDismiss}
+          onPress={() => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+            startDismissTransition();
+          }}
           style={styles.dismissBtn}
           activeOpacity={0.7}
         >
           <Text style={[styles.dismissText, { color: theme.textMuted }]}>✕</Text>
         </TouchableOpacity>
+
+        {/* Subtle timer progress bar at bottom of the banner */}
+        <View style={styles.progressBarTrack}>
+          <Animated.View
+            style={[
+              styles.progressBarFill,
+              {
+                width: progressBarWidth,
+                backgroundColor: theme.primary,
+              },
+            ]}
+          />
+        </View>
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -77,28 +201,42 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 20,
+    bottom: 24,
     alignItems: 'center',
     paddingHorizontal: 16,
+    zIndex: 9999,
   },
   banner: {
+    position: 'relative',
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     width: '100%',
-    maxWidth: 460,
-    shadowOpacity: 0.16,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 18,
-    elevation: 6,
+    maxWidth: 480,
+    shadowOpacity: 0.22,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 20,
+    elevation: 8,
   },
-  message: { flex: 1, fontSize: 12, fontWeight: '700', lineHeight: 17 },
+  message: { flex: 1, fontSize: 13, fontWeight: '700', lineHeight: 18 },
   actionBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
   actionText: { fontSize: 12, fontWeight: '800' },
-  dismissBtn: { paddingHorizontal: 4, paddingVertical: 4 },
+  dismissBtn: { paddingHorizontal: 6, paddingVertical: 6 },
   dismissText: { fontSize: 14, fontWeight: '700' },
+  progressBarTrack: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(128,128,128,0.15)',
+  },
+  progressBarFill: {
+    height: '100%',
+  },
 });

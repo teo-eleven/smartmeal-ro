@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 import { UndoBanner } from '../UndoBanner';
 
 const baseProps = {
@@ -44,7 +44,9 @@ describe('UndoBanner', () => {
     render(<UndoBanner {...baseProps} autoDismissTimeoutMs={5000} />);
     expect(baseProps.onDismiss).not.toHaveBeenCalled();
 
-    jest.advanceTimersByTime(5000);
+    act(() => {
+      jest.advanceTimersByTime(5000);
+    });
     expect(baseProps.onDismiss).toHaveBeenCalledTimes(1);
   });
 });

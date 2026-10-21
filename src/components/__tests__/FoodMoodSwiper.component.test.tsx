@@ -114,4 +114,40 @@ describe('FoodMoodSwiper Component (Tinder-style Food Swiper)', () => {
     // Returns back to 'speedy'
     expect(screen.getByText('Mese Rapide (<25 min)')).toBeTruthy();
   });
+
+  it('supports unlimited selections and bulk select all', () => {
+    const mockOnSetMoods = jest.fn();
+    render(
+      <FoodMoodSwiper
+        selectedMoods={['speedy', 'romanian_classic']}
+        onToggleMood={mockOnToggleMood}
+        onSetMoods={mockOnSetMoods}
+        isDark={true}
+      />
+    );
+
+    expect(screen.getByText('2 pofte alese (Nelimitat ✨)')).toBeTruthy();
+
+    const selectAllBtn = screen.getByText('⚡ Selectează toate (12)');
+    fireEvent.press(selectAllBtn);
+    expect(mockOnSetMoods).toHaveBeenCalledWith(
+      expect.arrayContaining(['speedy', 'romanian_classic', 'pasta_italian'])
+    );
+  });
+
+  it('supports navigation via next and prev arrow buttons', () => {
+    render(
+      <FoodMoodSwiper
+        selectedMoods={[]}
+        onToggleMood={mockOnToggleMood}
+        isDark={false}
+      />
+    );
+
+    const nextArrow = screen.getByLabelText('Cardul următor');
+    fireEvent.press(nextArrow);
+
+    const prevArrow = screen.getByLabelText('Cardul anterior');
+    fireEvent.press(prevArrow);
+  });
 });

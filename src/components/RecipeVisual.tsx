@@ -9,6 +9,7 @@ import {
   getRecipeHighlights,
   getTotalMinutes,
 } from '../utils/recipeVisual';
+import { getRecipePhotographyUri } from '../utils/recipePhotography';
 
 interface RecipeVisualProps {
   recipe: Recipe;
@@ -19,13 +20,9 @@ interface RecipeVisualProps {
 }
 
 /**
- * The picture at the top of a recipe card.
- *
- * Every recipe gets the same treatment: its name set over a heavily treated photograph from
- * its archetype — blurred, desaturated and darkened, so it reads as texture rather than as a
- * portrait of that particular dish. No card shows a sharp photograph, so no card can promise
- * a dish or a garnish the recipe does not contain; see ADR-14, and ADR-07 for the earlier
- * attempt at untreated stock photography that put headphones on a bean stew.
+ * The visual presentation of a recipe card.
+ * Displays high-definition, appetizing food photography with a clear, subtle scrim
+ * and crisp typography so dishes are vibrant, mouth-watering, and easy to read.
  */
 export const RecipeVisual: React.FC<RecipeVisualProps> = ({
   recipe,
@@ -38,14 +35,17 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
   const highlights = getRecipeHighlights(recipe, 3);
   const minutes = getTotalMinutes(recipe);
   const backdrop = ARCHETYPE_BACKDROPS[archetype];
+  const photoUri = getRecipePhotographyUri(recipe, archetype);
 
   const accessibilityLabel = `${recipe.title}. ${palette.labelRo}. Ingrediente principale: ${highlights.join(', ')}. ${minutes} minute.`;
 
   const content = (
     <View style={styles.content} pointerEvents="none">
-      <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={2}>
-        {recipe.title}
-      </Text>
+      <View style={styles.titleContainer}>
+        <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={2}>
+          {recipe.title}
+        </Text>
+      </View>
 
       {!compact && (
         <>
@@ -58,13 +58,9 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
     </View>
   );
 
-  // No corner badges here. Every screen that shows this picture lays its own over it, time
-  // included, in the same corners: drawing them here too put the time on a card twice, one
-  // label under another, and on the 74 px week cards they ran into the title. The kind of
-  // dish and the time stay in the accessibility label.
+  const imageSource = photoUri ? { uri: photoUri } : backdrop;
 
-  // No backdrop exists for this archetype, so the gradient carries the card on its own.
-  if (!backdrop) {
+  if (!imageSource) {
     return (
       <View style={[styles.fill, style]} accessibilityLabel={accessibilityLabel}>
         <LinearGradient
@@ -80,18 +76,19 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
 
   return (
     <ImageBackground
-      source={backdrop}
+      source={imageSource}
       resizeMode="cover"
       style={[styles.fill, style]}
       accessibilityLabel={accessibilityLabel}
     >
-      {/* Clean cinematic scrim that keeps the photo visible, bright and legible */}
+      {/* Subtle appetizing scrim: keeps food visible, vibrant and mouthwatering */}
       <LinearGradient
         colors={
           isDark
-            ? ['rgba(0,0,0,0.10)', 'rgba(19, 25, 20, 0.75)']
-            : ['rgba(0,0,0,0.05)', 'rgba(30, 38, 32, 0.65)']
+            ? ['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.22)', 'rgba(19, 25, 20, 0.58)']
+            : ['rgba(0,0,0,0.02)', 'rgba(0,0,0,0.15)', 'rgba(30, 38, 32, 0.48)']
         }
+        locations={[0, 0.55, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -115,6 +112,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
+    zIndex: 2,
+  },
+  titleContainer: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.28)',
   },
   title: {
     width: '100%',
@@ -125,9 +129,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 23,
     letterSpacing: -0.3,
-    textShadowColor: 'rgba(0,0,0,0.65)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 6,
+    textShadowColor: 'rgba(0,0,0,0.85)',
+    textShadowOffset: { width: 0, height: 1.5 },
+    textShadowRadius: 8,
   },
   titleCompact: {
     fontSize: 14,
@@ -136,15 +140,18 @@ const styles = StyleSheet.create({
   rule: {
     width: 46,
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    marginTop: 12,
-    marginBottom: 10,
+    backgroundColor: 'rgba(255,255,255,0.65)',
+    marginTop: 10,
+    marginBottom: 8,
   },
   highlights: {
-    color: 'rgba(255,255,255,0.88)',
+    color: 'rgba(255,255,255,0.95)',
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 1.1,
     textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.80)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
 });

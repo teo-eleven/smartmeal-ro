@@ -5,6 +5,7 @@ import {
   MealPlan,
   MealPlanDay,
   MealSlot,
+  MoodTag,
   PlannedMeal,
   Recipe,
   SupermarketId,
@@ -460,9 +461,9 @@ export function generateMealPlan(
   const scoredRecipes = eligibleRecipes.map((recipe) => {
     let score = 0;
 
-    // Dishes the user said they liked, weighted the same as in the day-by-day pass.
+    // Dishes the user said they liked, weighted strongly so they regularly make it into plans.
     if ((preferences.favouriteRecipeIds ?? []).includes(recipe.id)) {
-      score += 40;
+      score += 65;
     }
 
     if (preferences.moodTags && preferences.moodTags.length > 0) {
@@ -542,7 +543,7 @@ export function generateMealPlan(
     return recipe.suitableSlots.includes(slot);
   }
 
-  function pickBestRecipeForSlot(slot: MealSlot): Recipe {
+  function pickBestRecipeForSlot(slot: MealSlot, daySpotlightMood?: MoodTag): Recipe {
     // Relaxation ladder, loosest constraint first. Diet and appliances are NEVER relaxed:
     // suggesting a dish the user cannot cook, or must not eat, is worse than no preference
     // match at all. Only store availability and slot suitability may give way.
@@ -649,6 +650,12 @@ export function generateMealPlan(
         usedIngredientsInPlan.has(ing.ingredientId)
       ).length;
 
+      // Spotlight mood boost: intelligently distributes user cravings across days
+      const aSpotlightBonus =
+        daySpotlightMood && a.recipe.moodTags.includes(daySpotlightMood) ? 35 : 0;
+      const bSpotlightBonus =
+        daySpotlightMood && b.recipe.moodTags.includes(daySpotlightMood) ? 35 : 0;
+
       // Penalize consecutive day repetition
       const aConsecutivePenalty = a.recipe.id === lastUsedRecipeId ? 40 : 0;
       const bConsecutivePenalty = b.recipe.id === lastUsedRecipeId ? 40 : 0;
@@ -668,7 +675,8 @@ export function generateMealPlan(
 
       const aTotalScore =
         a.score +
-        aShared * 8 -
+        aShared * 8 +
+        aSpotlightBonus -
         aConsecutivePenalty -
         aUsagePenalty -
         aExcludedPenalty +
@@ -676,7 +684,8 @@ export function generateMealPlan(
         a.portionCost * 0.2;
       const bTotalScore =
         b.score +
-        bShared * 8 -
+        bShared * 8 +
+        bSpotlightBonus -
         bConsecutivePenalty -
         bUsagePenalty -
         bExcludedPenalty +
@@ -696,14 +705,20 @@ export function generateMealPlan(
   }
 
   // Construct MealPlanDay entries
-  const days: MealPlanDay[] = preferences.cookingDays.map((dayOfWeek) => {
+  const days: MealPlanDay[] = preferences.cookingDays.map((dayOfWeek, dayIndex) => {
     const rawDaySlots = preferences.dailyMealSlots?.[dayOfWeek] ?? slots;
     const daySlots = [...rawDaySlots]
       .filter((s) => s !== 'snack')
       .sort((a, b) => (CANONICAL_SLOT_ORDER[a] ?? 99) - (CANONICAL_SLOT_ORDER[b] ?? 99));
 
+    // Rotate spotlight mood across all user-selected moods so every craving gets dedicated focus!
+    const daySpotlightMood =
+      preferences.moodTags && preferences.moodTags.length > 0
+        ? preferences.moodTags[dayIndex % preferences.moodTags.length]
+        : undefined;
+
     const dayMeals: PlannedMeal[] = daySlots.map((slot) => {
-      const recipe = pickBestRecipeForSlot(slot);
+      const recipe = pickBestRecipeForSlot(slot, daySpotlightMood);
       const cost = calculateRecipePortionCost(
         recipe,
         preferences.peopleCount,

@@ -156,6 +156,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
     setFoodTier,
     setBudget,
     toggleMoodTag,
+    setMoodTags,
     toggleDietType,
     toggleAvoidedAllergen,
     toggleHealthGoalTag,
@@ -770,9 +771,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 Ce pofte ai săptămâna asta?
               </Text>
               <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Alege stilurile culinare dorite (selectate: {preferences.moodTags.length}/5). Trage
-                cardurile ca pe Tinder (dreapta = Îmi place, stânga = Pas) sau folosește butoanele
-                tactile!
+                Alege stilurile culinare dorite ({preferences.moodTags.length} selectate · fără limită). Răsfoiește caruselul culinar, alege poftele tale preferate sau selectează-le pe toate!
               </Text>
 
               {preferences.dietTypes &&
@@ -811,7 +810,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               <FoodMoodSwiper
                 selectedMoods={preferences.moodTags}
                 onToggleMood={toggleMoodTag}
-                maxMoods={5}
+                onSetMoods={setMoodTags}
                 isDark={isDark}
                 dietTypes={preferences.dietTypes}
               />
@@ -836,8 +835,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     </Text>
                     <Text style={[styles.stepImpactDesc, { color: theme.textMuted }]}>
                       {preferences.moodTags.length > 0
-                        ? 'Rețetele din aceste categorii vor primi prioritate maximă (+30 puncte scor) și vor fi distribuite pe zilele de gătit la Pasul 4.'
-                        : 'Glisează spre dreapta sau apasă „Îmi place” pentru stilurile pe care vrei să le mănânci în acest meniu.'}
+                        ? `Toate cele ${preferences.moodTags.length} ${
+                            preferences.moodTags.length === 1 ? 'poftă este inclusă' : 'stiluri alese sunt distribuite inteligent'
+                          } pe zilele de gătit, oferindu-ți varietate culinară dedicată în fiecare zi.`
+                        : 'Selectează poftele tale preferate — fiecare poftă aleasă va influența direct rețetele propuse.'}
                     </Text>
                   </View>
                 </View>
