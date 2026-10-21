@@ -815,6 +815,28 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 isDark={isDark}
                 dietTypes={preferences.dietTypes}
               />
+
+              {preferences.moodTags.length > 0 && (
+                <View
+                  style={[
+                    styles.stepImpactCard,
+                    { backgroundColor: theme.accentBg, borderColor: theme.border },
+                  ]}
+                >
+                  <View style={styles.stepImpactHeaderRow}>
+                    <Text style={styles.stepImpactIcon}>🎯</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.stepImpactTitle, { color: theme.text }]}>
+                        {preferences.moodTags.length}{' '}
+                        {preferences.moodTags.length === 1 ? 'stil culinar ales' : 'stiluri culinare alese'}
+                      </Text>
+                      <Text style={[styles.stepImpactDesc, { color: theme.textMuted }]}>
+                        Rețetele din aceste categorii vor primi prioritate maximă (+30 puncte scor) și vor fi distribuite pe zilele de gătit la Pasul 4.
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
             </View>
           )}
 
@@ -893,6 +915,67 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     </TouchableOpacity>
                   );
                 })}
+              </View>
+
+              {/* Step 3 Inter-step Cascade Impact */}
+              <View
+                style={[
+                  styles.stepImpactCard,
+                  { backgroundColor: theme.accentBg, borderColor: theme.border },
+                ]}
+              >
+                <View style={styles.stepImpactHeaderRow}>
+                  <Text style={styles.stepImpactIcon}>👨‍👩‍👧</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.stepImpactTitle, { color: theme.text }]}>
+                      Scalare automată: exact ×{preferences.peopleCount}{' '}
+                      {preferences.peopleCount === 1 ? 'porție' : 'porții'} per masă
+                    </Text>
+                    <Text style={[styles.stepImpactDesc, { color: theme.textMuted }]}>
+                      Gramajele ingredientelor și cantitățile din lista de cumpărături vor fi multiplicate exact pentru {preferences.peopleCount}{' '}
+                      {preferences.peopleCount === 1 ? 'persoană' : 'persoane'}.
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.stepImpactPillsRow}>
+                  <View
+                    style={[
+                      styles.stepImpactMiniPill,
+                      { backgroundColor: theme.surfaceSecondary, borderColor: theme.border },
+                    ]}
+                  >
+                    <Text style={[styles.stepImpactMiniPillText, { color: theme.text }]}>
+                      🥗 Dieta ta:{' '}
+                      {preferences.dietTypes
+                        ?.map((d) => DIET_OPTIONS_CATALOG.find((o) => o.id === d)?.label || d)
+                        .join(', ') || 'Omnivor'}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.stepImpactMiniPill,
+                      { backgroundColor: theme.surfaceSecondary, borderColor: theme.border },
+                    ]}
+                  >
+                    <Text style={[styles.stepImpactMiniPillText, { color: theme.text }]}>
+                      ✨ Pofte:{' '}
+                      {preferences.moodTags.length > 0
+                        ? `${preferences.moodTags.length} selectate`
+                        : 'Diverse'}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.stepImpactMiniPill,
+                      { backgroundColor: theme.surfaceSecondary, borderColor: theme.border },
+                    ]}
+                  >
+                    <Text style={[styles.stepImpactMiniPillText, { color: theme.text }]}>
+                      ⚖️ Fără risipă de alimente
+                    </Text>
+                  </View>
+                </View>
               </View>
             </View>
           )}
@@ -1181,6 +1264,69 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   );
                 })}
               </View>
+
+              {/* Step 4 Inter-step Cascade Impact */}
+              {(() => {
+                const totalMeals = preferences.cookingDays.length * preferences.mealSlots.length;
+                const totalPortions = totalMeals * preferences.peopleCount;
+                const tierName =
+                  preferences.foodTier === 'basic'
+                    ? 'Economic (Mărci de bază)'
+                    : preferences.foodTier === 'premium'
+                    ? 'Gourmet (Selecție Premium)'
+                    : 'Echilibrat (Raport optim)';
+
+                return (
+                  <View
+                    style={[
+                      styles.stepImpactCard,
+                      { backgroundColor: theme.accentBg, borderColor: theme.border },
+                    ]}
+                  >
+                    <View style={styles.stepImpactHeaderRow}>
+                      <Text style={styles.stepImpactIcon}>📅</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.stepImpactTitle, { color: theme.text }]}>
+                          Structura planului: {totalMeals} mese ({totalPortions} porții totale)
+                        </Text>
+                        <Text style={[styles.stepImpactDesc, { color: theme.textMuted }]}>
+                          {preferences.cookingDays.length} zile planificate cu{' '}
+                          {preferences.mealSlots.length}{' '}
+                          {preferences.mealSlots.length === 1 ? 'masă' : 'mese'}/zi pentru{' '}
+                          {preferences.peopleCount}{' '}
+                          {preferences.peopleCount === 1 ? 'persoană' : 'persoane'}.
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.stepImpactPillsRow}>
+                      <View
+                        style={[
+                          styles.stepImpactMiniPill,
+                          { backgroundColor: theme.surfaceSecondary, borderColor: theme.border },
+                        ]}
+                      >
+                        <Text style={[styles.stepImpactMiniPillText, { color: theme.text }]}>
+                          🎯 Pofte în meniu:{' '}
+                          {preferences.moodTags.length > 0
+                            ? `${preferences.moodTags.length} stiluri alese`
+                            : 'Diversificate'}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.stepImpactMiniPill,
+                          { backgroundColor: theme.surfaceSecondary, borderColor: theme.border },
+                        ]}
+                      >
+                        <Text style={[styles.stepImpactMiniPillText, { color: theme.text }]}>
+                          🏷️ Calitate ingrediente: {tierName}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })()}
             </View>
           )}
 
@@ -1202,6 +1348,41 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               />
 
               <EligibilityMeter preferences={preferences} isDark={isDark} />
+
+              {/* Step 5 Inter-step Cascade Impact */}
+              {(() => {
+                const hasOven = preferences.appliances.includes('oven');
+                const hasAirFryer = preferences.appliances.includes('air_fryer');
+                let applianceMsg = 'Toate rețetele propuse vor putea fi gătite cu aparatele selectate.';
+                if (!hasOven && !hasAirFryer) {
+                  applianceMsg =
+                    'Meniul va conține doar rețete la plită/tigaie (fără coacere la cuptor sau aer cald).';
+                } else if (!hasOven) {
+                  applianceMsg =
+                    'Rețetele ce necesită cuptor mare sunt excluse automat; se vor folosi plita și air fryer-ul.';
+                }
+
+                return (
+                  <View
+                    style={[
+                      styles.stepImpactCard,
+                      { backgroundColor: theme.accentBg, borderColor: theme.border },
+                    ]}
+                  >
+                    <View style={styles.stepImpactHeaderRow}>
+                      <Text style={styles.stepImpactIcon}>🍳</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.stepImpactTitle, { color: theme.text }]}>
+                          Garanție 100% fezabilitate în bucătărie
+                        </Text>
+                        <Text style={[styles.stepImpactDesc, { color: theme.textMuted }]}>
+                          {applianceMsg} Nicio rețetă nu va cere aparate pe care nu le deții.
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })()}
             </View>
           )}
 
@@ -1267,6 +1448,58 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   );
                 })}
               </View>
+
+              {/* Step 6 Inter-step Cascade Impact */}
+              {(() => {
+                const currentMarket =
+                  SUPERMARKET_LIST.find((m) => m.id === preferences.supermarketId) ||
+                  SUPERMARKET_LIST[0];
+                const totalMeals = preferences.cookingDays.length * preferences.mealSlots.length;
+                const totalPortions = totalMeals * preferences.peopleCount;
+
+                return (
+                  <View
+                    style={[
+                      styles.stepImpactCard,
+                      { backgroundColor: theme.accentBg, borderColor: theme.border },
+                    ]}
+                  >
+                    <View style={styles.stepImpactHeaderRow}>
+                      <Text style={styles.stepImpactIcon}>🛒</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.stepImpactTitle, { color: theme.text }]}>
+                          Prețuri optimizate la {currentMarket.name}
+                        </Text>
+                        <Text style={[styles.stepImpactDesc, { color: theme.textMuted }]}>
+                          Ingredientele pentru cele {totalPortions} porții din săptămână vor fi estimate pe prețurile reale la raft din {currentMarket.name}.
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.stepImpactPillsRow}>
+                      <View
+                        style={[
+                          styles.stepImpactMiniPill,
+                          { backgroundColor: theme.surfaceSecondary, borderColor: theme.border },
+                        ]}
+                      >
+                        <Text style={[styles.stepImpactMiniPillText, { color: theme.text }]}>
+                          💡 {currentMarket.tagline}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.stepImpactMiniPill,
+                          { backgroundColor: theme.surfaceSecondary, borderColor: theme.border },
+                        ]}
+                      >
+                        <Text style={[styles.stepImpactMiniPillText, { color: theme.text }]}>
+                          🍿 Gustările din pasul următor se vor adapta la acest magazin
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })()}
             </View>
           )}
 
@@ -1704,24 +1937,40 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 </View>
               )}
 
-              {/* Total Extras Summary Pill */}
-              {(preferences.selectedSnackIds?.length || 0) +
-                (preferences.selectedDrinkIds?.length || 0) >
-                0 && (
-                <View
-                  style={[
-                    styles.retailSummaryPill,
-                    { backgroundColor: theme.primaryLight, borderColor: theme.primary },
-                  ]}
-                >
-                  <Text style={[styles.retailSummaryText, { color: theme.primary }]}>
-                    ✨{' '}
-                    {(preferences.selectedSnackIds?.length || 0) +
-                      (preferences.selectedDrinkIds?.length || 0)}{' '}
-                    gustări & băuturi selectate adăugate automat în lista de cumpărături
-                  </Text>
-                </View>
-              )}
+              {/* Step 7 Inter-step Cascade Impact */}
+              {(() => {
+                const snacksCount = preferences.selectedSnackIds?.length || 0;
+                const drinksCount = preferences.selectedDrinkIds?.length || 0;
+                const totalExtras = snacksCount + drinksCount;
+                const currentMarket =
+                  SUPERMARKET_LIST.find((m) => m.id === preferences.supermarketId) ||
+                  SUPERMARKET_LIST[0];
+
+                return (
+                  <View
+                    style={[
+                      styles.stepImpactCard,
+                      { backgroundColor: theme.accentBg, borderColor: theme.border },
+                    ]}
+                  >
+                    <View style={styles.stepImpactHeaderRow}>
+                      <Text style={styles.stepImpactIcon}>🍿</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.stepImpactTitle, { color: theme.text }]}>
+                          {totalExtras > 0
+                            ? `${totalExtras} gustări & băuturi adăugate (+${extrasCost.toFixed(2)} lei)`
+                            : 'Fără gustări sau băuturi extra adăugate'}
+                        </Text>
+                        <Text style={[styles.stepImpactDesc, { color: theme.textMuted }]}>
+                          {totalExtras > 0
+                            ? `Prețuri estimate la ${currentMarket.name}. Sunt incluse în bugetul de la Pasul 8 și direct în lista de cumpărături.`
+                            : 'Poți alege gustări sau băuturi pentru seri de film/meci sau poți continua doar cu mesele principale.'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })()}
             </View>
           )}
 
@@ -1735,6 +1984,80 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 Suma totală pe care dorești să o cheltui la magazin pentru mesele și gustările din
                 aceste zile.
               </Text>
+
+              {/* Step 8 Comprehensive Pipeline Breadcrumb */}
+              <View
+                style={[
+                  styles.pipelineSummaryCard,
+                  { backgroundColor: theme.surfaceSecondary, borderColor: theme.borderStrong },
+                ]}
+              >
+                <View style={styles.pipelineTitleRow}>
+                  <Text style={[styles.pipelineTitle, { color: theme.text }]}>
+                    🔗 Lanț Decizional Sincronizat (Etapele 1 ➔ 8)
+                  </Text>
+                  <View style={[styles.pipelineStatusBadge, { backgroundColor: '#30d158' }]}>
+                    <Text style={styles.pipelineStatusText}>✓ INTEGRAT</Text>
+                  </View>
+                </View>
+
+                <View style={styles.pipelineStepsList}>
+                  <View style={styles.pipelineStepItem}>
+                    <Text style={styles.pipelineStepNumber}>1</Text>
+                    <Text style={[styles.pipelineStepText, { color: theme.text }]}>
+                      {preferences.dietTypes?.map(d => DIET_OPTIONS_CATALOG.find(o => o.id === d)?.label || d).join(', ') || 'Omnivor'}
+                    </Text>
+                  </View>
+                  <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
+
+                  <View style={styles.pipelineStepItem}>
+                    <Text style={styles.pipelineStepNumber}>2</Text>
+                    <Text style={[styles.pipelineStepText, { color: theme.text }]}>
+                      {preferences.moodTags.length} pofte
+                    </Text>
+                  </View>
+                  <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
+
+                  <View style={styles.pipelineStepItem}>
+                    <Text style={styles.pipelineStepNumber}>3</Text>
+                    <Text style={[styles.pipelineStepText, { color: theme.text }]}>
+                      {preferences.peopleCount} {preferences.peopleCount === 1 ? 'pers.' : 'pers.'}
+                    </Text>
+                  </View>
+                  <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
+
+                  <View style={styles.pipelineStepItem}>
+                    <Text style={styles.pipelineStepNumber}>4</Text>
+                    <Text style={[styles.pipelineStepText, { color: theme.text }]}>
+                      {preferences.cookingDays.length} zile ({preferences.mealSlots.length} mese/zi)
+                    </Text>
+                  </View>
+                  <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
+
+                  <View style={styles.pipelineStepItem}>
+                    <Text style={styles.pipelineStepNumber}>5</Text>
+                    <Text style={[styles.pipelineStepText, { color: theme.text }]}>
+                      {preferences.appliances.length} aparate
+                    </Text>
+                  </View>
+                  <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
+
+                  <View style={styles.pipelineStepItem}>
+                    <Text style={styles.pipelineStepNumber}>6</Text>
+                    <Text style={[styles.pipelineStepText, { color: theme.text }]}>
+                      {SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId)?.name || 'Kaufland'}
+                    </Text>
+                  </View>
+                  <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
+
+                  <View style={styles.pipelineStepItem}>
+                    <Text style={styles.pipelineStepNumber}>7</Text>
+                    <Text style={[styles.pipelineStepText, { color: theme.text }]}>
+                      {(preferences.selectedSnackIds?.length || 0) + (preferences.selectedDrinkIds?.length || 0)} extras
+                    </Text>
+                  </View>
+                </View>
+              </View>
 
               <BudgetSlider
                 budget={preferences.budgetRon}
@@ -2653,5 +2976,105 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 2,
     textAlign: 'center',
+  },
+
+  /* Inter-step Cascading Connection Cards */
+  stepImpactCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    marginTop: 14,
+    marginBottom: 6,
+    gap: 8,
+  },
+  stepImpactHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  stepImpactIcon: {
+    fontSize: 22,
+  },
+  stepImpactTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  stepImpactDesc: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 2,
+  },
+  stepImpactPillsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  stepImpactMiniPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  stepImpactMiniPillText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+
+  /* Step 8 Pipeline Breadcrumb Card */
+  pipelineSummaryCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 16,
+  },
+  pipelineTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  pipelineTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  pipelineStatusBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  pipelineStatusText: {
+    color: '#000000',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  pipelineStepsList: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  pipelineStepItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: 'rgba(128,128,128,0.12)',
+  },
+  pipelineStepNumber: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#F3C06D',
+  },
+  pipelineStepText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  pipelineArrow: {
+    fontSize: 10,
   },
 });
