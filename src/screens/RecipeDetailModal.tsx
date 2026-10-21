@@ -22,7 +22,7 @@ import { RecipeVisual } from '../components/RecipeVisual';
 import { getAppTheme } from '../styles/theme';
 import { getRecipeAllergens } from '../utils/allergenFilter';
 import { ALLERGEN_CATALOG } from '../data/allergens';
-import { getEligibleRecipes } from '../engine/plannerEngine';
+import { getEligibleRecipes, getEligibleDessertRecipes } from '../engine/plannerEngine';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { formatIngredientWithHousehold } from '../utils/householdUnits';
 import { getHealthGoalMeta } from '../data/healthTags';
@@ -158,11 +158,16 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
   const suggestedReplacement = useMemo(() => {
     if (!recipe) return null;
-    const eligible = getEligibleRecipes(preferences);
     const target = targetSlot || (recipe.suitableSlots && recipe.suitableSlots[0]) || 'dinner';
-    const slotFiltered = eligible.filter(
-      (r) => r.id !== recipe.id && (r.suitableSlots ? r.suitableSlots.includes(target) : true)
-    );
+    const isDessert = target === 'dessert' || Boolean(recipe.suitableSlots?.includes('dessert'));
+    const eligible = isDessert
+      ? getEligibleDessertRecipes(preferences)
+      : getEligibleRecipes(preferences);
+    const slotFiltered = isDessert
+      ? eligible.filter((r) => r.id !== recipe.id)
+      : eligible.filter(
+          (r) => r.id !== recipe.id && (r.suitableSlots ? r.suitableSlots.includes(target) : true)
+        );
     const baseCandidates =
       slotFiltered.length > 0 ? slotFiltered : eligible.filter((r) => r.id !== recipe.id);
 

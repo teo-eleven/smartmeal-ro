@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { DayOfWeek, MealPlan, MealSlot, Recipe, SupermarketId, UserPreferences } from '../types';
-import { getEligibleRecipes } from '../engine/plannerEngine';
+import { getEligibleRecipes, getEligibleDessertRecipes } from '../engine/plannerEngine';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { aiProxyService, SmartSwapResult } from '../services/aiProxy';
 import { getAppTheme } from '../styles/theme';
@@ -78,13 +78,19 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   const targetMeal = slot ? currentMealDay?.meals?.find((m) => m.slot === slot) : null;
   const currentRecipe = targetMeal ? targetMeal.recipe : currentMealDay?.recipe;
   const currentRecipeId = currentRecipe?.id;
-  const slotTitle = targetMeal?.slotLabelRo || '';
+  const isDessertSlot =
+    slot === 'dessert' || Boolean(currentRecipe?.suitableSlots?.includes('dessert'));
+  const slotTitle = targetMeal?.slotLabelRo || (isDessertSlot ? 'Desert de Casă' : '');
 
   // Filter eligible recipes suitable for this specific meal slot
-  const eligible = getEligibleRecipes(preferences);
-  const slotFiltered = eligible.filter((r) =>
-    slot && r.suitableSlots ? r.suitableSlots.includes(slot) : true
-  );
+  const eligible = isDessertSlot
+    ? getEligibleDessertRecipes(preferences)
+    : getEligibleRecipes(preferences);
+  const slotFiltered = isDessertSlot
+    ? eligible
+    : eligible.filter((r) =>
+        slot && r.suitableSlots ? r.suitableSlots.includes(slot) : true
+      );
   const baseCandidates = slotFiltered.length > 0 ? slotFiltered : eligible;
 
   // Collect recipe IDs used in plan

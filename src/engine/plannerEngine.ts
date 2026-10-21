@@ -101,6 +101,69 @@ export function getEligibleRecipes(preferences: UserPreferences): Recipe[] {
   );
 }
 
+/**
+ * Retrieves all dessert recipes matching dietary, allergy, appliance, and supermarket constraints.
+ * Desserts are exempt from savory main-dish health goal restrictions (e.g. muscle_gain, high_protein),
+ * but strictly enforce diets, avoided allergens, required kitchen appliances, and religious/pork restrictions.
+ */
+export function getEligibleDessertRecipes(preferences: UserPreferences): Recipe[] {
+  const activeDiets: DietType[] =
+    preferences.dietTypes && preferences.dietTypes.length > 0
+      ? preferences.dietTypes
+      : [preferences.dietType];
+  const rejected = new Set(preferences.dislikedRecipeIds ?? []);
+  const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
+
+  // Primary: strictly matching store, appliances, diet, allergens, not disliked, pork_free, and suitable for dessert slot
+  let desserts = RECIPES.filter(
+    (recipe) =>
+      Boolean(recipe.suitableSlots?.includes('dessert')) &&
+      !rejected.has(recipe.id) &&
+      (!requirePorkFree || !recipeContainsPork(recipe)) &&
+      isRecipeMatchingDiets(recipe, activeDiets) &&
+      isRecipeSafeForAllergies(recipe, preferences.avoidedAllergens) &&
+      hasRequiredAppliances(recipe.appliances, preferences.appliances) &&
+      isSupermarketCompatible(recipe, preferences.supermarketId)
+  );
+
+  // Fallback: relax supermarket availability if store-specific catalog is limited,
+  // but NEVER relax diet, allergens, appliances, or religious restrictions!
+  if (desserts.length === 0) {
+    desserts = RECIPES.filter(
+      (recipe) =>
+        Boolean(recipe.suitableSlots?.includes('dessert')) &&
+        !rejected.has(recipe.id) &&
+        (!requirePorkFree || !recipeContainsPork(recipe)) &&
+        isRecipeMatchingDiets(recipe, activeDiets) &&
+        isRecipeSafeForAllergies(recipe, preferences.avoidedAllergens) &&
+        hasRequiredAppliances(recipe.appliances, preferences.appliances)
+    );
+  }
+
+  // Sort: dishes matching user's selected foodTier or moodTags (especially sweet_treat) first
+  const effectiveTier = preferences.foodTier || 'medium';
+  return desserts.sort((a, b) => {
+    let scoreA = 0;
+    let scoreB = 0;
+    if ((preferences.favouriteRecipeIds ?? []).includes(a.id)) scoreA += 50;
+    if ((preferences.favouriteRecipeIds ?? []).includes(b.id)) scoreB += 50;
+    if (a.tier === effectiveTier) scoreA += 20;
+    if (b.tier === effectiveTier) scoreB += 20;
+    if (preferences.moodTags?.includes('sweet_treat')) {
+      if (a.moodTags?.includes('sweet_treat')) scoreA += 30;
+      if (b.moodTags?.includes('sweet_treat')) scoreB += 30;
+    }
+    // Synergy with user's active health goals if the dessert possesses them (e.g. chia pudding for anti-inflammatory)
+    (a.healthTags || []).forEach((t) => {
+      if (preferences.healthGoalTags?.includes(t)) scoreA += 15;
+    });
+    (b.healthTags || []).forEach((t) => {
+      if (preferences.healthGoalTags?.includes(t)) scoreB += 15;
+    });
+    return scoreB - scoreA;
+  });
+}
+
 export const ALL_APPLIANCES: Appliance[] = ['hob', 'oven', 'air_fryer', 'microwave'];
 
 const APPLIANCE_LABELS_RO: Record<Appliance, string> = {
@@ -209,7 +272,8 @@ export function getAlternativeRecipes(
   preferences: UserPreferences,
   slot?: MealSlot
 ): Recipe[] {
-  const eligible = getEligibleRecipes(preferences);
+  const isDessert = slot === 'dessert' || Boolean(currentRecipe.suitableSlots?.includes('dessert'));
+  const eligible = isDessert ? getEligibleDessertRecipes(preferences) : getEligibleRecipes(preferences);
   const filtered = eligible.filter((r) => {
     if (r.id === currentRecipe.id) return false;
     if (slot && r.suitableSlots && r.suitableSlots.length > 0) {
@@ -547,9 +611,26 @@ export function generateMealPlan(
     // Relaxation ladder, loosest constraint first. Diet and appliances are NEVER relaxed:
     // suggesting a dish the user cannot cook, or must not eat, is worse than no preference
     // match at all. Only store availability and slot suitability may give way.
-    let candidates = scoredRecipes.filter((s) => matchesSlot(s.recipe, slot));
+    let candidates =
+      slot === 'dessert'
+        ? scoreFallbackRecipes(getEligibleDessertRecipes(preferences))
+        : scoredRecipes.filter((s) => matchesSlot(s.recipe, slot));
 
-    if (candidates.length === 0) {
+    if (slot === 'dessert' && candidates.length === 0) {
+      // Fallback for desserts relaxing supermarket only, strictly KEEPING diet, allergens, appliances!
+      const anyDesserts = RECIPES.filter(
+        (r) =>
+          matchesSlot(r, 'dessert') &&
+          !rejectedIds.has(r.id) &&
+          (!requirePorkFree || !recipeContainsPork(r)) &&
+          isRecipeMatchingDiets(r, activeDiets) &&
+          isRecipeSafeForAllergies(r, preferences.avoidedAllergens) &&
+          hasRequiredAppliances(r.appliances, preferences.appliances)
+      );
+      if (anyDesserts.length > 0) {
+        candidates = scoreFallbackRecipes(anyDesserts);
+      }
+    } else if (candidates.length === 0) {
       // 1. Drop the supermarket requirement, keep diet + appliances + slot + health goals.
       const ignoringStore = RECIPES.filter(
         (r) =>
@@ -811,12 +892,15 @@ export function swapMealInPlan(
     }
   });
 
-  const eligible = getEligibleRecipes(preferences);
+  const isDessert = slotToSwap === 'dessert';
+  const eligible = isDessert ? getEligibleDessertRecipes(preferences) : getEligibleRecipes(preferences);
 
   // Filter candidates strictly matching slot compatibility
-  let slotFiltered = eligible.filter((r) =>
-    r.suitableSlots ? r.suitableSlots.includes(slotToSwap) : true
-  );
+  let slotFiltered = isDessert
+    ? eligible
+    : eligible.filter((r) =>
+        r.suitableSlots ? r.suitableSlots.includes(slotToSwap) : true
+      );
   if (slotFiltered.length === 0) slotFiltered = eligible;
 
   // Candidates not already in this week's plan
@@ -832,6 +916,10 @@ export function swapMealInPlan(
 
   if (availableCandidates.length === 0) {
     availableCandidates = eligible.filter((r) => r.id !== currentRecipeId);
+  }
+
+  if (availableCandidates.length === 0) {
+    availableCandidates = isDessert ? getEligibleDessertRecipes(preferences) : eligible;
   }
 
   if (availableCandidates.length === 0) {
@@ -977,52 +1065,8 @@ export function selectOptimalDessertForDay(
   const day = currentPlan.days.find((d) => d.dayOfWeek === dayOfWeek);
   if (!day) return null;
 
-  // All recipes eligible by diet and appliances with 'dessert' in suitableSlots
-  let eligible = getEligibleRecipes(preferences).filter((r) =>
-    r.suitableSlots ? r.suitableSlots.includes('dessert') : false
-  );
-
-  // If no dessert matches specific health goals (e.g. high_protein/muscle_gain targets for main meals),
-  // relax health goals but STRICTLY KEEP diet, allergies, appliances, and religious/pork restrictions!
-  if (eligible.length === 0) {
-    const activeDiets: DietType[] =
-      preferences.dietTypes && preferences.dietTypes.length > 0
-        ? preferences.dietTypes
-        : [preferences.dietType];
-    const rejected = new Set(preferences.dislikedRecipeIds ?? []);
-    const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
-
-    eligible = RECIPES.filter(
-      (recipe) =>
-        Boolean(recipe.suitableSlots?.includes('dessert')) &&
-        !rejected.has(recipe.id) &&
-        (!requirePorkFree || !recipeContainsPork(recipe)) &&
-        isRecipeMatchingDiets(recipe, activeDiets) &&
-        isRecipeSafeForAllergies(recipe, preferences.avoidedAllergens) &&
-        hasRequiredAppliances(recipe.appliances, preferences.appliances) &&
-        isSupermarketCompatible(recipe, preferences.supermarketId)
-    );
-  }
-
-  // If still 0 due to supermarket ingredient uniqueness, relax supermarket compatibility as well:
-  if (eligible.length === 0) {
-    const activeDiets: DietType[] =
-      preferences.dietTypes && preferences.dietTypes.length > 0
-        ? preferences.dietTypes
-        : [preferences.dietType];
-    const rejected = new Set(preferences.dislikedRecipeIds ?? []);
-    const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
-
-    eligible = RECIPES.filter(
-      (recipe) =>
-        Boolean(recipe.suitableSlots?.includes('dessert')) &&
-        !rejected.has(recipe.id) &&
-        (!requirePorkFree || !recipeContainsPork(recipe)) &&
-        isRecipeMatchingDiets(recipe, activeDiets) &&
-        isRecipeSafeForAllergies(recipe, preferences.avoidedAllergens) &&
-        hasRequiredAppliances(recipe.appliances, preferences.appliances)
-    );
-  }
+  // All recipes eligible by diet, appliances, and allergens with 'dessert' suitability
+  const eligible = getEligibleDessertRecipes(preferences);
 
   if (eligible.length === 0) return null;
 

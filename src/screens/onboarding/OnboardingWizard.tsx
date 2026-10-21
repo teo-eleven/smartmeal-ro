@@ -106,6 +106,12 @@ const MEAL_MOMENT_OPTIONS: {
     icon: '🍽️',
     subtitle: 'Mâncăruri echilibrate, pește la cuptor, salate bogate și cine savuroase.',
   },
+  {
+    slot: 'dessert',
+    title: 'Desert de Casă',
+    icon: '🍰',
+    subtitle: 'Papanași tradiționali, lava cake, clătite, budinci catifelate și delicii dulci.',
+  },
 ];
 
 const FOOD_TIER_OPTIONS: {
@@ -1123,7 +1129,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 Ce mese dorești să planifici în fiecare zi?
               </Text>
               <Text style={[styles.questionSubtitle, { color: theme.textMuted }]}>
-                Selectează una, două sau toate cele trei mese principale (Mic Dejun, Prânz, Cină).
+                Alege mesele principale pentru fiecare zi, plus opțional un moment dulce de desert.
               </Text>
 
               <View style={[styles.mealCountGrid, isLargeScreen && styles.mealCountGridDesktop]}>
@@ -1165,17 +1171,35 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     >
                       <Text style={styles.mealCountIcon}>{option.icon}</Text>
                       <View style={styles.mealCountInfo}>
-                        <Text
-                          style={[
-                            styles.mealCountTitle,
-                            {
-                              color: isSelected ? theme.primary : theme.text,
-                              fontWeight: isSelected ? '800' : '700',
-                            },
-                          ]}
-                        >
-                          {option.title}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          <Text
+                            style={[
+                              styles.mealCountTitle,
+                              {
+                                color: isSelected ? theme.primary : theme.text,
+                                fontWeight: isSelected ? '800' : '700',
+                              },
+                            ]}
+                          >
+                            {option.title}
+                          </Text>
+                          {option.slot === 'dessert' && preferences.moodTags.includes('sweet_treat') && (
+                            <View
+                              style={{
+                                backgroundColor: isDark ? 'rgba(236, 72, 153, 0.22)' : '#fdf2f8',
+                                borderColor: '#ec4899',
+                                borderWidth: 1,
+                                paddingHorizontal: 7,
+                                paddingVertical: 2,
+                                borderRadius: 6,
+                              }}
+                            >
+                              <Text style={{ fontSize: 11, fontWeight: '800', color: '#ec4899' }}>
+                                ✨ Recomandat din Pofte
+                              </Text>
+                            </View>
+                          )}
+                        </View>
                         <Text style={[styles.mealCountSubtitle, { color: theme.textMuted }]}>
                           {option.subtitle}
                         </Text>
@@ -1329,6 +1353,21 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                           🏷️ Calitate ingrediente: {tierName}
                         </Text>
                       </View>
+                      {preferences.moodTags.includes('sweet_treat') && (
+                        <View
+                          style={[
+                            styles.stepImpactMiniPill,
+                            {
+                              backgroundColor: isDark ? 'rgba(236, 72, 153, 0.16)' : '#fdf2f8',
+                              borderColor: '#ec4899',
+                            },
+                          ]}
+                        >
+                          <Text style={[styles.stepImpactMiniPillText, { color: '#ec4899', fontWeight: '800' }]}>
+                            🍰 {preferences.mealSlots.includes('dessert') ? 'Desert de Casă inclus' : 'Poftă de Dulce (activabilă mai sus)'}
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   </View>
                 );

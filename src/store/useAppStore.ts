@@ -1625,15 +1625,27 @@ export const useAppStore = create<AppState>((set, get) => ({
             },
           };
         }
+        const nextMoods = current.filter((t) => t !== tag);
+        let nextSlots = state.preferences.mealSlots;
+        if (tag === 'sweet_treat') {
+          nextSlots = nextSlots.filter((s) => s !== 'dessert');
+          if (nextSlots.length === 0) nextSlots = ['dinner'];
+        }
         const nextPrefs = {
           ...state.preferences,
-          moodTags: current.filter((t) => t !== tag),
+          moodTags: nextMoods,
+          mealSlots: nextSlots,
         };
         void storageService.savePreferences(nextPrefs);
         return { preferences: nextPrefs };
       }
 
-      const nextPrefs = { ...state.preferences, moodTags: [...current, tag] };
+      const nextMoods = [...current, tag];
+      let nextSlots = state.preferences.mealSlots;
+      if (tag === 'sweet_treat' && !nextSlots.includes('dessert')) {
+        nextSlots = [...nextSlots, 'dessert'];
+      }
+      const nextPrefs = { ...state.preferences, moodTags: nextMoods, mealSlots: nextSlots };
       void storageService.savePreferences(nextPrefs);
       return { preferences: nextPrefs };
     });
@@ -1641,9 +1653,20 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setMoodTags: (tags: MoodTag[]) => {
     set((state) => {
+      const hadSweetTreat = state.preferences.moodTags.includes('sweet_treat');
+      const hasSweetTreat = tags.includes('sweet_treat');
+      let nextSlots = state.preferences.mealSlots;
+      if (!hadSweetTreat && hasSweetTreat && !nextSlots.includes('dessert')) {
+        nextSlots = [...nextSlots, 'dessert'];
+      } else if (hadSweetTreat && !hasSweetTreat) {
+        nextSlots = nextSlots.filter((s) => s !== 'dessert');
+        if (nextSlots.length === 0) nextSlots = ['dinner'];
+      }
+
       const nextPrefs = {
         ...state.preferences,
         moodTags: tags.length > 0 ? tags : (['healthy_comfort'] as MoodTag[]),
+        mealSlots: nextSlots,
       };
       void storageService.savePreferences(nextPrefs);
       return { preferences: nextPrefs };
