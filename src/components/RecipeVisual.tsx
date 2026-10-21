@@ -35,7 +35,7 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
   const highlights = getRecipeHighlights(recipe, 3);
   const minutes = getTotalMinutes(recipe);
   const backdrop = ARCHETYPE_BACKDROPS[archetype];
-  const photoUri = getRecipePhotographyUri(recipe, archetype);
+  const photoUri = recipe.imageUrl || getRecipePhotographyUri(recipe, archetype);
 
   const accessibilityLabel = `${recipe.title}. ${palette.labelRo}. Ingrediente principale: ${highlights.join(', ')}. ${minutes} minute.`;
 
