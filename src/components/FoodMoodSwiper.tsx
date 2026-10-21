@@ -13,7 +13,7 @@ import {
   Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { DietType, MoodTag, Recipe } from '../types';
+import { DietType, MoodTag } from '../types';
 import { MOOD_OPTIONS_CATALOG, MoodOptionInfo } from '../utils/moodCatalog';
 import { ARCHETYPE_BACKDROPS } from '../../assets/recipes/backdrops';
 import { getAppTheme } from '../styles/theme';
@@ -216,8 +216,15 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
     extrapolate: 'clamp',
   });
 
+  const cardExitOpacity = pan.x.interpolate({
+    inputRange: [-SCREEN_WIDTH * 0.9, -SCREEN_WIDTH * 0.45, 0, SCREEN_WIDTH * 0.45, SCREEN_WIDTH * 0.9],
+    outputRange: [0, 1, 1, 1, 0],
+    extrapolate: 'clamp',
+  });
+
   const animatedCardStyle = {
     transform: [{ translateX: pan.x }, { translateY: pan.y }, { rotate }],
+    opacity: cardExitOpacity,
   };
 
   const likeOpacity = pan.x.interpolate({
@@ -229,18 +236,6 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
   const nopeOpacity = pan.x.interpolate({
     inputRange: [-100, -20],
     outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
-
-  const nextScale = pan.x.interpolate({
-    inputRange: [-180, 0, 180],
-    outputRange: [1, 0.94, 1],
-    extrapolate: 'clamp',
-  });
-
-  const nextOpacity = pan.x.interpolate({
-    inputRange: [-180, 0, 180],
-    outputRange: [1, 0.85, 1],
     extrapolate: 'clamp',
   });
 
@@ -328,17 +323,11 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
         <View style={styles.deckSection}>
           {currentItem ? (
             <View style={styles.deckViewport}>
-              {/* Card 2: Next Card in deck (rendered behind) */}
+              {/* Card 2: Next Card in deck (rendered behind with exact same 1:1 scale to eliminate jumping) */}
               {nextItem && (
-                <Animated.View
-                  style={[
-                    styles.cardWrapper,
-                    styles.cardBackdrop,
-                    {
-                      transform: [{ scale: nextScale }],
-                      opacity: nextOpacity,
-                    },
-                  ]}
+                <View
+                  key={`card-next-${nextItem.id}`}
+                  style={[styles.cardWrapper, styles.cardBackdrop]}
                   pointerEvents="none"
                 >
                   <View
@@ -358,11 +347,12 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                       moodRecipeMap.get(nextItem.id)
                     )}
                   </View>
-                </Animated.View>
+                </View>
               )}
 
               {/* Card 1: Top Active Card (Draggable) */}
               <Animated.View
+                key={`card-top-${currentItem.id}`}
                 {...panResponder.panHandlers}
                 style={[styles.cardWrapper, animatedCardStyle]}
               >
@@ -595,38 +585,44 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
         </View>
       )}
 
-      {/* Selected Pills Summary Bar */}
-      {selectedMoods.length > 0 && viewMode === 'swipe' && (
+      {/* Selected Pills Summary Bar - Stable minHeight to prevent page jumps */}
+      {viewMode === 'swipe' && (
         <View style={[styles.selectedPillsContainer, { borderTopColor: theme.border }]}>
           <Text style={[styles.selectedPillsLabel, { color: theme.textMuted }]}>
-            Pofte alese pentru această săptămână:
+            Pofte alese pentru această săptămână ({selectedMoods.length}/{maxMoods}):
           </Text>
           <View style={styles.pillsRow}>
-            {selectedMoods.map((tag) => {
-              const item = MOOD_OPTIONS_CATALOG.find((m) => m.id === tag);
-              if (!item) return null;
-              return (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={`Elimină pofta ${item.label}`}
-                  key={tag}
-                  onPress={() => onToggleMood(tag)}
-                  style={[
-                    styles.activeMoodPill,
-                    {
-                      backgroundColor: theme.accentBg,
-                      borderColor: theme.border,
-                    },
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.activeMoodPillText, { color: theme.text }]}>
-                    {item.icon} {item.label}
-                  </Text>
-                  <Text style={styles.activeMoodPillRemove}>✕</Text>
-                </TouchableOpacity>
-              );
-            })}
+            {selectedMoods.length > 0 ? (
+              selectedMoods.map((tag) => {
+                const item = MOOD_OPTIONS_CATALOG.find((m) => m.id === tag);
+                if (!item) return null;
+                return (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={`Elimină pofta ${item.label}`}
+                    key={tag}
+                    onPress={() => onToggleMood(tag)}
+                    style={[
+                      styles.activeMoodPill,
+                      {
+                        backgroundColor: theme.accentBg,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.activeMoodPillText, { color: theme.text }]}>
+                      {item.icon} {item.label}
+                    </Text>
+                    <Text style={styles.activeMoodPillRemove}>✕</Text>
+                  </TouchableOpacity>
+                );
+              })
+            ) : (
+              <Text style={[styles.selectedPillsEmptyText, { color: theme.textMuted }]}>
+                Nicio poftă selectată încă • Trage cardul spre dreapta dacă îți place
+              </Text>
+            )}
           </View>
         </View>
       )}
@@ -687,42 +683,40 @@ function renderCardBody(
             <Text style={[styles.vibeText, { color: theme.text }]}>{item.vibe}</Text>
           </View>
 
-          {/* Right side indicators */}
-          <View style={styles.topRightRow}>
-            <View
+          {/* Right side single unified indicator */}
+          <View
+            style={[
+              styles.recipeCountPill,
+              {
+                backgroundColor: isSelected
+                  ? '#30d158'
+                  : count > 0
+                  ? isDark
+                    ? 'rgba(48,209,88,0.2)'
+                    : 'rgba(48,209,88,0.15)'
+                  : 'rgba(255,69,58,0.2)',
+                borderColor: isSelected ? '#30d158' : count > 0 ? '#30d158' : '#ff453a',
+              },
+            ]}
+          >
+            <Text
               style={[
-                styles.recipeCountPill,
-                {
-                  backgroundColor: count > 0 ? (isDark ? 'rgba(48,209,88,0.2)' : 'rgba(48,209,88,0.15)') : 'rgba(255,69,58,0.2)',
-                  borderColor: count > 0 ? '#30d158' : '#ff453a',
-                },
+                styles.recipeCountText,
+                { color: isSelected ? '#000000' : count > 0 ? '#30d158' : '#ff453a' },
               ]}
             >
-              <Text
-                style={[
-                  styles.recipeCountText,
-                  { color: count > 0 ? '#30d158' : '#ff453a' },
-                ]}
-              >
-                {count > 0 ? `✨ ${count} rețete` : '⚠️ 0 rețete'}
-              </Text>
-            </View>
-
-            {isSelected && (
-              <View style={styles.selectedStampBadge}>
-                <Text style={styles.selectedStampText}>✓ ALES</Text>
-              </View>
-            )}
+              {isSelected ? `✓ ALES · ${count} rețete` : count > 0 ? `✨ ${count} rețete` : '⚠️ 0 rețete'}
+            </Text>
           </View>
         </View>
 
-        {/* Big Food Icon in Center */}
-        <View style={styles.centerIconWrap}>
+        {/* Big Food Icon in Center (Pinned absolutely to prevent any layout shifts) */}
+        <View style={styles.centerIconWrap} pointerEvents="none">
           <Text style={styles.bigFoodIcon}>{item.icon}</Text>
         </View>
       </View>
 
-      {/* Details Container - Locked Metrics to eliminate visual jumps */}
+      {/* Details Container - Strict Vertical Metrics to eliminate visual jumps */}
       <View style={styles.cardDetailsArea}>
         <View style={styles.cardTitleBox}>
           <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={1}>
@@ -830,10 +824,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     maxWidth: 390,
+    top: 0,
+    left: 0,
   },
   cardBackdrop: {
-    transform: [{ scale: 0.94 }],
-    opacity: 0.85,
+    opacity: 0.96,
   },
   cardInner: {
     width: '100%',
@@ -867,19 +862,14 @@ const styles = StyleSheet.create({
     height: 110,
     width: '100%',
     position: 'relative',
-    justifyContent: 'space-between',
     padding: 10,
   },
   cardTopRow: {
+    height: 28,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     zIndex: 2,
-  },
-  topRightRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
   },
   vibePill: {
     flexDirection: 'row',
@@ -898,8 +888,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   recipeCountPill: {
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
   },
@@ -907,21 +897,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
   },
-  selectedStampBadge: {
-    backgroundColor: '#30d158',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 16,
-  },
-  selectedStampText: {
-    color: '#000000',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
   centerIconWrap: {
-    alignSelf: 'center',
-    marginBottom: 4,
+    position: 'absolute',
+    top: 48,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 2,
   },
   bigFoodIcon: {
@@ -1213,16 +1195,23 @@ const styles = StyleSheet.create({
   selectedPillsContainer: {
     width: '100%',
     maxWidth: 580,
-    marginTop: 8,
+    marginTop: 10,
     paddingTop: 8,
     borderTopWidth: 1,
+    minHeight: 56,
   },
   selectedPillsLabel: {
     fontSize: 10,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  selectedPillsEmptyText: {
+    fontSize: 11,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 6,
   },
   pillsRow: {
     flexDirection: 'row',

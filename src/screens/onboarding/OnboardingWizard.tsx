@@ -816,27 +816,32 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 dietTypes={preferences.dietTypes}
               />
 
-              {preferences.moodTags.length > 0 && (
-                <View
-                  style={[
-                    styles.stepImpactCard,
-                    { backgroundColor: theme.accentBg, borderColor: theme.border },
-                  ]}
-                >
-                  <View style={styles.stepImpactHeaderRow}>
-                    <Text style={styles.stepImpactIcon}>🎯</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.stepImpactTitle, { color: theme.text }]}>
-                        {preferences.moodTags.length}{' '}
-                        {preferences.moodTags.length === 1 ? 'stil culinar ales' : 'stiluri culinare alese'}
-                      </Text>
-                      <Text style={[styles.stepImpactDesc, { color: theme.textMuted }]}>
-                        Rețetele din aceste categorii vor primi prioritate maximă (+30 puncte scor) și vor fi distribuite pe zilele de gătit la Pasul 4.
-                      </Text>
-                    </View>
+              <View
+                style={[
+                  styles.stepImpactCard,
+                  { backgroundColor: theme.accentBg, borderColor: theme.border },
+                ]}
+              >
+                <View style={styles.stepImpactHeaderRow}>
+                  <Text style={styles.stepImpactIcon}>🎯</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.stepImpactTitle, { color: theme.text }]}>
+                      {preferences.moodTags.length > 0
+                        ? `${preferences.moodTags.length} ${
+                            preferences.moodTags.length === 1
+                              ? 'stil culinar ales'
+                              : 'stiluri culinare alese'
+                          }`
+                        : 'Alege poftele tale pentru săptămână'}
+                    </Text>
+                    <Text style={[styles.stepImpactDesc, { color: theme.textMuted }]}>
+                      {preferences.moodTags.length > 0
+                        ? 'Rețetele din aceste categorii vor primi prioritate maximă (+30 puncte scor) și vor fi distribuite pe zilele de gătit la Pasul 4.'
+                        : 'Glisează spre dreapta sau apasă „Îmi place” pentru stilurile pe care vrei să le mănânci în acest meniu.'}
+                    </Text>
                   </View>
                 </View>
-              )}
+              </View>
             </View>
           )}
 

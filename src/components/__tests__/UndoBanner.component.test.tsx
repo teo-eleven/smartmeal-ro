@@ -12,7 +12,9 @@ const baseProps = {
 };
 
 describe('UndoBanner', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   test('shows what happened and how to take it back', () => {
     render(<UndoBanner {...baseProps} />);
@@ -36,5 +38,13 @@ describe('UndoBanner', () => {
   test('stays out of the way when there is nothing to undo', () => {
     render(<UndoBanner {...baseProps} visible={false} />);
     expect(screen.queryByText(baseProps.message)).toBeNull();
+  });
+
+  test('automatically dismisses after 5 seconds', () => {
+    render(<UndoBanner {...baseProps} autoDismissTimeoutMs={5000} />);
+    expect(baseProps.onDismiss).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(5000);
+    expect(baseProps.onDismiss).toHaveBeenCalledTimes(1);
   });
 });

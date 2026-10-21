@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getAppTheme } from '../styles/theme';
 
@@ -9,11 +9,12 @@ interface UndoBannerProps {
   onAction: () => void;
   onDismiss: () => void;
   isDark: boolean;
+  autoDismissTimeoutMs?: number;
 }
 
 /**
- * Offered right after something was destroyed. Deliberately not on a timer: a confirmation
- * the user may have mis-clicked should not expire while they are still reading it.
+ * Offered right after something was destroyed. Automatically dismisses after 5 seconds
+ * if the user does not take action or manually dismiss.
  */
 export const UndoBanner: React.FC<UndoBannerProps> = ({
   visible,
@@ -22,8 +23,18 @@ export const UndoBanner: React.FC<UndoBannerProps> = ({
   onAction,
   onDismiss,
   isDark,
+  autoDismissTimeoutMs = 5000,
 }) => {
   const theme = getAppTheme(isDark);
+
+  useEffect(() => {
+    if (!visible || !autoDismissTimeoutMs || autoDismissTimeoutMs <= 0) return;
+    const timer = setTimeout(() => {
+      onDismiss();
+    }, autoDismissTimeoutMs);
+
+    return () => clearTimeout(timer);
+  }, [visible, autoDismissTimeoutMs, onDismiss]);
 
   if (!visible) return null;
 
