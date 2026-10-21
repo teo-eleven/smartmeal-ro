@@ -82,6 +82,7 @@ export const INGREDIENT_ICONS: Record<string, string> = {
   miere_poliflora: '🍯',
   zahar_tos: '🍬',
   ciocolata_menaj: '🍫',
+  ciocolata_neagra_vegana: '🍫',
   cacao_pudra: '🍫',
   biscuiti_populari: '🍪',
   gem_fructe: '🍓',

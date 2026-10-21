@@ -195,6 +195,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
   },
   carne_tocata_amestec: {
     id: 'carne_tocata_amestec',
+    containsPork: true,
     name: 'Carne tocată amestec porc-vită',
     category: 'meat_fish',
     isPantryStaple: false,
@@ -204,6 +205,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
   },
   muschiulet_porc: {
     id: 'muschiulet_porc',
+    containsPork: true,
     name: 'Mușchiuleț de porc fraged',
     category: 'meat_fish',
     isPantryStaple: false,
@@ -653,6 +655,16 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     unit: 'g',
     typicalPriceRon: { lidl: 4.49, kaufland: 4.19, carrefour: 4.99, mega_image: 5.49, auchan: 4.89, penny: 4.36, profi: 4.48, sezamo: 5.38 },
   },
+  ciocolata_neagra_vegana: {
+    id: 'ciocolata_neagra_vegana',
+    name: 'Ciocolată neagră fără lactate 70%',
+    category: 'pantry',
+    isPantryStaple: false,
+    standardPackSize: 100,
+    unit: 'g',
+    // Estimated shelf prices (2026-10): a 70% bar is roughly 20% dearer than the 55% one.
+    typicalPriceRon: { lidl: 5.49, kaufland: 5.19, carrefour: 5.99, mega_image: 6.49, auchan: 5.89, penny: 5.36, profi: 5.48, sezamo: 6.38 },
+  },
   zahar_tos: {
     id: 'zahar_tos',
     name: 'Zahăr tos alb',
@@ -736,6 +748,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
   },
   sunca_praga: {
     id: 'sunca_praga',
+    containsPork: true,
     name: 'Șuncă de Praga feliată din piept de porc',
     category: 'meat_fish',
     isPantryStaple: false,
@@ -754,6 +767,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
   },
   carnaciori_oltenesti: {
     id: 'carnaciori_oltenesti',
+    containsPork: true,
     name: 'Cârnăciori oltenești afumați',
     category: 'meat_fish',
     isPantryStaple: false,
@@ -763,6 +777,7 @@ export const INGREDIENTS: Record<string, Ingredient> = {
   },
   bacon_afumat: {
     id: 'bacon_afumat',
+    containsPork: true,
     name: 'Bacon feliat afumat din piept de porc',
     category: 'meat_fish',
     isPantryStaple: false,

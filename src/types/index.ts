@@ -71,6 +71,8 @@ export interface Ingredient {
   standardPackSize: number;
   unit: MeasurementUnit;
   typicalPriceRon: Record<SupermarketId, number>;
+  /** Pork or a pork product. The "Fără porc" filter trusts this flag, never the name. */
+  containsPork?: boolean;
 }
 
 export interface RecipeIngredient {

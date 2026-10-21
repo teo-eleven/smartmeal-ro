@@ -607,7 +607,11 @@ export function generateMealPlan(
     return recipe.suitableSlots.includes(slot);
   }
 
-  function pickBestRecipeForSlot(slot: MealSlot, daySpotlightMood?: MoodTag): Recipe {
+  /**
+   * Null only when nothing at all may be served in this slot, which today happens for
+   * desserts under strict diets: keto has no dessert, and inventing one would break the diet.
+   */
+  function pickBestRecipeForSlot(slot: MealSlot, daySpotlightMood?: MoodTag): Recipe | null {
     // Relaxation ladder, loosest constraint first. Diet and appliances are NEVER relaxed:
     // suggesting a dish the user cannot cook, or must not eat, is worse than no preference
     // match at all. Only store availability and slot suitability may give way.
@@ -776,6 +780,7 @@ export function generateMealPlan(
       return bTotalScore - aTotalScore;
     });
 
+    if (sorted.length === 0) return null;
     const chosen = sorted[0].recipe;
     const currentUsage = recipeUsageCount.get(chosen.id) || 0;
     recipeUsageCount.set(chosen.id, currentUsage + 1);
@@ -786,7 +791,7 @@ export function generateMealPlan(
   }
 
   // Construct MealPlanDay entries
-  const days: MealPlanDay[] = preferences.cookingDays.map((dayOfWeek, dayIndex) => {
+  const plannedDays = preferences.cookingDays.map((dayOfWeek, dayIndex): MealPlanDay | null => {
     const rawDaySlots = preferences.dailyMealSlots?.[dayOfWeek] ?? slots;
     const daySlots = [...rawDaySlots]
       .filter((s) => s !== 'snack')
@@ -798,8 +803,9 @@ export function generateMealPlan(
         ? preferences.moodTags[dayIndex % preferences.moodTags.length]
         : undefined;
 
-    const dayMeals: PlannedMeal[] = daySlots.map((slot) => {
+    const dayMeals: PlannedMeal[] = daySlots.flatMap((slot): PlannedMeal[] => {
       const recipe = pickBestRecipeForSlot(slot, daySpotlightMood);
+      if (!recipe) return [];
       const cost = calculateRecipePortionCost(
         recipe,
         preferences.peopleCount,
@@ -807,16 +813,20 @@ export function generateMealPlan(
         preferences.excludePantryStaples
       );
 
-      return {
-        id: `${dayOfWeek}-${slot}`,
-        slot,
-        slotLabelRo: getSlotLabelRo(slot),
-        recipe,
-        servings: preferences.peopleCount,
-        estimatedCostRon: cost,
-      };
+      return [
+        {
+          id: `${dayOfWeek}-${slot}`,
+          slot,
+          slotLabelRo: getSlotLabelRo(slot),
+          recipe,
+          servings: preferences.peopleCount,
+          estimatedCostRon: cost,
+        },
+      ];
     });
 
+    // A day whose only slots could not be filled is left out rather than shown empty.
+    if (dayMeals.length === 0) return null;
     const primaryMeal = dayMeals.find((m) => m.slot === 'dinner') || dayMeals[0];
     const dayCostSum = dayMeals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
 
@@ -828,6 +838,7 @@ export function generateMealPlan(
       estimatedCostRon: Math.round(dayCostSum * 100) / 100,
     };
   });
+  const days = plannedDays.filter((day): day is MealPlanDay => day !== null);
 
   // Bring the cart down to the user's budget before the plan is handed back.
   const { days: budgetedDays, swapsApplied } = optimizeDaysForBudget(

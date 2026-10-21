@@ -25,6 +25,7 @@ import {
   checkPlanFeasibility,
   generateMealPlan,
   getAlternativeRecipes,
+  getEligibleDessertRecipes,
   getEligibleRecipes,
   getSlotLabelRo,
   hasRequiredAppliances,
@@ -38,12 +39,24 @@ import {
   calculateRecipePortionCost,
 } from '../engine/budgetCalculator';
 import { INGREDIENTS } from '../data/ingredients';
+import { recipeContainsPork } from '../data/healthTags';
 import { RECIPES_MAP } from '../data/recipes';
 import { RETAIL_PRODUCTS_MAP } from '../data/retailProducts';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { ALLERGEN_CATALOG } from '../data/allergens';
 import { getRecipeAllergens } from '../utils/allergenFilter';
-import { parseReminderSettings, parseUserPreferences } from '../utils/preferencesValidation';
+import { mergeProtections, stricterDiet } from './preferenceProtections';
+import {
+  buildPreferenceRepairNotice,
+  hasRepairs,
+  PreferenceRepairs,
+} from './preferenceRepairNotice';
+import {
+  parseReminderSettings,
+  parseUserPreferences,
+  wasDietRepaired,
+  wasHealthGoalsRepaired,
+} from '../utils/preferencesValidation';
 import { reminderScheduler } from '../services/reminderScheduler';
 import { storageService } from '../services/storage';
 import { cloudSyncService } from '../services/supabase';
@@ -295,14 +308,6 @@ const KNOWN_ALLERGENS = new Set<string>(ALLERGEN_CATALOG.map((a) => a.id));
  * Allergen lists only ever grow when they meet. Restoring an older plan, or reading a list
  * back from storage, must never be a way to end up protected against less than before.
  */
-function mergeAllergens(a?: Allergen[], b?: Allergen[]): Allergen[] {
-  // Defensive on both sides: either can arrive from storage or a cloud row as something
-  // that is not a list at all, and spreading that throws.
-  const left = Array.isArray(a) ? a : [];
-  const right = Array.isArray(b) ? b : [];
-  return Array.from(new Set([...left, ...right]));
-}
-
 /** Storage is untrusted: anything that is not a known allergen id is dropped. */
 export function sanitizeAllergens(value: unknown): { allergens: Allergen[]; wasRepaired: boolean } {
   if (!Array.isArray(value)) {
@@ -324,6 +329,9 @@ function makePlanSafeForPreferences(
   preferences: UserPreferences
 ): { days: MealPlanDay[]; replacedCount: number; offendingAllergens: Allergen[] } {
   const eligible = getEligibleRecipes(preferences);
+  // Desserts are judged by the dessert rules, exactly as generation picks them: health goals
+  // shape the main meals only, so a dessert without a 'high_fiber' tag is not unsafe.
+  const eligibleDesserts = getEligibleDessertRecipes(preferences);
   const avoided = preferences.avoidedAllergens ?? [];
   let replacedCount = 0;
   const offending = new Set<Allergen>();
@@ -340,23 +348,27 @@ function makePlanSafeForPreferences(
       // allergen verdict was then computed against a list the catalog never contained.
       // Whatever arrives, the dish served is the one the catalog defines.
       const canonical = RECIPES_MAP[meal.recipe.id];
-      const isSafe = Boolean(canonical) && eligible.some((recipe) => recipe.id === canonical.id);
+      const pool = meal.slot === 'dessert' ? eligibleDesserts : eligible;
+      const isSafe = Boolean(canonical) && pool.some((recipe) => recipe.id === canonical.id);
       if (isSafe) return meal.recipe === canonical ? meal : { ...meal, recipe: canonical };
 
-      getRecipeAllergens(canonical ?? meal.recipe)
+      // A dish the catalog does not know is replaced; its stored body is never read, since it
+      // may not even have an ingredient list.
+      (canonical ? getRecipeAllergens(canonical) : [])
         .filter((allergen) => avoided.includes(allergen))
         .forEach((allergen) => offending.add(allergen));
 
+      // A dessert is only ever replaced by a dessert; with none left, the slot is dropped.
       const replacement =
-        eligible.find(
+        pool.find(
           (recipe) =>
             (recipe.suitableSlots ? recipe.suitableSlots.includes(meal.slot) : true) &&
             (usage.get(recipe.id) || 0) < 2
         ) ??
-        eligible.find((recipe) =>
+        pool.find((recipe) =>
           recipe.suitableSlots ? recipe.suitableSlots.includes(meal.slot) : true
         ) ??
-        eligible[0];
+        (meal.slot === 'dessert' ? undefined : pool[0]);
 
       replacedCount += 1;
       if (!replacement) return null;
@@ -380,17 +392,54 @@ function makePlanSafeForPreferences(
 
     const keptMeals = meals.filter((meal): meal is PlannedMeal => meal !== null);
     const primary = keptMeals.find((meal) => meal.slot === 'dinner') || keptMeals[0];
+    // With nothing safe left, the day goes: keeping it would keep the unsafe dish as its
+    // headline, and parts of the UI read the headline rather than the meals.
+    if (!primary) return null;
     const sum = keptMeals.reduce((total, meal) => total + meal.estimatedCostRon, 0);
 
     return {
       ...day,
       meals: keptMeals,
-      recipe: primary ? primary.recipe : day.recipe,
+      recipe: primary.recipe,
       estimatedCostRon: Math.round(sum * 100) / 100,
     };
   });
 
-  return { days: safeDays, replacedCount, offendingAllergens: Array.from(offending) };
+  return {
+    days: safeDays.filter((day): day is MealPlanDay => day !== null),
+    replacedCount,
+    offendingAllergens: Array.from(offending),
+  };
+}
+
+/** Said when no day of an incoming plan survives today's rules, so nothing is replaced. */
+function buildNothingSafeNotice(source: 'restore' | 'cloud'): SystemNotice {
+  return {
+    id: Date.now().toString(),
+    title: 'Planul nu se potrivește cu setările tale',
+    message:
+      source === 'restore'
+        ? 'Niciun fel din planul salvat nu respectă dieta, alergiile sau aparatele tale de acum, așa că am păstrat meniul curent.'
+        : 'Niciun fel din planul din cloud nu respectă dieta, alergiile sau aparatele tale de pe acest dispozitiv, așa că am păstrat meniul curent.',
+    type: 'warning',
+  };
+}
+
+/**
+ * The safety pass, for plans that arrive from outside generation. A malformed plan throws
+ * inside it; that is a refusal like any other, never a crash out of a tap handler.
+ */
+function tryMakePlanSafe(
+  days: MealPlanDay[],
+  preferences: UserPreferences
+): ReturnType<typeof makePlanSafeForPreferences> | null {
+  try {
+    const result = makePlanSafeForPreferences(days, preferences);
+    return result.days.length > 0 ? result : null;
+  } catch (error) {
+    console.warn('[useAppStore] Incoming plan unusable:', error);
+    return null;
+  }
 }
 
 function buildRestoreNotice(replacedCount: number, offendingAllergens: Allergen[]): string {
@@ -615,6 +664,12 @@ function describeUnsafeRecipe(recipe: Recipe, preferences: UserPreferences): str
     return `„${recipe.title}" nu se potrivește cu dieta pe care ai ales-o.`;
   }
 
+  // The other admission paths (generation, alternatives, desserts) all enforce this one; a
+  // direct replacement did not, so a pork dish could be put on a "Fără porc" board by hand.
+  if ((preferences.healthGoalTags ?? []).includes('pork_free') && recipeContainsPork(recipe)) {
+    return `„${recipe.title}" conține carne de porc, iar tu ai ales „Fără porc”.`;
+  }
+
   if (!hasRequiredAppliances(recipe.appliances, preferences.appliances)) {
     return `„${recipe.title}" are nevoie de un aparat pe care nu l-ai bifat în bucătăria ta.`;
   }
@@ -647,12 +702,11 @@ function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Partial<App
     ? parseUserPreferences(pending.preferences, state.preferences)
     : state.preferences;
 
+  // Taste follows the cloud, which is what the user asked for; protections only get stricter.
   const effectivePrefs: UserPreferences = {
     ...cloudPrefs,
-    avoidedAllergens: mergeAllergens(
-      state.preferences.avoidedAllergens,
-      cloudPrefs.avoidedAllergens
-    ),
+    ...mergeProtections(cloudPrefs, state.preferences),
+    ...stricterDiet(state.preferences, cloudPrefs),
   };
 
   // Even valid-looking preferences can describe a week nobody can cook. Refusing beats
@@ -670,11 +724,11 @@ function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Partial<App
     };
   }
 
-  const {
-    days: safeDays,
-    replacedCount,
-    offendingAllergens,
-  } = makePlanSafeForPreferences(pending.plan.days, effectivePrefs);
+  const checked = tryMakePlanSafe(pending.plan.days, effectivePrefs);
+  if (!checked) {
+    return { confirmRequest: null, pendingCloudPlan: null, activeNotice: buildNothingSafeNotice('cloud') };
+  }
+  const { days: safeDays, replacedCount, offendingAllergens } = checked;
 
   const aggregated = aggregateGroceryList(
     collectMealsFromDays(safeDays),
@@ -886,6 +940,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           ? null
           : parseUserPreferences(rawStoredPrefs, DEFAULT_PREFERENCES);
       let repairedPrefsNotice: SystemNotice | null = null;
+      let protectionsUnreadable = false;
 
       if (storedPrefs) {
         const repairs: string[] = [];
@@ -898,6 +953,9 @@ export const useAppStore = create<AppState>((set, get) => ({
           (rawStoredPrefs as { avoidedAllergens?: unknown })?.avoidedAllergens
         );
         const allergensWereRepaired = wasRepaired;
+        // A diet that could not be read falls back quietly, which can mean a vegan reading as
+        // omnivore; that has to be said out loud, exactly like an unreadable allergen list.
+        const dietWasRepaired = wasDietRepaired(rawStoredPrefs);
 
         if (!checkPlanFeasibility(storedPrefs).isFeasible) {
           storedPrefs = {
@@ -927,39 +985,34 @@ export const useAppStore = create<AppState>((set, get) => ({
           }
         }
 
-        if (repairs.length > 0 || allergensWereRepaired) {
+        const repairSummary: PreferenceRepairs = {
+          allergensRepaired: allergensWereRepaired,
+          dietRepaired: dietWasRepaired,
+          healthGoalsRepaired: wasHealthGoalsRepaired(rawStoredPrefs),
+          resetSettings: repairs,
+          stillInfeasible: false,
+          planDropped: false,
+        };
+        // A plan checked against a diet or health goals that could not be read was checked
+        // against the wrong rules: a vegan read as omnivore keeps every meat dish. It goes.
+        protectionsUnreadable = repairSummary.dietRepaired || repairSummary.healthGoalsRepaired;
+
+        if (hasRepairs(repairSummary)) {
           void storageService.savePreferences(storedPrefs);
-          const stillBroken = !checkPlanFeasibility(storedPrefs).isFeasible;
-
-          // Two different failures, and they used to share one sentence: a list of allergies
-          // that could not be read has nothing to do with whether a plan was possible.
-          // Saying so is the point, because the app can no longer protect what it cannot read.
-          const allergenSentence = allergensWereRepaired
-            ? 'Lista ta de alergii nu a putut fi citită complet, așa că am păstrat doar ce am putut recunoaște. Verific-o din Filtre înainte să gătești.'
-            : '';
-          const feasibilitySentence =
-            repairs.length === 0
-              ? ''
-              : stillBroken
-                ? `Am restaurat ${repairs.join(' și ')}, dar combinația de dietă și alergii tot nu permite niciun plan. Verifică-le din Filtre.`
-                : `Setările salvate nu permiteau generarea niciunui plan, așa că am restaurat ${repairs.join(' și ')}. Le poți schimba oricând din Filtre.`;
-
-          repairedPrefsNotice = {
-            id: Date.now().toString(),
-            title: allergensWereRepaired
-              ? 'Verifică-ți alergiile'
-              : stillBroken
-                ? 'Setări incomplete'
-                : 'Setări restaurate',
-            message: [allergenSentence, feasibilitySentence].filter(Boolean).join(' '),
-            type: allergensWereRepaired || stillBroken ? 'warning' : 'info',
-          };
+          repairedPrefsNotice = buildPreferenceRepairNotice({
+            ...repairSummary,
+            stillInfeasible: !checkPlanFeasibility(storedPrefs).isFeasible,
+            planDropped: protectionsUnreadable && plan !== null,
+          });
         }
       }
 
-      let sanitizedPlan = plan;
-      let hydratedItems = items;
+      let sanitizedPlan = protectionsUnreadable ? null : plan;
+      let hydratedItems = protectionsUnreadable ? [] : items;
       let planSafetyNotice: SystemNotice | null = null;
+      if (protectionsUnreadable && plan) {
+        void storageService.savePlanAndGrocery(null, []);
+      }
 
       try {
         if (sanitizedPlan) {
@@ -986,6 +1039,9 @@ export const useAppStore = create<AppState>((set, get) => ({
             replacedCount,
             offendingAllergens,
           } = makePlanSafeForPreferences(sanitizedPlan.days, effectivePrefs);
+          if (safeDays.length === 0) {
+            throw new Error('No day of the stored plan is safe under the current preferences');
+          }
 
           // The checked days are always the ones kept, not only when something was replaced.
           // Guarding this on `replacedCount > 0` meant a plan whose recipe ids were all valid
@@ -2924,25 +2980,23 @@ export const useAppStore = create<AppState>((set, get) => ({
         };
       }
 
-      // The saved plan brings back its menu, not the user's protections. Allergies, diet and
-      // the kitchen are whatever they are TODAY: restoring an older week must never be a way
-      // around a restriction declared since, which for an allergy is a safety matter.
+      // The saved plan brings back its menu, not the user's settings. Everything starts from
+      // TODAY's preferences; only the shape of the week comes from the entry, so later
+      // rebuilds match the plan on screen. Protections from both sides are kept, and the
+      // entry is parsed like any other stored data before any of it is believed.
+      const entryPrefs = parseUserPreferences(entry.preferences, state.preferences);
       const effectivePrefs: UserPreferences = {
-        ...entry.preferences,
-        avoidedAllergens: mergeAllergens(
-          state.preferences.avoidedAllergens,
-          entry.preferences.avoidedAllergens
-        ),
-        dietType: state.preferences.dietType,
-        dietTypes: state.preferences.dietTypes,
-        appliances: state.preferences.appliances,
+        ...state.preferences,
+        cookingDays: entryPrefs.cookingDays,
+        mealSlots: entryPrefs.mealSlots,
+        dailyMealSlots: entryPrefs.dailyMealSlots,
+        peopleCount: entryPrefs.peopleCount,
+        ...mergeProtections(state.preferences, entryPrefs),
       };
 
-      const {
-        days: safeDays,
-        replacedCount,
-        offendingAllergens,
-      } = makePlanSafeForPreferences(entry.plan.days, effectivePrefs);
+      const checked = tryMakePlanSafe(entry.plan.days, effectivePrefs);
+      if (!checked) return { activeNotice: buildNothingSafeNotice('restore') };
+      const { days: safeDays, replacedCount, offendingAllergens } = checked;
 
       const aggregated = aggregateGroceryList(
         collectMealsFromDays(safeDays),

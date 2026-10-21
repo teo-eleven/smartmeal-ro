@@ -4,6 +4,7 @@ import {
   DayOfWeek,
   DietType,
   FoodTier,
+  HealthGoalTag,
   MealSlot,
   MoodTag,
   SupermarketId,
@@ -12,6 +13,7 @@ import {
 import { DEFAULT_REMINDERS, ReminderSettings } from '../types';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { ALLERGEN_CATALOG } from '../data/allergens';
+import { HEALTH_GOALS_CATALOG } from '../data/healthTags';
 import { DIET_OPTIONS_CATALOG } from './dietCompatibility';
 import { MOOD_OPTIONS_CATALOG } from './moodCatalog';
 
@@ -47,6 +49,13 @@ const VALID_SUPERMARKETS = new Set<string>(Object.keys(SUPERMARKETS));
 const VALID_ALLERGENS = new Set<string>(ALLERGEN_CATALOG.map((a) => a.id));
 const VALID_DIETS = new Set<string>(DIET_OPTIONS_CATALOG.map((d) => d.id));
 const VALID_MOODS = new Set<string>(MOOD_OPTIONS_CATALOG.map((m) => m.id));
+const VALID_HEALTH_GOALS = new Set<string>(HEALTH_GOALS_CATALOG.map((g) => g.id));
+const SNACK_TASTES: readonly NonNullable<UserPreferences['snackTastePreference']>[] = [
+  'sweet',
+  'savory',
+  'both',
+];
+const VALID_SNACK_TASTES = new Set<string>(SNACK_TASTES);
 
 /** The lowest and highest household the pack maths stays meaningful for. */
 const MIN_PEOPLE = 1;
@@ -94,6 +103,51 @@ export function sanitizePantryStock(value: unknown): Record<string, number> {
   return clean;
 }
 
+/**
+ * Per-day slot layouts. Unknown days and slots are dropped, and a day left with no slots is
+ * dropped too: an empty list would ask the planner for a day with no meals at all.
+ */
+function pickDailyMealSlots(value: unknown): Partial<Record<DayOfWeek, MealSlot[]>> | undefined {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined;
+
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([day]) => VALID_DAYS.has(day))
+    .map(([day, slots]) => [day, pickList<MealSlot>(slots, VALID_SLOTS)] as const)
+    .filter(([, slots]) => slots.length > 0);
+
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+/**
+ * Whether the stored diet had to be repaired to be read.
+ *
+ * parseUserPreferences falls back quietly, which for a diet can mean a vegan reading as
+ * omnivore. Hydration asks this so it can tell the user instead of serving them meat.
+ */
+export function wasDietRepaired(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const raw = value as Record<string, unknown>;
+
+  const dietTypeBroken = raw.dietType !== undefined && !VALID_DIETS.has(raw.dietType as string);
+  if (raw.dietTypes === undefined || raw.dietTypes === null) return dietTypeBroken;
+  if (!Array.isArray(raw.dietTypes)) return true;
+
+  const validCount = pickList<DietType>(raw.dietTypes, VALID_DIETS).length;
+  return dietTypeBroken || validCount !== raw.dietTypes.length;
+}
+
+/**
+ * Whether the stored health goals had to be repaired to be read. "Fără porc" lives here, so a
+ * list that could not be read may have been a religious restriction the app just lost.
+ */
+export function wasHealthGoalsRepaired(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const tags = (value as Record<string, unknown>).healthGoalTags;
+  if (tags === undefined || tags === null) return false;
+  if (!Array.isArray(tags)) return true;
+  return pickList<HealthGoalTag>(tags, VALID_HEALTH_GOALS).length !== tags.length;
+}
+
 export function parseUserPreferences(
   value: unknown,
   fallback: UserPreferences
@@ -109,6 +163,12 @@ export function parseUserPreferences(
     (slot) => slot !== 'snack'
   );
   const dietTypes = pickList<DietType>(raw.dietTypes, VALID_DIETS);
+  const healthGoalTags = pickList<HealthGoalTag>(raw.healthGoalTags, VALID_HEALTH_GOALS);
+  const pendingPantryStock = sanitizePantryStock(raw.pendingPantryStock);
+  const snackTastePreference =
+    typeof raw.snackTastePreference === 'string' && VALID_SNACK_TASTES.has(raw.snackTastePreference)
+      ? (raw.snackTastePreference as UserPreferences['snackTastePreference'])
+      : undefined;
 
   return {
     supermarketId: pickString<SupermarketId>(
@@ -137,6 +197,11 @@ export function parseUserPreferences(
     selectedSnackIds: pickStringList(raw.selectedSnackIds),
     selectedDrinkIds: pickStringList(raw.selectedDrinkIds),
     includeAlcohol: pickBoolean(raw.includeAlcohol, fallback.includeAlcohol ?? false),
+    // These four were missing, so they vanished on every launch and every cloud pull.
+    healthGoalTags,
+    dailyMealSlots: pickDailyMealSlots(raw.dailyMealSlots),
+    pendingPantryStock: Object.keys(pendingPantryStock).length > 0 ? pendingPantryStock : undefined,
+    snackTastePreference,
   };
 }
 

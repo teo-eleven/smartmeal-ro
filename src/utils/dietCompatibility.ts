@@ -102,6 +102,61 @@ export function getIncompatibleDietsFor(selectedDiets: DietType[]): Set<DietType
 }
 
 
+/** A keto serving stays at or under this many grams of carbohydrate. */
+export const KETO_MAX_CARBS_PER_SERVING = 20;
+
+/**
+ * Ingredients a keto plan never contains, whatever the amount: grains, flour and bread,
+ * sugar and honey, starchy vegetables, legumes and sweet fruit. Exact ids, never fragments,
+ * because the fragment list ('cartofi', 'orez'...) let flour, bread, oats, beans and sugar
+ * straight through.
+ */
+export const KETO_EXCLUDED_INGREDIENT_IDS: ReadonlySet<string> = new Set([
+  // Grains, flour, bread
+  'faina_alba',
+  'faina_grau',
+  'pesmet_auriu',
+  'paine_toast',
+  'chifle_burger',
+  'lipii_tortilla',
+  'tortilla_chips_nachos',
+  'biscuiti_populari',
+  'fulgi_ovaz',
+  'lapte_vegetal_ovaz',
+  'bors_proaspat',
+  'malai_superior',
+  'orez_basmati',
+  'orez_bob_rotund',
+  'orez_arborio',
+  'paste_penne',
+  'paste_spaghete',
+  'quinoa_alba',
+  'porumb_dulce',
+  'porumb_popcorn',
+  // Sugar and sweets
+  'zahar_tos',
+  'miere_poliflora',
+  'gem_fructe',
+  'ciocolata_menaj',
+  'ciocolata_neagra_vegana',
+  // Starchy vegetables and legumes
+  'cartofi_albi',
+  'fasole_rosie_conserva',
+  'fasole_boabe_conserva',
+  'naut_conserva',
+  'linte_verde_uscata',
+  'mazare_congelata',
+  // Sweet fruit
+  'banane',
+  'mere_romanesti',
+]);
+
+/** Both rules must hold: a low-carb total can still hide a slice of bread. */
+export function isKetoCompatible(recipe: Recipe): boolean {
+  if (recipe.nutritionPerServing.carbsGrams > KETO_MAX_CARBS_PER_SERVING) return false;
+  return !recipe.ingredients.some((ing) => KETO_EXCLUDED_INGREDIENT_IDS.has(ing.ingredientId));
+}
+
 /**
  * Checks whether a recipe matches the user's combined dietary preferences (1 or 2 selected).
  */
@@ -150,18 +205,9 @@ export function isRecipeMatchingDiets(recipe: Recipe, selectedDiets: DietType[])
         break;
       }
 
-      case 'keto': {
-        const hasHighCarbs = recipe.ingredients.some(
-          (ing) =>
-            ing.ingredientId.includes('cartofi') ||
-            ing.ingredientId.includes('orez') ||
-            ing.ingredientId.includes('malai') ||
-            ing.ingredientId.includes('paste') ||
-            ing.ingredientId.includes('spaghete')
-        );
-        if (hasHighCarbs) return false;
+      case 'keto':
+        if (!isKetoCompatible(recipe)) return false;
         break;
-      }
 
       default:
         // A diet nobody wrote a rule for permits nothing, rather than everything.

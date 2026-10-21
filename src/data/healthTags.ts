@@ -1,4 +1,5 @@
 import { HealthGoalTag, Recipe } from '../types';
+import { INGREDIENTS } from './ingredients';
 
 export interface HealthGoalMeta {
   id: HealthGoalTag;
@@ -68,27 +69,15 @@ export function getHealthGoalMeta(id: HealthGoalTag): HealthGoalMeta | undefined
   return HEALTH_GOALS_MAP.get(id);
 }
 
-const PORK_INGREDIENT_INDICATORS = [
-  'porc',
-  'bacon',
-  'carnati',
-  'carnat',
-  'costita',
-  'slana',
-  'sunca_taraneasca',
-];
-
 /**
- * Checks if a recipe contains any pork products.
+ * Whether a recipe contains pork, decided only by the `containsPork` flag on its ingredients.
+ *
+ * This used to match id fragments ('porc', 'carnat', 'sunca_taraneasca'...), which missed
+ * `sunca_praga`, `carnaciori_oltenesti` ("carnat" is not a substring of "carnaciori") and
+ * the pork-beef mince, so nine pork recipes reached users who chose "Fără porc".
  */
 export function recipeContainsPork(recipe: Recipe): boolean {
-  if (recipe.id.toLowerCase().includes('porc') || recipe.title.toLowerCase().includes('porc')) {
-    return true;
-  }
-  return recipe.ingredients.some((ing) => {
-    const id = ing.ingredientId.toLowerCase();
-    return PORK_INGREDIENT_INDICATORS.some((indicator) => id.includes(indicator));
-  });
+  return recipe.ingredients.some((ing) => INGREDIENTS[ing.ingredientId]?.containsPork === true);
 }
 
 /**
@@ -97,8 +86,11 @@ export function recipeContainsPork(recipe: Recipe): boolean {
 export function getRecipeHealthTags(recipe: Recipe): HealthGoalTag[] {
   const tags = new Set<HealthGoalTag>(recipe.healthTags || []);
 
-  // If the recipe contains no pork, it is inherently pork_free
-  if (!recipeContainsPork(recipe)) {
+  // Derived, never trusted from the data: a hand-written 'pork_free' on a recipe with pork
+  // must not survive, and a recipe without pork is pork-free whether or not anyone said so.
+  if (recipeContainsPork(recipe)) {
+    tags.delete('pork_free');
+  } else {
     tags.add('pork_free');
   }
 

@@ -1,4 +1,4 @@
-import { parseUserPreferences, sanitizePantryStock } from '../preferencesValidation';
+import { parseUserPreferences, sanitizePantryStock, wasDietRepaired } from '../preferencesValidation';
 import { isRecipeMatchingDiets } from '../dietCompatibility';
 import { getEligibleRecipes } from '../../engine/plannerEngine';
 import { RECIPES } from '../../data/recipes';
@@ -129,5 +129,80 @@ describe('dieta refuză implicit ce nu recunoaște', () => {
     expect(isRecipeMatchingDiets(meat, ['omnivore'])).toBe(true);
     expect(isRecipeMatchingDiets(meat, ['vegan'])).toBe(false);
     expect(isRecipeMatchingDiets(vegan, ['vegetarian'])).toBe(true);
+  });
+});
+
+/**
+ * The 2026-10-21 audit: parseUserPreferences rebuilt the object field by field and left out
+ * four of them, so "Fără porc", per-day slots, parked pantry surplus and the snack taste were
+ * dropped on every launch and every cloud pull, then overwritten by the next save.
+ */
+describe('câmpurile care se pierdeau la repornire', () => {
+  test('healthGoalTags supraviețuiește, inclusiv „Fără porc”', () => {
+    const parsed = parseUserPreferences({ ...SAFE, healthGoalTags: ['pork_free', 'heart_healthy'] }, SAFE);
+
+    expect(parsed.healthGoalTags).toEqual(['pork_free', 'heart_healthy']);
+  });
+
+  test('healthGoalTags necunoscute sunt eliminate, nu păstrate brut', () => {
+    const parsed = parseUserPreferences(
+      { ...SAFE, healthGoalTags: ['pork_free', 'anti_gravity', 42] },
+      SAFE
+    );
+
+    expect(parsed.healthGoalTags).toEqual(['pork_free']);
+  });
+
+  test('dailyMealSlots supraviețuiește, cu zile și sloturi validate', () => {
+    const parsed = parseUserPreferences(
+      {
+        ...SAFE,
+        dailyMealSlots: {
+          monday: ['breakfast', 'dinner'],
+          funday: ['dinner'],
+          tuesday: ['lunch', 'brunch'],
+          wednesday: 'dinner',
+        },
+      },
+      SAFE
+    );
+
+    expect(parsed.dailyMealSlots).toEqual({
+      monday: ['breakfast', 'dinner'],
+      tuesday: ['lunch'],
+    });
+  });
+
+  test('o zi cu listă goală de sloturi nu e păstrată (ar produce o zi fără mese)', () => {
+    const parsed = parseUserPreferences({ ...SAFE, dailyMealSlots: { monday: [] } }, SAFE);
+
+    expect(parsed.dailyMealSlots).toBeUndefined();
+  });
+
+  test('pendingPantryStock supraviețuiește, curățat ca pantryStock', () => {
+    const parsed = parseUserPreferences(
+      { ...SAFE, pendingPantryStock: { orez_basmati: 300, faina_alba: 'mult', ulei: -5 } },
+      SAFE
+    );
+
+    expect(parsed.pendingPantryStock).toEqual({ orez_basmati: 300 });
+  });
+
+  test('snackTastePreference supraviețuiește doar cu o valoare permisă', () => {
+    expect(parseUserPreferences({ ...SAFE, snackTastePreference: 'savory' }, SAFE).snackTastePreference).toBe('savory');
+    expect(parseUserPreferences({ ...SAFE, snackTastePreference: 'umami' }, SAFE).snackTastePreference).toBeUndefined();
+  });
+});
+
+describe('dieta coruptă nu devine „omnivor” în tăcere', () => {
+  test('dietTypes cu valori necunoscute e raportat ca reparat', () => {
+    expect(wasDietRepaired({ ...SAFE, dietTypes: ['vegann'] })).toBe(true);
+    expect(wasDietRepaired({ ...SAFE, dietTypes: 'vegan' })).toBe(true);
+    expect(wasDietRepaired({ ...SAFE, dietType: 'carnivore' })).toBe(true);
+  });
+
+  test('o dietă validă nu e raportată ca reparată', () => {
+    expect(wasDietRepaired({ ...SAFE, dietType: 'vegan', dietTypes: ['vegan', 'gluten_free'] })).toBe(false);
+    expect(wasDietRepaired({ ...SAFE, dietTypes: undefined })).toBe(false);
   });
 });
