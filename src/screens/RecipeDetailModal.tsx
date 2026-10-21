@@ -539,6 +539,89 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   })}
                 </View>
               </View>
+
+              {/* Actions Section under Ingredients */}
+              <View
+                style={[
+                  styles.cardSection,
+                  styles.actionsCardSection,
+                  { backgroundColor: theme.card, borderColor: theme.border },
+                ]}
+              >
+                <Text style={[styles.sectionHeading, { color: theme.text, marginBottom: 12 }]}>
+                  ⚡ Opțiuni pentru această masă
+                </Text>
+
+                <View style={styles.actionButtonsContainer}>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Schimbă cu alt preparat"
+                    onPress={onSwap}
+                    style={[
+                      styles.actionBtn,
+                      styles.swapActionBtn,
+                      { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.actionBtnText, { color: theme.primary }]}>
+                      🔄 Schimbă cu alt preparat
+                    </Text>
+                  </TouchableOpacity>
+
+                  {targetDay && (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănâncă în oraș'}
+                      onPress={() => {
+                        const effectiveSlot = targetSlot || targetMeal?.slot || 'dinner';
+                        toggleEatOut(targetDay, effectiveSlot);
+                        showNotice(
+                          isEatenOut ? 'Gătești acasă' : 'Mâncat în oraș',
+                          isEatenOut
+                            ? `Am reintrodus masa în planul de gătit și în lista de cumpărături.`
+                            : `Am marcat masa ca mâncată în oraș. Ingredientele au fost scoase din lista de cumpărături.`,
+                          'info'
+                        );
+                      }}
+                      style={[
+                        styles.actionBtn,
+                        styles.eatOutActionBtn,
+                        {
+                          backgroundColor: isEatenOut
+                            ? (isDark ? 'rgba(234, 179, 8, 0.2)' : '#fef9c3')
+                            : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#f3f4f6'),
+                          borderColor: isEatenOut
+                            ? (isDark ? '#ca8a04' : '#eab308')
+                            : theme.border,
+                        },
+                      ]}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.actionBtnText,
+                          { color: isEatenOut ? (isDark ? '#facc15' : '#854d0e') : theme.text },
+                        ]}
+                      >
+                        {isEatenOut ? '↺ Gătește acasă această masă' : '🍽️ Mâncat în oraș la această masă'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Închide"
+                    onPress={onClose}
+                    style={[styles.actionBtn, styles.doneActionBtn, { backgroundColor: theme.primary }]}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.actionBtnText, { color: theme.primaryText, fontWeight: '800' }]}>
+                      ✓ Închide & Înapoi la Meniu
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
 
             {/* ============================================================ */}
@@ -875,67 +958,6 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   </View>
                 </View>
               )}
-
-              {/* Actions Row */}
-              <View style={styles.actionButtonsContainer}>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={onSwap}
-                  style={[styles.bigSwapBtn, { backgroundColor: theme.primaryLight, borderColor: theme.primary }]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.bigSwapBtnText, { color: theme.primary }]}>🔄 Schimbă cu alt preparat</Text>
-                </TouchableOpacity>
-
-                {targetDay && (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănâncă în oraș'}
-                    onPress={() => {
-                      const effectiveSlot = targetSlot || targetMeal?.slot || 'dinner';
-                      toggleEatOut(targetDay, effectiveSlot);
-                      showNotice(
-                        isEatenOut ? 'Gătești acasă' : 'Mâncat în oraș',
-                        isEatenOut
-                          ? `Am reintrodus masa în planul de gătit și în lista de cumpărături.`
-                          : `Am marcat masa ca mâncată în oraș. Ingredientele au fost scoase din lista de cumpărături.`,
-                        'info'
-                      );
-                    }}
-                    style={[
-                      styles.bigSwapBtn,
-                      {
-                        backgroundColor: isEatenOut
-                          ? (isDark ? 'rgba(234, 179, 8, 0.2)' : '#fef9c3')
-                          : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#f3f4f6'),
-                        borderColor: isEatenOut
-                          ? (isDark ? '#ca8a04' : '#eab308')
-                          : theme.border,
-                      },
-                    ]}
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={[
-                        styles.bigSwapBtnText,
-                        { color: isEatenOut ? (isDark ? '#facc15' : '#854d0e') : theme.text },
-                      ]}
-                    >
-                      {isEatenOut ? '↺ Gătește acasă această masă' : '🍽️ Mâncat în oraș la această masă'}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel="Închide"
-                  onPress={onClose}
-                  style={[styles.doneBtn, { backgroundColor: theme.primary }]}
-                  activeOpacity={0.85}
-                >
-                  <Text style={[styles.doneBtnText, { color: theme.primaryText }]}>✓ Închide & Înapoi la Meniu</Text>
-                </TouchableOpacity>
-              </View>
             </View>
 
           </View>
@@ -1433,38 +1455,64 @@ const styles = StyleSheet.create({
     minHeight: 70,
     textAlignVertical: 'top',
   },
+  actionsCardSection: {
+    marginTop: 16,
+  },
   actionButtonsContainer: {
+    flexDirection: 'column',
+    gap: 10,
+    width: '100%',
+  },
+  actionBtn: {
+    width: '100%',
+    minHeight: 48,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  swapActionBtn: {},
+  eatOutActionBtn: {},
+  doneActionBtn: {
+    borderWidth: 0,
+    shadowColor: '#000000',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  actionBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+    textAlign: 'center',
   },
   bigSwapBtn: {
-    flex: 1,
-    height: 48,
+    width: '100%',
+    minHeight: 48,
     borderRadius: 14,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bigSwapBtnText: {
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
   },
   doneBtn: {
-    flex: 1.4,
-    height: 48,
+    width: '100%',
+    minHeight: 48,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 4,
   },
   doneBtnText: {
     color: '#ffffff',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
   },
   aiVisualCard: {

@@ -2291,7 +2291,17 @@ export const useAppStore = create<AppState>((set, get) => ({
         state.currentPlan,
         state.preferences
       );
-      if (!chosenRecipe) return {};
+      if (!chosenRecipe) {
+        return {
+          activeNotice: {
+            id: Date.now().toString(),
+            title: 'Niciun desert disponibil',
+            message:
+              'Nu s-a găsit niciun desert compatibil cu aparatele sau restricțiile tale curente.',
+            type: 'warning',
+          },
+        };
+      }
 
       const cost = calculateRecipePortionCost(
         chosenRecipe,
@@ -2346,9 +2356,30 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);
 
+      const dayNameRo =
+        dayOfWeek === 'monday'
+          ? 'luni'
+          : dayOfWeek === 'tuesday'
+            ? 'marți'
+            : dayOfWeek === 'wednesday'
+              ? 'miercuri'
+              : dayOfWeek === 'thursday'
+                ? 'joi'
+                : dayOfWeek === 'friday'
+                  ? 'vineri'
+                  : dayOfWeek === 'saturday'
+                    ? 'sâmbătă'
+                    : 'duminică';
+
       return {
         currentPlan: updatedPlan,
         groceryItems: aggregated.items,
+        activeNotice: {
+          id: Date.now().toString(),
+          title: '🍰 Desert adăugat',
+          message: `Am adăugat „${chosenRecipe.title}” în meniul de ${dayNameRo}.`,
+          type: 'success',
+        },
       };
     });
   },

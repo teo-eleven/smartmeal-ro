@@ -195,7 +195,15 @@ export const MealCard: React.FC<MealCardProps> = ({
         ]}
       >
         <View style={styles.eatenOutHeader}>
-          <View style={[styles.floatingBadge, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)' }]}>
+          <View
+            style={[
+              styles.eatenOutDayBadge,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              },
+            ]}
+          >
             <Text style={[styles.dayBadgeText, { color: theme.textMuted }]}>
               {DAY_LABELS[day.dayOfWeek].toUpperCase()} • {effectiveSlotLabel ? effectiveSlotLabel.toUpperCase() : 'MASĂ'}
             </Text>
@@ -844,6 +852,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     marginBottom: 16,
+  },
+  eatenOutDayBadge: {
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
   },
   eatenOutBody: {
     alignItems: 'center',

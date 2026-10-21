@@ -958,9 +958,52 @@ export function selectOptimalDessertForDay(
   if (!day) return null;
 
   // All recipes eligible by diet and appliances with 'dessert' in suitableSlots
-  const eligible = getEligibleRecipes(preferences).filter((r) =>
+  let eligible = getEligibleRecipes(preferences).filter((r) =>
     r.suitableSlots ? r.suitableSlots.includes('dessert') : false
   );
+
+  // If no dessert matches specific health goals (e.g. high_protein/muscle_gain targets for main meals),
+  // relax health goals but STRICTLY KEEP diet, allergies, appliances, and religious/pork restrictions!
+  if (eligible.length === 0) {
+    const activeDiets: DietType[] =
+      preferences.dietTypes && preferences.dietTypes.length > 0
+        ? preferences.dietTypes
+        : [preferences.dietType];
+    const rejected = new Set(preferences.dislikedRecipeIds ?? []);
+    const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
+
+    eligible = RECIPES.filter(
+      (recipe) =>
+        Boolean(recipe.suitableSlots?.includes('dessert')) &&
+        !rejected.has(recipe.id) &&
+        (!requirePorkFree || !recipeContainsPork(recipe)) &&
+        isRecipeMatchingDiets(recipe, activeDiets) &&
+        isRecipeSafeForAllergies(recipe, preferences.avoidedAllergens) &&
+        hasRequiredAppliances(recipe.appliances, preferences.appliances) &&
+        isSupermarketCompatible(recipe, preferences.supermarketId)
+    );
+  }
+
+  // If still 0 due to supermarket ingredient uniqueness, relax supermarket compatibility as well:
+  if (eligible.length === 0) {
+    const activeDiets: DietType[] =
+      preferences.dietTypes && preferences.dietTypes.length > 0
+        ? preferences.dietTypes
+        : [preferences.dietType];
+    const rejected = new Set(preferences.dislikedRecipeIds ?? []);
+    const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
+
+    eligible = RECIPES.filter(
+      (recipe) =>
+        Boolean(recipe.suitableSlots?.includes('dessert')) &&
+        !rejected.has(recipe.id) &&
+        (!requirePorkFree || !recipeContainsPork(recipe)) &&
+        isRecipeMatchingDiets(recipe, activeDiets) &&
+        isRecipeSafeForAllergies(recipe, preferences.avoidedAllergens) &&
+        hasRequiredAppliances(recipe.appliances, preferences.appliances)
+    );
+  }
+
   if (eligible.length === 0) return null;
 
   // 1. Desserts already used across the ENTIRE plan

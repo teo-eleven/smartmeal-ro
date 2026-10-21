@@ -81,6 +81,21 @@ describe('selectOptimalDessertForDay', () => {
     expect(dessert!.suitableSlots).toContain('dessert');
   });
 
+  test('returns a dessert even when strict health goals are selected', () => {
+    // Arrange: user chose health goals like heart_healthy or anti_inflammatory
+    const preferences = buildPreferences({
+      healthGoalTags: ['heart_healthy'],
+    });
+    const plan = generateMealPlan(preferences);
+
+    // Act
+    const dessert = selectOptimalDessertForDay('monday', plan, preferences);
+
+    // Assert: should fall back to an available dessert matching diet & appliances
+    expect(dessert).not.toBeNull();
+    expect(dessert!.suitableSlots).toContain('dessert');
+  });
+
   test('gives a different dessert to each day rather than repeating one', () => {
     // Arrange
     const preferences = buildPreferences();
