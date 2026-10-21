@@ -16,7 +16,7 @@ const FIX =
   '  eas env:set --environment production --visibility plaintext --name EXPO_PUBLIC_TERMS_URL --value https://<domeniul-tau>/terms\n' +
   '  eas env:set --environment production --visibility plaintext --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value appl_...\n' +
   '  eas env:set --environment production --visibility plaintext --name EXPO_PUBLIC_REVENUECAT_ANDROID_KEY --value goog_...\n' +
-  'Vezi STORE.md §4.';
+  'Vezi docs/STORE.md §4.';
 
 /**
  * The public SDK keys start appl_ (iOS) and goog_ (Android). A secret key (sk_) shipped in

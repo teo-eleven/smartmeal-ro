@@ -52,7 +52,7 @@
     "typescript": "~5.3.3"
   },
   "private": true,
-  "_overridesNote": "Forteaza versiunile patch-uite ale unor dependente tranzitive de build (Expo CLI, Metro), fara a urca Expo SDK. image-size este exclus intentionat: v2 schimba forma exportului si rupe metro/src/Assets.js (getImageSize is not a function). Vezi DECISIONS.md ADR-09.",
+  "_overridesNote": "Forteaza versiunile patch-uite ale unor dependente tranzitive de build (Expo CLI, Metro), fara a urca Expo SDK. image-size este exclus intentionat: v2 schimba forma exportului si rupe metro/src/Assets.js (getImageSize is not a function). Vezi docs/DECISIONS.md ADR-09.",
   "overrides": {
     "tar": "^7.5.22",
     "@xmldom/xmldom": "^0.9.12",

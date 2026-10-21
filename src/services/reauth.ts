@@ -12,7 +12,7 @@ import { warnSafely } from './authErrors';
  *
  * Biometrics renew the month on purpose: the point of turning them on is not typing the
  * password every thirty days. It is a lock on the device, not on the server; the session
- * underneath stays valid throughout. See DECISIONS.md.
+ * underneath stays valid throughout. See docs/DECISIONS.md.
  *
  * The services that sign somebody in call markVerified themselves (supabase.ts, authCode.ts),
  * so no screen can open a session without starting the count.

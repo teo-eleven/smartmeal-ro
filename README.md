@@ -100,33 +100,29 @@ npm run typecheck
 
 ## 📱 Export pentru iOS & Android
 
-**Aplicația nu poate fi încă trimisă în magazine.** Identificatorii de pachet există:
+Configurația de bază pentru magazine este pregătită în `app.json` și `eas.json`:
+- **iOS Bundle Identifier**: `ro.smartmeal.app` (suport iPhone, Privacy Manifests configurate conform politicilor Apple)
+- **Android Package**: `ro.smartmeal.app` (adaptive icons, permisiuni și ținte de build)
 
-- **iOS Bundle Identifier**: `ro.smartmeal.app`
-- **Android Package**: `ro.smartmeal.app`
-
-Dar lipsesc fișiere obligatorii, iar `eas build` nu are ce citi fără ele:
-
-| Lipsește                                   | De ce e obligatoriu                             |
-| ------------------------------------------ | ----------------------------------------------- |
-| `assets/icon.png` (1024×1024)              | fără el se livrează iconița implicită Expo      |
-| `assets/splash.png`                        | ecranul de pornire                              |
-| `assets/adaptive-icon.png`                 | cerut de Android                                |
-| `eas.json`                                 | `eas build` nu pornește fără profiluri          |
-| `ios.buildNumber`, `android.versionCode`   | cerute la fiecare urcare                        |
-| politică de confidențialitate (URL public) | cerută de ambele magazine                       |
-| `ios.privacyManifests`                     | cerut de Apple din mai 2024 pentru AsyncStorage |
-
-După ce există toate, comenzile sunt:
-
+Pentru pașii de build prin EAS:
 ```bash
 npx eas-cli build --platform android
 npx eas-cli build --platform ios
 ```
 
-Migrația `supabase/migrations/0001_user_meal_plans.sql` și funcțiile edge
-(`proxy-gemini-plan`, `delete-account`) trebuie publicate înainte de orice build cu cloud
-activ — vezi `supabase/README.md`.
+Pentru ghidul complet de publicare în Apple App Store și Google Play, consultă [docs/STORE.md](docs/STORE.md).
+
+---
+
+## 📚 Documentație
+
+Toate detaliile tehnice, deciziile arhitecturale și ghidurile de publicare sunt organizate în directorul `docs/`:
+
+* 🏛️ **[docs/DECISIONS.md](docs/DECISIONS.md)** — Architectural Decision Records (ADR-uri detaliate pentru tehnologiile alese, gestionarea stării, persistență și arhetipuri culinare).
+* 🛒 **[docs/STORE.md](docs/STORE.md)** — Ghidul pas cu pas pentru lansarea în Apple App Store și Google Play (conturi, pași de verificare, 14 zile test închis Android).
+* 📝 **[docs/STORE_LISTING.md](docs/STORE_LISTING.md)** — Textele promoționale, descrierile și cuvintele cheie pregătite pentru formularele magazinelor.
+* 🔒 **[docs/PRIVACY.md](docs/PRIVACY.md)** — Politica de confidențialitate și conformitatea GDPR pentru procesarea datelor.
+* 🖼️ **[docs/generateBackdrops.md](docs/generateBackdrops.md)** — Instrucțiuni pentru generarea și optimizarea imaginilor de fundal ale rețetelor.
 
 ---
 
@@ -136,6 +132,9 @@ activ — vezi `supabase/README.md`.
 smartmeal-ro/
 ├── App.tsx                      # Componenta principală cu navigare și dashboard
 ├── config/                      # Configurație validată și variabile de mediu
+├── docs/                        # Documentație de arhitectură, confidențialitate și magazine
+├── public/                      # Pagini statice (delete-account, unsubscribe, landing)
+├── scripts/                     # Scripturi de mentenanță și verificare migrații
 ├── src/
 │   ├── components/              # Componente UI reutilizabile (MealCard, MacroBar, etc.)
 │   ├── data/                    # Catalogul românesc (supermarketuri, ingrediente, rețete)
@@ -143,10 +142,12 @@ smartmeal-ro/
 │   ├── screens/                 # Ecrane: Onboarding, MealBoard, Grocery, RecipeModal, Auth
 │   ├── services/                # Storage local, Supabase Sync și AI Proxy
 │   ├── store/                   # Store global Zustand cu auto-persistență
+│   ├── styles/                  # Sistemul vizual (Luxury Warm Forest, teme, glass)
 │   └── types/                   # Definiții de tipuri TypeScript
 ├── supabase/
-│   └── functions/               # Supabase Edge Function proxy pentru Gemini Flash
-└── __tests__/                   # Teste de integrare end-to-end
+│   ├── functions/               # Supabase Edge Functions (Gemini Flash proxy, email reminders)
+│   └── migrations/              # Migrații SQL (tabele utilizator, rate limit, securitate)
+└── assets/                      # Iconițe, imagini adaptive și fundaluri rețete
 ```
 
 ---
