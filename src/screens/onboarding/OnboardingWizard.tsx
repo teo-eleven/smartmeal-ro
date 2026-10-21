@@ -775,11 +775,45 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 tactile!
               </Text>
 
+              {preferences.dietTypes &&
+                preferences.dietTypes.length > 0 &&
+                !preferences.dietTypes.includes('omnivore') && (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: theme.accentBg,
+                      borderColor: theme.border,
+                      borderWidth: 1,
+                      borderRadius: 12,
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      marginBottom: 12,
+                      gap: 8,
+                    }}
+                  >
+                    <Text style={{ fontSize: 16 }}>🌱</Text>
+                    <Text style={{ fontSize: 12, color: theme.text, flex: 1, lineHeight: 16 }}>
+                      Cardurile și rețetele afișate sunt filtrate automat pentru stilul tău:{' '}
+                      <Text style={{ fontWeight: '800', color: theme.primary }}>
+                        {preferences.dietTypes
+                          .map(
+                            (d) =>
+                              DIET_OPTIONS_CATALOG.find((o) => o.id === d)?.label || d
+                          )
+                          .join(', ')}
+                      </Text>
+                      .
+                    </Text>
+                  </View>
+                )}
+
               <FoodMoodSwiper
                 selectedMoods={preferences.moodTags}
                 onToggleMood={toggleMoodTag}
                 maxMoods={5}
                 isDark={isDark}
+                dietTypes={preferences.dietTypes}
               />
             </View>
           )}

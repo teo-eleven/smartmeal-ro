@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,16 +10,19 @@ import {
   Platform,
   Dimensions,
   ViewStyle,
+  Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MoodTag } from '../types';
+import { DietType, MoodTag, Recipe } from '../types';
 import { MOOD_OPTIONS_CATALOG, MoodOptionInfo } from '../utils/moodCatalog';
 import { ARCHETYPE_BACKDROPS } from '../../assets/recipes/backdrops';
 import { getAppTheme } from '../styles/theme';
+import { RECIPES } from '../data/recipes';
+import { isRecipeMatchingDiets } from '../utils/dietCompatibility';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const SWIPE_THRESHOLD = 100;
-const SWIPE_VELOCITY = 0.5;
+const SWIPE_THRESHOLD = 90;
+const SWIPE_VELOCITY = 0.45;
 
 export interface FoodMoodSwiperProps {
   selectedMoods: MoodTag[];
@@ -28,6 +31,7 @@ export interface FoodMoodSwiperProps {
   maxMoods?: number;
   isDark: boolean;
   onComplete?: () => void;
+  dietTypes?: DietType[];
 }
 
 interface SwipeHistoryItem {
@@ -43,6 +47,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
   maxMoods = 5,
   isDark,
   onComplete,
+  dietTypes,
 }) => {
   const theme = getAppTheme(isDark);
   const [viewMode, setViewMode] = useState<'swipe' | 'grid'>('swipe');
@@ -52,11 +57,28 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
   const pan = useRef(new Animated.ValueXY()).current;
   const isAnimating = useRef(false);
 
+  // Pre-calculate matching recipe counts per mood according to user's diet preferences
+  const moodRecipeMap = useMemo(() => {
+    const map = new Map<MoodTag, { count: number; sampleTitles: string[] }>();
+    const effectiveDiets = dietTypes && dietTypes.length > 0 ? dietTypes : [];
+
+    MOOD_OPTIONS_CATALOG.forEach((item) => {
+      const matching = RECIPES.filter(
+        (r) => r.moodTags.includes(item.id) && isRecipeMatchingDiets(r, effectiveDiets)
+      );
+      const sampleTitles = matching.slice(0, 3).map((r) => {
+        return r.title.length > 28 ? r.title.slice(0, 26) + '…' : r.title;
+      });
+      map.set(item.id, { count: matching.length, sampleTitles });
+    });
+    return map;
+  }, [dietTypes]);
+
   const resetPosition = useCallback(() => {
     Animated.spring(pan, {
       toValue: { x: 0, y: 0 },
-      friction: 6,
-      tension: 40,
+      friction: 7,
+      tension: 50,
       useNativeDriver: false,
     }).start();
   }, [pan]);
@@ -100,11 +122,12 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
   );
 
   const swipeCard = useCallback(
-    (direction: 'left' | 'right') => {
+    (direction: 'left' | 'right', gestureDy: number = 0) => {
       if (isAnimating.current || currentIndex >= MOOD_OPTIONS_CATALOG.length) return;
       isAnimating.current = true;
       const item = MOOD_OPTIONS_CATALOG[currentIndex];
-      const targetX = direction === 'right' ? SCREEN_WIDTH + 150 : -SCREEN_WIDTH - 150;
+      const targetX = direction === 'right' ? SCREEN_WIDTH + 180 : -SCREEN_WIDTH - 180;
+      const targetY = gestureDy ? gestureDy * 1.4 : 20;
 
       if (process.env.NODE_ENV === 'test') {
         advanceCard(direction === 'right' ? 'liked' : 'passed', item);
@@ -112,8 +135,9 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
       }
 
       Animated.timing(pan, {
-        toValue: { x: targetX, y: 0 },
-        duration: 220,
+        toValue: { x: targetX, y: targetY },
+        duration: 380,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: false,
       }).start(() => {
         advanceCard(direction === 'right' ? 'liked' : 'passed', item);
@@ -152,13 +176,13 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
       onMoveShouldSetPanResponder: (_, gesture) =>
         Math.abs(gesture.dx) > 8 || Math.abs(gesture.dy) > 8,
       onPanResponderMove: (_, gesture) => {
-        pan.setValue({ x: gesture.dx, y: gesture.dy * 0.4 });
+        pan.setValue({ x: gesture.dx, y: gesture.dy * 0.45 });
       },
       onPanResponderRelease: (_, gesture) => {
         if (gesture.dx > SWIPE_THRESHOLD || gesture.vx > SWIPE_VELOCITY) {
-          swipeCard('right');
+          swipeCard('right', gesture.dy);
         } else if (gesture.dx < -SWIPE_THRESHOLD || gesture.vx < -SWIPE_VELOCITY) {
-          swipeCard('left');
+          swipeCard('left', gesture.dy);
         } else {
           resetPosition();
         }
@@ -187,8 +211,8 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 
   // Interpolated transforms for top card
   const rotate = pan.x.interpolate({
-    inputRange: [-250, 0, 250],
-    outputRange: ['-14deg', '0deg', '14deg'],
+    inputRange: [-SCREEN_WIDTH * 0.75, 0, SCREEN_WIDTH * 0.75],
+    outputRange: ['-16deg', '0deg', '16deg'],
     extrapolate: 'clamp',
   });
 
@@ -216,7 +240,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 
   const nextOpacity = pan.x.interpolate({
     inputRange: [-180, 0, 180],
-    outputRange: [1, 0.8, 1],
+    outputRange: [1, 0.85, 1],
     extrapolate: 'clamp',
   });
 
@@ -326,7 +350,13 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                       },
                     ]}
                   >
-                    {renderCardBody(nextItem, isDark, selectedMoods.includes(nextItem.id), theme)}
+                    {renderCardBody(
+                      nextItem,
+                      isDark,
+                      selectedMoods.includes(nextItem.id),
+                      theme,
+                      moodRecipeMap.get(nextItem.id)
+                    )}
                   </View>
                 </Animated.View>
               )}
@@ -363,7 +393,13 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                   </Animated.View>
 
                   {/* Card Body */}
-                  {renderCardBody(currentItem, isDark, isCurrentSelected, theme)}
+                  {renderCardBody(
+                    currentItem,
+                    isDark,
+                    isCurrentSelected,
+                    theme,
+                    moodRecipeMap.get(currentItem.id)
+                  )}
                 </View>
               </Animated.View>
             </View>
@@ -486,6 +522,9 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
           <View style={styles.gridContainer}>
             {MOOD_OPTIONS_CATALOG.map((mood) => {
               const isSelected = selectedMoods.includes(mood.id);
+              const moodStats = moodRecipeMap.get(mood.id);
+              const recipeCount = moodStats ? moodStats.count : 0;
+
               return (
                 <TouchableOpacity
                   accessibilityRole="button"
@@ -503,17 +542,24 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                 >
                   <Text style={styles.gridMoodIcon}>{mood.icon}</Text>
                   <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.gridMoodLabel,
-                        {
-                          color: isSelected ? theme.primary : theme.text,
-                          fontWeight: isSelected ? '800' : '600',
-                        },
-                      ]}
-                    >
-                      {mood.label}
-                    </Text>
+                    <View style={styles.gridTitleRow}>
+                      <Text
+                        style={[
+                          styles.gridMoodLabel,
+                          {
+                            color: isSelected ? theme.primary : theme.text,
+                            fontWeight: isSelected ? '800' : '600',
+                          },
+                        ]}
+                      >
+                        {mood.label}
+                      </Text>
+                      <View style={[styles.gridCountBadge, { backgroundColor: isSelected ? theme.primary : theme.border }]}>
+                        <Text style={[styles.gridCountText, { color: isSelected ? theme.primaryText : theme.textMuted }]}>
+                          {recipeCount} rețete
+                        </Text>
+                      </View>
+                    </View>
                     <Text
                       style={[styles.gridMoodDesc, { color: theme.textMuted }]}
                       numberOfLines={2}
@@ -588,14 +634,20 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
   );
 };
 
-/** Helper to render card interior with backdrop image and typography */
+/** Helper to render card interior with backdrop image, locked vertical layout and typography */
 function renderCardBody(
   item: MoodOptionInfo,
   isDark: boolean,
   isSelected: boolean,
-  theme: ReturnType<typeof getAppTheme>
+  theme: ReturnType<typeof getAppTheme>,
+  stats?: { count: number; sampleTitles: string[] }
 ) {
   const backdrop = item.archetype ? ARCHETYPE_BACKDROPS[item.archetype] : undefined;
+  const count = stats?.count ?? 0;
+  const sampleDishes =
+    stats && stats.sampleTitles.length > 0
+      ? stats.sampleTitles
+      : (item.sampleDishes || []);
 
   return (
     <View style={styles.cardContent}>
@@ -635,11 +687,33 @@ function renderCardBody(
             <Text style={[styles.vibeText, { color: theme.text }]}>{item.vibe}</Text>
           </View>
 
-          {isSelected && (
-            <View style={styles.selectedStampBadge}>
-              <Text style={styles.selectedStampText}>✓ ALES</Text>
+          {/* Right side indicators */}
+          <View style={styles.topRightRow}>
+            <View
+              style={[
+                styles.recipeCountPill,
+                {
+                  backgroundColor: count > 0 ? (isDark ? 'rgba(48,209,88,0.2)' : 'rgba(48,209,88,0.15)') : 'rgba(255,69,58,0.2)',
+                  borderColor: count > 0 ? '#30d158' : '#ff453a',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.recipeCountText,
+                  { color: count > 0 ? '#30d158' : '#ff453a' },
+                ]}
+              >
+                {count > 0 ? `✨ ${count} rețete` : '⚠️ 0 rețete'}
+              </Text>
             </View>
-          )}
+
+            {isSelected && (
+              <View style={styles.selectedStampBadge}>
+                <Text style={styles.selectedStampText}>✓ ALES</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Big Food Icon in Center */}
@@ -648,42 +722,49 @@ function renderCardBody(
         </View>
       </View>
 
-      {/* Details Container */}
+      {/* Details Container - Locked Metrics to eliminate visual jumps */}
       <View style={styles.cardDetailsArea}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>{item.label}</Text>
-        <Text style={[styles.cardDesc, { color: theme.textMuted }]}>{item.desc}</Text>
+        <View style={styles.cardTitleBox}>
+          <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={1}>
+            {item.label}
+          </Text>
+        </View>
 
-        {/* Highlights Pills */}
-        {item.highlights && item.highlights.length > 0 && (
-          <View style={styles.highlightsRow}>
-            {item.highlights.map((h, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.highlightTag,
-                  {
-                    backgroundColor: theme.accentBg,
-                    borderColor: theme.border,
-                  },
-                ]}
-              >
-                <Text style={[styles.highlightTagText, { color: theme.text }]}>{h}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+        <View style={styles.cardDescBox}>
+          <Text style={[styles.cardDesc, { color: theme.textMuted }]} numberOfLines={2}>
+            {item.desc}
+          </Text>
+        </View>
 
-        {/* Sample Dishes Row */}
-        {item.sampleDishes && item.sampleDishes.length > 0 && (
-          <View style={styles.sampleDishesBox}>
-            <Text style={[styles.sampleDishesLabel, { color: theme.textMuted }]}>
-              Exemple de rețete în meniu:
-            </Text>
-            <Text style={[styles.sampleDishesText, { color: theme.text }]}>
-              {item.sampleDishes.join(' · ')}
-            </Text>
-          </View>
-        )}
+        {/* Highlights Row (Fixed Height) */}
+        <View style={styles.highlightsRow}>
+          {(item.highlights || []).slice(0, 3).map((h, i) => (
+            <View
+              key={i}
+              style={[
+                styles.highlightTag,
+                {
+                  backgroundColor: theme.accentBg,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Text style={[styles.highlightTagText, { color: theme.text }]} numberOfLines={1}>
+                {h}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Sample Dishes Row (Fixed Height) */}
+        <View style={styles.sampleDishesBox}>
+          <Text style={[styles.sampleDishesLabel, { color: theme.textMuted }]} numberOfLines={1}>
+            Exemple în catalogul SmartMeal:
+          </Text>
+          <Text style={[styles.sampleDishesText, { color: theme.text }]} numberOfLines={2}>
+            {sampleDishes.join(' · ')}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -699,9 +780,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-    flexWrap: 'wrap',
-    gap: 8,
+    marginBottom: 12,
   },
   modeSegment: {
     flexDirection: 'row',
@@ -741,7 +820,7 @@ const styles = StyleSheet.create({
   deckViewport: {
     width: '100%',
     maxWidth: 390,
-    height: 310,
+    height: 330,
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
@@ -785,7 +864,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   cardMediaArea: {
-    height: 100,
+    height: 110,
     width: '100%',
     position: 'relative',
     justifyContent: 'space-between',
@@ -796,6 +875,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     zIndex: 2,
+  },
+  topRightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   vibePill: {
     flexDirection: 'row',
@@ -813,6 +897,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  recipeCountPill: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  recipeCountText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
   selectedStampBadge: {
     backgroundColor: '#30d158',
     paddingHorizontal: 8,
@@ -827,7 +921,7 @@ const styles = StyleSheet.create({
   },
   centerIconWrap: {
     alignSelf: 'center',
-    marginBottom: 2,
+    marginBottom: 4,
     zIndex: 2,
   },
   bigFoodIcon: {
@@ -835,31 +929,43 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* Details Area */
+  /* Details Area - Strict Vertical Constraints */
   cardDetailsArea: {
     flex: 1,
-    padding: 12,
-    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 10,
+    justifyContent: 'flex-start',
+  },
+  cardTitleBox: {
+    height: 24,
+    justifyContent: 'center',
+    marginBottom: 3,
   },
   cardTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
     letterSpacing: -0.3,
-    marginBottom: 2,
+  },
+  cardDescBox: {
+    height: 36,
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   cardDesc: {
     fontSize: 12,
-    lineHeight: 16,
-    marginBottom: 6,
+    lineHeight: 17,
   },
   highlightsRow: {
+    height: 26,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginBottom: 6,
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+    overflow: 'hidden',
   },
   highlightTag: {
-    paddingHorizontal: 7,
+    paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
@@ -869,21 +975,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   sampleDishesBox: {
-    paddingTop: 4,
+    height: 50,
+    paddingTop: 5,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(128,128,128,0.2)',
+    justifyContent: 'flex-start',
   },
   sampleDishesLabel: {
+    height: 14,
     fontSize: 9,
-    fontWeight: '600',
-    marginBottom: 1,
+    fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginBottom: 2,
   },
   sampleDishesText: {
+    height: 32,
     fontSize: 11,
     fontWeight: '500',
-    lineHeight: 14,
+    lineHeight: 15,
   },
 
   /* Swipe Dynamic Stamps */
@@ -1067,9 +1177,24 @@ const styles = StyleSheet.create({
   gridMoodIcon: {
     fontSize: 28,
   },
+  gridTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 3,
+    gap: 8,
+  },
   gridMoodLabel: {
     fontSize: 14,
-    marginBottom: 3,
+  },
+  gridCountBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  gridCountText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   gridMoodDesc: {
     fontSize: 12,

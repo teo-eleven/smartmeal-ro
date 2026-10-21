@@ -1,4 +1,4 @@
-import { FoodTier, HealthGoalTag, MealSlot, Recipe, SupermarketId } from '../types';
+import { DietType, FoodTier, HealthGoalTag, MealSlot, MoodTag, Recipe, SupermarketId } from '../types';
 import { EXTENDED_RECIPES } from './extendedRecipes';
 import { HEALTH_SPECIALTY_RECIPES } from './healthSpecialtyRecipes';
 import { getRecipeHealthTags } from './healthTags';
@@ -3403,6 +3403,115 @@ export const RECIPE_HEALTH_TAGS_MAP: Record<string, HealthGoalTag[]> = {
   supa_mediteraneana_fasole_alba_ulei_masline: ['heart_healthy', 'high_fiber', 'anti_inflammatory'],
 };
 
+/**
+ * Enriches mood tags based on dish archetype, ingredients, calories and title,
+ * guaranteeing deep variety across all 12 mood areas in the app.
+ */
+export function enrichRecipeMoodTags(recipe: {
+  id: string;
+  title: string;
+  description?: string;
+  moodTags?: MoodTag[];
+  nutritionPerServing?: { calories?: number; proteinGrams?: number };
+  dietType?: DietType;
+  suitableSlots?: MealSlot[];
+  archetype?: string;
+  ingredients?: { ingredientId: string }[];
+}): MoodTag[] {
+  const tags = new Set<MoodTag>(recipe.moodTags || []);
+  const title = (recipe.title || '').toLowerCase();
+  const id = (recipe.id || '').toLowerCase();
+  const desc = (recipe.description || '').toLowerCase();
+  const cal = recipe.nutritionPerServing?.calories || 0;
+  const protein = recipe.nutritionPerServing?.proteinGrams || 0;
+  const ingIds = (recipe.ingredients || []).map((i) => i.ingredientId.toLowerCase());
+
+  // 1. pasta_italian (Paste & Italienești)
+  if (
+    /paste|spaghe|penne|tagliat|carbonara|bolognese|pomodoro|pesto|arrabbiata|lasagna/i.test(
+      title + ' ' + id
+    ) ||
+    ingIds.some(
+      (i) =>
+        i.includes('paste') ||
+        i.includes('spaghete') ||
+        i.includes('penne') ||
+        i.includes('tagliatelle')
+    )
+  ) {
+    tags.add('pasta_italian');
+  }
+
+  // 2. soups_stews (Ciorbe & Supe calde de casă)
+  if (
+    /ciorba|supa|borș|bors|tocanita|tocana|iahnie|ghiveci|stew|mancare/i.test(
+      title + ' ' + id
+    ) ||
+    recipe.archetype === 'soup' ||
+    recipe.archetype === 'stew'
+  ) {
+    tags.add('soups_stews');
+  }
+
+  // 3. grill_meat (Grătar & Cărnuri fragede)
+  const isStewOrSoup =
+    /ostropel|tocan|iahnie|ghiveci|gulaș|gulas|mâncărică|mancărică|mancare de|ciorbă|ciorba|supă|supa|borș|bors/i.test(
+      title + ' ' + id
+    );
+  if (
+    !isStewOrSoup &&
+    (/gratar|grătar|friptura|friptură|muschiulet|mușchiuleț|cotlet|steak|antricot|carnaciori|cârnăciori|snitel|șnițel|aripioare|ceafa|ceafă/i.test(
+      title + ' ' + id
+    ) ||
+      recipe.archetype === 'grill')
+  ) {
+    if (recipe.dietType === 'omnivore') {
+      tags.add('grill_meat');
+    }
+  }
+
+  // 4. fresh_salad (Salate crocante & Fresh Bowls)
+  if (
+    (/salată|salata|salad|bowl/i.test(title) && !/șnițel|snitel|burger/i.test(title)) ||
+    recipe.archetype === 'salad'
+  ) {
+    tags.add('fresh_salad');
+  }
+
+  // 5. spicy_fiesta (Condimentat, picant & Mexican)
+  if (
+    /fajitas|chili|mexican|picant|curry|ardei_iute|shakshuka|condimentat|piper/i.test(
+      title + ' ' + id + ' ' + desc
+    ) ||
+    ingIds.includes('ardei_iute_rosu')
+  ) {
+    tags.add('spicy_fiesta');
+  }
+
+  // 6. light_dinner (Cină ușoară de seară <420 kcal)
+  if (cal > 0 && cal <= 420 && !tags.has('sweet_treat')) {
+    tags.add('light_dinner');
+  }
+
+  // 7. high_protein (Peste 28g proteine / porție)
+  if (protein >= 28 || /proteic|muschiulet|somon|ton|antricot|steak/i.test(title + ' ' + id)) {
+    tags.add('high_protein');
+  }
+
+  // 8. sweet_treat (Desert & Dulce de casă)
+  if (
+    recipe.suitableSlots?.includes('dessert') ||
+    recipe.archetype === 'dessert' ||
+    /desert|clatite|papanasi|lava|tort|budinca|chec|mousse|gris|orez cu lapte|crema cocos|mere coapte/i.test(
+      title + ' ' + id
+    )
+  ) {
+    tags.add('sweet_treat');
+  }
+
+  return Array.from(tags);
+}
+
 export const RECIPES: Recipe[] = [
   ...BASE_RECIPES.map((recipe) => {
     const storeSpec = RECIPE_STORE_SPEC_MAP[recipe.id];
@@ -3413,6 +3522,7 @@ export const RECIPES: Recipe[] = [
       suitableSlots: recipe.suitableSlots ?? RECIPE_SLOTS_MAP[recipe.id] ?? ['dinner', 'lunch'],
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'medium',
       healthTags: finalHealthTags,
+      moodTags: enrichRecipeMoodTags(recipe),
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
       storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
@@ -3426,6 +3536,7 @@ export const RECIPES: Recipe[] = [
       ...recipe,
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'medium',
       healthTags: finalHealthTags,
+      moodTags: enrichRecipeMoodTags(recipe),
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
       storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
@@ -3440,6 +3551,7 @@ export const RECIPES: Recipe[] = [
       suitableSlots: recipe.suitableSlots ?? ['lunch', 'dinner'],
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'basic',
       healthTags: finalHealthTags,
+      moodTags: enrichRecipeMoodTags(recipe),
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
       storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
@@ -3454,6 +3566,7 @@ export const RECIPES: Recipe[] = [
       suitableSlots: recipe.suitableSlots ?? ['lunch', 'dinner'],
       tier: recipe.tier ?? 'medium',
       healthTags: finalHealthTags,
+      moodTags: enrichRecipeMoodTags(recipe),
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
       storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,

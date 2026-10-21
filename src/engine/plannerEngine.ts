@@ -466,11 +466,16 @@ export function generateMealPlan(
     }
 
     if (preferences.moodTags && preferences.moodTags.length > 0) {
+      let moodMatchCount = 0;
       recipe.moodTags.forEach((tag) => {
         if (preferences.moodTags.includes(tag)) {
-          score += 15;
+          score += 30;
+          moodMatchCount++;
         }
       });
+      if (moodMatchCount > 1) {
+        score += 15;
+      }
     }
 
     if (preferences.healthGoalTags && preferences.healthGoalTags.length > 0) {
@@ -827,7 +832,7 @@ export function swapMealInPlan(
     const bMatches = b.moodTags.filter((t) => preferences.moodTags.includes(t)).length;
     const aHealth = (a.healthTags || []).filter((t) => preferences.healthGoalTags?.includes(t)).length;
     const bHealth = (b.healthTags || []).filter((t) => preferences.healthGoalTags?.includes(t)).length;
-    return bTier + bMatches * 10 + bHealth * 15 - (aTier + aMatches * 10 + aHealth * 15);
+    return bTier + bMatches * 20 + bHealth * 15 - (aTier + aMatches * 20 + aHealth * 15);
   });
 
   const replacementRecipe = availableCandidates[0];
@@ -1090,7 +1095,7 @@ export function selectOptimalDessertForDay(
     // RULE 5: Mood tag synergy
     (preferences.moodTags || []).forEach((tag) => {
       if (candidate.moodTags.includes(tag)) {
-        score += 20;
+        score += 30;
       }
     });
 
