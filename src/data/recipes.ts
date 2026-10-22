@@ -2938,12 +2938,19 @@ export const RECIPE_HEALTH_TAGS_MAP: Record<string, HealthGoalTag[]> = {
  * Enriches mood tags based on dish archetype, ingredients, calories and title,
  * guaranteeing deep variety across all 12 mood areas in the app.
  */
+/** Thresholds behind the mood tags that promise a number. */
+const HIGH_PROTEIN_MIN_G = 28;
+const SPEEDY_MAX_MINUTES = 25;
+const LIGHT_DINNER_MAX_KCAL = 420;
+
 export function enrichRecipeMoodTags(recipe: {
   id: string;
   title: string;
   description?: string;
   moodTags?: MoodTag[];
   nutritionPerServing?: { calories?: number; proteinGrams?: number };
+  prepTimeMinutes?: number;
+  cookTimeMinutes?: number;
   dietType?: DietType;
   suitableSlots?: MealSlot[];
   archetype?: string;
@@ -3019,106 +3026,69 @@ export function enrichRecipeMoodTags(recipe: {
     tags.add('spicy_fiesta');
   }
 
-  // 6. light_dinner (Cină ușoară de seară <420 kcal)
-  if (cal > 0 && cal <= 420 && !tags.has('sweet_treat')) {
-    tags.add('light_dinner');
-  }
+  // 6-9. Tags that state a number are derived from it and override whatever the source said:
+  // hand-written ones claimed "high protein" at 8 g and "speedy" at 32 minutes, and a regex
+  // read "tortilla" as a cake.
+  const minutes = (recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0);
+  const isDessert = Boolean(recipe.suitableSlots?.includes('dessert'));
+  const setTag = (tag: MoodTag, on: boolean) => (on ? tags.add(tag) : tags.delete(tag));
 
-  // 7. high_protein (Peste 28g proteine / porție)
-  if (protein >= 28 || /proteic|muschiulet|somon|ton|antricot|steak/i.test(title + ' ' + id)) {
-    tags.add('high_protein');
-  }
-
-  // 8. sweet_treat (Desert & Dulce de casă)
-  if (
-    recipe.suitableSlots?.includes('dessert') ||
-    recipe.archetype === 'dessert' ||
-    /desert|clatite|papanasi|lava|tort|budinca|chec|mousse|gris|orez cu lapte|crema cocos|mere coapte/i.test(
-      title + ' ' + id
-    )
-  ) {
-    tags.add('sweet_treat');
-  }
+  setTag('high_protein', protein >= HIGH_PROTEIN_MIN_G);
+  setTag('speedy', minutes > 0 && minutes < SPEEDY_MAX_MINUTES);
+  setTag('sweet_treat', isDessert);
+  setTag('light_dinner', cal > 0 && cal <= LIGHT_DINNER_MAX_KCAL && !isDessert);
 
   return Array.from(tags);
 }
 
+/**
+ * One catalog recipe, completed: slots and tier defaults, store data, derived health tags,
+ * nutrition computed from the ingredients, and mood tags read from that finished recipe.
+ */
+function buildRecipe(
+  recipe: RecipeSource,
+  defaults: { suitableSlots: MealSlot[] | undefined; tier: FoodTier }
+): Recipe {
+  const storeSpec = RECIPE_STORE_SPEC_MAP[recipe.id];
+  const explicitHealth = RECIPE_HEALTH_TAGS_MAP[recipe.id] ?? recipe.healthTags;
+  const completed: Recipe = {
+    ...recipe,
+    suitableSlots: defaults.suitableSlots,
+    tier: defaults.tier,
+    healthTags: getRecipeHealthTags({ ...recipe, healthTags: explicitHealth }),
+    nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
+    availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
+    storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
+    storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
+  };
+  return { ...completed, moodTags: enrichRecipeMoodTags(completed) };
+}
+
 export const RECIPES: Recipe[] = [
-  ...BASE_RECIPES.map((recipe) => {
-    const storeSpec = RECIPE_STORE_SPEC_MAP[recipe.id];
-    const explicitHealth = RECIPE_HEALTH_TAGS_MAP[recipe.id] ?? recipe.healthTags;
-    const finalHealthTags = getRecipeHealthTags({ ...recipe, healthTags: explicitHealth });
-    return {
-      ...recipe,
+  ...BASE_RECIPES.map((recipe) =>
+    buildRecipe(recipe, {
       suitableSlots: recipe.suitableSlots ?? RECIPE_SLOTS_MAP[recipe.id] ?? ['dinner', 'lunch'],
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'medium',
-      healthTags: finalHealthTags,
-      nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
-      moodTags: enrichRecipeMoodTags({
-        ...recipe,
-        nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
-      }),
-      availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
-      storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
-      storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
-    };
-  }),
-  ...NEW_RECIPES.map((recipe) => {
-    const storeSpec = RECIPE_STORE_SPEC_MAP[recipe.id];
-    const explicitHealth = RECIPE_HEALTH_TAGS_MAP[recipe.id] ?? recipe.healthTags;
-    const finalHealthTags = getRecipeHealthTags({ ...recipe, healthTags: explicitHealth });
-    return {
-      ...recipe,
+    })
+  ),
+  ...NEW_RECIPES.map((recipe) =>
+    buildRecipe(recipe, {
+      suitableSlots: recipe.suitableSlots,
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'medium',
-      healthTags: finalHealthTags,
-      nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
-      moodTags: enrichRecipeMoodTags({
-        ...recipe,
-        nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
-      }),
-      availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
-      storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
-      storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
-    };
-  }),
-  ...EXTENDED_RECIPES.map((recipe) => {
-    const storeSpec = RECIPE_STORE_SPEC_MAP[recipe.id];
-    const explicitHealth = RECIPE_HEALTH_TAGS_MAP[recipe.id] ?? recipe.healthTags;
-    const finalHealthTags = getRecipeHealthTags({ ...recipe, healthTags: explicitHealth });
-    return {
-      ...recipe,
+    })
+  ),
+  ...EXTENDED_RECIPES.map((recipe) =>
+    buildRecipe(recipe, {
       suitableSlots: recipe.suitableSlots ?? ['lunch', 'dinner'],
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'basic',
-      healthTags: finalHealthTags,
-      nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
-      moodTags: enrichRecipeMoodTags({
-        ...recipe,
-        nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
-      }),
-      availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
-      storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
-      storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
-    };
-  }),
-  ...HEALTH_SPECIALTY_RECIPES.map((recipe) => {
-    const storeSpec = RECIPE_STORE_SPEC_MAP[recipe.id];
-    const explicitHealth = RECIPE_HEALTH_TAGS_MAP[recipe.id] ?? recipe.healthTags;
-    const finalHealthTags = getRecipeHealthTags({ ...recipe, healthTags: explicitHealth });
-    return {
-      ...recipe,
+    })
+  ),
+  ...HEALTH_SPECIALTY_RECIPES.map((recipe) =>
+    buildRecipe(recipe, {
       suitableSlots: recipe.suitableSlots ?? ['lunch', 'dinner'],
       tier: recipe.tier ?? 'medium',
-      healthTags: finalHealthTags,
-      nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
-      moodTags: enrichRecipeMoodTags({
-        ...recipe,
-        nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
-      }),
-      availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
-      storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
-      storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
-    };
-  }),
+    })
+  ),
 ];
 
 export const RECIPES_MAP: Record<string, Recipe> = RECIPES.reduce(

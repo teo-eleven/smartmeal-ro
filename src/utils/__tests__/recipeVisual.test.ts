@@ -166,9 +166,13 @@ describe('labels read like something a cook would say', () => {
 
 describe('archetype respects when a dish is eaten', () => {
   test('a sweet breakfast is breakfast, not dessert', () => {
-    const pancakes = RECIPES_MAP['clatite_vegane_banane_ovaz'];
-    if (!pancakes) return;
-    expect(pancakes.moodTags).toContain('sweet_treat');
+    // Catalog recipes no longer carry 'sweet_treat' unless they can be served as dessert,
+    // so the case is built explicitly: a sweet dish offered only at breakfast.
+    const pancakes = {
+      ...RECIPES_MAP['clatite_vegane_banane_ovaz'],
+      moodTags: ['sweet_treat' as const],
+      suitableSlots: ['breakfast' as const],
+    };
     expect(getRecipeArchetype(pancakes)).toBe('breakfast');
   });
 
