@@ -1,4 +1,4 @@
-import { toCatalogAmount } from './ingredientUnits';
+import { shoppingAmount } from './ingredientUnits';
 import { AisleCategory, GroceryListItem, Recipe, SupermarketId } from '../types';
 import { INGREDIENTS } from '../data/ingredients';
 import { RETAIL_PRODUCTS_MAP } from '../data/retailProducts';
@@ -40,9 +40,7 @@ export function aggregateGroceryList(
       if (excludePantryStaples && isStaple) continue;
 
       // In the catalog's unit: a recipe may say "150 g" of something sold by the piece.
-      const perServing = toCatalogAmount(ing, dbIngredient);
-      if (perServing === null) continue;
-      const requiredForMeal = perServing * servings;
+      const requiredForMeal = shoppingAmount(ing, dbIngredient) * servings;
 
       if (!ingredientMap[ing.ingredientId]) {
         ingredientMap[ing.ingredientId] = {

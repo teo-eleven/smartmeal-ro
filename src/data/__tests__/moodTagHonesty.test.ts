@@ -10,6 +10,7 @@ import { RECIPES, RECIPES_MAP } from '../recipes';
 const HIGH_PROTEIN_MIN_G = 28;
 const SPEEDY_MAX_MINUTES = 25;
 const LIGHT_DINNER_MAX_KCAL = 420;
+const LOW_CALORIE_MAX_KCAL = 550;
 
 const totalMinutes = (id: string) =>
   RECIPES_MAP[id].prepTimeMinutes + RECIPES_MAP[id].cookTimeMinutes;
@@ -38,6 +39,15 @@ describe('etichetele de poftă spun adevărul', () => {
       (r) =>
         r.moodTags.includes('light_dinner') &&
         r.nutritionPerServing.calories > LIGHT_DINNER_MAX_KCAL
+    );
+
+    expect(heavy.map((r) => `${r.id}: ${r.nutritionPerServing.calories} kcal`)).toEqual([]);
+  });
+
+  test(`„Sub 550 kcal” înseamnă sub ${LOW_CALORIE_MAX_KCAL} kcal`, () => {
+    const heavy = RECIPES.filter(
+      (r) =>
+        r.moodTags.includes('low_calorie') && r.nutritionPerServing.calories >= LOW_CALORIE_MAX_KCAL
     );
 
     expect(heavy.map((r) => `${r.id}: ${r.nutritionPerServing.calories} kcal`)).toEqual([]);

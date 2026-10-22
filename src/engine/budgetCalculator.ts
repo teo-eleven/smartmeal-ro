@@ -1,4 +1,4 @@
-import { toCatalogAmount } from './ingredientUnits';
+import { shoppingAmount } from './ingredientUnits';
 import { FoodTier, Recipe, SupermarketId } from '../types';
 import { INGREDIENTS } from '../data/ingredients';
 import { RECIPES } from '../data/recipes';
@@ -27,9 +27,7 @@ export function calculateRecipePortionCost(
     if (!packPrice || packPrice <= 0) continue;
 
     // Needed for the whole meal, in the unit the catalog prices the ingredient in
-    const perServing = toCatalogAmount(item, ingredient);
-    if (perServing === null) continue;
-    const totalNeeded = perServing * peopleCount;
+    const totalNeeded = shoppingAmount(item, ingredient) * peopleCount;
     // Fractional cost of ingredient consumed
     const portionFraction = totalNeeded / ingredient.standardPackSize;
     totalCost += portionFraction * packPrice;

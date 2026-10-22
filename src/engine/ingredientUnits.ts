@@ -88,3 +88,12 @@ export function computeRecipeNutrition(lines: RecipeIngredient[]): RecipeNutriti
     fatGrams: Math.round(totals.fat),
   };
 }
+
+/**
+ * The amount to shop for and to price. A line the converter cannot relate to the catalog
+ * unit keeps its raw amount: an imperfect quantity on the list is better than an ingredient
+ * that silently disappears from it. Catalog recipes never reach the fallback (tested).
+ */
+export function shoppingAmount(line: RecipeIngredient, ingredient: Ingredient): number {
+  return toCatalogAmount(line, ingredient) ?? line.amountPerServing;
+}

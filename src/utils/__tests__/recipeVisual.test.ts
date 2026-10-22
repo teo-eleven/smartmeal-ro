@@ -168,6 +168,7 @@ describe('archetype respects when a dish is eaten', () => {
   test('a sweet breakfast is breakfast, not dessert', () => {
     // Catalog recipes no longer carry 'sweet_treat' unless they can be served as dessert,
     // so the case is built explicitly: a sweet dish offered only at breakfast.
+    expect(RECIPES_MAP['clatite_vegane_banane_ovaz']).toBeDefined();
     const pancakes = {
       ...RECIPES_MAP['clatite_vegane_banane_ovaz'],
       moodTags: ['sweet_treat' as const],

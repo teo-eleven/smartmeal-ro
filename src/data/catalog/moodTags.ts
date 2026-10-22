@@ -1,13 +1,15 @@
 import { DietType, MealSlot, MoodTag } from '../../types';
 
-/**
- * Enriches mood tags based on dish archetype, ingredients, calories and title,
- * guaranteeing deep variety across all 12 mood areas in the app.
- */
 /** Thresholds behind the mood tags that promise a number. */
 const HIGH_PROTEIN_MIN_G = 28;
 const SPEEDY_MAX_MINUTES = 25;
 const LIGHT_DINNER_MAX_KCAL = 420;
+const LOW_CALORIE_MAX_KCAL = 550;
+
+/**
+ * Enriches mood tags based on dish archetype, ingredients, calories and title,
+ * guaranteeing deep variety across all 12 mood areas in the app.
+ */
 
 export function enrichRecipeMoodTags(recipe: {
   id: string;
@@ -101,6 +103,7 @@ export function enrichRecipeMoodTags(recipe: {
   setTag('speedy', minutes > 0 && minutes < SPEEDY_MAX_MINUTES);
   setTag('sweet_treat', isDessert);
   setTag('light_dinner', cal > 0 && cal <= LIGHT_DINNER_MAX_KCAL && !isDessert);
+  setTag('low_calorie', cal > 0 && cal < LOW_CALORIE_MAX_KCAL);
 
   return Array.from(tags);
 }

@@ -1,7 +1,12 @@
 import { RECIPES, RECIPES_MAP } from '../../data/recipes';
 import { INGREDIENTS } from '../../data/ingredients';
 import { INGREDIENT_NUTRITION } from '../../data/ingredientNutrition';
-import { computeRecipeNutrition, toCatalogAmount, toGrams } from '../ingredientUnits';
+import {
+  computeRecipeNutrition,
+  shoppingAmount,
+  toCatalogAmount,
+  toGrams,
+} from '../ingredientUnits';
 import { calculateRecipePortionCost } from '../budgetCalculator';
 
 /**
@@ -131,5 +136,14 @@ describe('valorile nutriționale ale rețetelor', () => {
 
   test('salamul de biscuiți nu mai pretinde 380 kcal', () => {
     expect(RECIPES_MAP.salam_de_biscuiti_clasic.nutritionPerServing.calories).toBeGreaterThan(600);
+  });
+});
+
+describe('o linie neconvertibilă nu dispare din lista de cumpărături', () => {
+  test('shoppingAmount păstrează cantitatea brută când conversia nu e posibilă', () => {
+    const line = { ingredientId: 'faina_alba', amountPerServing: 2, unit: 'buc' as const };
+
+    expect(toCatalogAmount(line, INGREDIENTS.faina_alba)).toBeNull();
+    expect(shoppingAmount(line, INGREDIENTS.faina_alba)).toBe(2);
   });
 });

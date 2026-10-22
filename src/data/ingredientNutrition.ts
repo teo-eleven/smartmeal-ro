@@ -151,7 +151,7 @@ export const INGREDIENT_NUTRITION: Readonly<Record<string, NutritionPer100g>> = 
   gem_fructe: n(250, 0.4, 62, 0.1, 1),
   ciocolata_menaj: n(546, 5, 55, 31, 7),
   ciocolata_neagra_vegana: n(598, 7.8, 46, 43, 11),
-  cacao_pudra: n(360, 22, 45, 21, 33), // EU label values; USDA's 228 kcal uses other factors
+  cacao_pudra: n(360, 22, 45, 21, 33), // EU label values (carbs incl. 33 g fibre); USDA's 228 kcal uses other energy factors
   nuci_miez: n(654, 15, 14, 65, 6.7),
   unt_arahide: n(588, 25, 20, 50, 6),
   seminte_chia: n(486, 17, 42, 31, 34),
