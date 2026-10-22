@@ -76,14 +76,16 @@ export function getHealthGoalMeta(id: HealthGoalTag): HealthGoalMeta | undefined
  * `sunca_praga`, `carnaciori_oltenesti` ("carnat" is not a substring of "carnaciori") and
  * the pork-beef mince, so nine pork recipes reached users who chose "Fără porc".
  */
-export function recipeContainsPork(recipe: Recipe): boolean {
+export function recipeContainsPork(recipe: Pick<Recipe, 'ingredients'>): boolean {
   return recipe.ingredients.some((ing) => INGREDIENTS[ing.ingredientId]?.containsPork === true);
 }
 
 /**
  * Derives appropriate health tags for a recipe based on its explicit tags and ingredients.
  */
-export function getRecipeHealthTags(recipe: Recipe): HealthGoalTag[] {
+export function getRecipeHealthTags(
+  recipe: Pick<Recipe, 'healthTags' | 'ingredients'>
+): HealthGoalTag[] {
   const tags = new Set<HealthGoalTag>(recipe.healthTags || []);
 
   // Derived, never trusted from the data: a hand-written 'pork_free' on a recipe with pork

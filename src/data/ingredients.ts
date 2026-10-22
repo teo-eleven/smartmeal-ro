@@ -164,6 +164,16 @@ export const INGREDIENTS: Record<string, Ingredient> = {
     unit: 'g',
     typicalPriceRon: { lidl: 3.99, kaufland: 3.69, carrefour: 4.29, mega_image: 4.79, auchan: 4.2, penny: 3.87, profi: 3.95, sezamo: 4.69 },
   },
+  sfecla_rosie: {
+    id: 'sfecla_rosie',
+    name: 'Sfeclă roșie',
+    category: 'produce',
+    isPantryStaple: false,
+    standardPackSize: 1000,
+    unit: 'g',
+    // Estimated shelf prices (2026-10), in line with other root vegetables per kg.
+    typicalPriceRon: { lidl: 3.49, kaufland: 3.29, carrefour: 3.79, mega_image: 4.29, auchan: 3.69, penny: 3.39, profi: 3.49, sezamo: 4.19 },
+  },
   avocado: {
     id: 'avocado',
     name: 'Avocado ready-to-eat',

@@ -18,6 +18,7 @@ import { MacroBar } from '../components/MacroBar';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAppStore } from '../store/useAppStore';
 import { RecipeVisual } from '../components/RecipeVisual';
+import { toCatalogAmount } from '../engine/ingredientUnits';
 import { PhotoCreditLine } from '../components/PhotoCreditLine';
 
 import { getAppTheme } from '../styles/theme';
@@ -247,7 +248,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     const item = INGREDIENTS[ing.ingredientId];
     if (!item) return acc;
     const unitPrice = (item.typicalPriceRon[preferences.supermarketId] ?? 5) / (item.standardPackSize || 100);
-    return acc + unitPrice * ing.amountPerServing;
+    return acc + unitPrice * (toCatalogAmount(ing, item) ?? 0);
   }, 0);
   const formattedCostPerServing = Math.max(3.5, Math.round(estimatedCostPerServing * 10) / 10).toFixed(2);
   const formattedTotalCost = (parseFloat(formattedCostPerServing) * activeServings).toFixed(2);

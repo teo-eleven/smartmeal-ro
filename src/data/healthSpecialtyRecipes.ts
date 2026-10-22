@@ -1,6 +1,6 @@
-import { Recipe } from '../types';
+import { RecipeSource } from '../types';
 
-export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
+export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
   {
     id: 'somon_cuptor_dovlecei_turmeric',
     title: 'File de somon la cuptor cu dovlecei și turmeric',
@@ -11,7 +11,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: ['oven'],
     moodTags: ['speedy', 'high_protein', 'healthy_comfort'],
-    nutritionPerServing: { calories: 480, proteinGrams: 36, carbsGrams: 12, fatGrams: 28 },
     ingredients: [
       { ingredientId: 'file_somon_proaspat', amountPerServing: 160, unit: 'g' },
       { ingredientId: 'turmeric_macinat', amountPerServing: 2, unit: 'g' },
@@ -42,7 +41,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['healthy_comfort', 'speedy', 'low_calorie'],
-    nutritionPerServing: { calories: 290, proteinGrams: 9, carbsGrams: 24, fatGrams: 16 },
     ingredients: [
       { ingredientId: 'conopida_proaspata', amountPerServing: 300, unit: 'g' },
       { ingredientId: 'lapte_cocos', amountPerServing: 80, unit: 'ml' },
@@ -73,7 +71,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['speedy', 'low_calorie', 'healthy_comfort'],
-    nutritionPerServing: { calories: 310, proteinGrams: 8, carbsGrams: 42, fatGrams: 12 },
     ingredients: [
       { ingredientId: 'afine_congelate', amountPerServing: 140, unit: 'g' },
       { ingredientId: 'lapte_migdale_fara_zahar', amountPerServing: 160, unit: 'ml' },
@@ -102,7 +99,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['healthy_comfort', 'high_protein', 'speedy'],
-    nutritionPerServing: { calories: 430, proteinGrams: 20, carbsGrams: 48, fatGrams: 17 },
     ingredients: [
       { ingredientId: 'linte_verde_uscata', amountPerServing: 75, unit: 'g' },
       { ingredientId: 'spanac_baby', amountPerServing: 50, unit: 'g' },
@@ -132,7 +128,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['high_protein', 'speedy', 'healthy_comfort'],
-    nutritionPerServing: { calories: 510, proteinGrams: 44, carbsGrams: 36, fatGrams: 19 },
     ingredients: [
       { ingredientId: 'piept_curcan', amountPerServing: 160, unit: 'g' },
       { ingredientId: 'quinoa_alba', amountPerServing: 60, unit: 'g' },
@@ -162,7 +157,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['speedy', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: { calories: 280, proteinGrams: 8, carbsGrams: 22, fatGrams: 17 },
     ingredients: [
       { ingredientId: 'seminte_chia', amountPerServing: 35, unit: 'g' },
       { ingredientId: 'lapte_migdale_fara_zahar', amountPerServing: 200, unit: 'ml' },
@@ -189,7 +183,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['healthy_comfort', 'high_protein', 'romanian_classic'],
-    nutritionPerServing: { calories: 420, proteinGrams: 21, carbsGrams: 54, fatGrams: 10 },
     ingredients: [
       { ingredientId: 'linte_verde_uscata', amountPerServing: 60, unit: 'g' },
       { ingredientId: 'naut_conserva', amountPerServing: 100, unit: 'g' },
@@ -220,7 +213,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: ['oven'],
     moodTags: ['speedy', 'high_protein', 'low_calorie'],
-    nutritionPerServing: { calories: 340, proteinGrams: 34, carbsGrams: 10, fatGrams: 15 },
     ingredients: [
       { ingredientId: 'file_cod_congelat', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'dovlecei', amountPerServing: 150, unit: 'g' },
@@ -250,7 +242,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: { calories: 230, proteinGrams: 7, carbsGrams: 28, fatGrams: 9 },
     ingredients: [
       { ingredientId: 'fasole_verde_congelata', amountPerServing: 260, unit: 'g' },
       { ingredientId: 'rosii_pasate', amountPerServing: 100, unit: 'g' },
@@ -280,7 +271,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: ['oven'],
     moodTags: ['healthy_comfort', 'high_protein', 'speedy'],
-    nutritionPerServing: { calories: 410, proteinGrams: 35, carbsGrams: 12, fatGrams: 22 },
     ingredients: [
       { ingredientId: 'file_cod_congelat', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'ardei_gras_rosu', amountPerServing: 80, unit: 'g' },
@@ -310,7 +300,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein', 'healthy_comfort'],
-    nutritionPerServing: { calories: 360, proteinGrams: 24, carbsGrams: 4, fatGrams: 26 },
     ingredients: [
       { ingredientId: 'oua_m', amountPerServing: 2, unit: 'buc' },
       { ingredientId: 'ciuperci_champignon', amountPerServing: 80, unit: 'g' },
@@ -340,7 +329,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: [],
     moodTags: ['speedy', 'low_calorie', 'healthy_comfort'],
-    nutritionPerServing: { calories: 210, proteinGrams: 10, carbsGrams: 9, fatGrams: 14 },
     ingredients: [
       { ingredientId: 'castraveti', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'iaurt_grecesc_10', amountPerServing: 150, unit: 'g' },
@@ -369,7 +357,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['healthy_comfort', 'family_fav', 'high_protein'],
-    nutritionPerServing: { calories: 440, proteinGrams: 18, carbsGrams: 64, fatGrams: 10 },
     ingredients: [
       { ingredientId: 'fasole_rosie_conserva', amountPerServing: 160, unit: 'g' },
       { ingredientId: 'cartofi_albi', amountPerServing: 120, unit: 'g' },
@@ -400,7 +387,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['speedy', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: { calories: 370, proteinGrams: 14, carbsGrams: 38, fatGrams: 17 },
     ingredients: [
       { ingredientId: 'naut_conserva', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'morcovi', amountPerServing: 120, unit: 'g' },
@@ -430,7 +416,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein', 'healthy_comfort'],
-    nutritionPerServing: { calories: 420, proteinGrams: 42, carbsGrams: 3, fatGrams: 24 },
     ingredients: [
       { ingredientId: 'pastrav_proaspat', amountPerServing: 220, unit: 'g' },
       { ingredientId: 'lamaie', amountPerServing: 50, unit: 'g' },
@@ -459,7 +444,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['healthy_comfort', 'romanian_classic', 'low_calorie'],
-    nutritionPerServing: { calories: 320, proteinGrams: 14, carbsGrams: 45, fatGrams: 8 },
     ingredients: [
       { ingredientId: 'fasole_boabe_conserva', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'morcovi', amountPerServing: 70, unit: 'g' },
@@ -492,7 +476,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['speedy', 'family_fav'],
-    nutritionPerServing: { calories: 350, proteinGrams: 23, carbsGrams: 5, fatGrams: 26 },
     ingredients: [
       { ingredientId: 'oua_m', amountPerServing: 2, unit: 'buc' },
       { ingredientId: 'bacon_afumat', amountPerServing: 40, unit: 'g' },
@@ -521,7 +504,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein'],
-    nutritionPerServing: { calories: 360, proteinGrams: 30, carbsGrams: 4, fatGrams: 25 },
     ingredients: [
       { ingredientId: 'oua_m', amountPerServing: 3, unit: 'buc' },
       { ingredientId: 'somon_afumat', amountPerServing: 50, unit: 'g' },
@@ -549,7 +531,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: [],
     moodTags: ['speedy', 'healthy_comfort'],
-    nutritionPerServing: { calories: 410, proteinGrams: 15, carbsGrams: 14, fatGrams: 33 },
     ingredients: [
       { ingredientId: 'iaurt_grecesc', amountPerServing: 170, unit: 'g' },
       { ingredientId: 'nuci_miez', amountPerServing: 20, unit: 'g' },
@@ -577,7 +558,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['oven'],
     moodTags: ['high_protein', 'family_fav'],
-    nutritionPerServing: { calories: 365, proteinGrams: 38, carbsGrams: 12, fatGrams: 18 },
     ingredients: [
       { ingredientId: 'pulpe_pui_dezosate', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'dovlecei', amountPerServing: 150, unit: 'g' },
@@ -607,7 +587,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein', 'healthy_comfort'],
-    nutritionPerServing: { calories: 380, proteinGrams: 40, carbsGrams: 8, fatGrams: 21 },
     ingredients: [
       { ingredientId: 'piept_curcan', amountPerServing: 160, unit: 'g' },
       { ingredientId: 'ciuperci_champignon', amountPerServing: 120, unit: 'g' },
@@ -636,7 +615,6 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein', 'grill_meat'],
-    nutritionPerServing: { calories: 555, proteinGrams: 44, carbsGrams: 6, fatGrams: 40 },
     ingredients: [
       { ingredientId: 'antricot_vita_angus', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'spanac_baby', amountPerServing: 100, unit: 'g' },

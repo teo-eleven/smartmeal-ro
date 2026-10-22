@@ -126,6 +126,13 @@ export interface Recipe {
   storeBadgeLabel?: string;
 }
 
+/**
+ * A recipe as written in the catalog files. Nutrition is not written by hand: it is computed
+ * from the ingredients when the catalog is built (`computeRecipeNutrition`), because the
+ * hand-written values drifted up to 55% below the real figure.
+ */
+export type RecipeSource = Omit<Recipe, 'nutritionPerServing'>;
+
 /** Follows the phone unless the user overrides it. */
 export type ThemeMode = 'system' | 'light' | 'dark';
 

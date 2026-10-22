@@ -1,9 +1,10 @@
-import { DietType, FoodTier, HealthGoalTag, MealSlot, MoodTag, Recipe, SupermarketId } from '../types';
+import { computeRecipeNutrition } from '../engine/ingredientUnits';
+import { DietType, FoodTier, HealthGoalTag, MealSlot, MoodTag, Recipe, RecipeSource, SupermarketId } from '../types';
 import { EXTENDED_RECIPES } from './extendedRecipes';
 import { HEALTH_SPECIALTY_RECIPES } from './healthSpecialtyRecipes';
 import { getRecipeHealthTags } from './healthTags';
 
-const BASE_RECIPES: Recipe[] = [
+const BASE_RECIPES: RecipeSource[] = [
   {
     id: 'pui_airfryer_cartofi',
     title: 'Pui crocant la Air Fryer cu cartofi wedges',
@@ -13,12 +14,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['air_fryer'],
     moodTags: ['speedy', 'high_protein', 'family_fav'],
-    nutritionPerServing: {
-      calories: 520,
-      proteinGrams: 46,
-      carbsGrams: 42,
-      fatGrams: 14,
-    },
     ingredients: [
       { ingredientId: 'piept_pui_file', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'cartofi_albi', amountPerServing: 250, unit: 'g' },
@@ -44,12 +39,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'healthy_comfort', 'speedy'],
-    nutritionPerServing: {
-      calories: 480,
-      proteinGrams: 18,
-      carbsGrams: 52,
-      fatGrams: 22,
-    },
     ingredients: [
       { ingredientId: 'malai_superior', amountPerServing: 100, unit: 'g' },
       { ingredientId: 'telemea_vaca', amountPerServing: 90, unit: 'g' },
@@ -73,12 +62,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'family_fav', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 560,
-      proteinGrams: 24,
-      carbsGrams: 68,
-      fatGrams: 20,
-    },
     ingredients: [
       { ingredientId: 'paste_spaghete', amountPerServing: 100, unit: 'g' },
       { ingredientId: 'oua_m', amountPerServing: 2, unit: 'buc' },
@@ -103,12 +86,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 590,
-      proteinGrams: 38,
-      carbsGrams: 48,
-      fatGrams: 26,
-    },
     ingredients: [
       { ingredientId: 'file_somon_proaspat', amountPerServing: 150, unit: 'g' },
       { ingredientId: 'orez_basmati', amountPerServing: 75, unit: 'g' },
@@ -134,12 +111,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['speedy', 'fakeaway', 'high_protein'],
-    nutritionPerServing: {
-      calories: 540,
-      proteinGrams: 44,
-      carbsGrams: 40,
-      fatGrams: 21,
-    },
     ingredients: [
       { ingredientId: 'lipii_tortilla', amountPerServing: 1, unit: 'buc' },
       { ingredientId: 'piept_pui_file', amountPerServing: 150, unit: 'g' },
@@ -165,12 +136,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: {
-      calories: 380,
-      proteinGrams: 14,
-      carbsGrams: 64,
-      fatGrams: 8,
-    },
     ingredients: [
       { ingredientId: 'ciuperci_champignon', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'ceapa_galbena', amountPerServing: 80, unit: 'g' },
@@ -197,12 +162,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['family_fav', 'healthy_comfort', 'high_protein'],
-    nutritionPerServing: {
-      calories: 620,
-      proteinGrams: 36,
-      carbsGrams: 65,
-      fatGrams: 22,
-    },
     ingredients: [
       { ingredientId: 'paste_penne', amountPerServing: 90, unit: 'g' },
       { ingredientId: 'carne_tocata_amestec', amountPerServing: 150, unit: 'g' },
@@ -229,12 +188,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['oven'],
     moodTags: ['family_fav', 'healthy_comfort', 'high_protein'],
-    nutritionPerServing: {
-      calories: 490,
-      proteinGrams: 48,
-      carbsGrams: 35,
-      fatGrams: 16,
-    },
     ingredients: [
       { ingredientId: 'piept_pui_file', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'oua_m', amountPerServing: 1, unit: 'buc' },
@@ -260,12 +213,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: {
-      calories: 410,
-      proteinGrams: 22,
-      carbsGrams: 20,
-      fatGrams: 26,
-    },
     ingredients: [
       { ingredientId: 'oua_m', amountPerServing: 2, unit: 'buc' },
       { ingredientId: 'rosii_cuburi', amountPerServing: 180, unit: 'g' },
@@ -292,12 +239,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['speedy', 'fakeaway', 'high_protein'],
-    nutritionPerServing: {
-      calories: 510,
-      proteinGrams: 42,
-      carbsGrams: 55,
-      fatGrams: 12,
-    },
     ingredients: [
       { ingredientId: 'piept_pui_file', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'orez_basmati', amountPerServing: 75, unit: 'g' },
@@ -323,12 +264,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob', 'oven'],
     moodTags: ['romanian_classic', 'family_fav', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 610,
-      proteinGrams: 35,
-      carbsGrams: 48,
-      fatGrams: 28,
-    },
     ingredients: [
       { ingredientId: 'carne_tocata_amestec', amountPerServing: 150, unit: 'g' },
       { ingredientId: 'oua_m', amountPerServing: 0.5, unit: 'buc' },
@@ -356,12 +291,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: [], // no appliance strictly required, hob used as neutral
     moodTags: ['speedy', 'low_calorie', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 340,
-      proteinGrams: 16,
-      carbsGrams: 18,
-      fatGrams: 22,
-    },
     ingredients: [
       { ingredientId: 'rosii_proaspete', amountPerServing: 150, unit: 'g' },
       { ingredientId: 'castraveti', amountPerServing: 120, unit: 'g' },
@@ -388,12 +317,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['oven'],
     moodTags: ['high_protein', 'healthy_comfort', 'family_fav'],
-    nutritionPerServing: {
-      calories: 550,
-      proteinGrams: 45,
-      carbsGrams: 38,
-      fatGrams: 20,
-    },
     ingredients: [
       { ingredientId: 'muschiulet_porc', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'cartofi_albi', amountPerServing: 250, unit: 'g' },
@@ -418,12 +341,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'low_calorie', 'high_protein'],
-    nutritionPerServing: {
-      calories: 470,
-      proteinGrams: 32,
-      carbsGrams: 64,
-      fatGrams: 9,
-    },
     ingredients: [
       { ingredientId: 'paste_penne', amountPerServing: 90, unit: 'g' },
       { ingredientId: 'ton_conserva', amountPerServing: 80, unit: 'g' },
@@ -449,12 +366,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['air_fryer'],
     moodTags: ['fakeaway', 'high_protein', 'family_fav'],
-    nutritionPerServing: {
-      calories: 520,
-      proteinGrams: 42,
-      carbsGrams: 45,
-      fatGrams: 16,
-    },
     ingredients: [
       { ingredientId: 'chifle_burger', amountPerServing: 1, unit: 'buc' },
       { ingredientId: 'piept_pui_file', amountPerServing: 160, unit: 'g' },
@@ -481,12 +392,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'healthy_comfort', 'high_protein'],
-    nutritionPerServing: {
-      calories: 450,
-      proteinGrams: 36,
-      carbsGrams: 16,
-      fatGrams: 24,
-    },
     ingredients: [
       { ingredientId: 'piept_pui_file', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'smantana_20', amountPerServing: 70, unit: 'g' },
@@ -514,12 +419,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['oven'],
     moodTags: ['low_calorie', 'healthy_comfort', 'speedy'],
-    nutritionPerServing: {
-      calories: 320,
-      proteinGrams: 14,
-      carbsGrams: 36,
-      fatGrams: 12,
-    },
     ingredients: [
       { ingredientId: 'dovlecei', amountPerServing: 250, unit: 'g' },
       { ingredientId: 'pesmet_auriu', amountPerServing: 40, unit: 'g' },
@@ -546,12 +445,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['air_fryer'],
     moodTags: ['speedy', 'high_protein', 'fakeaway'],
-    nutritionPerServing: {
-      calories: 540,
-      proteinGrams: 44,
-      carbsGrams: 32,
-      fatGrams: 22,
-    },
     ingredients: [
       { ingredientId: 'pulpe_pui_dezosate', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'cartofi_albi', amountPerServing: 200, unit: 'g' },
@@ -576,12 +469,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['fakeaway', 'healthy_comfort', 'high_protein'],
-    nutritionPerServing: {
-      calories: 580,
-      proteinGrams: 42,
-      carbsGrams: 52,
-      fatGrams: 20,
-    },
     ingredients: [
       { ingredientId: 'piept_pui_file', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'lapte_cocos', amountPerServing: 120, unit: 'ml' },
@@ -607,12 +494,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein', 'romanian_classic'],
-    nutritionPerServing: {
-      calories: 390,
-      proteinGrams: 25,
-      carbsGrams: 8,
-      fatGrams: 27,
-    },
     ingredients: [
       { ingredientId: 'oua_m', amountPerServing: 3, unit: 'buc' },
       { ingredientId: 'telemea_vaca', amountPerServing: 50, unit: 'g' },
@@ -638,12 +519,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['oven'],
     moodTags: ['healthy_comfort', 'family_fav', 'romanian_classic'],
-    nutritionPerServing: {
-      calories: 520,
-      proteinGrams: 16,
-      carbsGrams: 54,
-      fatGrams: 26,
-    },
     ingredients: [
       { ingredientId: 'cartofi_albi', amountPerServing: 300, unit: 'g' },
       { ingredientId: 'smantana_20', amountPerServing: 100, unit: 'g' },
@@ -668,12 +543,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: {
-      calories: 360,
-      proteinGrams: 18,
-      carbsGrams: 55,
-      fatGrams: 6,
-    },
     ingredients: [
       { ingredientId: 'fasole_rosie_conserva', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'ceapa_galbena', amountPerServing: 80, unit: 'g' },
@@ -699,12 +568,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['oven', 'hob'],
     moodTags: ['romanian_classic', 'family_fav', 'high_protein'],
-    nutritionPerServing: {
-      calories: 590,
-      proteinGrams: 46,
-      carbsGrams: 45,
-      fatGrams: 24,
-    },
     ingredients: [
       { ingredientId: 'pulpe_pui_dezosate', amountPerServing: 220, unit: 'g' },
       { ingredientId: 'malai_superior', amountPerServing: 80, unit: 'g' },
@@ -729,12 +592,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'healthy_comfort', 'family_fav'],
-    nutritionPerServing: {
-      calories: 490,
-      proteinGrams: 18,
-      carbsGrams: 62,
-      fatGrams: 18,
-    },
     ingredients: [
       { ingredientId: 'paste_penne', amountPerServing: 90, unit: 'g' },
       { ingredientId: 'spanac_baby', amountPerServing: 70, unit: 'g' },
@@ -760,12 +617,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: [],
     moodTags: ['speedy', 'low_calorie', 'high_protein'],
-    nutritionPerServing: {
-      calories: 450,
-      proteinGrams: 30,
-      carbsGrams: 42,
-      fatGrams: 18,
-    },
     ingredients: [
       { ingredientId: 'lipii_tortilla', amountPerServing: 1, unit: 'buc' },
       { ingredientId: 'ton_conserva', amountPerServing: 80, unit: 'g' },
@@ -791,12 +642,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'family_fav', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 520,
-      proteinGrams: 40,
-      carbsGrams: 58,
-      fatGrams: 12,
-    },
     ingredients: [
       { ingredientId: 'piept_pui_file', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'orez_basmati', amountPerServing: 80, unit: 'g' },
@@ -823,12 +668,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['oven', 'air_fryer'],
     moodTags: ['low_calorie', 'speedy', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 280,
-      proteinGrams: 20,
-      carbsGrams: 8,
-      fatGrams: 18,
-    },
     ingredients: [
       { ingredientId: 'ciuperci_champignon', amountPerServing: 250, unit: 'g' },
       { ingredientId: 'mozzarella_rasa', amountPerServing: 60, unit: 'g' },
@@ -853,12 +692,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['air_fryer', 'oven'],
     moodTags: ['healthy_comfort', 'low_calorie', 'romanian_classic'],
-    nutritionPerServing: {
-      calories: 340,
-      proteinGrams: 16,
-      carbsGrams: 30,
-      fatGrams: 16,
-    },
     ingredients: [
       { ingredientId: 'dovlecei', amountPerServing: 250, unit: 'g' },
       { ingredientId: 'morcovi', amountPerServing: 60, unit: 'g' },
@@ -884,12 +717,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: ['oven'],
     moodTags: ['low_calorie', 'high_protein', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 460,
-      proteinGrams: 36,
-      carbsGrams: 14,
-      fatGrams: 28,
-    },
     ingredients: [
       { ingredientId: 'file_somon_proaspat', amountPerServing: 150, unit: 'g' },
       { ingredientId: 'dovlecei', amountPerServing: 150, unit: 'g' },
@@ -914,12 +741,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein', 'low_calorie'],
-    nutritionPerServing: {
-      calories: 430,
-      proteinGrams: 44,
-      carbsGrams: 28,
-      fatGrams: 14,
-    },
     ingredients: [
       { ingredientId: 'piept_pui_file', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'salata_verde', amountPerServing: 0.5, unit: 'buc' },
@@ -945,12 +766,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['oven'],
     moodTags: ['romanian_classic', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: {
-      calories: 330,
-      proteinGrams: 8,
-      carbsGrams: 56,
-      fatGrams: 7,
-    },
     ingredients: [
       { ingredientId: 'cartofi_albi', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'dovlecei', amountPerServing: 120, unit: 'g' },
@@ -978,12 +793,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['air_fryer'],
     moodTags: ['high_protein', 'family_fav', 'fakeaway'],
-    nutritionPerServing: {
-      calories: 530,
-      proteinGrams: 46,
-      carbsGrams: 22,
-      fatGrams: 28,
-    },
     ingredients: [
       { ingredientId: 'piept_pui_file', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'unt_82', amountPerServing: 25, unit: 'g' },
@@ -1008,12 +817,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['fakeaway', 'high_protein', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 560,
-      proteinGrams: 38,
-      carbsGrams: 42,
-      fatGrams: 24,
-    },
     ingredients: [
       { ingredientId: 'carne_tocata_amestec', amountPerServing: 150, unit: 'g' },
       { ingredientId: 'fasole_rosie_conserva', amountPerServing: 120, unit: 'g' },
@@ -1040,12 +843,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['healthy_comfort', 'low_calorie'],
-    nutritionPerServing: {
-      calories: 420,
-      proteinGrams: 10,
-      carbsGrams: 64,
-      fatGrams: 14,
-    },
     ingredients: [
       { ingredientId: 'orez_basmati', amountPerServing: 80, unit: 'g' },
       { ingredientId: 'lapte_cocos', amountPerServing: 100, unit: 'ml' },
@@ -1071,12 +868,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 420,
-      proteinGrams: 18,
-      carbsGrams: 32,
-      fatGrams: 24,
-    },
     ingredients: [
       { ingredientId: 'paine_toast', amountPerServing: 60, unit: 'g' },
       { ingredientId: 'oua_m', amountPerServing: 2, unit: 'buc' },
@@ -1101,12 +892,6 @@ const BASE_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['healthy_comfort', 'romanian_classic', 'low_calorie'],
-    nutritionPerServing: {
-      calories: 360,
-      proteinGrams: 10,
-      carbsGrams: 52,
-      fatGrams: 12,
-    },
     ingredients: [
       { ingredientId: 'cartofi_albi', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'morcovi', amountPerServing: 80, unit: 'g' },
@@ -1164,7 +949,7 @@ const RECIPE_SLOTS_MAP: Record<string, MealSlot[]> = {
   supa_crema_legume_crutoane: ['lunch'],
 };
 
-const NEW_RECIPES: Recipe[] = [
+const NEW_RECIPES: RecipeSource[] = [
   // 🍳 COMBINAȚII MIC DEJUN
   {
     id: 'terci_ovaz_fructe_miere',
@@ -1175,12 +960,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: {
-      calories: 340,
-      proteinGrams: 12,
-      carbsGrams: 58,
-      fatGrams: 7,
-    },
     ingredients: [
       { ingredientId: 'fulgi_ovaz', amountPerServing: 60, unit: 'g' },
       { ingredientId: 'lapte_3_5', amountPerServing: 200, unit: 'ml' },
@@ -1205,12 +984,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: [],
     moodTags: ['speedy', 'healthy_comfort', 'high_protein'],
-    nutritionPerServing: {
-      calories: 310,
-      proteinGrams: 14,
-      carbsGrams: 24,
-      fatGrams: 18,
-    },
     ingredients: [
       { ingredientId: 'iaurt_grecesc_10', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'nuci_miez', amountPerServing: 30, unit: 'g' },
@@ -1234,12 +1007,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['family_fav', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 390,
-      proteinGrams: 12,
-      carbsGrams: 62,
-      fatGrams: 10,
-    },
     ingredients: [
       { ingredientId: 'faina_alba', amountPerServing: 80, unit: 'g' },
       { ingredientId: 'lapte_3_5', amountPerServing: 100, unit: 'ml' },
@@ -1265,12 +1032,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['speedy', 'family_fav', 'high_protein'],
-    nutritionPerServing: {
-      calories: 420,
-      proteinGrams: 22,
-      carbsGrams: 35,
-      fatGrams: 21,
-    },
     ingredients: [
       { ingredientId: 'paine_toast', amountPerServing: 80, unit: 'g' },
       { ingredientId: 'cascaval_clasic', amountPerServing: 60, unit: 'g' },
@@ -1295,12 +1056,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['speedy', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: {
-      calories: 280,
-      proteinGrams: 7,
-      carbsGrams: 32,
-      fatGrams: 14,
-    },
     ingredients: [
       { ingredientId: 'seminte_chia', amountPerServing: 35, unit: 'g' },
       { ingredientId: 'lapte_cocos', amountPerServing: 150, unit: 'ml' },
@@ -1324,12 +1079,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein', 'low_calorie'],
-    nutritionPerServing: {
-      calories: 330,
-      proteinGrams: 23,
-      carbsGrams: 4,
-      fatGrams: 25,
-    },
     ingredients: [
       { ingredientId: 'oua_m', amountPerServing: 2, unit: 'buc' },
       { ingredientId: 'spanac_baby', amountPerServing: 80, unit: 'g' },
@@ -1356,12 +1105,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'family_fav', 'fakeaway'],
-    nutritionPerServing: {
-      calories: 260,
-      proteinGrams: 8,
-      carbsGrams: 38,
-      fatGrams: 9,
-    },
     ingredients: [
       { ingredientId: 'porumb_popcorn', amountPerServing: 70, unit: 'g' },
       { ingredientId: 'ulei_floarea_soarelui', amountPerServing: 15, unit: 'ml' },
@@ -1386,12 +1129,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['speedy', 'healthy_comfort', 'fakeaway'],
-    nutritionPerServing: {
-      calories: 340,
-      proteinGrams: 7,
-      carbsGrams: 32,
-      fatGrams: 22,
-    },
     ingredients: [
       { ingredientId: 'avocado', amountPerServing: 150, unit: 'g' },
       { ingredientId: 'rosii_cherry', amountPerServing: 60, unit: 'g' },
@@ -1417,12 +1154,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['speedy', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: {
-      calories: 290,
-      proteinGrams: 11,
-      carbsGrams: 33,
-      fatGrams: 13,
-    },
     ingredients: [
       { ingredientId: 'naut_conserva', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'ulei_masline', amountPerServing: 20, unit: 'ml' },
@@ -1449,12 +1180,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['speedy', 'healthy_comfort', 'family_fav'],
-    nutritionPerServing: {
-      calories: 270,
-      proteinGrams: 6,
-      carbsGrams: 38,
-      fatGrams: 11,
-    },
     ingredients: [
       { ingredientId: 'paine_toast', amountPerServing: 80, unit: 'g' },
       { ingredientId: 'rosii_proaspete', amountPerServing: 120, unit: 'g' },
@@ -1480,12 +1205,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['air_fryer'],
     moodTags: ['speedy', 'fakeaway', 'low_calorie'],
-    nutritionPerServing: {
-      calories: 210,
-      proteinGrams: 6,
-      carbsGrams: 36,
-      fatGrams: 6,
-    },
     ingredients: [
       { ingredientId: 'cartofi_albi', amountPerServing: 250, unit: 'g' },
       { ingredientId: 'ulei_floarea_soarelui', amountPerServing: 10, unit: 'ml' },
@@ -1509,12 +1228,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'healthy_comfort', 'high_protein'],
-    nutritionPerServing: {
-      calories: 290,
-      proteinGrams: 8,
-      carbsGrams: 16,
-      fatGrams: 22,
-    },
     ingredients: [
       { ingredientId: 'nuci_miez', amountPerServing: 40, unit: 'g' },
       { ingredientId: 'seminte_chia', amountPerServing: 15, unit: 'g' },
@@ -1540,12 +1253,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['family_fav', 'romanian_classic'],
-    nutritionPerServing: {
-      calories: 320,
-      proteinGrams: 8,
-      carbsGrams: 52,
-      fatGrams: 9,
-    },
     ingredients: [
       { ingredientId: 'faina_alba', amountPerServing: 60, unit: 'g' },
       { ingredientId: 'lapte_3_5', amountPerServing: 120, unit: 'ml' },
@@ -1570,12 +1277,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['healthy_comfort', 'romanian_classic', 'family_fav'],
-    nutritionPerServing: {
-      calories: 340,
-      proteinGrams: 8,
-      carbsGrams: 64,
-      fatGrams: 6,
-    },
     ingredients: [
       { ingredientId: 'orez_basmati', amountPerServing: 60, unit: 'g' },
       { ingredientId: 'lapte_3_5', amountPerServing: 250, unit: 'ml' },
@@ -1599,12 +1300,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'family_fav', 'speedy'],
-    nutritionPerServing: {
-      calories: 380,
-      proteinGrams: 7,
-      carbsGrams: 52,
-      fatGrams: 16,
-    },
     ingredients: [
       { ingredientId: 'biscuiti_populari', amountPerServing: 80, unit: 'g' },
       { ingredientId: 'lapte_3_5', amountPerServing: 50, unit: 'ml' },
@@ -1630,12 +1325,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['air_fryer'],
     moodTags: ['speedy', 'fakeaway'],
-    nutritionPerServing: {
-      calories: 410,
-      proteinGrams: 8,
-      carbsGrams: 42,
-      fatGrams: 24,
-    },
     ingredients: [
       { ingredientId: 'ciocolata_menaj', amountPerServing: 50, unit: 'g' },
       { ingredientId: 'unt_82', amountPerServing: 25, unit: 'g' },
@@ -1661,12 +1350,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'family_fav'],
-    nutritionPerServing: {
-      calories: 480,
-      proteinGrams: 16,
-      carbsGrams: 58,
-      fatGrams: 20,
-    },
     ingredients: [
       { ingredientId: 'branza_vaci_proaspata', amountPerServing: 120, unit: 'g' },
       { ingredientId: 'faina_alba', amountPerServing: 50, unit: 'g' },
@@ -1693,12 +1376,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['oven'],
     moodTags: ['healthy_comfort', 'low_calorie', 'romanian_classic', 'speedy'],
-    nutritionPerServing: {
-      calories: 230,
-      proteinGrams: 6,
-      carbsGrams: 36,
-      fatGrams: 9,
-    },
     ingredients: [
       { ingredientId: 'mere_romanesti', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'nuci_miez', amountPerServing: 20, unit: 'g' },
@@ -1724,12 +1401,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['oven'],
     moodTags: ['family_fav', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 350,
-      proteinGrams: 6,
-      carbsGrams: 48,
-      fatGrams: 15,
-    },
     ingredients: [
       { ingredientId: 'faina_alba', amountPerServing: 50, unit: 'g' },
       { ingredientId: 'cacao_pudra', amountPerServing: 15, unit: 'g' },
@@ -1756,12 +1427,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['air_fryer'],
     moodTags: ['speedy', 'high_protein', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 590,
-      proteinGrams: 48,
-      carbsGrams: 28,
-      fatGrams: 32,
-    },
     ingredients: [
       { ingredientId: 'antricot_vita_angus', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'cartofi_albi', amountPerServing: 200, unit: 'g' },
@@ -1789,12 +1454,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'fakeaway', 'high_protein'],
-    nutritionPerServing: {
-      calories: 520,
-      proteinGrams: 34,
-      carbsGrams: 62,
-      fatGrams: 16,
-    },
     ingredients: [
       { ingredientId: 'creveti_decorticati', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'paste_spaghete', amountPerServing: 100, unit: 'g' },
@@ -1823,12 +1482,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein', 'family_fav'],
-    nutritionPerServing: {
-      calories: 580,
-      proteinGrams: 36,
-      carbsGrams: 38,
-      fatGrams: 32,
-    },
     ingredients: [
       { ingredientId: 'carnaciori_oltenesti', amountPerServing: 100, unit: 'g' },
       { ingredientId: 'oua_m', amountPerServing: 2, unit: 'buc' },
@@ -1855,12 +1508,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 420,
-      proteinGrams: 28,
-      carbsGrams: 32,
-      fatGrams: 20,
-    },
     ingredients: [
       { ingredientId: 'paine_toast', amountPerServing: 2, unit: 'buc' },
       { ingredientId: 'crema_branza', amountPerServing: 60, unit: 'g' },
@@ -1885,12 +1532,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'family_fav', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 380,
-      proteinGrams: 14,
-      carbsGrams: 46,
-      fatGrams: 16,
-    },
     ingredients: [
       { ingredientId: 'paine_toast', amountPerServing: 3, unit: 'buc' },
       { ingredientId: 'oua_m', amountPerServing: 1, unit: 'buc' },
@@ -1916,12 +1557,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'family_fav', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 520,
-      proteinGrams: 32,
-      carbsGrams: 52,
-      fatGrams: 20,
-    },
     ingredients: [
       { ingredientId: 'fasole_boabe_conserva', amountPerServing: 240, unit: 'g' },
       { ingredientId: 'bacon_afumat', amountPerServing: 80, unit: 'g' },
@@ -1949,12 +1584,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob', 'oven'],
     moodTags: ['romanian_classic', 'family_fav', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 510,
-      proteinGrams: 26,
-      carbsGrams: 48,
-      fatGrams: 24,
-    },
     ingredients: [
       { ingredientId: 'malai_superior', amountPerServing: 100, unit: 'g' },
       { ingredientId: 'telemea_vaca', amountPerServing: 100, unit: 'g' },
@@ -1981,12 +1610,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['speedy', 'family_fav', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 440,
-      proteinGrams: 14,
-      carbsGrams: 78,
-      fatGrams: 8,
-    },
     ingredients: [
       { ingredientId: 'paste_spaghete', amountPerServing: 110, unit: 'g' },
       { ingredientId: 'rosii_pasate', amountPerServing: 150, unit: 'ml' },
@@ -2013,12 +1636,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'family_fav', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 530,
-      proteinGrams: 24,
-      carbsGrams: 58,
-      fatGrams: 24,
-    },
     ingredients: [
       { ingredientId: 'cartofi_albi', amountPerServing: 300, unit: 'g' },
       { ingredientId: 'carnaciori_oltenesti', amountPerServing: 100, unit: 'g' },
@@ -2046,12 +1663,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob', 'oven'],
     moodTags: ['healthy_comfort', 'family_fav', 'romanian_classic'],
-    nutritionPerServing: {
-      calories: 390,
-      proteinGrams: 8,
-      carbsGrams: 74,
-      fatGrams: 7,
-    },
     ingredients: [
       { ingredientId: 'orez_bob_rotund', amountPerServing: 90, unit: 'g' },
       { ingredientId: 'ceapa_galbena', amountPerServing: 50, unit: 'g' },
@@ -2079,12 +1690,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'family_fav', 'high_protein'],
-    nutritionPerServing: {
-      calories: 590,
-      proteinGrams: 42,
-      carbsGrams: 52,
-      fatGrams: 24,
-    },
     ingredients: [
       { ingredientId: 'pulpe_pui_dezosate', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'cartofi_albi', amountPerServing: 250, unit: 'g' },
@@ -2113,12 +1718,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['family_fav', 'high_protein', 'speedy'],
-    nutritionPerServing: {
-      calories: 540,
-      proteinGrams: 46,
-      carbsGrams: 30,
-      fatGrams: 25,
-    },
     ingredients: [
       { ingredientId: 'piept_pui_file', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'faina_grau', amountPerServing: 30, unit: 'g' },
@@ -2146,12 +1745,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob', 'oven'],
     moodTags: ['romanian_classic', 'family_fav', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 580,
-      proteinGrams: 38,
-      carbsGrams: 46,
-      fatGrams: 28,
-    },
     ingredients: [
       { ingredientId: 'carne_tocata_amestec', amountPerServing: 150, unit: 'g' },
       { ingredientId: 'cartofi_albi', amountPerServing: 250, unit: 'g' },
@@ -2180,12 +1773,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'family_fav', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 460,
-      proteinGrams: 34,
-      carbsGrams: 36,
-      fatGrams: 20,
-    },
     ingredients: [
       { ingredientId: 'carne_tocata_amestec', amountPerServing: 140, unit: 'g' },
       { ingredientId: 'orez_bob_rotund', amountPerServing: 20, unit: 'g' },
@@ -2214,12 +1801,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein', 'fakeaway'],
-    nutritionPerServing: {
-      calories: 510,
-      proteinGrams: 42,
-      carbsGrams: 56,
-      fatGrams: 14,
-    },
     ingredients: [
       { ingredientId: 'piept_pui_file', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'ardei_gras_rosu', amountPerServing: 60, unit: 'g' },
@@ -2247,12 +1828,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'omnivore',
     appliances: ['hob'],
     moodTags: ['speedy', 'high_protein', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 610,
-      proteinGrams: 48,
-      carbsGrams: 36,
-      fatGrams: 30,
-    },
     ingredients: [
       { ingredientId: 'muschiulet_porc', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'cartofi_albi', amountPerServing: 200, unit: 'g' },
@@ -2279,12 +1854,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: ['oven'],
     moodTags: ['healthy_comfort', 'high_protein', 'speedy'],
-    nutritionPerServing: {
-      calories: 520,
-      proteinGrams: 42,
-      carbsGrams: 34,
-      fatGrams: 22,
-    },
     ingredients: [
       { ingredientId: 'dorada_proaspata', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'cartofi_albi', amountPerServing: 200, unit: 'g' },
@@ -2311,12 +1880,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegetarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'fakeaway', 'healthy_comfort'],
-    nutritionPerServing: {
-      calories: 510,
-      proteinGrams: 18,
-      carbsGrams: 64,
-      fatGrams: 20,
-    },
     ingredients: [
       { ingredientId: 'orez_arborio', amountPerServing: 90, unit: 'g' },
       { ingredientId: 'ciuperci_hribi', amountPerServing: 120, unit: 'g' },
@@ -2345,12 +1908,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'pescatarian',
     appliances: ['hob'],
     moodTags: ['speedy', 'fakeaway', 'high_protein'],
-    nutritionPerServing: {
-      calories: 460,
-      proteinGrams: 36,
-      carbsGrams: 20,
-      fatGrams: 26,
-    },
     ingredients: [
       { ingredientId: 'creveti_decorticati', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'branza_feta', amountPerServing: 80, unit: 'g' },
@@ -2378,7 +1935,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['speedy', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: { calories: 380, proteinGrams: 10, carbsGrams: 62, fatGrams: 11 },
     ingredients: [
       { ingredientId: 'fulgi_ovaz', amountPerServing: 60, unit: 'g' },
       { ingredientId: 'lapte_vegetal_ovaz', amountPerServing: 220, unit: 'ml' },
@@ -2404,7 +1960,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['speedy', 'fresh_salad', 'low_calorie'],
-    nutritionPerServing: { calories: 340, proteinGrams: 8, carbsGrams: 34, fatGrams: 19 },
     ingredients: [
       { ingredientId: 'paine_toast', amountPerServing: 70, unit: 'g' },
       { ingredientId: 'avocado', amountPerServing: 1, unit: 'buc' },
@@ -2431,7 +1986,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['family_fav', 'healthy_comfort', 'sweet_treat'],
-    nutritionPerServing: { calories: 420, proteinGrams: 9, carbsGrams: 70, fatGrams: 12 },
     ingredients: [
       { ingredientId: 'banane', amountPerServing: 140, unit: 'g' },
       { ingredientId: 'fulgi_ovaz', amountPerServing: 45, unit: 'g' },
@@ -2458,7 +2012,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['speedy', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: { calories: 360, proteinGrams: 10, carbsGrams: 58, fatGrams: 11 },
     ingredients: [
       { ingredientId: 'fulgi_ovaz', amountPerServing: 55, unit: 'g' },
       { ingredientId: 'lapte_vegetal_ovaz', amountPerServing: 180, unit: 'ml' },
@@ -2485,7 +2038,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['speedy', 'high_protein', 'family_fav'],
-    nutritionPerServing: { calories: 450, proteinGrams: 16, carbsGrams: 48, fatGrams: 22 },
     ingredients: [
       { ingredientId: 'paine_toast', amountPerServing: 70, unit: 'g' },
       { ingredientId: 'unt_arahide', amountPerServing: 30, unit: 'g' },
@@ -2510,7 +2062,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['sweet_treat', 'family_fav'],
-    nutritionPerServing: { calories: 390, proteinGrams: 6, carbsGrams: 34, fatGrams: 26 },
     ingredients: [
       { ingredientId: 'ciocolata_neagra_vegana', amountPerServing: 55, unit: 'g' },
       { ingredientId: 'lapte_cocos', amountPerServing: 120, unit: 'ml' },
@@ -2535,7 +2086,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['oven'],
     moodTags: ['sweet_treat', 'romanian_classic', 'healthy_comfort'],
-    nutritionPerServing: { calories: 250, proteinGrams: 3, carbsGrams: 40, fatGrams: 9 },
     ingredients: [
       { ingredientId: 'mere_romanesti', amountPerServing: 220, unit: 'g' },
       { ingredientId: 'nuci_miez', amountPerServing: 20, unit: 'g' },
@@ -2560,7 +2110,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['sweet_treat', 'speedy', 'healthy_comfort'],
-    nutritionPerServing: { calories: 300, proteinGrams: 7, carbsGrams: 38, fatGrams: 16 },
     ingredients: [
       { ingredientId: 'avocado', amountPerServing: 1, unit: 'buc' },
       { ingredientId: 'banane', amountPerServing: 130, unit: 'g' },
@@ -2592,7 +2141,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: { calories: 395, proteinGrams: 9, carbsGrams: 58, fatGrams: 13 },
     ingredients: [
       { ingredientId: 'malai_superior', amountPerServing: 80, unit: 'g' },
       { ingredientId: 'ciuperci_champignon', amountPerServing: 150, unit: 'g' },
@@ -2621,7 +2169,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'family_fav', 'healthy_comfort'],
-    nutritionPerServing: { calories: 420, proteinGrams: 7, carbsGrams: 62, fatGrams: 16 },
     ingredients: [
       { ingredientId: 'cartofi_albi', amountPerServing: 300, unit: 'g' },
       { ingredientId: 'ardei_gras_rosu', amountPerServing: 80, unit: 'g' },
@@ -2651,7 +2198,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['speedy', 'healthy_comfort', 'sweet_treat'],
-    nutritionPerServing: { calories: 360, proteinGrams: 11, carbsGrams: 42, fatGrams: 17 },
     ingredients: [
       { ingredientId: 'banane', amountPerServing: 160, unit: 'g' },
       { ingredientId: 'unt_arahide', amountPerServing: 25, unit: 'g' },
@@ -2678,7 +2224,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'healthy_comfort', 'family_fav'],
-    nutritionPerServing: { calories: 450, proteinGrams: 10, carbsGrams: 76, fatGrams: 12 },
     ingredients: [
       { ingredientId: 'orez_basmati', amountPerServing: 90, unit: 'g' },
       { ingredientId: 'morcovi', amountPerServing: 70, unit: 'g' },
@@ -2709,7 +2254,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'healthy_comfort', 'high_protein'],
-    nutritionPerServing: { calories: 410, proteinGrams: 19, carbsGrams: 55, fatGrams: 12 },
     ingredients: [
       { ingredientId: 'fasole_boabe_conserva', amountPerServing: 220, unit: 'g' },
       { ingredientId: 'ceapa_galbena', amountPerServing: 120, unit: 'g' },
@@ -2740,7 +2284,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['fakeaway', 'healthy_comfort', 'high_protein'],
-    nutritionPerServing: { calories: 540, proteinGrams: 17, carbsGrams: 72, fatGrams: 21 },
     ingredients: [
       { ingredientId: 'naut_conserva', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'lapte_cocos', amountPerServing: 120, unit: 'ml' },
@@ -2771,7 +2314,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['spicy_fiesta', 'high_protein', 'family_fav'],
-    nutritionPerServing: { calories: 430, proteinGrams: 18, carbsGrams: 66, fatGrams: 10 },
     ingredients: [
       { ingredientId: 'fasole_rosie_conserva', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'porumb_dulce', amountPerServing: 80, unit: 'g' },
@@ -2802,7 +2344,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['healthy_comfort', 'romanian_classic'],
-    nutritionPerServing: { calories: 470, proteinGrams: 11, carbsGrams: 76, fatGrams: 13 },
     ingredients: [
       { ingredientId: 'orez_arborio', amountPerServing: 90, unit: 'g' },
       { ingredientId: 'ciuperci_hribi', amountPerServing: 120, unit: 'g' },
@@ -2832,7 +2373,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['oven'],
     moodTags: ['romanian_classic', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: { calories: 380, proteinGrams: 9, carbsGrams: 58, fatGrams: 12 },
     ingredients: [
       { ingredientId: 'dovlecei', amountPerServing: 250, unit: 'g' },
       { ingredientId: 'orez_basmati', amountPerServing: 60, unit: 'g' },
@@ -2862,7 +2402,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['sweet_treat', 'healthy_comfort'],
-    nutritionPerServing: { calories: 340, proteinGrams: 5, carbsGrams: 56, fatGrams: 12 },
     ingredients: [
       { ingredientId: 'orez_bob_rotund', amountPerServing: 60, unit: 'g' },
       { ingredientId: 'lapte_cocos', amountPerServing: 150, unit: 'ml' },
@@ -2888,7 +2427,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['sweet_treat', 'speedy', 'low_calorie'],
-    nutritionPerServing: { calories: 280, proteinGrams: 6, carbsGrams: 36, fatGrams: 13 },
     ingredients: [
       { ingredientId: 'fructe_padure_congelate', amountPerServing: 150, unit: 'g' },
       { ingredientId: 'seminte_chia', amountPerServing: 14, unit: 'g' },
@@ -2914,7 +2452,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['sweet_treat', 'speedy'],
-    nutritionPerServing: { calories: 310, proteinGrams: 8, carbsGrams: 44, fatGrams: 13 },
     ingredients: [
       { ingredientId: 'banane', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'unt_arahide', amountPerServing: 20, unit: 'g' },
@@ -2939,7 +2476,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['sweet_treat', 'romanian_classic', 'speedy'],
-    nutritionPerServing: { calories: 260, proteinGrams: 3, carbsGrams: 40, fatGrams: 11 },
     ingredients: [
       { ingredientId: 'mere_romanesti', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'nuci_miez', amountPerServing: 18, unit: 'g' },
@@ -2966,7 +2502,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: [],
     moodTags: ['sweet_treat', 'speedy'],
-    nutritionPerServing: { calories: 330, proteinGrams: 4, carbsGrams: 38, fatGrams: 18 },
     ingredients: [
       { ingredientId: 'lapte_cocos', amountPerServing: 120, unit: 'ml' },
       { ingredientId: 'cacao_pudra', amountPerServing: 10, unit: 'g' },
@@ -2992,7 +2527,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['soups_stews', 'romanian_classic', 'low_calorie'],
-    nutritionPerServing: { calories: 260, proteinGrams: 6, carbsGrams: 44, fatGrams: 7 },
     ingredients: [
       { ingredientId: 'cartofi_albi', amountPerServing: 140, unit: 'g' },
       { ingredientId: 'morcovi', amountPerServing: 80, unit: 'g' },
@@ -3023,7 +2557,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['high_protein', 'fresh_salad', 'light_dinner'],
-    nutritionPerServing: { calories: 390, proteinGrams: 16, carbsGrams: 48, fatGrams: 15 },
     ingredients: [
       { ingredientId: 'naut_conserva', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'spanac_baby', amountPerServing: 70, unit: 'g' },
@@ -3052,7 +2585,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['oven'],
     moodTags: ['family_fav', 'romanian_classic', 'healthy_comfort'],
-    nutritionPerServing: { calories: 400, proteinGrams: 8, carbsGrams: 66, fatGrams: 13 },
     ingredients: [
       { ingredientId: 'cartofi_albi', amountPerServing: 320, unit: 'g' },
       { ingredientId: 'usturoi', amountPerServing: 10, unit: 'g' },
@@ -3080,7 +2612,6 @@ const NEW_RECIPES: Recipe[] = [
     dietType: 'vegan',
     appliances: ['hob'],
     moodTags: ['romanian_classic', 'healthy_comfort', 'low_calorie'],
-    nutritionPerServing: { calories: 330, proteinGrams: 13, carbsGrams: 46, fatGrams: 11 },
     ingredients: [
       { ingredientId: 'mazare_congelata', amountPerServing: 220, unit: 'g' },
       { ingredientId: 'morcovi', amountPerServing: 80, unit: 'g' },
@@ -3522,7 +3053,11 @@ export const RECIPES: Recipe[] = [
       suitableSlots: recipe.suitableSlots ?? RECIPE_SLOTS_MAP[recipe.id] ?? ['dinner', 'lunch'],
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'medium',
       healthTags: finalHealthTags,
-      moodTags: enrichRecipeMoodTags(recipe),
+      nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
+      moodTags: enrichRecipeMoodTags({
+        ...recipe,
+        nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
+      }),
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
       storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
@@ -3536,7 +3071,11 @@ export const RECIPES: Recipe[] = [
       ...recipe,
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'medium',
       healthTags: finalHealthTags,
-      moodTags: enrichRecipeMoodTags(recipe),
+      nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
+      moodTags: enrichRecipeMoodTags({
+        ...recipe,
+        nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
+      }),
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
       storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
@@ -3551,7 +3090,11 @@ export const RECIPES: Recipe[] = [
       suitableSlots: recipe.suitableSlots ?? ['lunch', 'dinner'],
       tier: recipe.tier ?? RECIPE_TIERS_MAP[recipe.id] ?? 'basic',
       healthTags: finalHealthTags,
-      moodTags: enrichRecipeMoodTags(recipe),
+      nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
+      moodTags: enrichRecipeMoodTags({
+        ...recipe,
+        nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
+      }),
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
       storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
@@ -3566,7 +3109,11 @@ export const RECIPES: Recipe[] = [
       suitableSlots: recipe.suitableSlots ?? ['lunch', 'dinner'],
       tier: recipe.tier ?? 'medium',
       healthTags: finalHealthTags,
-      moodTags: enrichRecipeMoodTags(recipe),
+      nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
+      moodTags: enrichRecipeMoodTags({
+        ...recipe,
+        nutritionPerServing: computeRecipeNutrition(recipe.ingredients),
+      }),
       availableSupermarkets: recipe.availableSupermarkets ?? storeSpec?.availableSupermarkets,
       storeSignature: recipe.storeSignature ?? storeSpec?.storeSignature,
       storeBadgeLabel: recipe.storeBadgeLabel ?? storeSpec?.storeBadgeLabel,
