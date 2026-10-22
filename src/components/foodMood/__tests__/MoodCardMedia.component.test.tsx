@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { MoodCardMedia } from '../MoodCardMedia';
 import { ARCHETYPE_PHOTO_URLS } from '../../../utils/recipePhotography';
+import { MOOD_OPTIONS_CATALOG } from '../../../utils/moodCatalog';
 
 describe('MoodCardMedia', () => {
   test('arată poza tipului de mâncare, din cache pe disc', () => {
@@ -35,4 +36,13 @@ test('o eroare la poza unui tip de mâncare nu se moștenește când cardul trec
   expect(screen.getByTestId('mood-card-photo').props.source).toEqual({
     uri: ARCHETYPE_PHOTO_URLS.pasta,
   });
+});
+
+test('fiecare card de poftă are tipul de mâncare potrivit numelui lui', () => {
+  const byLabel = (fragment: string) =>
+    MOOD_OPTIONS_CATALOG.find((m) => m.label.includes(fragment))?.archetype;
+
+  expect(byLabel('Salate')).toBe('salad');
+  expect(byLabel('Fakeaway')).toBe('wrap');
+  expect(byLabel('Mexican')).toBe('snack');
 });

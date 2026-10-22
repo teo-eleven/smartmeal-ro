@@ -78,6 +78,17 @@ describe('manifestul de fotografii', () => {
   });
 });
 
+describe('potriviri respinse la verificarea din aplicația reală (22.10.2026)', () => {
+  test.each([
+    ['tartine_unt_arahide_banane', 'photo-1528735602780'], // grilled sandwich, no banana
+    ['paste_bolognese_clasice', 'photo-1546549032'], // pale spaghetti, no meat sauce
+    ['mic_dejun_englezesc_romanesc', 'photo-1533089860892'], // egg on toast, no sausages
+    ['pui_airfryer_cartofi', 'photo-1562967914'], // chicken tenders, no wedges
+  ])('%s nu mai primește poza care nu-l arată', (recipeId, photoId) => {
+    expect(RECIPE_PHOTO_MANIFEST[recipeId]?.url ?? '').not.toContain(photoId);
+  });
+});
+
 describe('getRecipePhoto', () => {
   test('o rețetă din manifest primește poza ei verificată', () => {
     const [recipeId, photo] = Object.entries(RECIPE_PHOTO_MANIFEST)[0];

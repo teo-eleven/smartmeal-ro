@@ -52,7 +52,6 @@ function wikimedia(url: string, author: string, license: string, sourceUrl: stri
 
 export const RECIPE_PHOTO_MANIFEST: Readonly<Record<string, RecipePhoto>> = {
   // --- Unsplash, kept after the 2026-10-21 visual audit ---
-  pui_airfryer_cartofi: unsplash('photo-1562967914-608f82629710'),
   pulpe_pui_cuptor_usturoi: unsplash('photo-1598103442097-8b74394b95c6'),
   pui_cuptor_cartofi_aurii: unsplash('photo-1598103442097-8b74394b95c6'),
   pui_usturoi_mamaliguta_rapida: unsplash('photo-1598103442097-8b74394b95c6'),
@@ -83,7 +82,6 @@ export const RECIPE_PHOTO_MANIFEST: Readonly<Record<string, RecipePhoto>> = {
   wrap_ton_avocado: unsplash('photo-1626700051175-6818013e1d4f'),
   toast_crema_branza_somon_afumat: unsplash('photo-1525351484163-7529414344d8'),
   paste_carbonara_rapide: unsplash('photo-1612874742237-6526221588e3'),
-  paste_bolognese_clasice: unsplash('photo-1546549032-9571cd6b27df'),
   spaghete_pomodoro_busuioc: unsplash('photo-1551183053-bf91a1d81141'),
   penne_arrabbiata_rapide: unsplash('photo-1551183053-bf91a1d81141'),
   paste_sos_branza_smantana: unsplash('photo-1551183053-bf91a1d81141'),
@@ -105,13 +103,11 @@ export const RECIPE_PHOTO_MANIFEST: Readonly<Record<string, RecipePhoto>> = {
   omleta_ciuperci_telemea: unsplash('photo-1510693206972-df098062cb71'),
   shakshuka_oua_rosii: unsplash('photo-1590412200988-a436970781fa'),
   shakshuka_romaneasca_telemea: unsplash('photo-1590412200988-a436970781fa'),
-  mic_dejun_englezesc_romanesc: unsplash('photo-1533089860892-a7c6f0a88666'),
   sandvis_cald_cascaval_sunca: unsplash('photo-1528735602780-2552fd46c7af'),
   quesadilla_pui_cascaval: unsplash('photo-1618040996337-56904b7850b9'),
   quesadilla_pui_cascaval_tigaie: unsplash('photo-1618040996337-56904b7850b9'),
   toast_ou_avocado: unsplash('photo-1525351484163-7529414344d8'),
   tartine_avocado_rosii_cherry: unsplash('photo-1525351484163-7529414344d8'),
-  tartine_unt_arahide_banane: unsplash('photo-1528735602780-2552fd46c7af'),
   popcorn_aromat_parmezan_boia: unsplash('photo-1578849278619-e73505e9610f'),
   bruschete_rosii_usturoi_busuioc: unsplash('photo-1572695157366-5e585ab2b69f'),
   friganela_dulce_scortisoara: unsplash('photo-1484723091739-30a097e8f929'),
