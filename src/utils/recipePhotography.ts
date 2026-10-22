@@ -29,7 +29,9 @@ export const ARCHETYPE_PHOTO_URLS: Record<DishArchetype, string> = {
   wrap: archetypePhoto('photo-1626700051175-6818013e1d4f'), // tortilla wraps
   rice: archetypePhoto('photo-1512058564366-18510be2db19'), // rice bowl
   dessert: archetypePhoto('photo-1567620905732-2d1ec7ab7445'), // stack of pancakes
-  snack: archetypePhoto('photo-1578849278619-e73505e9610f'), // bowl of popcorn
+  // Wikimedia Commons, CC0 (no attribution required): tortilla chips with guacamole.
+  snack:
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/2018-02-01-Guacamole_mit_Nachos-7937.jpg/960px-2018-02-01-Guacamole_mit_Nachos-7937.jpg',
 };
 
 /** Lower case, no diacritics: "Mămăliguță" and "mamaliguta" are the same word. */
