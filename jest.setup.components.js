@@ -11,6 +11,15 @@ jest.mock('expo-linear-gradient', () => {
   return { LinearGradient: View };
 });
 
+// expo-image is native too. A View keeps the props (source, onError, testID) inspectable, so
+// tests can fire the load error and check the fallback.
+jest.mock('expo-image', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const Image = (props) => React.createElement(View, props);
+  return { Image };
+});
+
 // Several components schedule a short "done" feedback with setTimeout. Left running, those
 // timers outlive the test and Jest force-exits the worker.
 beforeEach(() => {

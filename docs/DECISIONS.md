@@ -703,3 +703,44 @@ Inițial, fluxul de intrare folosea `WelcomeGate` și fereastra modală `AuthMod
 ### Condiție de invalidare
 Dacă cerințele aplicației se mută pe un model strict enterprise cu revocare instantanee la nivel de secundă (care ar impune validarea token-ului la fiecare cerere printr-un gateway Redis/Edge centralizat).
 
+
+---
+
+## ADR-20: Recipe photos come only from a visually verified manifest
+
+**Status:** Accepted · 2026-10-22 · supersedes ADR-14 in part; refines ADR-07
+
+### Context
+Commit `c68a7b3` (2026-10-21) gave all 143 recipes an Unsplash photograph through a hand-typed
+id map, labelled "verified". The ids were live (HTTP 200) but nobody had looked at them. The
+audit of the same day downloaded all 65 distinct photos and found a cat under a blanket on the
+biscuit salami and three chocolate creams, a stack of books on three oat porridges, an office
+meeting on creamy pasta, a city skyline on a nut mix, and about forty more showing another
+dish. The tests passed, because they compared each URL with an id typed into the test. It was
+ADR-07's failure repeated, and it broke ADR-14 (no sharp photographs) without revisiting it.
+
+### Decision
+- `src/data/recipePhotoManifest.ts` is the only source of recipe photos. Each entry records its
+  source, its credit, and `verifiedAt`, the date someone looked at it next to the recipe.
+- A photo enters the manifest only after review on the sheet produced by
+  `npm run photos:sheet` (`scripts/photoContactSheet.mjs`): photo, title and ingredients side
+  by side.
+- A recipe without an entry shows the generated card (ADR-07). There is no fallback to a photo
+  of another dish of the same kind. A name-based match (`matchDishKeyword`) may only borrow a
+  photo already in the manifest, using the leading dish words, whole words only.
+- New photos come from Wikimedia Commons, which has authentic Romanian dishes (mămăligă,
+  papanași, ciorbe) that stock libraries lack. Only CC0, CC BY, CC BY-SA and public-domain
+  files are used. Author and licence are shown in the recipe detail (`PhotoCreditLine`). The
+  65 existing Unsplash photos were each judged; the 68 recipe entries that held up are kept.
+- Photos load through `expo-image` with a disk cache. When one fails (offline, removed
+  upstream), the card falls back to the local backdrop, then to the gradient. The container
+  always has a background, so a card is never blank.
+
+### Accepted trade-off
+Photography returns, so ADR-14's promise of one uniform card no longer holds: cards with a
+verified photo look different from generated ones. Commons photos are often amateur shots.
+Both are preferred to a sharp photo of the wrong dish.
+
+### Falsification condition
+If a photo that contradicts its recipe reaches a release again, the manifest review is not
+working and the next step is to drop remote photos entirely (ADR-07 alone).

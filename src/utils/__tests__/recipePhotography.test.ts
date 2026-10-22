@@ -1,85 +1,136 @@
-import { RECIPES } from '../../data/recipes';
+import { RECIPES, RECIPES_MAP } from '../../data/recipes';
+import { RECIPE_PHOTO_MANIFEST } from '../../data/recipePhotoManifest';
 import {
-  getRecipePhotographyUri,
-  getPhotoByKeywords,
-  RECIPE_EXACT_PHOTOS,
   ARCHETYPE_PHOTO_URLS,
+  getPhotoByKeywords,
+  getRecipePhoto,
+  matchDishKeyword,
 } from '../recipePhotography';
-import { getRecipeArchetype } from '../recipeVisual';
+import { Recipe } from '../../types';
 
-describe('Recipe Photography System', () => {
-  test('every recipe in the catalog has a dedicated photo mapping', () => {
+/**
+ * The old tests compared each recipe's URL with an id typed into the test, so they "proved"
+ * that the biscuit salami showed photo-1541781774459 — a cat under a blanket. A URL says
+ * nothing about what is in the picture. What can be tested is the process: every photo comes
+ * from the manifest, every manifest entry records who checked it and when, and anything the
+ * manifest does not cover gets the generated card instead of a guess.
+ */
 
-    RECIPES.forEach((recipe) => {
-      const uri = getRecipePhotographyUri(recipe, getRecipeArchetype(recipe));
-      expect(typeof uri).toBe('string');
-      expect(uri.startsWith('https://images.unsplash.com/')).toBe(true);
-      expect(RECIPE_EXACT_PHOTOS[recipe.id]).toBeDefined();
+const ALLOWED_HOSTS = ['images.unsplash.com', 'upload.wikimedia.org'];
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+const fabricated = (title: string): Recipe => ({ ...RECIPES[0], id: 'reteta_noua_ai', title });
+
+describe('manifestul de fotografii', () => {
+  test('fiecare intrare aparține unei rețete din catalog', () => {
+    const orphans = Object.keys(RECIPE_PHOTO_MANIFEST).filter((id) => !RECIPES_MAP[id]);
+
+    expect(orphans).toEqual([]);
+  });
+
+  test('fiecare poză vine de pe o gazdă permisă, prin https', () => {
+    const offHost = Object.entries(RECIPE_PHOTO_MANIFEST).filter(([, photo]) => {
+      const url = new URL(photo.url);
+      return url.protocol !== 'https:' || !ALLOWED_HOSTS.includes(url.hostname);
+    });
+
+    expect(offHost.map(([id]) => id)).toEqual([]);
+  });
+
+  test('fiecare poză are data verificării vizuale', () => {
+    const unverified = Object.entries(RECIPE_PHOTO_MANIFEST).filter(
+      ([, photo]) => !ISO_DATE.test(photo.verifiedAt)
+    );
+
+    expect(unverified.map(([id]) => id)).toEqual([]);
+  });
+
+  test('pozele de pe Wikimedia au autor, licență și link sursă (cerință de licență)', () => {
+    const uncredited = Object.entries(RECIPE_PHOTO_MANIFEST).filter(
+      ([, photo]) =>
+        photo.source === 'wikimedia' &&
+        !(photo.credit?.author && photo.credit.license && photo.credit.sourceUrl)
+    );
+
+    expect(uncredited.map(([id]) => id)).toEqual([]);
+  });
+
+  test('pozele confirmate greșite în auditul din 21.10.2026 nu mai apar nicăieri', () => {
+    const KNOWN_WRONG = [
+      'photo-1541781774459-bb2af2f05b55', // cat under a blanket
+      'photo-1517673132405-a56a62b18caf', // stack of books
+      'photo-1556761175-5973dc0f32e7', // office meeting
+      'photo-1536599018102-9f803c140fc1', // city skyline
+      'photo-1513456852971-30c0b8199d4d', // nachos (was on chia puddings)
+      'photo-1534422298391-e4f8c172dddb', // dumplings (was on mămăligă)
+      'photo-1576402187878-974f70c890a5', // penne (was on rice pudding)
+      'photo-1582878826629-29b7ad1cdc43', // pho (was on bean soup)
+      'photo-1579372786545-d24232daf58c', // cupcakes (was on papanași)
+    ];
+    const everywhere = [
+      ...Object.values(RECIPE_PHOTO_MANIFEST).map((photo) => photo.url),
+      ...Object.values(ARCHETYPE_PHOTO_URLS),
+    ];
+
+    KNOWN_WRONG.forEach((photoId) => {
+      expect(everywhere.filter((url) => url.includes(photoId))).toEqual([]);
     });
   });
+});
 
-  test('hummus displays a dedicated hummus photo, not generic snack platter', () => {
-    const hummus = RECIPES.find((r) => r.id === 'hummus_cremos_legume_crocante')!;
-    const uri = getRecipePhotographyUri(hummus, getRecipeArchetype(hummus));
+describe('getRecipePhoto', () => {
+  test('o rețetă din manifest primește poza ei verificată', () => {
+    const [recipeId, photo] = Object.entries(RECIPE_PHOTO_MANIFEST)[0];
 
-    expect(uri).toContain('photo-1577906096429-f73c2c312435');
+    expect(getRecipePhoto(RECIPES_MAP[recipeId])).toEqual(photo);
   });
 
-  test('ciorba de legume displays a vibrant vegetable ciorba photo, not dark meat soup', () => {
-    const ciorba = RECIPES.find((r) => r.id === 'ciorba_legume_lamaie')!;
-    const uri = getRecipePhotographyUri(ciorba, getRecipeArchetype(ciorba));
-
-    expect(uri).toContain('photo-1547592166-23ac45744acd');
+  test('o rețetă fără poză verificată și fără potrivire primește null (cardul generat)', () => {
+    expect(getRecipePhoto(fabricated('Fel inventat fără niciun cuvânt cunoscut'))).toBeNull();
   });
 
-  test('ghiveci calugaresc displays a roasted vegetable casserole photo, not chicken roast', () => {
-    const ghiveci = RECIPES.find((r) => r.id === 'ghiveci_legume_cuptor')!;
-    const uri = getRecipePhotographyUri(ghiveci, getRecipeArchetype(ghiveci));
+  test('imageUrl explicit are prioritate', () => {
+    const custom = { ...RECIPES[0], imageUrl: 'https://upload.wikimedia.org/x.jpg' };
 
-    expect(uri).toContain('photo-1572449043416-55f4685c9bb7');
+    expect(getRecipePhoto(custom)?.url).toBe('https://upload.wikimedia.org/x.jpg');
+  });
+});
+
+describe('potrivirea după cuvinte cheie (rețete noi, fără ID în manifest)', () => {
+  test('„Ovăz peste noapte” e ovăz, nu pește', () => {
+    expect(matchDishKeyword('Ovăz peste noapte cu banane')).toBe('ovaz_peste_noapte_mar_nuci');
   });
 
-  test('mamaliga cu telemea displays authentic golden polenta with cheese', () => {
-    const mamaliga = RECIPES.find((r) => r.id === 'mamaliga_branza_smantana')!;
-    const uri = getRecipePhotographyUri(mamaliga, getRecipeArchetype(mamaliga));
-
-    expect(uri).toContain('photo-1534422298391-e4f8c172dddb');
+  test('garnitura nu decide poza: pui cu mămăligă nu e mămăligă', () => {
+    expect(matchDishKeyword('Pulpe de pui la cuptor cu mujdei și mămăligă')).toBeNull();
   });
 
-  test('papanasi displays traditional fried cheese donuts with cream and jam', () => {
-    const papanasi = RECIPES.find((r) => r.id === 'papanasi_prajiti_smantana_dulceata')!;
-    const uri = getRecipePhotographyUri(papanasi, getRecipeArchetype(papanasi));
-
-    expect(uri).toContain('photo-1579372786545-d24232daf58c');
+  test('sosul nu decide poza: dovlecei cu sos de iaurt nu sunt desertul cu iaurt', () => {
+    expect(matchDishKeyword('Dovlecei la cuptor cu sos de iaurt')).toBeNull();
   });
 
-  test('salam de biscuiti displays authentic chocolate biscuit salami', () => {
-    const salam = RECIPES.find((r) => r.id === 'salam_de_biscuiti_clasic')!;
-    const uri = getRecipePhotographyUri(salam, getRecipeArchetype(salam));
-
-    expect(uri).toContain('photo-1541781774459-bb2af2f05b55');
+  test('felul principal câștigă și când e un singur cuvânt', () => {
+    expect(matchDishKeyword('Ciorbă de perișoare acrită cu borș')).toBe(
+      'ciorba_perisoare_acrita_bors'
+    );
+    expect(matchDishKeyword('Somon la tigaie cu orez')).toBe('somon_la_tigaie_orez');
   });
 
-  test('mancare de mazare displays sweet green peas stew', () => {
-    const mazare = RECIPES.find((r) => r.id === 'mancare_mazare_morcov_marar')!;
-    const uri = getRecipePhotographyUri(mazare, getRecipeArchetype(mazare));
-
-    expect(uri).toContain('photo-1546069901-ba9599a7e63c');
+  test('un cuvânt-cheie cu rețetă fără poză verificată dă null, nu altă poză', () => {
+    const recipeId = matchDishKeyword('Mămăligă cu brânză');
+    expect(recipeId).toBe('mamaliga_branza_smantana');
+    expect(getPhotoByKeywords('Mămăligă cu brânză')).toEqual(
+      RECIPE_PHOTO_MANIFEST[recipeId!] ?? null
+    );
   });
 
-  test('keyword photo resolver matches dynamically generated Romanian dish titles', () => {
-    expect(getPhotoByKeywords('Ciorbă de pui a la grec')).toContain('photo-1547592166-23ac45744acd');
-    expect(getPhotoByKeywords('Hummus cu susan')).toContain('photo-1577906096429-f73c2c312435');
-    expect(getPhotoByKeywords('Papanași fierți cu nucă')).toContain('photo-1579372786545-d24232daf58c');
-    expect(getPhotoByKeywords('Mâncărică de mazăre')).toContain('photo-1546069901-ba9599a7e63c');
+  test('doar cuvinte întregi: „avocado” nu e „cod”', () => {
+    expect(getPhotoByKeywords('Cremă de avocado')).toBeNull();
   });
 
-  test('explicit recipe.imageUrl takes top priority when present', () => {
-    const customRecipe = {
-      ...RECIPES[0],
-      imageUrl: 'https://custom-chef-photo.com/my-dish.jpg',
-    };
-    const uri = getRecipePhotographyUri(customRecipe, 'grill');
-    expect(uri).toBe('https://custom-chef-photo.com/my-dish.jpg');
+  test('felul principal se recunoaște și cu diacritice și fără', () => {
+    expect(getPhotoByKeywords('Ciorbă rădăuțeană de casă')).toEqual(
+      getPhotoByKeywords('Ciorba radauteana de casa')
+    );
   });
 });

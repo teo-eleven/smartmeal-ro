@@ -18,6 +18,7 @@ import { MacroBar } from '../components/MacroBar';
 import { useResponsive } from '../hooks/useResponsive';
 import { useAppStore } from '../store/useAppStore';
 import { RecipeVisual } from '../components/RecipeVisual';
+import { PhotoCreditLine } from '../components/PhotoCreditLine';
 
 import { getAppTheme } from '../styles/theme';
 import { getRecipeAllergens } from '../utils/allergenFilter';
@@ -366,6 +367,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   )}
                 </View>
               </View>
+              <PhotoCreditLine recipe={recipe} color={theme.textMuted} />
 
               {/* Title & Description */}
               <View style={[styles.detailsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
