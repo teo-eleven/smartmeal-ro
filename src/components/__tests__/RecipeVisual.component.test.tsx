@@ -107,3 +107,11 @@ describe('fotografia și rezerva ei', () => {
     expect(screen.getByText(unphotographed.title)).toBeTruthy();
   });
 });
+
+test('cardul e anunțat ca imagine de cititorul de ecran, cu descrierea felului de mâncare', () => {
+  render(<RecipeVisual recipe={RECIPES[0]} isDark />);
+  const card = screen.getByLabelText(/Ingrediente principale/i);
+
+  expect(card.props.accessible).toBe(true);
+  expect(card.props.accessibilityRole).toBe('image');
+});

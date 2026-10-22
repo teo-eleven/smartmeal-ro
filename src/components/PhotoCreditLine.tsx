@@ -26,16 +26,23 @@ export const PhotoCreditLine: React.FC<PhotoCreditLineProps> = ({ recipe, color 
       onPress={openSource}
       accessibilityRole="link"
       accessibilityLabel={`Fotografie de ${credit.author}, licență ${credit.license}. Deschide sursa.`}
+      accessibilityHint="Deschide pagina fotografiei pe Wikimedia Commons"
+      hitSlop={CREDIT_HIT_SLOP}
       style={styles.row}
     >
-      <Text style={[styles.text, { color }]} numberOfLines={1}>
-        Foto: {credit.author} · {credit.license} · Wikimedia Commons
+      {/* Licence first: CC BY needs it visible, and a long author name must not push it off. */}
+      <Text style={[styles.text, { color }]} numberOfLines={2}>
+        Foto {credit.license} · {credit.author} · Wikimedia Commons
       </Text>
     </TouchableOpacity>
   );
 };
 
+/** 44 pt is the minimum comfortable touch target; the text itself is small. */
+const MIN_TOUCH_TARGET = 44;
+const CREDIT_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 };
+
 const styles = StyleSheet.create({
-  row: { paddingHorizontal: 4, paddingTop: 6, minHeight: 24 },
+  row: { paddingHorizontal: 4, minHeight: MIN_TOUCH_TARGET, justifyContent: 'center' },
   text: { fontSize: 11, opacity: 0.8 },
 });

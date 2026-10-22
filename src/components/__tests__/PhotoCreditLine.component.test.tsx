@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking } from 'react-native';
+import { Linking, StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { PhotoCreditLine } from '../PhotoCreditLine';
 import { RECIPES } from '../../data/recipes';
@@ -19,7 +19,16 @@ describe('PhotoCreditLine', () => {
     mockPhoto.mockReturnValue({ url: 'https://upload.wikimedia.org/x.jpg', credit: CREDIT });
     render(<PhotoCreditLine recipe={RECIPES[0]} color="#fff" />);
 
-    expect(screen.getByText(/Ana Popescu · CC BY-SA 4.0/)).toBeTruthy();
+    expect(screen.getByText(/CC BY-SA 4.0 · Ana Popescu/)).toBeTruthy();
+  });
+
+  test('zona de apăsare are cel puțin 44 de puncte, iar licența nu e tăiată pe un rând', () => {
+    mockPhoto.mockReturnValue({ url: 'https://upload.wikimedia.org/x.jpg', credit: CREDIT });
+    render(<PhotoCreditLine recipe={RECIPES[0]} color="#fff" />);
+    const link = screen.getByRole('link');
+
+    expect(StyleSheet.flatten(link.props.style).minHeight).toBeGreaterThanOrEqual(44);
+    expect(screen.getByText(/CC BY-SA 4.0/).props.numberOfLines).toBeGreaterThanOrEqual(2);
   });
 
   test('apăsarea deschide pagina fișierului, unde se poate verifica licența', () => {

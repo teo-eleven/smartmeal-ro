@@ -65,6 +65,8 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
   return (
     <View
       style={[styles.fill, { backgroundColor: colors[1] }, style]}
+      accessible
+      accessibilityRole="image"
       accessibilityLabel={accessibilityLabel}
     >
       {showPhoto ? (
@@ -76,10 +78,17 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
           transition={PHOTO_FADE_MS}
           onError={() => setFailedUrl(photo.url)}
           style={StyleSheet.absoluteFill}
+          accessible={false}
           accessibilityIgnoresInvertColors
         />
       ) : backdrop ? (
-        <Image source={backdrop} contentFit="cover" style={StyleSheet.absoluteFill} />
+        <Image
+          source={backdrop}
+          contentFit="cover"
+          style={StyleSheet.absoluteFill}
+          accessible={false}
+          accessibilityIgnoresInvertColors
+        />
       ) : (
         <LinearGradient
           colors={colors}

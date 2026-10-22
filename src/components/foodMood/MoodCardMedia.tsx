@@ -25,8 +25,10 @@ const EMPTY_LIGHT = ['#f4f4f5', '#e4e4e7'] as const;
 export const MoodCardMedia: React.FC<MoodCardMediaProps> = ({ archetype, isDark }) => {
   const photoUrl = ARCHETYPE_PHOTO_URLS[archetype];
   const backdrop = ARCHETYPE_BACKDROPS[archetype];
-  const [photoFailed, setPhotoFailed] = useState(false);
-  const showPhoto = Boolean(photoUrl) && !photoFailed;
+  // The failed URL, not a flag: if the same card is reused for another archetype, its photo
+  // gets its own chance instead of inheriting the previous failure.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const showPhoto = Boolean(photoUrl) && photoUrl !== failedUrl;
 
   if (!showPhoto && !backdrop) {
     return (
@@ -46,8 +48,10 @@ export const MoodCardMedia: React.FC<MoodCardMediaProps> = ({ archetype, isDark 
           contentFit="cover"
           cachePolicy="memory-disk"
           transition={PHOTO_FADE_MS}
-          onError={() => setPhotoFailed(true)}
+          onError={() => setFailedUrl(photoUrl)}
           style={StyleSheet.absoluteFill}
+          accessible={false}
+          accessibilityIgnoresInvertColors
         />
       ) : (
         <Image

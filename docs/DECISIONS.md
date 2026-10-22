@@ -736,6 +736,9 @@ ADR-07's failure repeated, and it broke ADR-14 (no sharp photographs) without re
   upstream), the card falls back to the local backdrop, then to the gradient. The container
   always has a background, so a card is never blank.
 
+- A recipe's own `imageUrl` takes precedence and carries no credit, so it must only ever
+  hold a photo whose licence needs none; a Commons photo belongs in the manifest instead.
+
 ### Accepted trade-off
 Photography returns, so ADR-14's promise of one uniform card no longer holds: cards with a
 verified photo look different from generated ones. Commons photos are often amateur shots.

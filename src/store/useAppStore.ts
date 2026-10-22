@@ -339,7 +339,10 @@ function makePlanSafeForPreferences(
 
   const usage = new Map<string, number>();
   days.forEach((day) =>
-    day.meals.forEach((meal) => usage.set(meal.recipe.id, (usage.get(meal.recipe.id) || 0) + 1))
+    day.meals.forEach((meal) => {
+      const id = resolveRecipeId(meal.recipe.id);
+      usage.set(id, (usage.get(id) || 0) + 1);
+    })
   );
 
   const safeDays = days.map((day) => {
@@ -3343,7 +3346,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     // was handed, so a fabricated recipe claiming `dietType: 'vegan'` and no ingredients
     // passed all three trivially and landed on the board with arbitrary cooking steps.
     // Nothing outside the catalog can be cooked, so nothing outside it may be inserted.
-    const canonical = RECIPES_MAP[newRecipe.id];
+    const canonical = RECIPES_MAP[resolveRecipeId(newRecipe.id)];
     if (!canonical) {
       set({
         activeNotice: {

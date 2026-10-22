@@ -25,3 +25,14 @@ describe('MoodCardMedia', () => {
     expect(ARCHETYPE_PHOTO_URLS.snack).not.toContain('photo-1553530666-ba11a7da3888');
   });
 });
+
+test('o eroare la poza unui tip de mâncare nu se moștenește când cardul trece la alt tip', () => {
+  const { rerender } = render(<MoodCardMedia archetype="soup" isDark />);
+  fireEvent(screen.getByTestId('mood-card-photo'), 'error');
+
+  rerender(<MoodCardMedia archetype="pasta" isDark />);
+
+  expect(screen.getByTestId('mood-card-photo').props.source).toEqual({
+    uri: ARCHETYPE_PHOTO_URLS.pasta,
+  });
+});
