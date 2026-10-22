@@ -46,7 +46,7 @@ function img(photoId: string): string {
 export const RECIPE_EXACT_PHOTOS: Record<string, string> = {
   // --- 1. Pui & Pasăre ---
   pui_airfryer_cartofi: img('photo-1562967914-608f82629710'), // Crispy chicken with golden potato wedges
-  aripioare_pui_airfryer: img('photo-1527477396000-e27163b481c2'), // Roasted golden chicken wings
+  pulpe_pui_airfryer_cartofi: img('photo-1527477396000-e27163b481c2'), // Roasted golden chicken wings
   pulpe_pui_cuptor_usturoi: img('photo-1598103442097-8b74394b95c6'), // Oven roast chicken drumsticks with garlic
   pui_cuptor_cartofi_aurii: img('photo-1598103442097-8b74394b95c6'), // Roasted chicken with golden potatoes
   pui_usturoi_mamaliguta_rapida: img('photo-1598103442097-8b74394b95c6'), // Pan chicken with garlic & polenta
@@ -55,7 +55,7 @@ export const RECIPE_EXACT_PHOTOS: Record<string, string> = {
   pui_kiev_airfryer: img('photo-1600891964599-f61ba0e24092'), // Chicken Kiev butter roll
   burger_pui_crocant: img('photo-1568901346375-23c9450c58cd'), // Crispy chicken burger
   frigarui_pui_legume_gratar: img('photo-1555939594-58d7cb561ad1'), // Grilled chicken skewers with bell peppers
-  curcan_stirfry_legume_soia: img('photo-1512058564366-18510be2db19'), // Colorful poultry vegetable stir fry
+  pui_stirfry_legume_soia: img('photo-1512058564366-18510be2db19'), // Colorful poultry vegetable stir fry
   bowl_curcan_quinoa_avocado: img('photo-1546069901-ba9599a7e63c'), // Turkey quinoa avocado bowl
   ficatei_pui_ceapa_tigaie: img('photo-1544025162-d76694265947'), // Sautéed chicken livers with onions
   curry_pui_lapte_cocos: img('photo-1455619452474-d2be8b1e70cd'), // Creamy coconut chicken curry
@@ -74,7 +74,6 @@ export const RECIPE_EXACT_PHOTOS: Record<string, string> = {
 
   // --- 3. Mâncăruri Tradiționale de Legume & Ghiveci ---
   ghiveci_legume_cuptor: img('photo-1572449043416-55f4685c9bb7'), // Baked Mediterranean/Romanian vegetable casserole
-  ghiveci_calugaresc_legume: img('photo-1572449043416-55f4685c9bb7'), // Monastery baked vegetable casserole
   ghiveci_orez_legume_tigaie: img('photo-1572449043416-55f4685c9bb7'), // Vegetable & rice skillet
   mancare_mazare_morcov_marar: img('photo-1546069901-ba9599a7e63c'), // Sweet green peas stew with carrots and dill
   mancare_mazare_pui: img('photo-1546069901-ba9599a7e63c'), // Green peas stew with chicken & dill
@@ -84,14 +83,14 @@ export const RECIPE_EXACT_PHOTOS: Record<string, string> = {
   tocanita_ciuperci_smantana: img('photo-1504674900247-0877df9cc836'), // Mushroom stew with sour cream
   tocanita_fasole_boabe_boia: img('photo-1543339308-43e59d6b73a6'), // Bean stew with paprika
   tocanita_fasole_verde_rosii_usturoi: img('photo-1540420773420-3366772f4999'), // Green bean stew
-  fasole_scazuta_afumatura: img('photo-1543339308-43e59d6b73a6'), // Traditional slow-cooked baked beans
+  fasole_scazuta_ceapa_marar: img('photo-1543339308-43e59d6b73a6'), // Traditional slow-cooked baked beans
   tocanita_cartofi_carnaciori: img('photo-1541832676-9b763b0239ab'), // Rustic potato stew with smoked sausage
   chiftelute_marinate_sos: img('photo-1529042410759-befb1204b468'), // Meatballs in marinara with mashed potatoes
   musaca_cartofi_carne_tocata: img('photo-1574894709920-11b28e7367e3'), // Layered potato and minced meat moussaka
   musaca_cartofi_ciuperci: img('photo-1574894709920-11b28e7367e3'), // Potato and mushroom moussaka
   chili_con_carne_rapid: img('photo-1541832676-9b763b0239ab'), // Chili con carne with beans
   chili_vegetal_fasole_porumb: img('photo-1541832676-9b763b0239ab'), // Vegetarian kidney bean chili
-  chili_fasole_neagra_cartof_dulce: img('photo-1541832676-9b763b0239ab'), // Black bean sweet potato chili
+  chili_vegan_fasole_rosie_marar: img('photo-1541832676-9b763b0239ab'), // Black bean sweet potato chili
   curry_naut_cocos_orez: img('photo-1455619452474-d2be8b1e70cd'), // Chickpea coconut curry
   naut_spanac_rosii_vegan: img('photo-1546069901-ba9599a7e63c'), // Chickpeas with baby spinach & tomato
 
@@ -111,13 +110,13 @@ export const RECIPE_EXACT_PHOTOS: Record<string, string> = {
   // --- 6. Pește & Fructe de Mare ---
   somon_la_tigaie_orez: img('photo-1467003909585-2f8a72700288'), // Pan-seared salmon with rice & lemon
   somon_cuptor_legume: img('photo-1467003909585-2f8a72700288'), // Oven baked salmon fillet with zucchini
-  somon_salbatic_sparanghel_turmeric: img('photo-1467003909585-2f8a72700288'), // Salmon with asparagus
+  somon_cuptor_dovlecei_turmeric: img('photo-1467003909585-2f8a72700288'), // Salmon with asparagus
   dorada_cuptor_lamaie_ierburi: img('photo-1519708227418-c8fd9a32b7a2'), // Whole roasted dorada with lemon & rosemary
   pastrav_cuptor_lamaie_marar: img('photo-1519708227418-c8fd9a32b7a2'), // Baked river trout with herbs
   pastrav_gratar_marar_lamaie: img('photo-1519708227418-c8fd9a32b7a2'), // Pan-crisped trout with garlic
   cod_cuptor_dovlecei_ierburi: img('photo-1519708227418-c8fd9a32b7a2'), // Baked cod with herbs & zucchini
   peste_alb_cuptor_ardei_masline: img('photo-1519708227418-c8fd9a32b7a2'), // White fish fillet with olives
-  tagliatelle_creveti_usturoi: img('photo-1565680018434-b513d5e5fd47'), // Garlic butter prawn tagliatelle
+  spaghete_creveti_usturoi: img('photo-1565680018434-b513d5e5fd47'), // Garlic butter prawn tagliatelle
   creveti_saganaki_feta_rosii: img('photo-1559742811-822873691df8'), // Sizzling shrimp Saganaki with feta & tomato
   paste_ton_rosii: img('photo-1551183053-bf91a1d81141'), // Penne with tuna & tomato sauce
   wrap_ton_avocado: img('photo-1626700051175-6818013e1d4f'), // Fresh tuna & avocado tortilla wrap
@@ -165,7 +164,7 @@ export const RECIPE_EXACT_PHOTOS: Record<string, string> = {
   // --- 11. Mic Dejun & Gustări Sărate ---
   omleta_taraneasca_telemea: img('photo-1510693206972-df098062cb71'), // Fluffy rustic omelet with feta & pepper
   omleta_cremoasa_spanac_branza: img('photo-1510693206972-df098062cb71'), // Green spinach & cheese omelet
-  omleta_ciuperci_branza_capra: img('photo-1510693206972-df098062cb71'), // Mushroom & goat cheese omelette
+  omleta_ciuperci_telemea: img('photo-1510693206972-df098062cb71'), // Mushroom & goat cheese omelette
   shakshuka_oua_rosii: img('photo-1590412200988-a436970781fa'), // Skillet shakshuka with poached eggs
   shakshuka_romaneasca_telemea: img('photo-1590412200988-a436970781fa'), // Romanian shakshuka with telemea
   mic_dejun_englezesc_romanesc: img('photo-1533089860892-a7c6f0a88666'), // Hearty sausage and sunny eggs skillet
@@ -248,7 +247,7 @@ export function getPhotoByKeywords(title: string, id: string = ''): string | nul
   if (text.includes('ghiveci')) return RECIPE_EXACT_PHOTOS.ghiveci_legume_cuptor;
   if (text.includes('mazare') || text.includes('mazăre')) return RECIPE_EXACT_PHOTOS.mancare_mazare_morcov_marar;
   if (text.includes('fasole scazuta') || text.includes('fasole scăzută') || text.includes('iahnie'))
-    return RECIPE_EXACT_PHOTOS.fasole_scazuta_afumatura;
+    return RECIPE_EXACT_PHOTOS.fasole_scazuta_ceapa_marar;
   if (text.includes('ostropel')) return RECIPE_EXACT_PHOTOS.ostropel_pui_piure_cartofi;
   if (text.includes('chiftelute') || text.includes('chifteluțe') || text.includes('meatball'))
     return RECIPE_EXACT_PHOTOS.chiftelute_marinate_sos;
@@ -279,7 +278,7 @@ export function getPhotoByKeywords(title: string, id: string = ''): string | nul
   if (text.includes('snitel') || text.includes('șnițel')) return RECIPE_EXACT_PHOTOS.snitele_pui_cuptor;
   if (text.includes('burger')) return RECIPE_EXACT_PHOTOS.burger_pui_crocant;
   if (text.includes('curry')) return RECIPE_EXACT_PHOTOS.curry_pui_lapte_cocos;
-  if (text.includes('aripioare')) return RECIPE_EXACT_PHOTOS.aripioare_pui_airfryer;
+  if (text.includes('aripioare')) return RECIPE_EXACT_PHOTOS.pulpe_pui_airfryer_cartofi;
   if (text.includes('frigarui') || text.includes('frigărui')) return RECIPE_EXACT_PHOTOS.frigarui_pui_legume_gratar;
   if (text.includes('ficatei') || text.includes('ficăței')) return RECIPE_EXACT_PHOTOS.ficatei_pui_ceapa_tigaie;
   if (text.includes('muschiulet') || text.includes('mușchiuleț')) return RECIPE_EXACT_PHOTOS.muschiulet_porc_cuptor;
@@ -292,7 +291,7 @@ export function getPhotoByKeywords(title: string, id: string = ''): string | nul
   if (text.includes('dorada') || text.includes('doradă') || text.includes('pastrav') || text.includes('păstrăv') || text.includes('cod') || text.includes('peste') || text.includes('pește'))
     return RECIPE_EXACT_PHOTOS.dorada_cuptor_lamaie_ierburi;
   if (text.includes('creveti') || text.includes('creveți') || text.includes('shrimp'))
-    return RECIPE_EXACT_PHOTOS.tagliatelle_creveti_usturoi;
+    return RECIPE_EXACT_PHOTOS.spaghete_creveti_usturoi;
 
   // Paste & Risotto
   if (text.includes('carbonara')) return RECIPE_EXACT_PHOTOS.paste_carbonara_rapide;

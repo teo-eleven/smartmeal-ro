@@ -14,6 +14,7 @@ import { DEFAULT_REMINDERS, ReminderSettings } from '../types';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { ALLERGEN_CATALOG } from '../data/allergens';
 import { HEALTH_GOALS_CATALOG } from '../data/healthTags';
+import { resolveRecipeIds } from '../data/recipeIdAliases';
 import { DIET_OPTIONS_CATALOG } from './dietCompatibility';
 import { MOOD_OPTIONS_CATALOG } from './moodCatalog';
 
@@ -190,8 +191,9 @@ export function parseUserPreferences(
     pantryInventory: pickStringList(raw.pantryInventory),
     pantryStock: sanitizePantryStock(raw.pantryStock),
     avoidedAllergens: pickList<Allergen>(raw.avoidedAllergens, VALID_ALLERGENS),
-    dislikedRecipeIds: pickStringList(raw.dislikedRecipeIds),
-    favouriteRecipeIds: pickStringList(raw.favouriteRecipeIds),
+    // Ids of renamed recipes are translated, so a favourite or a rejection survives a rename.
+    dislikedRecipeIds: resolveRecipeIds(pickStringList(raw.dislikedRecipeIds)),
+    favouriteRecipeIds: resolveRecipeIds(pickStringList(raw.favouriteRecipeIds)),
     mealSlots: mealSlots.length > 0 ? mealSlots : fallback.mealSlots,
     foodTier: pickString<FoodTier>(raw.foodTier, VALID_TIERS, fallback.foodTier ?? 'medium'),
     selectedSnackIds: pickStringList(raw.selectedSnackIds),

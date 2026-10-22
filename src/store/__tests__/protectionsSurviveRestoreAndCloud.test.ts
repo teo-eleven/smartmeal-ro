@@ -298,3 +298,57 @@ describe('o protecție ilizibilă la pornire nu lasă planul vechi pe ecran', ()
     expect(state.activeNotice?.message).toContain('porc');
   });
 });
+
+describe('datele salvate cu ID-uri de rețete redenumite se migrează', () => {
+  test('favoritele și respingerile cu ID vechi sunt traduse la pornire', async () => {
+    await AsyncStorage.clear();
+    await AsyncStorage.setItem(
+      '@smartmeal_preferences',
+      JSON.stringify({
+        ...prefs(),
+        favouriteRecipeIds: ['aripioare_pui_airfryer'],
+        dislikedRecipeIds: ['ghiveci_calugaresc_legume', 'ghiveci_legume_cuptor'],
+      })
+    );
+    useAppStore.setState({ currentPlan: null, isHydrated: false, activeNotice: null });
+    await useAppStore.getState().hydrateStorage();
+
+    const { preferences } = useAppStore.getState();
+    expect(preferences.favouriteRecipeIds).toEqual(['pulpe_pui_airfryer_cartofi']);
+    expect(preferences.dislikedRecipeIds).toEqual(['ghiveci_legume_cuptor']);
+  });
+
+  test('un plan salvat cu un ID vechi păstrează aceeași rețetă, nu o înlocuiește', () => {
+    const plan = generatedUnder(prefs());
+    const renamed = RECIPES.find((r) => r.id === 'pulpe_pui_airfryer_cartofi')!;
+    const legacyPlan = {
+      ...plan,
+      days: plan.days.map((day, index) =>
+        index === 0
+          ? {
+              ...day,
+              meals: day.meals.map((meal) =>
+                meal.slot === 'dinner'
+                  ? { ...meal, recipe: { ...renamed, id: 'aripioare_pui_airfryer' } }
+                  : meal
+              ),
+            }
+          : day
+      ),
+    };
+    useAppStore.setState({
+      savedPlans: [
+        { id: 'old', name: 'vechi', savedAt: '2026-09-01', plan: legacyPlan, preferences: prefs() },
+      ],
+      activeNotice: null,
+    });
+
+    useAppStore.getState().restoreSavedPlan('old');
+
+    const dinner = useAppStore
+      .getState()
+      .currentPlan!.days[0].meals.find((meal) => meal.slot === 'dinner')!;
+    expect(dinner.recipe.id).toBe('pulpe_pui_airfryer_cartofi');
+    expect(useAppStore.getState().activeNotice?.title).not.toBe('Plan adaptat la setările tale');
+  });
+});

@@ -2,10 +2,10 @@ import { Recipe } from '../types';
 
 export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
   {
-    id: 'somon_salbatic_sparanghel_turmeric',
-    title: 'File de somon la cuptor cu sparanghel și turmeric',
+    id: 'somon_cuptor_dovlecei_turmeric',
+    title: 'File de somon la cuptor cu dovlecei și turmeric',
     description:
-      'Somon bogat în omega-3 rumenit fin la cuptor, asezonat cu turmeric antiinflamator, sparanghel fraged și lămâie.',
+      'Somon bogat în omega-3 rumenit fin la cuptor, asezonat cu turmeric antiinflamator, dovlecei fragezi și lămâie.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 18,
     dietType: 'pescatarian',
@@ -301,7 +301,7 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     healthTags: ['diabetic_friendly', 'anti_inflammatory', 'heart_healthy', 'pcos_friendly'],
   },
   {
-    id: 'omleta_ciuperci_branza_capra',
+    id: 'omleta_ciuperci_telemea',
     title: 'Omletă pufoasă cu ciuperci champignon și telemea',
     description:
       'Mic dejun proteic fără carbohidrați, care oferă sațietate prelungită și menține glicemia perfect stabilă.',
@@ -360,7 +360,7 @@ export const HEALTH_SPECIALTY_RECIPES: Recipe[] = [
     healthTags: ['diabetic_friendly', 'pcos_friendly', 'heart_healthy'],
   },
   {
-    id: 'chili_fasole_neagra_cartof_dulce',
+    id: 'chili_vegan_fasole_rosie_marar',
     title: 'Chili vegan aromat cu fasole roșie, porumb și mărar',
     description:
       'Festin bogat în fibre prebiotice, antioxidanți și carbohidrați lenți care susțin tranzitul intestinal optim.',

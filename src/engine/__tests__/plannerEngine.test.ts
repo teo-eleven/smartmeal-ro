@@ -201,7 +201,7 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
         // Must not contain luxury ingredients / expensive meals
         expect(day.recipe.id).not.toBe('antricot_vita_airfryer_ierburi');
         expect(day.recipe.id).not.toBe('somon_legume_airfryer');
-        expect(day.recipe.id).not.toBe('tagliatelle_creveti_usturoi');
+        expect(day.recipe.id).not.toBe('spaghete_creveti_usturoi');
       });
 
       // Premium plan: gourmet recipes prioritized
@@ -244,7 +244,7 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
       const lidlRecipeIds = lidlPlan.days.flatMap((d) => d.meals.map((m) => m.recipe.id));
       expect(lidlRecipeIds).not.toContain('dorada_cuptor_lamaie_ierburi');
       expect(lidlRecipeIds).not.toContain('antricot_vita_airfryer_ierburi');
-      expect(lidlRecipeIds).not.toContain('tagliatelle_creveti_usturoi');
+      expect(lidlRecipeIds).not.toContain('spaghete_creveti_usturoi');
     });
   });
 

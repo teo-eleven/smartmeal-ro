@@ -538,7 +538,7 @@ const BASE_RECIPES: Recipe[] = [
     ],
   },
   {
-    id: 'aripioare_pui_airfryer',
+    id: 'pulpe_pui_airfryer_cartofi',
     title: 'Pulpe de pui rumenite la Air Fryer cu cartofi aromați',
     description: 'Pulpe dezosate crocante la exterior și suculente la interior, pregătite rapid cu mirodenii tradiționale.',
     prepTimeMinutes: 5,
@@ -660,7 +660,7 @@ const BASE_RECIPES: Recipe[] = [
     ],
   },
   {
-    id: 'fasole_scazuta_afumatura',
+    id: 'fasole_scazuta_ceapa_marar',
     title: 'Mâncărică de fasole scăzută cu ceapă și mărar',
     description: 'Rețetă consistentă și economică din boabe de fasole roșie gătite cu sos concentrat de roșii, ceapă călită și cimbru/mărar.',
     prepTimeMinutes: 5,
@@ -1143,11 +1143,11 @@ const RECIPE_SLOTS_MAP: Record<string, MealSlot[]> = {
   burger_pui_crocant: ['dinner', 'lunch'],
   ciorba_radauteana_rapida: ['lunch'],
   dovlecei_pane_cuptor: ['lunch', 'dinner', 'snack'],
-  aripioare_pui_airfryer: ['dinner', 'snack'],
+  pulpe_pui_airfryer_cartofi: ['dinner', 'snack'],
   curry_pui_lapte_cocos: ['dinner', 'lunch'],
   omleta_taraneasca_telemea: ['breakfast'],
   cartofi_la_cuptor_telemea: ['dinner', 'lunch'],
-  fasole_scazuta_afumatura: ['dinner', 'lunch'],
+  fasole_scazuta_ceapa_marar: ['dinner', 'lunch'],
   pulpe_pui_cuptor_usturoi: ['dinner'],
   paste_cremoase_spanac: ['lunch', 'dinner'],
   wrap_ton_avocado: ['lunch', 'snack'],
@@ -1781,8 +1781,8 @@ const NEW_RECIPES: Recipe[] = [
     tier: 'premium',
   },
   {
-    id: 'tagliatelle_creveti_usturoi',
-    title: 'Tagliatelle cremoase cu creveți trași în unt și roșii cherry',
+    id: 'spaghete_creveti_usturoi',
+    title: 'Spaghete cremoase cu creveți trași în unt și roșii cherry',
     description: 'Paste al dente aromate cu creveți suculenți, roșii cherry dulci, usturoi rumenit și pătrunjel verde proaspăt.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 10,
@@ -2206,7 +2206,7 @@ const NEW_RECIPES: Recipe[] = [
     tier: 'medium',
   },
   {
-    id: 'curcan_stirfry_legume_soia',
+    id: 'pui_stirfry_legume_soia',
     title: 'Stir-fry crocant de pui cu legume colorate și sos de soia',
     description: 'Fâșii subțiri de carne de pui trase la foc iute cu ardei kapia, morcov și ciuperci în sos de soia, peste orez basmati.',
     prepTimeMinutes: 10,
@@ -2984,7 +2984,7 @@ const NEW_RECIPES: Recipe[] = [
   },
   {
     id: 'ciorba_legume_lamaie',
-    title: 'Ciorbă de legume acrită cu lămâie și leuștean de grădină',
+    title: 'Ciorbă de legume acrită cu lămâie și pătrunjel',
     description:
       'Zarzavat fiert cu cartof și orez, acrit cu lămâie în loc de borș, ca să rămână și fără gluten.',
     prepTimeMinutes: 12,
@@ -3121,11 +3121,11 @@ const RECIPE_TIERS_MAP: Record<string, FoodTier> = {
   burger_pui_crocant: 'medium',
   ciorba_radauteana_rapida: 'medium',
   dovlecei_pane_cuptor: 'basic',
-  aripioare_pui_airfryer: 'basic',
+  pulpe_pui_airfryer_cartofi: 'basic',
   curry_pui_lapte_cocos: 'medium',
   omleta_taraneasca_telemea: 'basic',
   cartofi_la_cuptor_telemea: 'basic',
-  fasole_scazuta_afumatura: 'basic',
+  fasole_scazuta_ceapa_marar: 'basic',
   pulpe_pui_cuptor_usturoi: 'basic',
   paste_cremoase_spanac: 'basic',
   wrap_ton_avocado: 'medium',
@@ -3159,7 +3159,7 @@ const RECIPE_TIERS_MAP: Record<string, FoodTier> = {
   salam_de_biscuiti_clasic: 'basic',
   lava_cake_ciocolata_airfryer: 'premium',
   antricot_vita_airfryer_ierburi: 'premium',
-  tagliatelle_creveti_usturoi: 'premium',
+  spaghete_creveti_usturoi: 'premium',
 
   // 17 Newly added diverse recipes
   mic_dejun_englezesc_romanesc: 'medium',
@@ -3174,7 +3174,7 @@ const RECIPE_TIERS_MAP: Record<string, FoodTier> = {
   snitel_crocant_pui_salata: 'medium',
   musaca_cartofi_carne_tocata: 'medium',
   ciorba_perisoare_acrita_bors: 'medium',
-  curcan_stirfry_legume_soia: 'medium',
+  pui_stirfry_legume_soia: 'medium',
   muschiulet_porc_sos_piper_verde: 'premium',
   dorada_cuptor_lamaie_ierburi: 'premium',
   risotto_cremos_hribi_parmezan: 'premium',
@@ -3194,7 +3194,7 @@ const RECIPE_STORE_SPEC_MAP: Record<string, RecipeStoreSpec> = {
     storeSignature: 'carrefour',
     storeBadgeLabel: '🐟 Pescărie Carrefour',
   },
-  tagliatelle_creveti_usturoi: {
+  spaghete_creveti_usturoi: {
     availableSupermarkets: ['carrefour', 'mega_image', 'kaufland'],
     storeSignature: 'carrefour',
     storeBadgeLabel: '🦐 Pescăria Carrefour',
@@ -3308,7 +3308,7 @@ const RECIPE_STORE_SPEC_MAP: Record<string, RecipeStoreSpec> = {
   },
 
   // Carrefour signature fresh & filiere
-  curcan_stirfry_legume_soia: {
+  pui_stirfry_legume_soia: {
     storeSignature: 'carrefour',
     storeBadgeLabel: '🌿 Filiera Calității',
   },
@@ -3337,7 +3337,7 @@ export const RECIPE_HEALTH_TAGS_MAP: Record<string, HealthGoalTag[]> = {
   somon_la_tigaie_orez: ['anti_inflammatory', 'pcos_friendly', 'diabetic_friendly', 'heart_healthy'],
   somon_cuptor_legume: ['anti_inflammatory', 'pcos_friendly', 'diabetic_friendly', 'heart_healthy'],
   dorada_cuptor_lamaie_ierburi: ['anti_inflammatory', 'pcos_friendly', 'diabetic_friendly', 'heart_healthy'],
-  tagliatelle_creveti_usturoi: ['anti_inflammatory', 'heart_healthy'],
+  spaghete_creveti_usturoi: ['anti_inflammatory', 'heart_healthy'],
   creveti_saganaki_feta_rosii: ['anti_inflammatory', 'heart_healthy'],
   wrap_ton_avocado: ['anti_inflammatory', 'heart_healthy', 'pcos_friendly'],
   paste_ton_rosii: ['anti_inflammatory', 'heart_healthy'],
@@ -3351,8 +3351,8 @@ export const RECIPE_HEALTH_TAGS_MAP: Record<string, HealthGoalTag[]> = {
   orez_pui_legume_wok: ['anti_inflammatory', 'pcos_friendly'],
   ostropel_pui_piure_cartofi: ['pcos_friendly'],
   ciorba_radauteana_rapida: ['diabetic_friendly', 'pcos_friendly'],
-  curcan_stirfry_legume_soia: ['anti_inflammatory', 'pcos_friendly', 'diabetic_friendly'],
-  aripioare_pui_airfryer: ['pcos_friendly'],
+  pui_stirfry_legume_soia: ['anti_inflammatory', 'pcos_friendly', 'diabetic_friendly'],
+  pulpe_pui_airfryer_cartofi: ['pcos_friendly'],
   quesadilla_pui_cascaval: ['pcos_friendly'],
 
   // Plant-based, Legumes & High Fiber
@@ -3385,7 +3385,7 @@ export const RECIPE_HEALTH_TAGS_MAP: Record<string, HealthGoalTag[]> = {
   mix_nuci_seminte_miere: ['high_fiber', 'heart_healthy', 'anti_inflammatory'],
 
   // Dedicated Health Specialty Recipes
-  somon_salbatic_sparanghel_turmeric: ['anti_inflammatory', 'heart_healthy', 'diabetic_friendly', 'pcos_friendly'],
+  somon_cuptor_dovlecei_turmeric: ['anti_inflammatory', 'heart_healthy', 'diabetic_friendly', 'pcos_friendly'],
   supa_crema_conopida_turmeric_cocos: ['anti_inflammatory', 'heart_healthy', 'diabetic_friendly'],
   smoothie_bowl_ghimbir_afine: ['anti_inflammatory', 'high_fiber', 'heart_healthy'],
   salata_calda_linte_spanac_nuci: ['anti_inflammatory', 'high_fiber', 'diabetic_friendly', 'heart_healthy'],
@@ -3395,9 +3395,9 @@ export const RECIPE_HEALTH_TAGS_MAP: Record<string, HealthGoalTag[]> = {
   cod_cuptor_dovlecei_ierburi: ['pcos_friendly', 'diabetic_friendly', 'heart_healthy', 'anti_inflammatory'],
   tocanita_fasole_verde_rosii_usturoi: ['diabetic_friendly', 'high_fiber', 'anti_inflammatory', 'heart_healthy'],
   peste_alb_cuptor_ardei_masline: ['diabetic_friendly', 'anti_inflammatory', 'heart_healthy', 'pcos_friendly'],
-  omleta_ciuperci_branza_capra: ['diabetic_friendly', 'pcos_friendly'],
+  omleta_ciuperci_telemea: ['diabetic_friendly', 'pcos_friendly'],
   salata_castraveti_iaurt_grecesc_marar: ['diabetic_friendly', 'pcos_friendly', 'heart_healthy'],
-  chili_fasole_neagra_cartof_dulce: ['high_fiber', 'heart_healthy', 'anti_inflammatory'],
+  chili_vegan_fasole_rosie_marar: ['high_fiber', 'heart_healthy', 'anti_inflammatory'],
   hummus_cremos_morcovi_seminte: ['high_fiber', 'anti_inflammatory', 'heart_healthy', 'diabetic_friendly'],
   pastrav_gratar_marar_lamaie: ['heart_healthy', 'anti_inflammatory', 'diabetic_friendly', 'pcos_friendly'],
   supa_mediteraneana_fasole_alba_ulei_masline: ['heart_healthy', 'high_fiber', 'anti_inflammatory'],

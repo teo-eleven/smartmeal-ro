@@ -40,6 +40,7 @@ import {
 } from '../engine/budgetCalculator';
 import { INGREDIENTS } from '../data/ingredients';
 import { recipeContainsPork } from '../data/healthTags';
+import { resolveRecipeId } from '../data/recipeIdAliases';
 import { RECIPES_MAP } from '../data/recipes';
 import { RETAIL_PRODUCTS_MAP } from '../data/retailProducts';
 import { SUPERMARKETS } from '../data/supermarkets';
@@ -347,7 +348,7 @@ function makePlanSafeForPreferences(
       // keep a legitimate id while its ingredients said something else entirely, and the
       // allergen verdict was then computed against a list the catalog never contained.
       // Whatever arrives, the dish served is the one the catalog defines.
-      const canonical = RECIPES_MAP[meal.recipe.id];
+      const canonical = RECIPES_MAP[resolveRecipeId(meal.recipe.id)];
       const pool = meal.slot === 'dessert' ? eligibleDesserts : eligible;
       const isSafe = Boolean(canonical) && pool.some((recipe) => recipe.id === canonical.id);
       if (isSafe) return meal.recipe === canonical ? meal : { ...meal, recipe: canonical };
