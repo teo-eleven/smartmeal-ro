@@ -20,6 +20,7 @@ interface AuthFormOptions {
 }
 
 const SIGNED_OUT_MESSAGE = 'Te-ai deconectat.';
+const SERVER_ERROR_MESSAGE = 'A apărut o problemă la comunicarea cu serverul.';
 
 /**
  * The state and actions of the sign-in forms: password sign-in, a new account, and the
@@ -104,7 +105,8 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
 
   /**
    * Every action that talks to the server goes through here: the old messages go, the button
-   * spins, and it stops spinning however the action ends.
+   * spins, a second tap is ignored, a thrown error becomes a message, and it stops spinning
+   * however the action ends.
    */
   const isBusy = useRef(false);
   const run = async (action: () => Promise<void>) => {
@@ -116,6 +118,8 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
     setLoading(true);
     try {
       await action();
+    } catch {
+      setErrorMessage(SERVER_ERROR_MESSAGE);
     } finally {
       isBusy.current = false;
       setLoading(false);
@@ -172,22 +176,14 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
     }
   };
 
-  const handleAuth = async () => {
-    clearMessages();
-    if (!email.trim() || !password.trim()) {
-      setErrorMessage('Te rugăm să completezi atât adresa de email, cât și parola.');
-      return;
-    }
-
-    setLoading(true);
-    try {
+  const handleAuth = () =>
+    run(async () => {
+      if (!email.trim() || !password.trim()) {
+        setErrorMessage('Te rugăm să completezi atât adresa de email, cât și parola.');
+        return;
+      }
       await (mode === 'signin' ? signIn() : signUp());
-    } catch {
-      setErrorMessage('A apărut o problemă la comunicarea cu serverul.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
 
   const startReset = () => {
     clearMessages();
@@ -201,15 +197,12 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
     setErrorMessage(null);
   };
 
-  const handleRequestReset = async () => {
-    clearMessages();
-    if (!email.trim()) {
-      setErrorMessage('Scrie adresa de email a contului.');
-      return;
-    }
-
-    setLoading(true);
-    try {
+  const handleRequestReset = () =>
+    run(async () => {
+      if (!email.trim()) {
+        setErrorMessage('Scrie adresa de email a contului.');
+        return;
+      }
       const { success, error } = await cloudSyncService.requestPasswordReset(email);
       if (!success) {
         setErrorMessage(error ?? 'Codul nu a putut fi trimis.');
@@ -219,41 +212,29 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
       // else turns this into a way of finding out who is registered.
       setSuccessMessage('Dacă adresa are cont, îți trimitem un cod pe email în câteva minute.');
       setResetStep('code');
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
 
-  const handleVerifyCode = async () => {
-    clearMessages();
-    if (resetCode.trim().length < 6) {
-      setErrorMessage('Codul din email are cel puțin 6 cifre.');
-      return;
-    }
-
-    setLoading(true);
-    try {
+  const handleVerifyCode = () =>
+    run(async () => {
+      if (resetCode.trim().length < 6) {
+        setErrorMessage('Codul din email are cel puțin 6 cifre.');
+        return;
+      }
       const { success, error } = await cloudSyncService.verifyPasswordResetCode(email, resetCode);
       if (!success) {
         setErrorMessage(error ?? 'Codul nu este valid.');
         return;
       }
       setResetStep('password');
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
 
-  const handleSetNewPassword = async () => {
-    clearMessages();
-    const weak = describeWeakPassword(newPassword);
-    if (weak) {
-      setErrorMessage(weak);
-      return;
-    }
-
-    setLoading(true);
-    try {
+  const handleSetNewPassword = () =>
+    run(async () => {
+      const weak = describeWeakPassword(newPassword);
+      if (weak) {
+        setErrorMessage(weak);
+        return;
+      }
       // The address is needed by the local simulation, which has no session to hang the new
       // password on; the real backend ignores it and uses the session the code produced.
       const { success, error } = await cloudSyncService.updatePassword(newPassword, email.trim());
@@ -265,10 +246,7 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
       clearForm();
       leaveReset();
       setSuccessMessage('Parola a fost schimbată. Ești conectat.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
 
   const handleSignOut = () =>
     run(async () => {

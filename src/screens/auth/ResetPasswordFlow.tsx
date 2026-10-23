@@ -48,6 +48,8 @@ export function ResetPasswordFlow({ form, theme }: { form: AuthFormState; theme:
           placeholder="exemplu@email.ro"
           placeholderTextColor={theme.textMuted}
           accessibilityLabel="Adresa de email pentru resetare"
+          returnKeyType="go"
+          onSubmitEditing={onSubmit}
           autoCapitalize="none"
           keyboardType="email-address"
           style={inputStyle}
@@ -61,6 +63,8 @@ export function ResetPasswordFlow({ form, theme }: { form: AuthFormState; theme:
           placeholder="123456"
           placeholderTextColor={theme.textMuted}
           accessibilityLabel="Codul primit pe email"
+          returnKeyType="go"
+          onSubmitEditing={onSubmit}
           keyboardType="number-pad"
           // Supabase sends 6 to 10 digits, depending on the project's OTP length setting.
           // Stopping at 6 made the rest of a real code untypable.
@@ -76,6 +80,8 @@ export function ResetPasswordFlow({ form, theme }: { form: AuthFormState; theme:
           placeholder="••••••••••"
           placeholderTextColor={theme.textMuted}
           accessibilityLabel="Parola nouă"
+          returnKeyType="go"
+          onSubmitEditing={onSubmit}
           secureTextEntry
           style={inputStyle}
         />

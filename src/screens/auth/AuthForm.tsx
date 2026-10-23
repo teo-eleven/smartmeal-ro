@@ -90,6 +90,8 @@ export function AuthForm({
           keyboardType="email-address"
           autoComplete="email"
           textContentType="emailAddress"
+          accessibilityLabel="Email"
+          returnKeyType="next"
           value={form.email}
           onChangeText={form.editEmail}
         />
@@ -105,8 +107,11 @@ export function AuthForm({
           // Lets password managers offer the saved one, or a new strong one on Creează cont.
           autoComplete={form.mode === 'signup' ? 'new-password' : 'current-password'}
           textContentType={form.mode === 'signup' ? 'newPassword' : 'password'}
+          accessibilityLabel="Parolă"
+          returnKeyType="go"
           value={form.password}
           onChangeText={form.editPassword}
+          onSubmitEditing={() => void form.handleAuth()}
         />
       </View>
 
