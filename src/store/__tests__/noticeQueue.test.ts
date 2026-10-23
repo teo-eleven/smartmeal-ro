@@ -58,3 +58,12 @@ describe('notificările stau la coadă', () => {
     expect(store().activeNotice).not.toBeNull();
   });
 });
+
+describe('„Șterge tot” la pofte explică ce a păstrat', () => {
+  test('golirea poftelor lasă „Comfort food” și spune asta', () => {
+    store().setMoodTags([]);
+
+    expect(store().preferences.moodTags).toEqual(['healthy_comfort']);
+    expect(store().activeNotice?.title).toBe('Am păstrat o poftă');
+  });
+});

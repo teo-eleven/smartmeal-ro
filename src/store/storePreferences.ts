@@ -342,7 +342,19 @@ export function createPreferencesActions(set: SetState, _get: GetState) {
           mealSlots: nextSlots,
         };
         void storageService.savePreferences(nextPrefs);
-        return { preferences: nextPrefs };
+        // A plan needs at least one craving; say so instead of swapping one in silently.
+        return tags.length > 0
+          ? { preferences: nextPrefs }
+          : {
+              preferences: nextPrefs,
+              activeNotice: {
+                id: Date.now().toString(),
+                title: 'Am păstrat o poftă',
+                message:
+                  'Meniul are nevoie de cel puțin o poftă, așa că am lăsat „Comfort food”. O poți schimba oricând.',
+                type: 'info' as const,
+              },
+            };
       });
     },
 
