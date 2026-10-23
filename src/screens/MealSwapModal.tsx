@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,11 +9,11 @@ import {
   View,
 } from 'react-native';
 import { DayOfWeek, MealPlan, MealSlot, Recipe, UserPreferences } from '../types';
-import { getEligibleRecipes, getEligibleDessertRecipes } from '../engine/plannerEngine';
-import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { aiProxyService, SmartSwapResult } from '../services/aiProxy';
 import { getAppTheme } from '../styles/theme';
 import { DAY_LABELS_RO } from '../constants/days';
+import { formatCostDelta, rankSwapCandidates } from '../utils/swapCandidates';
+import { useAppStore } from '../store/useAppStore';
 import { getStoreBadgeBg, getStoreSignatureBadge } from '../utils/storeBadge';
 
 interface MealSwapModalProps {
@@ -44,7 +43,12 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   // The modal stays mounted and only toggles `visible`, so without this the suggestion made
   // for Monday's lunch was still on screen -- with its "choose it" button -- when the modal
   // reopened for a different day.
+  // Each AI request carries a number; a reply for an earlier day or slot is ignored. Without
+  // it, Monday's late answer landed under Tuesday with a working "choose it" button.
+  const aiRequestRef = useRef(0);
+
   useEffect(() => {
+    aiRequestRef.current += 1;
     setAiResult(null);
     setIsAiLoading(false);
   }, [dayOfWeek, slot]);
@@ -53,41 +57,17 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
 
   const currentMealDay = currentPlan.days.find((d) => d.dayOfWeek === dayOfWeek);
   const targetMeal = slot ? currentMealDay?.meals?.find((m) => m.slot === slot) : null;
-  const currentRecipe = targetMeal ? targetMeal.recipe : currentMealDay?.recipe;
-  const currentRecipeId = currentRecipe?.id;
   const isDessertSlot =
-    slot === 'dessert' || Boolean(currentRecipe?.suitableSlots?.includes('dessert'));
+    slot === 'dessert' || Boolean(targetMeal?.recipe.suitableSlots?.includes('dessert'));
   const slotTitle = targetMeal?.slotLabelRo || (isDessertSlot ? 'Desert de Casă' : '');
-
-  // Filter eligible recipes suitable for this specific meal slot
-  const eligible = isDessertSlot
-    ? getEligibleDessertRecipes(preferences)
-    : getEligibleRecipes(preferences);
-  const slotFiltered = isDessertSlot
-    ? eligible
-    : eligible.filter((r) =>
-        slot && r.suitableSlots ? r.suitableSlots.includes(slot) : true
-      );
-  const baseCandidates = slotFiltered.length > 0 ? slotFiltered : eligible;
-
-  // Collect recipe IDs used in plan
-  const usedRecipeIds = new Set<string>();
-  currentPlan.days.forEach((d) => {
-    if (d.meals) {
-      d.meals.forEach((m) => usedRecipeIds.add(m.recipe.id));
-    } else {
-      usedRecipeIds.add(d.recipe.id);
-    }
-  });
-
-  // Prioritize recipes not currently used this week
-  const unusedCandidates = baseCandidates.filter(
-    (r) => !usedRecipeIds.has(r.id) && r.id !== currentRecipeId
+  const { currentRecipe, candidates: ranked } = rankSwapCandidates(
+    currentPlan,
+    preferences,
+    dayOfWeek,
+    slot ?? undefined
   );
-  const otherCandidates = baseCandidates.filter(
-    (r) => r.id !== currentRecipeId && usedRecipeIds.has(r.id)
-  );
-  const candidates = [...unusedCandidates, ...otherCandidates];
+  const candidates = ranked.map((c) => c.recipe);
+  const servingsForCost = targetMeal?.servings ?? currentPlan.peopleCount;
 
   const appTheme = getAppTheme(isDark);
   const theme = {
@@ -99,16 +79,24 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
 
   const handleAskAi = async () => {
     if (!currentRecipe) return;
+    const requestId = ++aiRequestRef.current;
     setIsAiLoading(true);
     try {
-      const result = await aiProxyService.suggestSmartSwap(
-        currentRecipe,
-        candidates,
-        preferences
-      );
-      setAiResult(result);
+      const result = await aiProxyService.suggestSmartSwap(currentRecipe, candidates, preferences);
+      if (requestId === aiRequestRef.current) setAiResult(result);
+    } catch (error) {
+      console.warn('[MealSwapModal] AI suggestion failed:', error);
+      if (requestId === aiRequestRef.current) {
+        useAppStore
+          .getState()
+          .showNotice(
+            'Sugestia AI nu e disponibilă',
+            'Nu am putut cere o sugestie acum. Poți alege oricând din lista de mai jos.',
+            'warning'
+          );
+      }
     } finally {
-      setIsAiLoading(false);
+      if (requestId === aiRequestRef.current) setIsAiLoading(false);
     }
   };
 
@@ -199,13 +187,9 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
 
             {/* List of replacement alternatives */}
             <View style={styles.candidatesList}>
-              {candidates.map((candidate) => {
-                const cost = calculateRecipePortionCost(
-                  candidate,
-                  currentPlan.peopleCount,
-                  preferences.supermarketId,
-                  preferences.excludePantryStaples
-                );
+              {ranked.map(({ recipe: candidate, mealCostRon, costDeltaRon, fitsBudget }) => {
+                // The cost is for the whole meal; it was labelled "per portion" for a household.
+                const perPortion = Math.round((mealCostRon / Math.max(1, servingsForCost)) * 100) / 100;
 
                 const isSuggested = aiResult?.recipe.id === candidate.id;
 
@@ -243,7 +227,17 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                         🔥 {candidate.nutritionPerServing.calories} kcal
                       </Text>
                       <Text style={[styles.costText, { color: theme.primary }]}>
-                        ~{cost} lei / porție
+                        ~{perPortion} lei / porție
+                      </Text>
+                      <Text
+                        style={[
+                          styles.costText,
+                          { color: fitsBudget ? theme.textMuted : '#f97316' },
+                        ]}
+                        accessibilityLabel={`Costul săptămânii: ${formatCostDelta(costDeltaRon)}${fitsBudget ? '' : ', peste buget'}`}
+                      >
+                        {formatCostDelta(costDeltaRon)}
+                        {fitsBudget ? '' : ' · peste buget'}
                       </Text>
                     </View>
 

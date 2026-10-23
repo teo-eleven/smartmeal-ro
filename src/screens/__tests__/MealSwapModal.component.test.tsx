@@ -75,3 +75,53 @@ describe('MealSwapModal uită sugestia AI când schimbi ziua', () => {
     expect(screen.queryByText('motivul sugestiei')).toBeNull();
   });
 });
+
+describe('un răspuns AI întârziat nu ajunge pe altă zi', () => {
+  test('sugestia cerută pentru luni, sosită după ce modalul e pe marți, e ignorată', async () => {
+    const plan = planFixture();
+    let resolveLate: (value: unknown) => void = () => undefined;
+    (aiProxyService.suggestSmartSwap as jest.Mock).mockReturnValue(
+      new Promise((resolve) => {
+        resolveLate = resolve;
+      })
+    );
+    const props = {
+      currentPlan: plan,
+      preferences: PREFS,
+      onClose: jest.fn(),
+      onSelectReplacement: jest.fn(),
+      isDark: true,
+      visible: true,
+    };
+    const { rerender } = render(<MealSwapModal {...props} dayOfWeek="monday" slot="dinner" />);
+    fireEvent.press(screen.getByText(/Întreabă AI/));
+
+    rerender(<MealSwapModal {...props} dayOfWeek="tuesday" slot="dinner" />);
+    resolveLate({ recipe: plan.days[3].meals[0].recipe, reason: 'pentru luni', isAiGenerated: true });
+    await waitFor(() => expect(aiProxyService.suggestSmartSwap).toHaveBeenCalled());
+
+    expect(screen.queryByText('pentru luni')).toBeNull();
+  });
+
+  test('o eroare de rețea la AI se explică, nu lasă o eroare neprinsă', async () => {
+    const plan = planFixture();
+    (aiProxyService.suggestSmartSwap as jest.Mock).mockRejectedValue(new Error('offline'));
+    useAppStore.setState({ activeNotice: null, noticeQueue: [] });
+    render(
+      <MealSwapModal
+        currentPlan={plan}
+        preferences={PREFS}
+        onClose={jest.fn()}
+        onSelectReplacement={jest.fn()}
+        isDark
+        visible
+        dayOfWeek="monday"
+        slot="dinner"
+      />
+    );
+
+    fireEvent.press(screen.getByText(/Întreabă AI/));
+
+    await waitFor(() => expect(useAppStore.getState().activeNotice?.type).toBe('warning'));
+  });
+});
