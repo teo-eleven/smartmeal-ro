@@ -31,8 +31,15 @@ jest.mock('../platformOs', () => ({ currentOs: () => 'ios' }));
  * Supabase, and what each of its answers turns into on screen. The same features through the
  * local simulation are in localAuthFlow.test.ts.
  */
+const getUser = jest.fn();
 const auth = {
-  getUser: jest.fn(),
+  getUser,
+  // The app reads the user from the stored session (F1); here it mirrors getUser's answer.
+  getSession: jest.fn(async () => {
+    const answer = (await getUser()) as { data?: { user?: unknown } } | undefined;
+    const user = answer?.data?.user ?? null;
+    return { data: { session: user ? { user } : null } };
+  }),
   signUp: jest.fn(),
   signInWithOtp: jest.fn(),
   verifyOtp: jest.fn(),

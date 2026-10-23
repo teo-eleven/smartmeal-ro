@@ -324,10 +324,13 @@ export function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Part
 
   void storageService.savePreferences(effectivePrefs);
   void storageService.savePlanAndGrocery(downloadedPlan, aggregated.items);
+  void storageService.saveCloudPlanVersion(pending.updatedAt);
 
   return {
     preferences: effectivePrefs,
     currentPlan: downloadedPlan,
+    lastSyncedPlan: downloadedPlan,
+    cloudPlanVersion: pending.updatedAt,
     groceryItems: aggregated.items,
     activeView: 'meals',
     confirmRequest: null,

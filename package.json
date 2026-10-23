@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test:coverage": "jest --coverage",
     "test:components": "jest --selectProjects components",
-    "photos:sheet": "node scripts/photoContactSheet.mjs"
+    "photos:sheet": "node scripts/photoContactSheet.mjs",
+    "build:web": "expo export -p web && node scripts/injectCsp.mjs dist"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",

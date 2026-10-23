@@ -36,6 +36,36 @@ import {
 import { applyCloudPlan, syncUnavailableNotice } from './storeTransforms';
 import { parseRecipeNotes } from '../utils/recipeNotes';
 
+/**
+ * Why a sync could not start. No connection used to be reported as an expired session,
+ * which sent people to sign in again for nothing (F1).
+ */
+function sessionProblemNotice(reason: string, action: 'upload' | 'download'): SystemNotice {
+  const what = action === 'upload' ? 'urca planul în cloud' : 'aduce planul din cloud';
+  return reason === 'offline'
+    ? {
+        id: Date.now().toString(),
+        title: 'Fără conexiune',
+        message: `Nu am putut ${what}: telefonul nu are internet. Planul rămâne salvat pe telefon; încearcă din nou când ai conexiune.`,
+        type: 'warning',
+      }
+    : {
+        id: Date.now().toString(),
+        title: 'Sesiune expirată',
+        message: `Conectează-te din nou ca să poți ${what}.`,
+        type: 'warning',
+      };
+}
+
+/** Addresses are compared without case: Ana@B.ro and ana@b.ro are one account. */
+function sameEmail(a: string | null, b: string | null): boolean {
+  return Boolean(a) && Boolean(b) && a!.trim().toLowerCase() === b!.trim().toLowerCase();
+}
+
+function signedInEmailForOwner(email: string | null): string | null {
+  return email && email.includes('@') ? email : null;
+}
+
 type SetState = StoreApi<AppState>['setState'];
 type GetState = () => AppState;
 
@@ -49,10 +79,16 @@ export function createSessionActions(set: SetState, get: GetState) {
         const savedPlans = await storageService.loadSavedPlans();
         const storedReminders = parseReminderSettings(await storageService.loadReminders());
         const recipeNotes = parseRecipeNotes(await storageService.loadRecipeNotes());
+        const storedOwner = await storageService.loadDataOwner();
+        const cloudPlanVersion = await storageService.loadCloudPlanVersion();
 
         // Read the session before anything renders, so the gate never flashes in front of
         // somebody who signed in three weeks ago and is still within their thirty days.
         const signedInEmail = await cloudSyncService.currentEmail();
+        // A phone upgraded from a build that did not record the owner: the account signed in
+        // now is the one whose data this is.
+        const dataOwnerEmail = storedOwner ?? signedInEmailForOwner(signedInEmail);
+        if (!storedOwner && dataOwnerEmail) void storageService.saveDataOwner(dataOwnerEmail);
         // checkReauth does not throw; if it ever did, the safe answer is the lock.
         const isLocked = signedInEmail
           ? await checkReauth(signedInEmail).then(
@@ -273,7 +309,14 @@ export function createSessionActions(set: SetState, get: GetState) {
             state.activeNotice,
           savedPlans,
           recipeNotes,
+          dataOwnerEmail,
+          cloudPlanVersion,
         }));
+        // The row may have changed elsewhere, e.g. emails turned off from the link in one.
+        if (signedInEmail && !isLocked) {
+          void get().loadRemindersFromCloud();
+          void get().pullRecipeNotes();
+        }
       } catch (e) {
         // Whatever went wrong, the user must not be told nothing: starting silently on the
         // defaults means an unrestricted omnivore with no allergies, which looks like a
@@ -307,14 +350,15 @@ export function createSessionActions(set: SetState, get: GetState) {
       const next: ReminderSettings = { ...get().reminders, ...patch };
       set({ reminders: next });
 
+      // Rescheduling follows the change through reminderSync, debounced.
       void storageService.saveReminders(next);
-      void reminderScheduler.reschedule(next, get().currentPlan);
 
       const email = get().userEmail;
       if (email) {
         void (async () => {
           const user = await cloudSyncService.getCurrentUser();
-          if (user) void cloudSyncService.saveReminders(user.id, next);
+          // Only what changed: an unsubscribe done by email link stays done.
+          if (user) void cloudSyncService.saveReminders(user.id, patch);
         })();
       }
     },
@@ -331,7 +375,6 @@ export function createSessionActions(set: SetState, get: GetState) {
 
         set({ reminders: remote });
         void storageService.saveReminders(remote);
-        void reminderScheduler.reschedule(remote, get().currentPlan);
       } catch (e) {
         console.warn('[useAppStore] Could not read the reminder settings:', e);
       }
@@ -374,12 +417,26 @@ export function createSessionActions(set: SetState, get: GetState) {
       } finally {
         // One step, never through 'guest', which would show the plan for an instant; and
         // whatever the sign-out did, this device stops showing the account.
+        get().clearLocalAccountData();
         set({ userEmail: null, authStatus: 'checking' });
         void reminderScheduler.cancelAll();
       }
     },
 
-    setUserEmail: (email: string | null) => {
+    setUserEmail: (email: string | null, options: { keepLocalData?: boolean } = {}) => {
+      const previous = get().userEmail ?? get().dataOwnerEmail;
+      const owner = get().dataOwnerEmail;
+      if (email === null && previous && !options.keepLocalData) {
+        get().clearLocalAccountData();
+      } else if (email && owner && !sameEmail(owner, email)) {
+        // A session expired with its data kept, and now somebody else signs in.
+        get().clearLocalAccountData();
+      }
+      if (email && !sameEmail(get().dataOwnerEmail, email)) {
+        set({ dataOwnerEmail: email });
+        void storageService.saveDataOwner(email);
+      }
+
       // At the lock, a sign-in does not open the app by itself: unlock checks that it was
       // recorded as a verification. Anything else calling this with an address cannot be a
       // way past the lock.
@@ -393,13 +450,14 @@ export function createSessionActions(set: SetState, get: GetState) {
       if (email) {
         // A second phone starts from what the account already knows.
         void get().loadRemindersFromCloud();
+        void get().pullRecipeNotes();
       } else {
         // Signing out must not leave the previous account's nudges firing on this phone.
         void reminderScheduler.cancelAll();
       }
     },
 
-    syncWithCloud: async () => {
+    syncWithCloud: async (options: { overwriteVersion?: string } = {}) => {
       const { userEmail, currentPlan, groceryItems, preferences, authStatus, isSyncing } = get();
       // Not from behind the monthly lock: the account has not been verified yet. Not twice at
       // once either: two quick taps used to send the plan twice and overwrite each other's flags.
@@ -408,32 +466,43 @@ export function createSessionActions(set: SetState, get: GetState) {
         set({ activeNotice: syncUnavailableNotice() });
         return;
       }
+      if (!currentPlan) {
+        get().showNotice(
+          'Nu ai niciun plan de urcat',
+          'Generează un meniu mai întâi; apoi îl poți urca în cloud.',
+          'info'
+        );
+        return;
+      }
 
       set({ isSyncing: true });
       try {
         // The row is keyed by the authenticated user's id, not their email: user_id is a uuid
         // referencing auth.users, and row-level security compares it against auth.uid().
-        const user = await cloudSyncService.getCurrentUser();
+        const { user, reason } = await cloudSyncService.verifyUser();
         if (!user) {
-          set({
-            activeNotice: {
-              id: Date.now().toString(),
-              title: 'Sesiune expirată',
-              message: 'Autentifică-te din nou pentru a sincroniza planul în cloud.',
-              type: 'warning',
-            },
-          });
+          set({ activeNotice: sessionProblemNotice(reason, 'upload') });
           return;
         }
 
-        const res = await cloudSyncService.saveMealPlan(
-          user.id,
-          currentPlan,
+        // Replaces only the cloud version this phone last saw, or the newer one the user just
+        // agreed to replace; anything else comes back as a conflict.
+        const res = await cloudSyncService.saveMealPlan({
+          plan: currentPlan,
           groceryItems,
-          preferences
-        );
-        if (res.success) {
-          set({ lastSyncedAt: new Date().toLocaleTimeString('ro-RO') });
+          preferences,
+          expectedUpdatedAt: options.overwriteVersion ?? get().cloudPlanVersion,
+        });
+        if (res.status === 'saved') {
+          set({
+            lastSyncedAt: new Date().toLocaleTimeString('ro-RO'),
+            lastSyncedPlan: currentPlan,
+            cloudPlanVersion: res.updatedAt,
+            cloudConflictVersion: null,
+          });
+          void storageService.saveCloudPlanVersion(res.updatedAt);
+        } else if (res.status === 'conflict') {
+          set({ cloudConflictVersion: res.updatedAt, confirmRequest: 'overwrite_cloud_plan' });
         } else {
           set({
             activeNotice: {
@@ -475,16 +544,9 @@ export function createSessionActions(set: SetState, get: GetState) {
 
       set({ isSyncing: true });
       try {
-        const user = await cloudSyncService.getCurrentUser();
+        const { user, reason } = await cloudSyncService.verifyUser();
         if (!user) {
-          set({
-            activeNotice: {
-              id: Date.now().toString(),
-              title: 'Sesiune expirată',
-              message: 'Autentifică-te din nou pentru a aduce planul din cloud.',
-              type: 'warning',
-            },
-          });
+          set({ activeNotice: sessionProblemNotice(reason, 'download') });
           return;
         }
 

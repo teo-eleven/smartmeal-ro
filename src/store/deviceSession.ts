@@ -33,10 +33,14 @@ export function resetDeviceSessionForTests(): void {
   inFlight = null;
 }
 
-/** Ends the account here and shows why. Nothing to do if it already ended. */
-function endSessionHere(message: string): void {
+/**
+ * Ends the account here and shows why. Nothing to do if it already ended. A revoked device
+ * loses the account's data (it was signed out on purpose, perhaps because it was lost); an
+ * expired session keeps it for the same person, and another account signing in wipes it.
+ */
+function endSessionHere(message: string, keepLocalData: boolean): void {
   if (!useAppStore.getState().userEmail) return;
-  useAppStore.getState().setUserEmail(null);
+  useAppStore.getState().setUserEmail(null, { keepLocalData });
   useAppStore.setState({ authStatus: 'checking' });
   // Through the store action, so it queues behind a safety warning instead of replacing it.
   useAppStore.getState().showNotice('Ai fost deconectat', message, 'warning');
@@ -46,7 +50,7 @@ async function checkIn(email: string): Promise<void> {
   const outcome = await registerThisDevice();
   // The answer is about the account that asked; somebody else may be signed in by now.
   if (outcome !== 'revoked' || useAppStore.getState().userEmail !== email) return;
-  endSessionHere(REVOKED_MESSAGE);
+  endSessionHere(REVOKED_MESSAGE, false);
   // The server already ended the session; this clears what the device still holds.
   await cloudSyncService.signOut();
 }
@@ -76,7 +80,7 @@ export function watchSessionEnd(): () => void {
   if (!client) return () => undefined;
 
   const { data } = client.auth.onAuthStateChange((event) => {
-    if (event === 'SIGNED_OUT' && !isSigningOutOnPurpose()) endSessionHere(EXPIRED_MESSAGE);
+    if (event === 'SIGNED_OUT' && !isSigningOutOnPurpose()) endSessionHere(EXPIRED_MESSAGE, true);
   });
   return () => data.subscription.unsubscribe();
 }

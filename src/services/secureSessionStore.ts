@@ -60,10 +60,18 @@ async function secureSet(key: string, value: string): Promise<void> {
   await secureRemove(key);
 
   const count = Math.ceil(value.length / CHUNK_SIZE);
-  for (let i = 0; i < count; i += 1) {
-    await SecureStore.setItemAsync(`${base}_${i}`, value.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE));
+  try {
+    for (let i = 0; i < count; i += 1) {
+      await SecureStore.setItemAsync(`${base}_${i}`, value.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE));
+    }
+    await SecureStore.setItemAsync(`${base}${COUNT_SUFFIX}`, String(count));
+  } catch (e) {
+    // The count is written last, so secureRemove cannot find these: clear them by number.
+    for (let i = 0; i < count; i += 1) {
+      await SecureStore.deleteItemAsync(`${base}_${i}`).catch(() => undefined);
+    }
+    throw e;
   }
-  await SecureStore.setItemAsync(`${base}${COUNT_SUFFIX}`, String(count));
 }
 
 async function secureRemove(key: string): Promise<void> {
@@ -78,6 +86,16 @@ async function secureRemove(key: string): Promise<void> {
   }
   await SecureStore.deleteItemAsync(`${base}${COUNT_SUFFIX}`);
   await SecureStore.deleteItemAsync(base);
+}
+
+const writeFailureListeners = new Set<() => void>();
+
+/** Called whenever the session could not be stored; returns the function that unsubscribes. */
+export function subscribeToSessionWriteFailures(listener: () => void): () => void {
+  writeFailureListeners.add(listener);
+  return () => {
+    writeFailureListeners.delete(listener);
+  };
 }
 
 export const secureSessionStore = {
@@ -101,12 +119,18 @@ export const secureSessionStore = {
     return isWeb ? AsyncStorage.getItem(key) : secureGet(key);
   },
 
+  /**
+   * Never throws: supabase-js would fail the sign-in or the token refresh. A failed write is
+   * cleaned up (no half session left behind) and reported to the app, which tells the person
+   * they will have to sign in again (F12).
+   */
   async setItem(key: string, value: string): Promise<void> {
     if (isWeb) return AsyncStorage.setItem(key, value);
     try {
       await secureSet(key, value);
     } catch (e) {
       console.warn('[secureSessionStore] Could not store the session:', e);
+      writeFailureListeners.forEach((listener) => listener());
     }
   },
 

@@ -202,16 +202,61 @@ describe('conectare și cont nou', () => {
     expect(await cloudSyncService.loadConsent('u1')).toBeNull();
   });
 
-  test('adresa curentă vine din sesiunea Supabase', async () => {
-    auth.getUser.mockResolvedValue({ data: { user: { email: 'a@b.ro' } } });
+  /**
+   * The 2026-10-21 audit (F1): identity came from getUser(), a network call, so a phone
+   * that started offline looked signed out. It now comes from the stored session.
+   */
+  test('adresa curentă vine din sesiunea salvată pe telefon, fără rețea', async () => {
+    auth.getSession.mockResolvedValue({ data: { session: { user: { email: 'a@b.ro' } } } });
+    auth.getUser.mockRejectedValue(new Error('offline'));
 
     expect(await cloudSyncService.currentEmail()).toBe('a@b.ro');
   });
 
-  test('un client care aruncă la citirea utilizatorului înseamnă „deconectat"', async () => {
-    auth.getUser.mockRejectedValue(new Error('offline'));
+  test('fără sesiune salvată, nimeni nu e conectat', async () => {
+    auth.getSession.mockResolvedValue({ data: { session: null } });
 
     expect(await cloudSyncService.currentEmail()).toBeNull();
+  });
+
+  test('un client care aruncă la citirea sesiunii înseamnă „deconectat"', async () => {
+    auth.getSession.mockRejectedValue(new Error('storage'));
+
+    expect(await cloudSyncService.currentEmail()).toBeNull();
+  });
+
+  describe('verificarea cu serverul, înainte de sincronizare', () => {
+    test('serverul confirmă utilizatorul', async () => {
+      auth.getUser.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null });
+
+      expect(await cloudSyncService.verifyUser()).toEqual({ user: { id: 'u1' }, reason: 'ok' });
+    });
+
+    test('fără rețea spune „offline”, nu „deconectat”', async () => {
+      auth.getUser.mockRejectedValue(new AuthRetryableFetchError('Failed to fetch', 0));
+
+      expect((await cloudSyncService.verifyUser()).reason).toBe('offline');
+    });
+
+    test('un server care nu răspunde la timp contează ca offline', async () => {
+      jest.useFakeTimers();
+      auth.getUser.mockReturnValue(new Promise(() => undefined));
+
+      const pending = cloudSyncService.verifyUser(1000);
+      jest.advanceTimersByTime(1001);
+
+      expect((await pending).reason).toBe('offline');
+      jest.useRealTimers();
+    });
+
+    test('o sesiune respinsă de server înseamnă „deconectat”', async () => {
+      auth.getUser.mockResolvedValue({
+        data: { user: null },
+        error: { message: 'invalid JWT', status: 401 },
+      });
+
+      expect(await cloudSyncService.verifyUser()).toEqual({ user: null, reason: 'signed_out' });
+    });
   });
 
   test('deconectarea nu aruncă nici când clientul aruncă', async () => {
@@ -289,6 +334,54 @@ describe('ștergerea contului', () => {
     const result = await cloudSyncService.deleteAccount();
 
     expect(result.success).toBe(false);
+    expect(auth.signOut).not.toHaveBeenCalled();
+  });
+
+  /** The server wants an authentication from the last 5 minutes before it deletes anything. */
+  test('cu parola, reconfirmă identitatea înainte să ceară ștergerea', async () => {
+    auth.getSession.mockResolvedValue({
+      data: { session: { access_token: 'proaspăt', user: { email: 'a@b.ro' } } },
+    });
+    auth.signInWithPassword.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null });
+    fetchMock.mockResolvedValue({ ok: true });
+
+    await cloudSyncService.deleteAccount('Muntele7Verde');
+
+    expect(auth.signInWithPassword).toHaveBeenCalledWith({
+      email: 'a@b.ro',
+      password: 'Muntele7Verde',
+    });
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
+  test('o parolă greșită nu ajunge la ștergere', async () => {
+    auth.getSession.mockResolvedValue({
+      data: { session: { access_token: 't', user: { email: 'a@b.ro' } } },
+    });
+    auth.signInWithPassword.mockResolvedValue({
+      data: { user: null },
+      error: { code: 'invalid_credentials', message: 'Invalid login credentials' },
+    });
+
+    const result = await cloudSyncService.deleteAccount('gresit');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/parola/i);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test('când serverul cere reautentificare, mesajul spune ce e de făcut', async () => {
+    auth.getSession.mockResolvedValue({ data: { session: { access_token: 't' } } });
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => ({ error: 'reauth_required' }),
+    });
+
+    const result = await cloudSyncService.deleteAccount();
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/parola contului/);
     expect(auth.signOut).not.toHaveBeenCalled();
   });
 
@@ -452,6 +545,17 @@ describe('mementourile din cont', () => {
     );
   });
 
+  test('o schimbare parțială scrie doar coloanele schimbate', async () => {
+    upsert.mockResolvedValue({ error: null });
+
+    await cloudSyncService.saveReminders('u1', { cookingTime: '19:00' });
+
+    expect(upsert).toHaveBeenCalledWith(
+      { user_id: 'u1', cooking_time: '19:00' },
+      { onConflict: 'user_id' }
+    );
+  });
+
   test('refuzul la salvare se transmite, în română, fără detaliile serverului', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     upsert.mockResolvedValue({ error: { message: 'RLS' } });
@@ -465,34 +569,81 @@ describe('mementourile din cont', () => {
 });
 
 describe('salvarea planului', () => {
-  test('preferințele pleacă odată cu planul, ca alergiile să ajungă pe alt telefon', async () => {
-    upsert.mockResolvedValue({ error: null });
+  const plan = { id: 'p1', days: [] } as never;
 
-    await cloudSyncService.saveMealPlan('u1', null, [], {
-      avoidedAllergens: ['arahide'],
+  test('trimite versiunea văzută ultima dată și preferințele, ca alergiile să ajungă pe alt telefon', async () => {
+    rpc.mockResolvedValueOnce({
+      data: [{ status: 'saved', updated_at: '2026-10-23T10:00:00Z' }],
+      error: null,
     } as never);
 
-    expect(upsert.mock.calls[0][0]).toEqual(
-      expect.objectContaining({ user_id: 'u1', preferences: { avoidedAllergens: ['arahide'] } })
-    );
+    const result = await cloudSyncService.saveMealPlan({
+      plan,
+      groceryItems: [],
+      preferences: { avoidedAllergens: ['arahide'] } as never,
+      expectedUpdatedAt: '2026-10-22T09:00:00Z',
+    });
+
+    expect(rpc).toHaveBeenCalledWith('save_meal_plan_if_unchanged', {
+      p_plan_data: plan,
+      p_grocery_items: [],
+      p_preferences: { avoidedAllergens: ['arahide'] },
+      p_expected_updated_at: '2026-10-22T09:00:00Z',
+    });
+    expect(result).toEqual({ status: 'saved', updatedAt: '2026-10-23T10:00:00Z', error: null });
   });
 
-  test('fără preferințe nu suprascrie coloana cu nimic', async () => {
-    upsert.mockResolvedValue({ error: null });
+  test('o versiune mai nouă în cloud vine înapoi ca un conflict, cu data ei', async () => {
+    rpc.mockResolvedValueOnce({
+      data: [{ status: 'conflict', updated_at: '2026-10-23T11:00:00Z' }],
+      error: null,
+    } as never);
 
-    await cloudSyncService.saveMealPlan('u1', null, []);
+    const result = await cloudSyncService.saveMealPlan({
+      plan,
+      groceryItems: [],
+      expectedUpdatedAt: null,
+    });
 
-    expect(upsert.mock.calls[0][0]).not.toHaveProperty('preferences');
+    expect(result).toEqual({ status: 'conflict', updatedAt: '2026-10-23T11:00:00Z', error: null });
+  });
+
+  test('fără plan nu trimite nimic', async () => {
+    const result = await cloudSyncService.saveMealPlan({
+      plan: null,
+      groceryItems: [],
+      expectedUpdatedAt: null,
+    });
+
+    expect(rpc).not.toHaveBeenCalled();
+    expect(result.status).toBe('error');
   });
 
   test('refuzul la salvare se transmite, în română, fără detaliile serverului', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-    upsert.mockResolvedValue({ error: { message: 'too large' } });
+    rpc.mockResolvedValueOnce({ data: null, error: { message: 'too large' } } as never);
 
-    expect(await cloudSyncService.saveMealPlan('u1', null, [])).toEqual({
-      success: false,
+    expect(
+      await cloudSyncService.saveMealPlan({ plan, groceryItems: [], expectedUpdatedAt: null })
+    ).toEqual({
+      status: 'error',
+      updatedAt: null,
       error: 'Nu am putut salva în cloud. Încearcă din nou.',
     });
+    warn.mockRestore();
+  });
+
+  test('un răspuns de formă necunoscută nu e luat drept salvare', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    rpc.mockResolvedValueOnce({ data: [{ status: 'ok?' }], error: null } as never);
+
+    const result = await cloudSyncService.saveMealPlan({
+      plan,
+      groceryItems: [],
+      expectedUpdatedAt: null,
+    });
+
+    expect(result.status).toBe('error');
     warn.mockRestore();
   });
 });

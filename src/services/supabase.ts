@@ -28,6 +28,63 @@ import { signingOutOnPurpose } from './signOutIntent';
  * security policy"). The user gets this; the detail goes to the log.
  */
 const CLOUD_SAVE_FAILED = 'Nu am putut salva în cloud. Încearcă din nou.';
+
+const REAUTH_FOR_DELETE =
+  'Pentru siguranță, scrie parola contului și încearcă din nou. Dacă intri cu cod pe email, deconectează-te, conectează-te iar cu un cod nou și șterge contul în următoarele 5 minute.';
+
+/** The `error` field of a function's JSON answer, or null if there is none to read. */
+async function readErrorCode(response: Response): Promise<string | null> {
+  try {
+    const body: unknown = await response.json();
+    const code = typeof body === 'object' && body !== null ? Reflect.get(body, 'error') : null;
+    return typeof code === 'string' ? code : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Below the client's patience: a sync that hangs longer is reported as no connection. */
+const VERIFY_USER_TIMEOUT_MS = 8000;
+
+/** The app's reminder fields and the columns of user_reminders they live in. */
+const REMINDER_COLUMNS: Record<keyof ReminderSettings, string> = {
+  cookingEnabled: 'cooking_enabled',
+  cookingTime: 'cooking_time',
+  shoppingEnabled: 'shopping_enabled',
+  shoppingWeekday: 'shopping_weekday',
+  shoppingTime: 'shopping_time',
+  emailEnabled: 'email_enabled',
+  emailFrequencyDays: 'email_frequency_days',
+};
+
+export interface VerifiedUser {
+  user: User | null;
+  reason: 'ok' | 'offline' | 'signed_out';
+}
+
+export interface SavePlanRequest {
+  plan: MealPlan | null;
+  groceryItems: GroceryListItem[];
+  preferences?: UserPreferences;
+  /** The cloud's updated_at this device last saw; null if it never saw one. */
+  expectedUpdatedAt: string | null;
+}
+
+export interface SavePlanResult {
+  status: 'saved' | 'conflict' | 'error';
+  /** The cloud's version after the call: the new one when saved, the newer one on conflict. */
+  updatedAt: string | null;
+  error: string | null;
+}
+
+/** The RPC's answer comes over the network; only the two known shapes are believed. */
+function parseSaveRow(data: unknown): Pick<SavePlanResult, 'status' | 'updatedAt'> | null {
+  const row = Array.isArray(data) ? data[0] : data;
+  if (typeof row !== 'object' || row === null) return null;
+  const { status, updated_at: updatedAt } = row as { status?: unknown; updated_at?: unknown };
+  if ((status !== 'saved' && status !== 'conflict') || typeof updatedAt !== 'string') return null;
+  return { status, updatedAt };
+}
 import { isWellFormedPlan } from './storage';
 
 let supabaseClientInstance: SupabaseClient | null = null;
@@ -109,6 +166,7 @@ export const cloudSyncService = {
    * in for thirty days" is a project setting (Authentication → Sessions), not something the
    * client can decide. The simulation honours the same thirty days locally.
    */
+  /** From the session stored on the phone: works offline (F1). */
   async currentEmail(): Promise<string | null> {
     if (localAuthSimulation.isActive()) {
       return localAuthSimulation.currentEmail();
@@ -117,16 +175,45 @@ export const cloudSyncService = {
     return user?.email ?? null;
   },
 
+  /**
+   * The signed-in user as the stored session knows it, without asking the server. Starting
+   * offline used to look like being signed out, because this called getUser(). Requests
+   * still carry the token, and the server still checks it.
+   */
   async getCurrentUser(): Promise<User | null> {
     const client = getSupabaseClient();
     if (!client) return null;
     try {
       const {
-        data: { user },
-      } = await client.auth.getUser();
-      return user;
+        data: { session },
+      } = await client.auth.getSession();
+      return session?.user ?? null;
     } catch {
       return null;
+    }
+  },
+
+  /**
+   * Asks the server whether the session is still good, before a sync. Tells a phone with no
+   * connection ('offline') apart from a session the server refused ('signed_out').
+   */
+  async verifyUser(timeoutMs = VERIFY_USER_TIMEOUT_MS): Promise<VerifiedUser> {
+    const client = getSupabaseClient();
+    if (!client) return { user: null, reason: 'signed_out' };
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<'timeout'>((resolve) => {
+      timer = setTimeout(() => resolve('timeout'), timeoutMs);
+    });
+    try {
+      const answer = await Promise.race([client.auth.getUser(), timeout]);
+      if (answer === 'timeout') return { user: null, reason: 'offline' };
+      const { data, error } = answer;
+      if (data?.user) return { user: data.user, reason: 'ok' };
+      return { user: null, reason: isAuthRetryableFetchError(error) ? 'offline' : 'signed_out' };
+    } catch (e) {
+      return { user: null, reason: isAuthRetryableFetchError(e) ? 'offline' : 'signed_out' };
+    } finally {
+      clearTimeout(timer);
     }
   },
 
@@ -234,11 +321,15 @@ export const cloudSyncService = {
    * edge function because removing a user needs the service-role key, which must never
    * reach the client; the function identifies the caller from their own token.
    */
-  async deleteAccount(): Promise<{ success: boolean; error: string | null }> {
-    return signingOutOnPurpose(() => this.deleteAccountNow());
+  /**
+   * `password` re-confirms who is asking: the server deletes only after an authentication
+   * from the last few minutes (delete-account, reauth_required).
+   */
+  async deleteAccount(password?: string): Promise<{ success: boolean; error: string | null }> {
+    return signingOutOnPurpose(() => this.deleteAccountNow(password));
   },
 
-  async deleteAccountNow(): Promise<{ success: boolean; error: string | null }> {
+  async deleteAccountNow(password?: string): Promise<{ success: boolean; error: string | null }> {
     if (localAuthSimulation.isActive()) {
       const email = await localAuthSimulation.currentEmail();
       await localAuthSimulation.deleteAccount();
@@ -264,14 +355,31 @@ export const cloudSyncService = {
         return { success: false, error: 'Autentifică-te din nou pentru a șterge contul.' };
       }
 
+      let accessToken = session.access_token;
+      if (password && session.user?.email) {
+        // A fresh sign-in gives a token whose amr says "just now", which the server wants.
+        const { error: reauthError } = await client.auth.signInWithPassword({
+          email: session.user.email,
+          password,
+        });
+        if (reauthError) {
+          return { success: false, error: 'Parola nu este corectă. Contul nu a fost șters.' };
+        }
+        const { data: fresh } = await client.auth.getSession();
+        accessToken = fresh.session?.access_token ?? accessToken;
+      }
+
       const response = await fetch(`${env.supabaseUrl}/functions/v1/delete-account`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
       });
 
+      if (response.status === 403 && (await readErrorCode(response)) === 'reauth_required') {
+        return { success: false, error: REAUTH_FOR_DELETE };
+      }
       if (!response.ok) {
         return {
           success: false,
@@ -458,27 +566,27 @@ export const cloudSyncService = {
   },
 
   /** Writes them back, keyed on the user so a second device picks them up. */
+  /**
+   * Writes only the fields that changed. Sending the whole row re-subscribed somebody who
+   * had unsubscribed from the emails by link the next time they touched any reminder (F3).
+   */
   async saveReminders(
     userId: string,
-    reminders: ReminderSettings
+    patch: Partial<ReminderSettings>
   ): Promise<{ success: boolean; error: string | null }> {
     const client = getSupabaseClient();
     if (!client) return { success: false, error: 'Cloud neconfigurat.' };
 
+    const columns = Object.fromEntries(
+      (Object.keys(patch) as (keyof ReminderSettings)[])
+        .filter((key) => key in REMINDER_COLUMNS && patch[key] !== undefined)
+        .map((key) => [REMINDER_COLUMNS[key], patch[key]])
+    );
+
     try {
-      const { error } = await client.from('user_reminders').upsert(
-        {
-          user_id: userId,
-          cooking_enabled: reminders.cookingEnabled,
-          cooking_time: reminders.cookingTime,
-          shopping_enabled: reminders.shoppingEnabled,
-          shopping_weekday: reminders.shoppingWeekday,
-          shopping_time: reminders.shoppingTime,
-          email_enabled: reminders.emailEnabled,
-          email_frequency_days: reminders.emailFrequencyDays,
-        },
-        { onConflict: 'user_id' }
-      );
+      const { error } = await client
+        .from('user_reminders')
+        .upsert({ user_id: userId, ...columns }, { onConflict: 'user_id' });
 
       if (error) {
         console.warn('[Supabase] Could not save the reminder settings:', error.message);
@@ -521,38 +629,40 @@ export const cloudSyncService = {
     });
   },
 
-  async saveMealPlan(
-    userId: string,
-    plan: MealPlan | null,
-    groceryItems: GroceryListItem[],
-    preferences?: UserPreferences
-  ): Promise<{ success: boolean; error: string | null }> {
+  /**
+   * Saves the plan only if the cloud still holds the version this device last saw
+   * (migration 0009). Otherwise nothing is written and the cloud's version comes back as a
+   * conflict, so the app can ask before replacing a plan another device saved.
+   */
+  async saveMealPlan(request: SavePlanRequest): Promise<SavePlanResult> {
+    if (!request.plan) {
+      return { status: 'error', updatedAt: null, error: 'Nu ai niciun plan de urcat.' };
+    }
     const client = getSupabaseClient();
     if (!client) {
-      return { success: false, error: 'Cloud neconfigurat. Modul offline activ.' };
+      return { status: 'error', updatedAt: null, error: 'Cloud neconfigurat. Modul offline activ.' };
     }
     try {
-      const { error } = await client.from('user_meal_plans').upsert(
-        {
-          user_id: userId,
-          plan_data: plan,
-          grocery_items: groceryItems,
-          // Diet and allergies travel with the plan; an allergy that lives on one device
-          // only is exactly the gap this closes.
-          ...(preferences ? { preferences } : {}),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id' }
-      );
-
+      const { data, error } = await client.rpc('save_meal_plan_if_unchanged', {
+        p_plan_data: request.plan,
+        p_grocery_items: request.groceryItems,
+        // Diet and allergies travel with the plan; null keeps what the row already holds.
+        p_preferences: request.preferences ?? null,
+        p_expected_updated_at: request.expectedUpdatedAt,
+      });
       if (error) {
         console.warn('[Supabase] Could not save the plan:', error.message);
-        return { success: false, error: CLOUD_SAVE_FAILED };
+        return { status: 'error', updatedAt: null, error: CLOUD_SAVE_FAILED };
       }
-      return { success: true, error: null };
+      const row = parseSaveRow(data);
+      if (!row) {
+        console.warn('[Supabase] Unexpected answer from save_meal_plan_if_unchanged');
+        return { status: 'error', updatedAt: null, error: CLOUD_SAVE_FAILED };
+      }
+      return { ...row, error: null };
     } catch (e: unknown) {
       const message = describeFailure(e, 'Eroare la salvarea în cloud.');
-      return { success: false, error: message };
+      return { status: 'error', updatedAt: null, error: message };
     }
   },
 

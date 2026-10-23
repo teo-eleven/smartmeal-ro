@@ -18,28 +18,20 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
+import { corsHeaders as sharedCors, parseAllowedOrigins } from '../_shared/cors.ts';
+import { isRecentlyAuthenticated } from '../_shared/recentAuth.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
 /**
- * Origins allowed to call this from a browser. Set ALLOWED_ORIGINS as a comma-separated
- * list; leaving it unset falls back to no origin at all rather than to '*', because this
- * endpoint destroys data. Native builds send no Origin header and are unaffected.
+ * Origins allowed to call this from a browser (ALLOWED_ORIGINS, comma-separated). Unset means
+ * none at all, never '*', because this endpoint destroys data. Native builds send no Origin.
  */
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter((origin) => origin.length > 0);
+const ALLOWED_ORIGINS = parseAllowedOrigins(Deno.env.get('ALLOWED_ORIGINS'));
 
 function corsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get('origin') || '';
-  return {
-    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : '',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Content-Type': 'application/json',
-    Vary: 'Origin',
-  };
+  return { ...sharedCors(req, ALLOWED_ORIGINS), 'Content-Type': 'application/json' };
 }
 
 serve(async (req: Request) => {
@@ -72,6 +64,13 @@ serve(async (req: Request) => {
     const { data, error: lookupError } = await admin.auth.getUser(token);
     if (lookupError || !data?.user) {
       return new Response(JSON.stringify({ error: 'unauthenticated' }), { status: 401, headers });
+    }
+
+    // A valid token is not enough to destroy the account: whoever holds an unlocked phone has
+    // one. The person must have entered their password or an emailed code in the last few
+    // minutes (the token was verified just above, so its claims can be read).
+    if (!isRecentlyAuthenticated(token, Math.floor(Date.now() / 1000))) {
+      return new Response(JSON.stringify({ error: 'reauth_required' }), { status: 403, headers });
     }
 
     // The cascade on user_meal_plans.user_id removes the stored plan with the account. The

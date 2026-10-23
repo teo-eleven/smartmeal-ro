@@ -161,7 +161,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
               <View style={[styles.aiResultCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <View style={styles.aiResultHeader}>
                   <Text style={[styles.aiResultBadge, { color: theme.primary }]}>
-                    {aiResult.isAiGenerated ? '🤖 Sugestie Gemini AI' : '🎯 Sugestie Optimă'}
+                    {aiResult.isAiGenerated ? '🤖 Sugestie AI' : '🎯 Sugestie Optimă'}
                   </Text>
                   <Text style={[styles.aiResultReason, { color: theme.textMuted }]}>
                     {aiResult.reason}

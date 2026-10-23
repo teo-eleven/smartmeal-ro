@@ -3,6 +3,18 @@ import { cloudSyncService } from '../supabase';
 import { DEFAULT_REMINDERS, UserPreferences } from '../../types';
 import { PRIVACY_POLICY_VERSION } from '../../../config/legal';
 
+jest.mock('../profile', () => ({ getDisplayName: jest.fn(async () => 'Ana') }));
+jest.mock('../recipeNotesCloud', () => ({
+  recipeNotesCloud: {
+    load: jest.fn(async () => ({ notes: { sarmale: 'din cont' }, error: null })),
+  },
+}));
+jest.mock('../devices', () => ({
+  listDevices: jest.fn(async () => ({
+    devices: [{ id: 'd1', name: 'iPhone', platform: 'ios', lastSeenAt: '2026-09-27T10:00:00Z' }],
+    error: null,
+  })),
+}));
 jest.mock('../supabase', () => ({
   cloudSyncService: {
     getCurrentUser: jest.fn(),
@@ -23,6 +35,7 @@ const LOCAL: LocalData = {
   groceryItems: [],
   savedPlans: [],
   reminders: DEFAULT_REMINDERS,
+  recipeNotes: { ciorba: 'mai mult leuștean' },
 };
 
 const NOW = new Date('2026-09-28T12:00:00Z');
@@ -125,7 +138,7 @@ describe('exportul de date', () => {
 
     const data = await collectDataExport(LOCAL, NOW);
 
-    expect(data.inYourAccount?.error).toMatch(/nu am putut citi/i);
+    expect(data.inYourAccount?.errors.join(' ')).toMatch(/nu am putut citi planul/i);
     expect(data.onThisPhone.preferences.avoidedAllergens).toEqual(['arahide']);
   });
 
@@ -151,5 +164,49 @@ describe('exportul de date', () => {
 
     expect(text).not.toContain('secret-jwt');
     expect(text.toLowerCase()).not.toContain('password');
+  });
+
+  /** The 2026-10-21 audit (F10). */
+  test('include numele, dispozitivele contului și notițele de pe telefon', async () => {
+    mocked.getCurrentUser.mockResolvedValue({ id: 'u1', email: 'a@b.ro' } as never);
+    mocked.loadMealPlan.mockResolvedValue({
+      plan: null,
+      groceryItems: [],
+      preferences: null,
+      updatedAt: null,
+      error: null,
+    });
+    mocked.loadReminders.mockResolvedValue(null);
+
+    const data = await collectDataExport(LOCAL, NOW);
+
+    expect(data.inYourAccount?.displayName).toBe('Ana');
+    expect(data.inYourAccount?.recipeNotes).toEqual({ sarmale: 'din cont' });
+    expect(data.inYourAccount?.devices).toEqual([expect.objectContaining({ name: 'iPhone' })]);
+    expect(data.inYourAccount?.errors).toEqual([]);
+    expect(data.onThisPhone.recipeNotes).toEqual({ ciorba: 'mai mult leuștean' });
+  });
+
+  test('o secțiune care nu se poate citi e numită, iar restul se exportă', async () => {
+    mocked.getCurrentUser.mockResolvedValue({ id: 'u1', email: 'a@b.ro' } as never);
+    mocked.loadMealPlan.mockResolvedValue({
+      plan: null,
+      groceryItems: [],
+      preferences: { avoidedAllergens: ['lactate'] } as never,
+      updatedAt: null,
+      error: null,
+    });
+    mocked.loadReminders.mockRejectedValue(new Error('timeout'));
+    const { listDevices } = jest.requireMock('../devices');
+    listDevices.mockResolvedValueOnce({ devices: [], error: 'offline' });
+
+    const data = await collectDataExport(LOCAL, NOW);
+
+    expect(data.inYourAccount?.preferences).toEqual({ avoidedAllergens: ['lactate'] });
+    expect(data.inYourAccount?.errors).toEqual([
+      expect.stringMatching(/mementourile/i),
+      expect.stringMatching(/dispozitivele/i),
+    ]);
+    expect(data.inYourAccount?.devices).toBeNull();
   });
 });

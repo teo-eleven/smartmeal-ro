@@ -8,6 +8,8 @@ const STORAGE_KEYS = {
   SAVED_PLANS: '@smartmeal_saved_plans',
   REMINDERS: '@smartmeal_reminders',
   RECIPE_NOTES: '@smartmeal_recipe_notes',
+  DATA_OWNER: '@smartmeal_data_owner',
+  CLOUD_PLAN_VERSION: '@smartmeal_cloud_plan_version',
 };
 
 /** Shape check for a row read back from storage, before anything relies on it. */
@@ -181,6 +183,52 @@ export const storageService = {
     } catch (e) {
       console.warn('[StorageService] Failed to load the reminder settings', e);
       return null;
+    }
+  },
+
+  async saveDataOwner(email: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.DATA_OWNER, email);
+    } catch (e) {
+      console.warn('[StorageService] Failed to save the data owner', e);
+    }
+  },
+
+  async loadDataOwner(): Promise<string | null> {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.DATA_OWNER);
+      return raw && raw.includes('@') ? raw : null;
+    } catch (e) {
+      console.warn('[StorageService] Failed to load the data owner', e);
+      return null;
+    }
+  },
+
+  async saveCloudPlanVersion(version: string | null): Promise<void> {
+    try {
+      if (version) await AsyncStorage.setItem(STORAGE_KEYS.CLOUD_PLAN_VERSION, version);
+      else await AsyncStorage.removeItem(STORAGE_KEYS.CLOUD_PLAN_VERSION);
+    } catch (e) {
+      console.warn('[StorageService] Failed to save the cloud plan version', e);
+    }
+  },
+
+  async loadCloudPlanVersion(): Promise<string | null> {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.CLOUD_PLAN_VERSION);
+      return raw && !Number.isNaN(Date.parse(raw)) ? raw : null;
+    } catch (e) {
+      console.warn('[StorageService] Failed to load the cloud plan version', e);
+      return null;
+    }
+  },
+
+  /** Everything an account left on this phone, saved plans and notes included. */
+  async clearAccountData(): Promise<void> {
+    try {
+      await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
+    } catch (e) {
+      console.warn('[StorageService] Failed to clear the account data', e);
     }
   },
 

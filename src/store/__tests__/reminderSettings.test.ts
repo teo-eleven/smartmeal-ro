@@ -1,6 +1,7 @@
 import { useAppStore } from '../useAppStore';
 import { storageService } from '../../services/storage';
 import { reminderScheduler } from '../../services/reminderScheduler';
+import { RESCHEDULE_DEBOUNCE_MS, startReminderSync } from '../reminderSync';
 import { DEFAULT_REMINDERS, DayOfWeek, UserPreferences } from '../../types';
 
 jest.mock('../../services/reminderScheduler', () => ({
@@ -60,17 +61,18 @@ describe('setările de memento', () => {
     expect(useAppStore.getState().reminders).toEqual(DEFAULT_REMINDERS);
   });
 
-  test('o schimbare reprogramează imediat', () => {
+  // Rescheduling itself goes through reminderSync, debounced (F7); see reminderSync.test.ts.
+  test('o schimbare reprogramează, prin reminderSync, cu planul curent', async () => {
+    const stop = startReminderSync();
+    await new Promise((resolve) => setTimeout(resolve, RESCHEDULE_DEBOUNCE_MS + 50));
+    (reminderScheduler.reschedule as jest.Mock).mockClear();
+
     useAppStore.getState().updateReminders({ cookingEnabled: true });
+    await new Promise((resolve) => setTimeout(resolve, RESCHEDULE_DEBOUNCE_MS + 50));
+    stop();
 
-    expect(useAppStore.getState().reminders.cookingEnabled).toBe(true);
-    expect(reminderScheduler.reschedule).toHaveBeenCalledTimes(1);
-  });
-
-  test('reprogramarea primește planul curent, ca să poată numi felul', () => {
-    useAppStore.getState().updateReminders({ cookingEnabled: true });
-
-    const [, plan] = (reminderScheduler.reschedule as jest.Mock).mock.calls[0];
+    const [settings, plan] = (reminderScheduler.reschedule as jest.Mock).mock.calls[0];
+    expect(settings.cookingEnabled).toBe(true);
     expect(plan).toBe(useAppStore.getState().currentPlan);
   });
 
@@ -79,7 +81,6 @@ describe('setările de memento', () => {
 
     useAppStore.getState().updateReminders({ shoppingEnabled: true, shoppingWeekday: 2 });
 
-    expect(reminderScheduler.reschedule).toHaveBeenCalled();
     expect(useAppStore.getState().reminders.shoppingWeekday).toBe(2);
   });
 

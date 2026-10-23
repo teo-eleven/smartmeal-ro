@@ -29,6 +29,7 @@ import { injectEmeraldGlassStyles, getAppTheme } from './src/styles/theme';
 import { glass } from './src/styles/glass';
 import { UndoBanner } from './src/components/UndoBanner';
 import { undoBannerCopy } from './src/utils/undoBannerCopy';
+import { startReminderSync } from './src/store/reminderSync';
 import { PaywallScreen } from './src/screens/PaywallScreen';
 import { useSubscriptionStore } from './src/store/subscriptionStore';
 import { cloudSyncService } from './src/services/supabase';
@@ -54,6 +55,7 @@ function AppShell() {
     clearNotice,
     confirmRequest,
     pendingCloudPlan,
+    cloudConflictVersion,
     requestConfirm,
     cancelConfirm,
     confirmPending,
@@ -82,6 +84,7 @@ function AppShell() {
       clearNotice: state.clearNotice,
       confirmRequest: state.confirmRequest,
       pendingCloudPlan: state.pendingCloudPlan,
+      cloudConflictVersion: state.cloudConflictVersion,
       requestConfirm: state.requestConfirm,
       cancelConfirm: state.cancelConfirm,
       confirmPending: state.confirmPending,
@@ -130,6 +133,12 @@ function AppShell() {
   }, [isHydrated]);
 
   useAccountSession(isHydrated, userEmail);
+
+  // Reminders follow the plan and the settings from here on, starting with what was stored.
+  useEffect(() => {
+    if (!isHydrated) return undefined;
+    return startReminderSync();
+  }, [isHydrated]);
 
   // The subscription follows the account: on sign-in it is linked to the account's id, so a
   // second phone signed in to it is unlocked too; on sign-out it is unlinked.
@@ -550,6 +559,19 @@ function AppShell() {
         }
         confirmLabel="Adu planul din cloud"
         cancelLabel="Păstrează ce am aici"
+        onConfirm={confirmPending}
+        onCancel={cancelConfirm}
+        isDark={isDark}
+      />
+
+      {/* Saving found a newer plan in the cloud: nothing is replaced without asking. */}
+      <ConfirmDialog
+        visible={confirmRequest === 'overwrite_cloud_plan'}
+        title="În cloud e un plan mai nou"
+        message={`Pe ${cloudConflictVersion ? new Date(cloudConflictVersion).toLocaleString('ro-RO') : 'alt dispozitiv'} a fost salvat în cloud un plan pe care nu l-ai văzut aici. Dacă urci planul de pe acest telefon, îl înlocuiești. Ca să-l vezi întâi, apasă „⬇ Adu” la Sincronizare, în Cont.`}
+        confirmLabel="Înlocuiește-l cu planul de aici"
+        cancelLabel="Nu urca acum"
+        isDestructive
         onConfirm={confirmPending}
         onCancel={cancelConfirm}
         isDark={isDark}

@@ -75,3 +75,62 @@ describe('starea abonamentului în aplicație', () => {
     expect(useSubscriptionStore.getState().status.isActive).toBe(false);
   });
 });
+
+/**
+ * The 2026-10-21 audit (F6): one failed read from the payments SDK showed a paying person
+ * the paywall.
+ */
+describe('o citire eșuată nu ascunde un abonament plătit', () => {
+  test('un abonament activ rămâne activ dacă o citire pică', async () => {
+    useSubscriptionStore.setState({
+      status: { ...ACTIVE, expiresAt: '2099-01-01T00:00:00Z' },
+      isChecked: true,
+    });
+    service.status.mockResolvedValue(null);
+
+    await useSubscriptionStore.getState().refresh();
+
+    expect(useSubscriptionStore.getState().status.isActive).toBe(true);
+  });
+
+  test('dar nu dincolo de data la care expiră', async () => {
+    useSubscriptionStore.setState({
+      status: { ...ACTIVE, expiresAt: '2020-01-01T00:00:00Z' },
+      isChecked: true,
+    });
+    service.status.mockResolvedValue(null);
+
+    await useSubscriptionStore.getState().refresh();
+
+    expect(useSubscriptionStore.getState().status.isActive).toBe(false);
+  });
+
+  test('la pornire, o primă citire eșuată se reîncearcă înainte de paywall', async () => {
+    jest.useFakeTimers();
+    service.status.mockResolvedValueOnce(null).mockResolvedValueOnce(ACTIVE);
+
+    const done = useSubscriptionStore.getState().refresh();
+    await jest.advanceTimersByTimeAsync(2500);
+    await done;
+
+    expect(service.status).toHaveBeenCalledTimes(2);
+    expect(useSubscriptionStore.getState()).toEqual(
+      expect.objectContaining({ isChecked: true, status: ACTIVE })
+    );
+    jest.useRealTimers();
+  });
+
+  test('două eșecuri la pornire: fără abonament, dar aplicația nu rămâne blocată', async () => {
+    jest.useFakeTimers();
+    service.status.mockResolvedValue(null);
+
+    const done = useSubscriptionStore.getState().refresh();
+    await jest.advanceTimersByTimeAsync(2500);
+    await done;
+
+    expect(useSubscriptionStore.getState()).toEqual(
+      expect.objectContaining({ isChecked: true, status: NOT_SUBSCRIBED })
+    );
+    jest.useRealTimers();
+  });
+});

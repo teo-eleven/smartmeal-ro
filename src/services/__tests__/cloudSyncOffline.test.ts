@@ -67,14 +67,22 @@ describe('cloud sync without a configured backend', () => {
   });
 
   test('saving reports failure instead of pretending it worked', async () => {
-    const result = await cloudSyncService.saveMealPlan('a@b.ro', buildPlan(), []);
-    expect(result.success).toBe(false);
+    const result = await cloudSyncService.saveMealPlan({
+      plan: buildPlan(),
+      groceryItems: [],
+      expectedUpdatedAt: null,
+    });
+    expect(result.status).toBe('error');
     expect(result.error).toMatch(/neconfigurat/i);
   });
 
   test('saving a null plan is refused rather than wiping remote data', async () => {
-    const result = await cloudSyncService.saveMealPlan('a@b.ro', null, []);
-    expect(result.success).toBe(false);
+    const result = await cloudSyncService.saveMealPlan({
+      plan: null,
+      groceryItems: [],
+      expectedUpdatedAt: null,
+    });
+    expect(result.status).toBe('error');
   });
 
   test('loading returns empty data with an explanation', async () => {

@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { DEFAULT_REMINDERS } from '../types';
 import { storageService } from '../services/storage';
 import { withRecipeNote } from '../utils/recipeNotes';
+import { recipeNotesCloud } from '../services/recipeNotesCloud';
+import { mergeCloudNotes, queueNoteUpload } from './recipeNotesSync';
 import { nextNotice, withNoticeQueue } from './noticeQueue';
 
 import { AppState, ConfirmActionId } from './appState';
@@ -13,6 +15,7 @@ import { createMealsActions } from './storeMeals';
 import { createPlanActions } from './storePlan';
 import { createPreferencesActions } from './storePreferences';
 import { createSessionActions } from './storeSession';
+import { createAccountActions } from './storeAccount';
 
 export type {
   ActiveView,
@@ -101,13 +104,19 @@ export const useAppStore = create<AppState>((rawSet, get) => {
     confirmRequest: null,
     pendingCloudPlan: null,
     requestConfirm: (action: ConfirmActionId) => set({ confirmRequest: action }),
-    cancelConfirm: () => set({ confirmRequest: null, pendingCloudPlan: null }),
+    cancelConfirm: () =>
+      set({ confirmRequest: null, pendingCloudPlan: null, cloudConflictVersion: null }),
     confirmPending: () => {
       const pending = get().confirmRequest;
       if (!pending) return;
       set({ confirmRequest: null });
       if (pending === 'reset_onboarding') {
         get().resetOnboarding();
+        return;
+      }
+      if (pending === 'overwrite_cloud_plan') {
+        const version = get().cloudConflictVersion;
+        if (version) void get().syncWithCloud({ overwriteVersion: version });
         return;
       }
       if (pending === 'apply_cloud_plan') {
@@ -159,12 +168,27 @@ export const useAppStore = create<AppState>((rawSet, get) => {
     dismissUndo: () => set({ lastDiscardedPlan: null }),
 
     recipeNotes: {},
-    setRecipeNote: (recipeId, text) =>
+    setRecipeNote: (recipeId, text) => {
       set((state) => {
         const recipeNotes = withRecipeNote(state.recipeNotes, recipeId, text);
         void storageService.saveRecipeNotes(recipeNotes);
         return { recipeNotes };
-      }),
+      });
+      // To the account too, once typing pauses; the phone's copy is already saved.
+      if (get().userEmail) {
+        queueNoteUpload(recipeId, () =>
+          get().userEmail ? (get().recipeNotes[recipeId] ?? '') : null
+        );
+      }
+    },
+
+    pullRecipeNotes: async () => {
+      const { notes, error } = await recipeNotesCloud.load();
+      if (error || !get().userEmail) return;
+      const recipeNotes = mergeCloudNotes(get().recipeNotes, notes);
+      set({ recipeNotes });
+      void storageService.saveRecipeNotes(recipeNotes);
+    },
 
     openWindowCount: 0,
     windowOpened: () => set((state) => ({ openWindowCount: state.openWindowCount + 1 })),
@@ -173,6 +197,7 @@ export const useAppStore = create<AppState>((rawSet, get) => {
 
     setActiveView: (view) => set(() => ({ activeView: view })),
     ...createSessionActions(set, get),
+    ...createAccountActions(set, get),
     ...createPreferencesActions(set, get),
     ...createLeftoversActions(set, get),
     ...createMealsActions(set, get),

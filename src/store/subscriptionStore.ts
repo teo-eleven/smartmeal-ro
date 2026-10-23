@@ -22,13 +22,31 @@ interface SubscriptionState {
   switchAccount: (userId: string | null) => Promise<void>;
 }
 
+/** How long to wait before re-reading the store when the first read at start fails. */
+const FIRST_READ_RETRY_MS = 2000;
+
+/**
+ * What to show when the store cannot be read: a subscription already known to be active
+ * stays active until its own expiry date; anything else is "not subscribed".
+ */
+function keepIfStillValid(previous: SubscriptionStatus): SubscriptionStatus {
+  if (!previous.isActive) return NOT_SUBSCRIBED;
+  if (previous.expiresAt && Date.parse(previous.expiresAt) <= Date.now()) return NOT_SUBSCRIBED;
+  return previous;
+}
+
 export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   status: NOT_SUBSCRIBED,
   isChecked: false,
 
   refresh: async () => {
-    const status = await subscriptionService.status();
-    set({ status, isChecked: true });
+    let status = await subscriptionService.status();
+    if (status === null && !get().isChecked) {
+      // The first read decides between the plan and the paywall: one more try first.
+      await new Promise((resolve) => setTimeout(resolve, FIRST_READ_RETRY_MS));
+      status = await subscriptionService.status();
+    }
+    set({ status: status ?? keepIfStillValid(get().status), isChecked: true });
   },
 
   purchase: async (packageId) => {

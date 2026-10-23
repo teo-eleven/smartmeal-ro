@@ -118,15 +118,15 @@ Status: **propus, așteaptă confirmare**.
 
 **Agenți:** backend-developer, ai-engineer (skill `claude-api`), security-reviewer · **Mărime:** L
 
-- [ ] F1: identitatea vine din `getSession()` (offline-safe); `getUser()` cu timeout doar unde e nevoie de validare; mesajele disting „offline” de „deconectat”.
-- [ ] F2: guard pentru „nu ai plan”; compare-and-swap pe `updated_at` (RPC `save_meal_plan_if_unchanged`) + dialog „versiune mai nouă în cloud”.
-- [ ] F3: reminderele trimit doar câmpurile modificate (patch); se reîncarcă din cloud la hidratare și la revenirea în aplicație, deci dezabonarea e respectată.
-- [ ] F4/F11: deconectarea și ștergerea contului golesc datele locale (inclusiv notițele `@smartmeal_recipe_notes`, adăugate în 4b) (cu confirmare dacă planul nu e urcat); mesaj despre anularea abonamentului din magazin.
-- [ ] F6: simularea de abonament verifică și `NODE_ENV`; o eroare SDK tranzitorie nu mai arată paywall-ul.
-- [ ] F7: reschedule după plan nou și după hidratare, serializat, cu debounce de 500 ms.
-- [ ] F10: exportul raportează erorile pe secțiuni și include `display_name` și dispozitivele. F12: `secureSessionStore` raportează erorile de scriere.
-- [ ] Notițe în cloud: migrarea `0009_user_recipe_notes.sql` (tabel + RLS doar pentru proprietar + grant-uri minime), teste în `test:sql`, export și ștergere la ștergerea contului.
-- [ ] **Proxy AI → Claude Haiku:**
+- [x] F1: identitatea vine din `getSession()` (offline-safe); `getUser()` cu timeout doar unde e nevoie de validare; mesajele disting „offline” de „deconectat”.
+- [x] F2: guard pentru „nu ai plan”; compare-and-swap pe `updated_at` (RPC `save_meal_plan_if_unchanged`) + dialog „versiune mai nouă în cloud”.
+- [x] F3: reminderele trimit doar câmpurile modificate (patch); se reîncarcă din cloud la hidratare și la revenirea în aplicație, deci dezabonarea e respectată.
+- [x] F4/F11: deconectarea și ștergerea contului golesc datele locale (inclusiv notițele `@smartmeal_recipe_notes`, adăugate în 4b) (cu confirmare dacă planul nu e urcat); mesaj despre anularea abonamentului din magazin.
+- [x] F6: simularea de abonament verifică și `NODE_ENV`; o eroare SDK tranzitorie nu mai arată paywall-ul.
+- [x] F7: reschedule după plan nou și după hidratare, serializat, cu debounce de 500 ms.
+- [x] F10: exportul raportează erorile pe secțiuni și include `display_name` și dispozitivele. F12: `secureSessionStore` raportează erorile de scriere.
+- [x] Notițe în cloud: migrarea `0010_user_recipe_notes.sql` (0009 a devenit salvarea condiționată a planului) (tabel + RLS doar pentru proprietar + grant-uri minime), teste în `test:sql`, export și ștergere la ștergerea contului.
+- [x] **Proxy AI → Claude Haiku:**
   - funcție nouă `proxy-ai-swap`;
   - `ANTHROPIC_API_KEY` din secretele Supabase;
   - `AI_MODEL` cu default `claude-haiku-5-5`;
@@ -138,12 +138,20 @@ Status: **propus, așteaptă confirmare**.
   - 400 nu se mai contorizează în rate limit;
   - mesaj generic la 500;
   - evals înainte de schimbarea promptului (skill `eval-harness`).
-- [ ] Securitate:
+- [x] Securitate:
   - CORS închis implicit;
   - `delete-account` cere autentificare recentă (`iat` < 5 min sau reintroducerea parolei);
   - CSP pentru web (`public/index.html` + paginile statice, scripturile inline mutate în fișiere externe sau cu hash).
-- [ ] `supabase/README.md`: deploy pentru toate funcțiile și lista de secrete.
-- [ ] **Refactor în paralel:** `supabase.ts` spart pe domenii (`auth`, `plans`, `reminders`, `notes`).
+- [x] `supabase/README.md`: deploy pentru toate funcțiile și lista de secrete.
+- [x] Notițele au modul propriu (`recipeNotesCloud.ts`); logica pură a funcțiilor în `_shared/` (testată din Jest).
+- [ ] **Refactor:** restul `supabase.ts` spart pe domenii (`auth`, `plans`, `reminders`) — **amânat** (refactor fără efect vizibil, fișierul e sub 800 de linii), la fel ca în 4b.
+
+**Rămase din review-ul de securitate al etapei 5 (LOW, de decis/configurat):**
+- Header-e HTTP la hosting: `Content-Security-Policy` cu `frame-ancestors 'none'` și `X-Frame-Options: DENY` (un `<meta>` nu poate interzice încadrarea în iframe).
+- Pe proiectul Supabase: `supabase functions delete proxy-gemini-plan` și `supabase secrets unset GEMINI_API_KEY` (pasul 7 din `supabase/README.md`).
+- O sesiune revocată de pe alt dispozitiv prin „sign out everywhere” e tratată ca expirată și păstrează datele; de hotărât dacă le ascundem până la reconectarea aceluiași cont.
+- `clearAccountData` nu e așteptat: dacă aplicația e omorâtă exact la deconectare, datele pot reapărea; un flag „ștergere în curs” la pornire ar închide cazul.
+- `user_meal_plans` păstrează scrierea directă (RLS 0001), deci un client modificat poate ocoli compare-and-swap-ul pe propriile date; doar integritate, nu securitate.
 
 ## Etapa 6 · `chore/expo-sdk-upgrade`: dependențe și închidere
 

@@ -156,20 +156,6 @@
         }
       }
     </style>
-    <script>
-      (function() {
-        try {
-          var stored = localStorage.getItem('smartmeal_preferences');
-          if (stored) {
-            var prefs = JSON.parse(stored);
-            if (prefs && prefs.themeMode === 'light') {
-              document.documentElement.classList.add('light');
-              document.body.style.backgroundColor = '#ffffff';
-            }
-          }
-        } catch (e) {}
-      })();
-    </script>
   </head>
 
   <body>

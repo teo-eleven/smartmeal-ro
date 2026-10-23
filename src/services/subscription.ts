@@ -97,10 +97,14 @@ const UNAVAILABLE = 'Abonamentul se face din aplicația de pe telefon (iPhone sa
 export const subscriptionService = {
   mode(): SubscriptionMode {
     if (platformKey()) return 'store';
-    return env.appEnv !== 'production' ? 'simulation' : 'unavailable';
+    // NODE_ENV as well, like the account simulation: a release bundle is always built as
+    // 'production', so one that forgot EXPO_PUBLIC_APP_ENV still cannot simulate a payment.
+    const isDevBuild = env.appEnv !== 'production' && process.env.NODE_ENV !== 'production';
+    return isDevBuild ? 'simulation' : 'unavailable';
   },
 
-  async status(): Promise<SubscriptionStatus> {
+  /** Null when the store could not be read: unknown, which is not the same as unsubscribed. */
+  async status(): Promise<SubscriptionStatus | null> {
     const mode = this.mode();
     if (mode === 'simulation') return simulatedStatus();
     if (mode === 'unavailable') return NOT_SUBSCRIBED;
@@ -109,10 +113,10 @@ export const subscriptionService = {
       ensureConfigured();
       return parseStatus(await Purchases.getCustomerInfo());
     } catch (e) {
-      // Unknown reads as not subscribed. The SDK serves a cached answer offline, so this is
-      // a real failure, not a paying person on a train.
+      // The SDK serves a cached answer offline, so this is a real failure; but one failed read
+      // must not lock a paying person out. The store decides what to keep (F6).
       console.warn('[subscription] Could not read the subscription:', e);
-      return NOT_SUBSCRIBED;
+      return null;
     }
   },
 

@@ -5,6 +5,7 @@ import { DEFAULT_REMINDERS } from '../../types';
 import { Linking } from 'react-native';
 import { useSubscriptionStore } from '../../store/subscriptionStore';
 import { NOT_SUBSCRIBED } from '../../services/subscriptionParse';
+import { useAppStore } from '../../store/useAppStore';
 
 jest.mock('../../services/dataExport', () => ({ collectDataExport: jest.fn() }));
 // The two sections that fetch their own data are tested on their own.
@@ -91,6 +92,19 @@ describe('panoul de cont', () => {
     fireEvent.press(screen.getByLabelText('Confirmă ștergerea definitivă a contului'));
 
     await waitFor(() => expect(props.onDeleteAccount).toHaveBeenCalled());
+  });
+
+  test('parola scrisă la confirmare pleacă odată cu ștergerea', async () => {
+    const props = show();
+
+    fireEvent.press(screen.getByLabelText('Șterge contul'));
+    fireEvent.changeText(
+      screen.getByLabelText('Parola contului, pentru confirmarea ștergerii'),
+      'Muntele7Verde'
+    );
+    fireEvent.press(screen.getByLabelText('Confirmă ștergerea definitivă a contului'));
+
+    await waitFor(() => expect(props.onDeleteAccount).toHaveBeenCalledWith('Muntele7Verde'));
   });
 
   test('renunțarea la ștergere nu șterge nimic', () => {
@@ -190,5 +204,55 @@ describe('panoul de cont, abonamentul', () => {
     fireEvent.press(screen.getByLabelText('Șterge contul'));
 
     expect(screen.getByText(/nu anulează abonamentul/i)).toBeTruthy();
+  });
+});
+
+/**
+ * The 2026-10-21 audit (F4): signing out now wipes the phone, so a plan never sent to the
+ * cloud would be lost. The panel says so first and offers to upload it.
+ */
+describe('deconectarea cu un plan neurcat', () => {
+  const plan = { id: 'p1', days: [] } as never;
+
+  afterEach(() => useAppStore.setState({ currentPlan: null, lastSyncedPlan: null }));
+
+  test('cere confirmare și nu deconectează încă', () => {
+    useAppStore.setState({ currentPlan: plan, lastSyncedPlan: null });
+    const props = show();
+
+    fireEvent.press(screen.getByLabelText('Deconectare cont'));
+
+    expect(props.onSignOut).not.toHaveBeenCalled();
+    expect(screen.getByText(/nu e urcat în cloud/)).toBeTruthy();
+  });
+
+  test('„Deconectează oricum” deconectează', () => {
+    useAppStore.setState({ currentPlan: plan, lastSyncedPlan: null });
+    const props = show();
+
+    fireEvent.press(screen.getByLabelText('Deconectare cont'));
+    fireEvent.press(screen.getByLabelText('Deconectează oricum și șterge planul de pe telefon'));
+
+    expect(props.onSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  test('„Urcă planul” pornește sincronizarea în loc de deconectare', () => {
+    useAppStore.setState({ currentPlan: plan, lastSyncedPlan: null });
+    const props = show();
+
+    fireEvent.press(screen.getByLabelText('Deconectare cont'));
+    fireEvent.press(screen.getByLabelText('Urcă planul în cloud înainte de deconectare'));
+
+    expect(props.onSync).toHaveBeenCalledTimes(1);
+    expect(props.onSignOut).not.toHaveBeenCalled();
+  });
+
+  test('cu planul deja urcat, deconectează direct', () => {
+    useAppStore.setState({ currentPlan: plan, lastSyncedPlan: plan });
+    const props = show();
+
+    fireEvent.press(screen.getByLabelText('Deconectare cont'));
+
+    expect(props.onSignOut).toHaveBeenCalledTimes(1);
   });
 });

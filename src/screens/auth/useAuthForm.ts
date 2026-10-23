@@ -256,9 +256,9 @@ export function useAuthForm({ onUserChanged, onSignedIn }: AuthFormOptions) {
       setSuccessMessage(SIGNED_OUT_MESSAGE);
     });
 
-  const handleDeleteAccount = () =>
+  const handleDeleteAccount = (password?: string) =>
     run(async () => {
-      const { success, error } = await cloudSyncService.deleteAccount();
+      const { success, error } = await cloudSyncService.deleteAccount(password);
       if (!success) {
         setErrorMessage(error ?? 'Contul nu a putut fi șters.');
         return;

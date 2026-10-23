@@ -63,10 +63,10 @@ Date de plată. Aplicația cere o singură permisiune Android: accesul la intern
 | Cui | Ce | De ce |
 | --- | --- | --- |
 | **Supabase** (găzduire UE) | email, plan, preferințe | doar dacă ai cont; stocare și autentificare |
-| **Google Gemini** | id-uri de rețete și preferințele planului, **fără email și fără date de identificare** | doar când apeși explicit „Întreabă AI" pentru o sugestie de înlocuire |
+| **Anthropic** (Claude) | id-uri de rețete, preferințele planului și, dacă o scrii, dorința ta pentru înlocuire, **fără email și fără date de identificare** | doar când apeși explicit „Întreabă AI" pentru o sugestie de înlocuire |
 | **Resend** (livrare de email) | adresa de email și conținutul mementoului | doar dacă ai pornit mementourile pe email |
 
-Cererea către Gemini pleacă de pe serverul nostru, nu de pe telefonul tău, și nu conține
+Cererea către Anthropic pleacă de pe serverul nostru, nu de pe telefonul tău, și nu conține
 adresa ta de email sau vreun identificator al contului.
 
 Mementourile de pe telefon sunt programate **local**, pe dispozitiv: nu colectăm niciun token
