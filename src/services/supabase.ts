@@ -32,6 +32,17 @@ const CLOUD_SAVE_FAILED = 'Nu am putut salva în cloud. Încearcă din nou.';
 /** Below the client's patience: a sync that hangs longer is reported as no connection. */
 const VERIFY_USER_TIMEOUT_MS = 8000;
 
+/** The app's reminder fields and the columns of user_reminders they live in. */
+const REMINDER_COLUMNS: Record<keyof ReminderSettings, string> = {
+  cookingEnabled: 'cooking_enabled',
+  cookingTime: 'cooking_time',
+  shoppingEnabled: 'shopping_enabled',
+  shoppingWeekday: 'shopping_weekday',
+  shoppingTime: 'shopping_time',
+  emailEnabled: 'email_enabled',
+  emailFrequencyDays: 'email_frequency_days',
+};
+
 export interface VerifiedUser {
   user: User | null;
   reason: 'ok' | 'offline' | 'signed_out';
@@ -520,27 +531,27 @@ export const cloudSyncService = {
   },
 
   /** Writes them back, keyed on the user so a second device picks them up. */
+  /**
+   * Writes only the fields that changed. Sending the whole row re-subscribed somebody who
+   * had unsubscribed from the emails by link the next time they touched any reminder (F3).
+   */
   async saveReminders(
     userId: string,
-    reminders: ReminderSettings
+    patch: Partial<ReminderSettings>
   ): Promise<{ success: boolean; error: string | null }> {
     const client = getSupabaseClient();
     if (!client) return { success: false, error: 'Cloud neconfigurat.' };
 
+    const columns = Object.fromEntries(
+      (Object.keys(patch) as (keyof ReminderSettings)[])
+        .filter((key) => key in REMINDER_COLUMNS && patch[key] !== undefined)
+        .map((key) => [REMINDER_COLUMNS[key], patch[key]])
+    );
+
     try {
-      const { error } = await client.from('user_reminders').upsert(
-        {
-          user_id: userId,
-          cooking_enabled: reminders.cookingEnabled,
-          cooking_time: reminders.cookingTime,
-          shopping_enabled: reminders.shoppingEnabled,
-          shopping_weekday: reminders.shoppingWeekday,
-          shopping_time: reminders.shoppingTime,
-          email_enabled: reminders.emailEnabled,
-          email_frequency_days: reminders.emailFrequencyDays,
-        },
-        { onConflict: 'user_id' }
-      );
+      const { error } = await client
+        .from('user_reminders')
+        .upsert({ user_id: userId, ...columns }, { onConflict: 'user_id' });
 
       if (error) {
         console.warn('[Supabase] Could not save the reminder settings:', error.message);

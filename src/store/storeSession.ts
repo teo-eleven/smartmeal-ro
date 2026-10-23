@@ -299,6 +299,8 @@ export function createSessionActions(set: SetState, get: GetState) {
           dataOwnerEmail,
           cloudPlanVersion,
         }));
+        // The row may have changed elsewhere, e.g. emails turned off from the link in one.
+        if (signedInEmail && !isLocked) void get().loadRemindersFromCloud();
       } catch (e) {
         // Whatever went wrong, the user must not be told nothing: starting silently on the
         // defaults means an unrestricted omnivore with no allergies, which looks like a
@@ -339,7 +341,8 @@ export function createSessionActions(set: SetState, get: GetState) {
       if (email) {
         void (async () => {
           const user = await cloudSyncService.getCurrentUser();
-          if (user) void cloudSyncService.saveReminders(user.id, next);
+          // Only what changed: an unsubscribe done by email link stays done.
+          if (user) void cloudSyncService.saveReminders(user.id, patch);
         })();
       }
     },

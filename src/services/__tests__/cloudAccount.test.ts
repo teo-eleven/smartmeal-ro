@@ -497,6 +497,17 @@ describe('mementourile din cont', () => {
     );
   });
 
+  test('o schimbare parțială scrie doar coloanele schimbate', async () => {
+    upsert.mockResolvedValue({ error: null });
+
+    await cloudSyncService.saveReminders('u1', { cookingTime: '19:00' });
+
+    expect(upsert).toHaveBeenCalledWith(
+      { user_id: 'u1', cooking_time: '19:00' },
+      { onConflict: 'user_id' }
+    );
+  });
+
   test('refuzul la salvare se transmite, în română, fără detaliile serverului', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     upsert.mockResolvedValue({ error: { message: 'RLS' } });

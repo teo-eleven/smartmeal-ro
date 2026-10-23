@@ -27,6 +27,8 @@ export function useAccountSession(isHydrated: boolean, userEmail: string | null)
       // An app left open in the background past the month locks on its way back.
       void useAppStore.getState().recheckLock();
       void verifyDeviceSession();
+      // An unsubscribe from the email link is respected without a restart.
+      void useAppStore.getState().loadRemindersFromCloud();
     });
     return () => listener.remove();
   }, [isHydrated]);
