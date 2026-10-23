@@ -129,3 +129,26 @@ describe('știm dacă planul de pe telefon e urcat în cloud', () => {
     expect(store().hasUnsyncedPlan()).toBe(true);
   });
 });
+
+/** Security review of stage 5: data from before dataOwnerEmail existed had no owner. */
+describe('date fără proprietar înregistrat, după actualizarea aplicației', () => {
+  test('la pornire, contul conectat devine proprietarul datelor de pe telefon', async () => {
+    await AsyncStorage.clear();
+    (cloudSyncService.currentEmail as jest.Mock).mockResolvedValueOnce('ana@b.ro');
+    useAppStore.setState({ dataOwnerEmail: null, userEmail: null });
+
+    await store().hydrateStorage();
+
+    expect(store().dataOwnerEmail).toBe('ana@b.ro');
+  });
+
+  test('același cont scris cu altă literă nu e luat drept alt cont', async () => {
+    await signedInWithData('Ana@B.ro');
+    const plan = store().currentPlan;
+    store().setUserEmail(null, { keepLocalData: true });
+
+    store().setUserEmail('ana@b.ro');
+
+    expect(store().currentPlan).toBe(plan);
+  });
+});

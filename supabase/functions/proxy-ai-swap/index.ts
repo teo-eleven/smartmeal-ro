@@ -38,6 +38,8 @@ const SERVER_BUDGET_MS = 7000;
 const RESPONSE_MARGIN_MS = 300;
 const MIN_UPSTREAM_MS = 1000;
 const RATE_LIMIT_MAX_REQUESTS = 20;
+/** A real request is a few hundred bytes; anything far bigger is refused unread. */
+const MAX_BODY_BYTES = 16 * 1024;
 
 function json(body: unknown, status: number, cors: Record<string, string>, extra = {}) {
   return new Response(JSON.stringify(body), {
@@ -99,6 +101,34 @@ serve(async (req: Request) => {
   const userId = await authenticatedUserId(req);
   if (!userId) return json({ error: 'unauthenticated', fallbackToLocal: true }, 401, cors);
 
+  // Size first, before anything is parsed: a real request is a few hundred bytes.
+  const declared = Number(req.headers.get('content-length') ?? '0');
+  if (declared > MAX_BODY_BYTES) {
+    return json({ error: 'request_too_large', fallbackToLocal: true }, 413, cors);
+  }
+  const raw = await req.text().catch(() => '');
+  if (raw.length > MAX_BODY_BYTES) {
+    return json({ error: 'request_too_large', fallbackToLocal: true }, 413, cors);
+  }
+
+  // Validated before the rate limit: a malformed request costs nothing and is not counted.
+  let body: unknown = null;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    body = null;
+  }
+  const payload = parseSwapPayload(body);
+  if (!payload) return json({ error: 'invalid_request', fallbackToLocal: true }, 400, cors);
+
+  // The cheap Postgres counter before the RevenueCat call: otherwise a free account could loop
+  // requests through the entitlement check, spend its quota and lock real subscribers out.
+  if (await isRateLimited(userId)) {
+    return json({ error: 'too_many_requests', fallbackToLocal: true }, 429, cors, {
+      'Retry-After': '60',
+    });
+  }
+
   // Each call costs money and the app's paywall runs on a device its user controls, so the
   // subscription is checked here. Fails closed.
   const entitlement = await checkEntitlement(userId, REVENUECAT_SECRET_KEY);
@@ -114,17 +144,8 @@ serve(async (req: Request) => {
     );
   }
 
-  if (!ANTHROPIC_API_KEY)
+  if (!ANTHROPIC_API_KEY) {
     return json({ error: 'not_configured', fallbackToLocal: true }, 503, cors);
-
-  // Validated before the rate limit: a malformed request costs nothing and is not counted.
-  const payload = parseSwapPayload(await req.json().catch(() => null));
-  if (!payload) return json({ error: 'invalid_request', fallbackToLocal: true }, 400, cors);
-
-  if (await isRateLimited(userId)) {
-    return json({ error: 'too_many_requests', fallbackToLocal: true }, 429, cors, {
-      'Retry-After': '60',
-    });
   }
 
   const remaining = SERVER_BUDGET_MS - (Date.now() - startedAt) - RESPONSE_MARGIN_MS;

@@ -89,27 +89,30 @@ const SWAP_TOOL = {
   },
 };
 
-/** The person's text cannot close the data block early. */
+/**
+ * No field can open or close the data block: angle brackets are dropped from every string the
+ * person controls. Stripping the characters, not the tag, so pieces cannot reassemble one.
+ */
 function neutralise(text: string): string {
-  return text.replace(/<\/?\s*date_utilizator\s*>/gi, '');
+  return text.replace(/[<>]/g, '');
 }
 
 export function buildSwapRequest(payload: SwapPayload, model: string) {
   const data = {
     persoane: payload.peopleCount,
     buget_saptamanal_ron: payload.budgetRon,
-    magazin: payload.supermarketId,
-    dieta: payload.dietType,
-    aparate: payload.appliances,
-    stil: payload.moodTags,
-    reteta_de_inlocuit: payload.currentMealId ?? null,
+    magazin: neutralise(payload.supermarketId),
+    dieta: neutralise(payload.dietType),
+    aparate: payload.appliances.map(neutralise),
+    stil: payload.moodTags.map(neutralise),
+    reteta_de_inlocuit: payload.currentMealId ? neutralise(payload.currentMealId) : null,
     dorinta: payload.userPrompt ? neutralise(payload.userPrompt) : null,
   };
   const content = `<date_utilizator>
 ${JSON.stringify(data, null, 2)}
 </date_utilizator>
 
-Candidați (id-uri): ${JSON.stringify(payload.candidateRecipeIds)}`;
+Candidați (id-uri): ${JSON.stringify(payload.candidateRecipeIds.map(neutralise))}`;
 
   return {
     model,

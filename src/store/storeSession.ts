@@ -57,6 +57,15 @@ function sessionProblemNotice(reason: string, action: 'upload' | 'download'): Sy
       };
 }
 
+/** Addresses are compared without case: Ana@B.ro and ana@b.ro are one account. */
+function sameEmail(a: string | null, b: string | null): boolean {
+  return Boolean(a) && Boolean(b) && a!.trim().toLowerCase() === b!.trim().toLowerCase();
+}
+
+function signedInEmailForOwner(email: string | null): string | null {
+  return email && email.includes('@') ? email : null;
+}
+
 type SetState = StoreApi<AppState>['setState'];
 type GetState = () => AppState;
 
@@ -70,12 +79,16 @@ export function createSessionActions(set: SetState, get: GetState) {
         const savedPlans = await storageService.loadSavedPlans();
         const storedReminders = parseReminderSettings(await storageService.loadReminders());
         const recipeNotes = parseRecipeNotes(await storageService.loadRecipeNotes());
-        const dataOwnerEmail = await storageService.loadDataOwner();
+        const storedOwner = await storageService.loadDataOwner();
         const cloudPlanVersion = await storageService.loadCloudPlanVersion();
 
         // Read the session before anything renders, so the gate never flashes in front of
         // somebody who signed in three weeks ago and is still within their thirty days.
         const signedInEmail = await cloudSyncService.currentEmail();
+        // A phone upgraded from a build that did not record the owner: the account signed in
+        // now is the one whose data this is.
+        const dataOwnerEmail = storedOwner ?? signedInEmailForOwner(signedInEmail);
+        if (!storedOwner && dataOwnerEmail) void storageService.saveDataOwner(dataOwnerEmail);
         // checkReauth does not throw; if it ever did, the safe answer is the lock.
         const isLocked = signedInEmail
           ? await checkReauth(signedInEmail).then(
@@ -412,13 +425,14 @@ export function createSessionActions(set: SetState, get: GetState) {
 
     setUserEmail: (email: string | null, options: { keepLocalData?: boolean } = {}) => {
       const previous = get().userEmail ?? get().dataOwnerEmail;
+      const owner = get().dataOwnerEmail;
       if (email === null && previous && !options.keepLocalData) {
         get().clearLocalAccountData();
-      } else if (email && get().dataOwnerEmail && get().dataOwnerEmail !== email) {
+      } else if (email && owner && !sameEmail(owner, email)) {
         // A session expired with its data kept, and now somebody else signs in.
         get().clearLocalAccountData();
       }
-      if (email && get().dataOwnerEmail !== email) {
+      if (email && !sameEmail(get().dataOwnerEmail, email)) {
         set({ dataOwnerEmail: email });
         void storageService.saveDataOwner(email);
       }

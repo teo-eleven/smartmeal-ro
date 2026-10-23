@@ -21,14 +21,19 @@ function supabaseOrigin() {
     raw = line?.slice('EXPO_PUBLIC_SUPABASE_URL='.length).trim();
   }
   try {
-    return raw ? new URL(raw).origin : 'https://*.supabase.co';
+    return raw ? new URL(raw).origin : null;
   } catch {
-    return 'https://*.supabase.co';
+    return null;
   }
 }
 
+// Without a project the app runs locally and talks to no server. Never a wildcard such as
+// https://*.supabase.co: that would let an injected script post data to anyone's project.
 const supabase = supabaseOrigin();
-const realtime = supabase.replace(/^https:/, 'wss:');
+if (!supabase)
+  console.warn('WARN  EXPO_PUBLIC_SUPABASE_URL is not set: connect-src stays self only.');
+const realtime = supabase ? supabase.replace(/^https:/, 'wss:') : '';
+const servers = supabase ? ` ${supabase} ${realtime}` : '';
 
 const APP_POLICY = [
   "default-src 'self'",
@@ -38,7 +43,7 @@ const APP_POLICY = [
   // Recipe photos are hotlinked from Wikimedia Commons (ADR-20); a few archetypes from Unsplash.
   "img-src 'self' data: blob: https://upload.wikimedia.org https://images.unsplash.com",
   "font-src 'self' data:",
-  `connect-src 'self' ${supabase} ${realtime}`,
+  `connect-src 'self'${servers}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
@@ -50,7 +55,7 @@ const STATIC_POLICY = [
   "script-src 'self'",
   "style-src 'unsafe-inline'",
   "img-src 'self' data:",
-  `connect-src ${supabase}`,
+  supabase ? `connect-src ${supabase}` : "connect-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",
 ].join('; ');
@@ -78,9 +83,14 @@ for (const [page, policy] of Object.entries(PAGES)) {
   }
   html = html.replace(/\s*<meta http-equiv="Content-Security-Policy"[^>]*>/i, '');
   html = html.replace(
-    /<head>/i,
-    `<head>\n    <meta http-equiv="Content-Security-Policy" content="${policy}" />`
+    /<head(\s[^>]*)?>/i,
+    (head) => `${head}\n    <meta http-equiv="Content-Security-Policy" content="${policy}" />`
   );
+  if (!html.includes(`content="${policy}"`)) {
+    console.error(`FAIL  ${page}: no <head> to put the policy in`);
+    failed = true;
+    continue;
+  }
   writeFileSync(file, html);
   console.log(`OK    ${page}`);
 }
