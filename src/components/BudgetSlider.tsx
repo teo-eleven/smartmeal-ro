@@ -4,6 +4,12 @@ import { calculateMinimumViableBudget } from '../engine/budgetCalculator';
 import { FoodTier, SupermarketId } from '../types';
 import { getAppTheme } from '../styles/theme';
 
+/** Below this a typed value is treated as a slip and replaced by a sensible budget. */
+const MIN_TYPED_BUDGET_RON = 20;
+const FALLBACK_BUDGET_RON = 30;
+const MAX_BUDGET_RON = 2500;
+const BUDGET_STEP_RON = 10;
+
 interface BudgetSliderProps {
   budget: number;
   peopleCount: number;
@@ -32,35 +38,32 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
   const isBelowFloor = budget < minFloor;
 
   const [customText, setCustomText] = useState(String(budget));
+  const [isEditing, setIsEditing] = useState(false);
 
+  // While the user types, the field is the source of truth. Syncing from the store on every
+  // keystroke wrote the clamped "20" back mid-typing, so 150 came out as 2050.
   useEffect(() => {
-    setCustomText(String(budget));
-  }, [budget]);
+    if (!isEditing) setCustomText(String(budget));
+  }, [budget, isEditing]);
 
   const handleCustomChange = (text: string) => {
-    const cleaned = text.replace(/[^0-9]/g, '');
-    setCustomText(cleaned);
-    const num = parseInt(cleaned, 10);
-    if (!isNaN(num) && num > 0) {
-      onChangeBudget(num);
-    }
+    setCustomText(text.replace(/[^0-9]/g, ''));
   };
 
-  const handleBlur = () => {
+  /** Commits the typed amount once, on blur or "done", within the slider's limits. */
+  const commitTypedBudget = () => {
+    setIsEditing(false);
     const num = parseInt(customText, 10);
-    if (isNaN(num) || num < 20) {
-      const fallback = Math.max(30, minFloor);
-      setCustomText(String(fallback));
-      onChangeBudget(fallback);
-    } else {
-      const clamped = Math.min(2500, num);
-      setCustomText(String(clamped));
-      onChangeBudget(clamped);
-    }
+    const next =
+      isNaN(num) || num < MIN_TYPED_BUDGET_RON
+        ? Math.max(FALLBACK_BUDGET_RON, minFloor)
+        : Math.min(MAX_BUDGET_RON, num);
+    setCustomText(String(next));
+    onChangeBudget(next);
   };
 
   const adjustBudget = (delta: number) => {
-    const next = Math.max(30, Math.min(2500, budget + delta));
+    const next = Math.max(FALLBACK_BUDGET_RON, Math.min(MAX_BUDGET_RON, budget + delta));
     onChangeBudget(next);
   };
 
@@ -84,7 +87,8 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
       <View style={styles.tightStepperRow}>
         <TouchableOpacity
           accessibilityRole="button"
-          onPress={() => adjustBudget(-10)}
+          accessibilityLabel="Scade bugetul"
+          onPress={() => adjustBudget(-BUDGET_STEP_RON)}
           style={[styles.tightStepBtn, { backgroundColor: theme.cardBg, borderColor: theme.border }]}
           activeOpacity={0.7}
         >
@@ -95,7 +99,11 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
           <TextInput
             value={customText}
             onChangeText={handleCustomChange}
-            onBlur={handleBlur}
+            onFocus={() => setIsEditing(true)}
+            onBlur={commitTypedBudget}
+            onSubmitEditing={commitTypedBudget}
+            returnKeyType="done"
+            accessibilityLabel="Buget săptămânal în lei"
             keyboardType="numeric"
             style={[styles.tightInputField, { color: theme.text }]}
             selectTextOnFocus
@@ -106,7 +114,8 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
 
         <TouchableOpacity
           accessibilityRole="button"
-          onPress={() => adjustBudget(10)}
+          accessibilityLabel="Crește bugetul"
+          onPress={() => adjustBudget(BUDGET_STEP_RON)}
           style={[styles.tightStepBtn, { backgroundColor: theme.cardBg, borderColor: theme.border }]}
           activeOpacity={0.7}
         >

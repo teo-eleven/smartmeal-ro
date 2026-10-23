@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   SafeAreaView,
@@ -73,6 +73,20 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
   const [appliances, setAppliances] = useState<Appliance[]>(preferences.appliances || ['hob', 'oven']);
   const [healthGoalTags, setHealthGoalTags] = useState<HealthGoalTag[]>(preferences.healthGoalTags || []);
   const [budgetInputText, setBudgetInputText] = useState<string>(String(preferences.budgetRon));
+
+  // The modal stays mounted while hidden, so every opening starts from the preferences in
+  // force now. It copied them once, and "Aplică" then wrote stale values over newer ones.
+  useEffect(() => {
+    if (!visible) return;
+    setCookingDays(preferences.cookingDays);
+    setPeopleCount(preferences.peopleCount);
+    setBudgetRon(preferences.budgetRon);
+    setMoodTags(preferences.moodTags);
+    setAppliances(preferences.appliances || ['hob', 'oven']);
+    setHealthGoalTags(preferences.healthGoalTags || []);
+    setBudgetInputText(String(preferences.budgetRon));
+    // Only on opening: syncing while open would erase what the user is editing.
+  }, [visible]);
 
   if (!visible) return null;
 
