@@ -125,6 +125,9 @@ export const useAppStore = create<AppState>((rawSet, get) => {
       type: 'info' | 'warning' | 'error' | 'success' = 'info'
     ) => set({ activeNotice: { id: Date.now().toString(), title, message, type } }),
     noticeQueue: [],
+    budgetOverrunPromptedCost: null,
+    markBudgetOverrunPrompted: (cartCostRon: number) =>
+      set({ budgetOverrunPromptedCost: cartCostRon }),
     // Raw set on purpose: showing the next queued notice must not queue it behind itself.
     clearNotice: () => rawSet((state) => nextNotice(state)),
 

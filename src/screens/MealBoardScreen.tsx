@@ -149,15 +149,18 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
   const [mealsModalVisible, setMealsModalVisible] = useState(false);
   const [mealsModalInitialCount, setMealsModalInitialCount] = useState<1 | 2 | 3>(1);
   const [budgetOverrunModalVisible, setBudgetOverrunModalVisible] = useState(false);
-  const lastOverrunPromptCostRef = useRef<number | null>(null);
+  const budgetOverrunPromptedCost = useAppStore((s) => s.budgetOverrunPromptedCost);
+  const markBudgetOverrunPrompted = useAppStore((s) => s.markBudgetOverrunPrompted);
 
+  // Prompt once per cart total, remembered in the store: the board unmounts on every tab
+  // switch, and a per-mount ref brought the prompt back each time the user returned.
   useEffect(() => {
     if (!currentPlan) return;
     if (
       currentPlan.totalCartCostRon > currentPlan.totalBudgetRon &&
-      lastOverrunPromptCostRef.current !== currentPlan.totalCartCostRon
+      budgetOverrunPromptedCost !== currentPlan.totalCartCostRon
     ) {
-      lastOverrunPromptCostRef.current = currentPlan.totalCartCostRon;
+      markBudgetOverrunPrompted(currentPlan.totalCartCostRon);
       setBudgetOverrunModalVisible(true);
     }
   }, [currentPlan?.totalCartCostRon, currentPlan?.totalBudgetRon]);

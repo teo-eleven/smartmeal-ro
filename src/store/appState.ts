@@ -94,6 +94,12 @@ export interface AppState {
 
   // System Informative Notice
   activeNotice: SystemNotice | null;
+  /**
+   * Cart total the budget-overrun prompt was last shown for. Kept here, not in the board,
+   * because the board unmounts on every tab switch and the prompt came back each time.
+   */
+  budgetOverrunPromptedCost: number | null;
+  markBudgetOverrunPrompted: (cartCostRon: number) => void;
   /** Notices raised while another was on screen, shown in order as each is dismissed. */
   noticeQueue: SystemNotice[];
   showNotice: (
