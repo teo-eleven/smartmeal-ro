@@ -8,12 +8,14 @@ export interface SmartSwapResult {
   isAiGenerated: boolean;
 }
 
-const PROXY_FUNCTION_PATH = '/functions/v1/proxy-gemini-plan';
+const PROXY_FUNCTION_PATH = '/functions/v1/proxy-ai-swap';
 const PROXY_TIMEOUT_MS = 8000;
 
 interface ProxyResponse {
   selectedRecipeId?: unknown;
   reasonRo?: unknown;
+  /** Only an explicit false means Claude chose; anything else is not called AI. */
+  isFallback?: unknown;
 }
 
 /**
@@ -127,13 +129,13 @@ export const aiProxyService = {
         return pickDeterministicFallback(validCandidates, preferences);
       }
 
-      const { selectedRecipeId, reasonRo } = data as ProxyResponse;
+      const { selectedRecipeId, reasonRo, isFallback } = data as ProxyResponse;
       const matched =
         typeof selectedRecipeId === 'string'
           ? validCandidates.find((r) => r.id === selectedRecipeId)
           : undefined;
 
-      if (!matched) {
+      if (!matched || isFallback !== false) {
         return pickDeterministicFallback(validCandidates, preferences);
       }
 

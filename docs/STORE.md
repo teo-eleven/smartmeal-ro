@@ -49,9 +49,10 @@ nu sunt protejate.
 - [ ] **trimite-ți singur o resetare** și parcurge-o cap-coadă în aplicație înainte de lansare
 - [ ] Authentication → Policies: ridică lungimea minimă a parolei la **10** (aplicația o
       verifică deja pe telefon, dar serverul trebuie să fie de acord)
-- [ ] `supabase secrets set GEMINI_API_KEY=<cheia>`
+- [ ] `supabase secrets set ANTHROPIC_API_KEY=<cheia>` (și restul din `supabase/README.md` → Secretele funcțiilor)
 - [ ] `supabase secrets set ALLOWED_ORIGINS=https://domeniul-tau.ro`
-- [ ] `supabase functions deploy proxy-gemini-plan`
+- [ ] `supabase db push` (migrațiile 0009 și 0010 înainte de noua versiune a aplicației)
+- [ ] `supabase functions deploy proxy-ai-swap`
 - [ ] `supabase functions deploy delete-account` — **obligatorie**, altfel butonul de ștergere
       a contului din aplicație nu are ce apela, iar submisia e respinsă
 - [ ] Authentication → Sessions: pune durata sesiunii pe **30 de zile**. Aplicația nu poate
@@ -59,7 +60,7 @@ nu sunt protejate.
       devreme, utilizatorul e scos afară oricât de mult ar spune aplicația altceva
 - [ ] în `.env`: `EXPO_PUBLIC_SUPABASE_URL` (obligatoriu `https://`) și
       `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- [ ] pune o **alertă de buget** pe proiectul Google Cloud pentru cheia Gemini
+- [ ] pune o **limită de cheltuieli** în consola Anthropic pentru cheia folosită de `proxy-ai-swap`
 
 Cheia `service_role` nu se pune niciodată în `.env` și nu ajunge niciodată în client.
 Supabase o injectează singur în funcțiile edge.
@@ -181,7 +182,7 @@ Răspunde exact așa — corespunde cu ce face codul:
 | Legate de identitate?        | Da, dacă utilizatorul își face cont                                                                                                                                |
 | Folosite pentru urmărire?    | **Nu**                                                                                                                                                             |
 | Folosite pentru publicitate? | **Nu**                                                                                                                                                             |
-| Partajate cu terți?          | Doar procesatori: Supabase (găzduire), Google Gemini (sugestii AI, fără date de identificare) și Resend (livrarea mementourilor pe email, numai dacă sunt pornite) |
+| Partajate cu terți?          | Doar procesatori: Supabase (găzduire), Anthropic (sugestii AI, fără date de identificare) și Resend (livrarea mementourilor pe email, numai dacă sunt pornite) |
 | Ștergerea contului           | Da, din aplicație: ecranul de cont → „Șterge contul și datele mele"                                                                                                |
 | Notificări                   | Locale, programate pe telefon. Nu există push de pe server, deci nu se colectează token-uri de notificare                                                          |
 

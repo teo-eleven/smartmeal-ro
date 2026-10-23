@@ -65,6 +65,7 @@ describe('the request the client actually sends', () => {
       json: async () => ({
         selectedRecipeId: candidates[2].id,
         reasonRo: 'Rapidă și echilibrată.',
+        isFallback: false,
       }),
     });
     global.fetch = fetchSpy as unknown as typeof fetch;
@@ -80,9 +81,9 @@ describe('the request the client actually sends', () => {
     await aiProxyService.suggestSmartSwap(current, candidates, buildPreferences());
 
     const [url, init] = fetchSpy.mock.calls[0];
-    expect(url).toBe(`${PROXY_URL}/functions/v1/proxy-gemini-plan`);
+    expect(url).toBe(`${PROXY_URL}/functions/v1/proxy-ai-swap`);
     expect(init.method).toBe('POST');
-    expect(String(url)).not.toContain('googleapis');
+    expect(String(url)).not.toContain('anthropic.com');
   });
 
   test('sends only the candidate ids, not the whole catalog', async () => {
@@ -109,6 +110,18 @@ describe('the request the client actually sends', () => {
     expect(body.userPrompt).toBe('ceva mai ușor');
   });
 
+  /** The 2026-10-21 audit: the server's own fallback pick was shown as an AI suggestion. */
+  test('an answer that does not say isFallback: false is not presented as AI', async () => {
+    fetchSpy.mockResolvedValue({
+      ok: true,
+      json: async () => ({ selectedRecipeId: candidates[1].id, reasonRo: 'Prima din listă.' }),
+    });
+
+    const result = await aiProxyService.suggestSmartSwap(current, candidates, buildPreferences());
+
+    expect(result.isAiGenerated).toBe(false);
+  });
+
   test('falls back deterministically when the proxy answers with an error status', async () => {
     fetchSpy.mockResolvedValue({ ok: false, status: 503, json: async () => ({}) });
 
@@ -121,7 +134,11 @@ describe('the request the client actually sends', () => {
   test('keeps an overlong model explanation from taking over the UI', async () => {
     fetchSpy.mockResolvedValue({
       ok: true,
-      json: async () => ({ selectedRecipeId: candidates[0].id, reasonRo: 'x'.repeat(500) }),
+      json: async () => ({
+        selectedRecipeId: candidates[0].id,
+        reasonRo: 'x'.repeat(500),
+        isFallback: false,
+      }),
     });
 
     const result = await aiProxyService.suggestSmartSwap(current, candidates, buildPreferences());

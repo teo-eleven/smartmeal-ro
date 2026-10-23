@@ -24,7 +24,7 @@
 3. **Planificator Săptămânal & Schimb Inteligent (Meal Board & Swap)**:
    - Sumar financiar: Buget țintă vs. Cost rețete vs. Cost total la casă (ambalaje întregi).
    - Detaliu complet rețetă: Valori nutriționale (kcal, proteine, carbohidrați, grăsimi), ingrediente scalate, instrucțiuni pas cu pas și notițe personale.
-   - Schimb inteligent de mese (**AI Smart Swap**): Posibilitate de schimbare instantanee manuală sau asistată de **Google Gemini Flash** cu justificare culinară în limba română.
+   - Schimb inteligent de mese (**AI Smart Swap**): Posibilitate de schimbare instantanee manuală sau asistată de **Claude Haiku** cu justificare culinară în limba română.
 
 4. **Listă de Cumpărături Agregată pe Raioane Reale (Grocery Checklist)**:
    - Calculează cantitatea exactă necesară vs. pachete întregi de cumpărat din magazin (ex: Ai nevoie de 100g mazăre $\rightarrow$ Cumperi 1 pachet de 500g).
@@ -41,7 +41,7 @@
 - **State Management**: Zustand v5 cu persistență offline hibridă
 - **Storage**: `@react-native-async-storage/async-storage`
 - **Backend & Cloud Sync**: Supabase (PostgreSQL, Auth, Edge Functions)
-- **AI Engine**: Google Gemini Flash (Structured JSON via Supabase Edge Function sau API Proxy)
+- **AI Engine**: Claude Haiku (răspuns structurat prin tool use, prin funcția Supabase `proxy-ai-swap`)
 - **Testare**: Jest, cu babel în două proiecte (logica în Node, componentele cu preset-ul
   React Native). Pragurile de acoperire sunt în `jest.config.js`.
 - **Linting & Stil**: ESLint + Prettier + TypeScript strict mode
@@ -66,7 +66,7 @@ cp .env.example .env
 
 Configurația de bază funcționează complet offline chiar și fără chei externe. Opțional, poți adăuga:
 
-- `EXPO_PUBLIC_GEMINI_API_KEY`: Cheia Google Gemini pentru sugestii AI.
+- Sugestiile AI (Claude Haiku) trec prin funcția Supabase `proxy-ai-swap`; cheia stă în secretele Supabase, niciodată în `.env` (vezi `supabase/README.md`).
 - `EXPO_PUBLIC_SUPABASE_URL` și `EXPO_PUBLIC_SUPABASE_ANON_KEY`: Pentru sincronizare cloud.
 
 ### 3. Pornire aplicație Web (Port 8081)
@@ -145,7 +145,7 @@ smartmeal-ro/
 │   ├── styles/                  # Sistemul vizual (Luxury Warm Forest, teme, glass)
 │   └── types/                   # Definiții de tipuri TypeScript
 ├── supabase/
-│   ├── functions/               # Supabase Edge Functions (Gemini Flash proxy, email reminders)
+│   ├── functions/               # Supabase Edge Functions (proxy AI Claude, mementouri pe email)
 │   └── migrations/              # Migrații SQL (tabele utilizator, rate limit, securitate)
 └── assets/                      # Iconițe, imagini adaptive și fundaluri rețete
 ```

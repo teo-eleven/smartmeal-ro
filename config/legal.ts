@@ -5,4 +5,4 @@
  * without "agreed to what". Change this together with the date at the top of docs/PRIVACY.md
  * whenever the policy changes in substance.
  */
-export const PRIVACY_POLICY_VERSION = '2026-09-28';
+export const PRIVACY_POLICY_VERSION = '2026-10-23';
