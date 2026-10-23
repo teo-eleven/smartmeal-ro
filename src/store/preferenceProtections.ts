@@ -71,6 +71,9 @@ export function stricterDiet(
 /**
  * Allergies and rejected dishes from both sides, and "Fără porc" if either side had it.
  *
+ * Both sides must already have been through `parseUserPreferences`, which resolves renamed
+ * recipe ids; unioning raw ids from storage would keep an old and a new id for one dish.
+ *
  * The other health goals are left to `base`: they shape the menu rather than forbid
  * anything, and a user who switched one off did so on purpose.
  */

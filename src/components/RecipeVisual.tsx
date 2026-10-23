@@ -1,5 +1,6 @@
-import React from 'react';
-import { ImageBackground, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Recipe } from '../types';
 import { ARCHETYPE_BACKDROPS } from '../../assets/recipes/backdrops';
@@ -9,7 +10,7 @@ import {
   getRecipeHighlights,
   getTotalMinutes,
 } from '../utils/recipeVisual';
-import { getRecipePhotographyUri } from '../utils/recipePhotography';
+import { getRecipePhoto } from '../utils/recipePhotography';
 
 interface RecipeVisualProps {
   recipe: Recipe;
@@ -19,10 +20,29 @@ interface RecipeVisualProps {
   style?: object;
 }
 
+/** Fade-in for a photo arriving from the network, so it does not pop over the card. */
+const PHOTO_FADE_MS = 200;
+
+const PHOTO_SCRIM_DARK = [
+  'rgba(0,0,0,0.03)',
+  'rgba(0,0,0,0.22)',
+  'rgba(19, 25, 20, 0.58)',
+] as const;
+const PHOTO_SCRIM_LIGHT = [
+  'rgba(0,0,0,0.02)',
+  'rgba(0,0,0,0.15)',
+  'rgba(30, 38, 32, 0.48)',
+] as const;
+const CARD_SCRIM_DARK = ['rgba(0,0,0,0.10)', 'rgba(19, 25, 20, 0.75)'] as const;
+const CARD_SCRIM_LIGHT = ['rgba(0,0,0,0.05)', 'rgba(30, 38, 32, 0.65)'] as const;
+
 /**
- * The visual presentation of a recipe card.
- * Displays high-definition, appetizing food photography with a clear, subtle scrim
- * and crisp typography so dishes are vibrant, mouth-watering, and easy to read.
+ * The picture at the top of a recipe card.
+ *
+ * A verified photograph of this dish when the manifest has one (ADR-20). Otherwise, or when
+ * that photo fails to load (offline, removed upstream), the card generated from the recipe:
+ * its name over its archetype's blurred backdrop, or over the archetype gradient (ADR-07).
+ * The container always has a background, so a slow or failed photo never leaves a blank box.
  */
 export const RecipeVisual: React.FC<RecipeVisualProps> = ({
   recipe,
@@ -35,66 +55,78 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
   const highlights = getRecipeHighlights(recipe, 3);
   const minutes = getTotalMinutes(recipe);
   const backdrop = ARCHETYPE_BACKDROPS[archetype];
-  const photoUri = recipe.imageUrl || getRecipePhotographyUri(recipe, archetype);
+  const photo = getRecipePhoto(recipe);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const showPhoto = photo !== null && photo.url !== failedUrl;
 
   const accessibilityLabel = `${recipe.title}. ${palette.labelRo}. Ingrediente principale: ${highlights.join(', ')}. ${minutes} minute.`;
+  const colors = isDark ? palette.darkColors : palette.lightColors;
 
-  const content = (
-    <View style={styles.content} pointerEvents="none">
-      <View style={styles.titleContainer}>
-        <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={2}>
-          {recipe.title}
-        </Text>
-      </View>
-
-      {!compact && (
-        <>
-          <View style={styles.rule} />
-          <Text style={styles.highlights} numberOfLines={1}>
-            {highlights.join(' · ').toUpperCase()}
-          </Text>
-        </>
-      )}
-    </View>
-  );
-
-  const imageSource = photoUri ? { uri: photoUri } : backdrop;
-
-  if (!imageSource) {
-    return (
-      <View style={[styles.fill, style]} accessibilityLabel={accessibilityLabel}>
+  return (
+    <View
+      style={[styles.fill, { backgroundColor: colors[1] }, style]}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={accessibilityLabel}
+    >
+      {showPhoto ? (
+        <Image
+          testID="recipe-photo"
+          source={{ uri: photo.url }}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          transition={PHOTO_FADE_MS}
+          onError={() => setFailedUrl(photo.url)}
+          style={StyleSheet.absoluteFill}
+          accessible={false}
+          accessibilityIgnoresInvertColors
+        />
+      ) : backdrop ? (
+        <Image
+          source={backdrop}
+          contentFit="cover"
+          style={StyleSheet.absoluteFill}
+          accessible={false}
+          accessibilityIgnoresInvertColors
+        />
+      ) : (
         <LinearGradient
-          colors={isDark ? palette.darkColors : palette.lightColors}
+          colors={colors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        {content}
-      </View>
-    );
-  }
+      )}
 
-  return (
-    <ImageBackground
-      source={imageSource}
-      resizeMode="cover"
-      style={[styles.fill, style]}
-      accessibilityLabel={accessibilityLabel}
-    >
-      {/* Subtle appetizing scrim: keeps food visible, vibrant and mouthwatering */}
       <LinearGradient
         colors={
-          isDark
-            ? ['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.22)', 'rgba(19, 25, 20, 0.58)']
-            : ['rgba(0,0,0,0.02)', 'rgba(0,0,0,0.15)', 'rgba(30, 38, 32, 0.48)']
+          showPhoto
+            ? [...(isDark ? PHOTO_SCRIM_DARK : PHOTO_SCRIM_LIGHT)]
+            : [...(isDark ? CARD_SCRIM_DARK : CARD_SCRIM_LIGHT)]
         }
-        locations={[0, 0.55, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      {content}
-    </ImageBackground>
+
+      {/* No corner badges here: every screen that shows this picture lays its own over it. */}
+      <View style={styles.content} pointerEvents="none">
+        <View style={styles.titleContainer}>
+          <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={2}>
+            {recipe.title}
+          </Text>
+        </View>
+
+        {!compact && (
+          <>
+            <View style={styles.rule} />
+            <Text style={styles.highlights} numberOfLines={1}>
+              {highlights.join(' · ').toUpperCase()}
+            </Text>
+          </>
+        )}
+      </View>
+    </View>
   );
 };
 

@@ -89,7 +89,7 @@ describe('dish archetypes', () => {
       ['salata_greceasca_telemea', 'salad'],
       ['mousse_ciocolata_cocos', 'dessert'],
       ['terci_ovaz_vegan_banane', 'breakfast'],
-      ['fasole_scazuta_afumatura', 'stew'],
+      ['fasole_scazuta_ceapa_marar', 'stew'],
     ];
 
     expectations.forEach(([id, expected]) => {

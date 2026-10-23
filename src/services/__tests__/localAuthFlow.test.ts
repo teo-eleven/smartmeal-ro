@@ -28,12 +28,14 @@ describe('parcursul de cont, prin serviciul real', () => {
 
   /** A release bundle is built with NODE_ENV=production, whatever else the env forgot. */
   test('într-un bundle de producție simularea nu pornește', () => {
-    const before = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+    // Expo's global types declare NODE_ENV read-only; the test needs to flip it at run time.
+    const env = process.env as Record<string, string | undefined>;
+    const before = env.NODE_ENV;
+    env.NODE_ENV = 'production';
     try {
       expect(localAuthSimulation.isActive()).toBe(false);
     } finally {
-      process.env.NODE_ENV = before;
+      env.NODE_ENV = before;
     }
   });
 
