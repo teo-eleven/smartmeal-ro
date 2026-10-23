@@ -1,3 +1,4 @@
+import { DAY_LABELS_RO } from '../constants/days';
 import { resolveRecipeId } from '../data/recipeIdAliases';
 import { RECIPES_MAP } from '../data/recipes';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
@@ -111,20 +112,7 @@ export function createMealsActions(set: SetState, get: GetState) {
 
         void storageService.savePlanAndGrocery(updatedPlan, cartItems);
 
-        const dayNameRo =
-          dayOfWeek === 'monday'
-            ? 'luni'
-            : dayOfWeek === 'tuesday'
-              ? 'marți'
-              : dayOfWeek === 'wednesday'
-                ? 'miercuri'
-                : dayOfWeek === 'thursday'
-                  ? 'joi'
-                  : dayOfWeek === 'friday'
-                    ? 'vineri'
-                    : dayOfWeek === 'saturday'
-                      ? 'sâmbătă'
-                      : 'duminică';
+        const dayNameRo = DAY_LABELS_RO[dayOfWeek].toLowerCase();
 
         return {
           currentPlan: updatedPlan,

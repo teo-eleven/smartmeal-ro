@@ -25,6 +25,28 @@ export { pickStoreCompatibleReplacement, sanitizeAllergens } from './planSafety'
 export const useAppStore = create<AppState>((rawSet, get) => {
   // Every notice an action raises waits its turn instead of replacing the one on screen.
   const set = withNoticeQueue<AppState>(rawSet, get);
+
+  /**
+   * Runs a reload task and turns a failure into a notice. Every caller fires and forgets, so a
+   * throw here was an unhandled rejection and the overlay vanished with no explanation.
+   */
+  const runReloadTask = async (task?: () => void | Promise<void>) => {
+    if (!task) return;
+    try {
+      await task();
+    } catch (error) {
+      console.warn('[useAppStore] Reload task failed:', error);
+      set({
+        activeNotice: {
+          id: Date.now().toString(),
+          title: 'Nu am putut actualiza meniul',
+          message:
+            'Ceva n-a mers la reîncărcare. Meniul de dinainte a rămas neschimbat; încearcă din nou.',
+          type: 'error',
+        },
+      });
+    }
+  };
   return {
     currentStep: 1,
     maxVisitedStep: 1,
@@ -39,8 +61,12 @@ export const useAppStore = create<AppState>((rawSet, get) => {
     isReloading: false,
     reloadConfig: null,
     triggerReload: async (opts, task) => {
-      // One reload at a time: a pull-to-refresh during a rebuild started a second one.
-      if (get().isReloading) return;
+      // One overlay at a time, but every task runs: a budget change made during a
+      // pull-to-refresh used to be dropped silently.
+      if (get().isReloading) {
+        await runReloadTask(task);
+        return;
+      }
       const durationMs = opts?.durationMs ?? DEFAULT_RELOAD_MS;
       set({
         isReloading: true,
@@ -53,22 +79,7 @@ export const useAppStore = create<AppState>((rawSet, get) => {
       });
       const startTime = Date.now();
       try {
-        if (task) {
-          await task();
-        }
-      } catch (error) {
-        // Every caller fires and forgets, so a throw here was an unhandled rejection and the
-        // user saw the overlay vanish with nothing changed and no explanation.
-        console.warn('[useAppStore] Reload task failed:', error);
-        set({
-          activeNotice: {
-            id: Date.now().toString(),
-            title: 'Nu am putut actualiza meniul',
-            message:
-              'Ceva n-a mers la reîncărcare. Meniul de dinainte a rămas neschimbat; încearcă din nou.',
-            type: 'error',
-          },
-        });
+        await runReloadTask(task);
       } finally {
         const elapsed = Date.now() - startTime;
         const remaining = Math.max(0, durationMs - elapsed);

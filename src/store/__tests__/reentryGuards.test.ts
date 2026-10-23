@@ -57,15 +57,19 @@ describe('sincronizarea nu rulează de două ori în paralel', () => {
 });
 
 describe('reîncărcarea', () => {
-  test('o a doua reîncărcare în timp ce prima rulează e ignorată', async () => {
-    const task = jest.fn(async () => undefined);
+  test('o a doua reîncărcare nu deschide alt overlay, dar sarcina ei tot rulează', async () => {
+    const first = jest.fn(async () => undefined);
+    const second = jest.fn(async () => undefined);
 
     await Promise.all([
-      store().triggerReload({ durationMs: 0 }, task),
-      store().triggerReload({ durationMs: 0 }, task),
+      store().triggerReload({ durationMs: 0 }, first),
+      store().triggerReload({ durationMs: 0 }, second),
     ]);
 
-    expect(task).toHaveBeenCalledTimes(1);
+    // A budget change made during a pull-to-refresh must not be lost.
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(store().isReloading).toBe(false);
   });
 
   test('o sarcină care eșuează nu lasă o eroare neprinsă: se arată un mesaj', async () => {

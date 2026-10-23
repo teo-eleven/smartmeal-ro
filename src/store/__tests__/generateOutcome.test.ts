@@ -43,3 +43,20 @@ describe('generatePlan spune dacă a reușit', () => {
     expect(store().activeNotice?.type).toBe('warning');
   });
 });
+
+describe('o generare eșuată nu atinge cămara', () => {
+  test('surplusul parcat nu înlocuiește stocul când planul nu se poate genera', () => {
+    useAppStore.setState({
+      preferences: {
+        ...store().preferences,
+        cookingDays: [],
+        pantryStock: { orez_basmati: 500 },
+        pendingPantryStock: { faina_alba: 300 },
+      },
+    });
+
+    expect(store().generatePlan()).toBe(false);
+    expect(store().preferences.pantryStock).toEqual({ orez_basmati: 500 });
+    expect(store().preferences.pendingPantryStock).toEqual({ faina_alba: 300 });
+  });
+});

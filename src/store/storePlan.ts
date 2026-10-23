@@ -233,12 +233,9 @@ export function createPlanActions(set: SetState, get: GetState) {
 
     generatePlan: () => {
       // Generating a plan is the moment a new week starts, so whatever was put aside from the
-      // last one becomes the cupboard now.
+      // last one becomes the cupboard now -- but only once the plan exists: promoting first
+      // and then failing replaced the cupboard with nothing to show for it.
       const preferences = promotePendingStock(get().preferences);
-      if (preferences !== get().preferences) {
-        void storageService.savePreferences(preferences);
-        set({ preferences });
-      }
 
       const feasibility = checkPlanFeasibility(preferences);
       if (!feasibility.isFeasible) {

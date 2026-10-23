@@ -38,16 +38,16 @@ export function syncUnavailableNotice() {
   };
 }
 
-/**
- * Applies a preference change that requires regenerating the plan.
- *
- * Nothing is written to storage and no state changes unless the new preferences can
- * actually produce a plan. Persisting first and generating second is what used to let a
- * failed rebuild leave storage holding a state the app could not start from.
- */
+function isServingCount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 1;
+}
+
 /** The cooked-double meal back to its own servings, recosted. */
 export function undoDoubleOnSource(meal: PlannedMeal, prefs: UserPreferences): PlannedMeal {
-  const servings = meal.servingsBeforeDouble ?? Math.max(1, Math.round(meal.servings / 2));
+  // Stored data is untrusted: only a positive, finite count is believed.
+  const servings = isServingCount(meal.servingsBeforeDouble)
+    ? meal.servingsBeforeDouble
+    : Math.max(1, Math.round(meal.servings / 2));
   return {
     ...meal,
     servingsBeforeDouble: undefined,
@@ -70,7 +70,8 @@ export function restoreReplacedMeal(meal: PlannedMeal, prefs: UserPreferences): 
     : undefined;
   const canRestore = canonical !== undefined && describeUnsafeRecipe(canonical, prefs) === null;
   const recipe = canRestore ? canonical : meal.recipe;
-  const servings = canRestore ? (meal.replacedServings ?? meal.servings) : meal.servings;
+  const servings =
+    canRestore && isServingCount(meal.replacedServings) ? meal.replacedServings : meal.servings;
   return {
     ...meal,
     replacedRecipe: undefined,
@@ -122,6 +123,13 @@ export function promotePendingStock(prefs: UserPreferences): UserPreferences {
   return { ...prefs, pantryStock: pending, pendingPantryStock: {} };
 }
 
+/**
+ * Applies a preference change that requires regenerating the plan.
+ *
+ * Nothing is written to storage and no state changes unless the new preferences can
+ * actually produce a plan. Persisting first and generating second is what used to let a
+ * failed rebuild leave storage holding a state the app could not start from.
+ */
 export function applyPreferencesWithRebuild(
   state: AppState,
   nextPrefs: UserPreferences
