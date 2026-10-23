@@ -337,6 +337,54 @@ describe('ștergerea contului', () => {
     expect(auth.signOut).not.toHaveBeenCalled();
   });
 
+  /** The server wants an authentication from the last 5 minutes before it deletes anything. */
+  test('cu parola, reconfirmă identitatea înainte să ceară ștergerea', async () => {
+    auth.getSession.mockResolvedValue({
+      data: { session: { access_token: 'proaspăt', user: { email: 'a@b.ro' } } },
+    });
+    auth.signInWithPassword.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null });
+    fetchMock.mockResolvedValue({ ok: true });
+
+    await cloudSyncService.deleteAccount('Muntele7Verde');
+
+    expect(auth.signInWithPassword).toHaveBeenCalledWith({
+      email: 'a@b.ro',
+      password: 'Muntele7Verde',
+    });
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
+  test('o parolă greșită nu ajunge la ștergere', async () => {
+    auth.getSession.mockResolvedValue({
+      data: { session: { access_token: 't', user: { email: 'a@b.ro' } } },
+    });
+    auth.signInWithPassword.mockResolvedValue({
+      data: { user: null },
+      error: { code: 'invalid_credentials', message: 'Invalid login credentials' },
+    });
+
+    const result = await cloudSyncService.deleteAccount('gresit');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/parola/i);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test('când serverul cere reautentificare, mesajul spune ce e de făcut', async () => {
+    auth.getSession.mockResolvedValue({ data: { session: { access_token: 't' } } });
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => ({ error: 'reauth_required' }),
+    });
+
+    const result = await cloudSyncService.deleteAccount();
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/parola contului/);
+    expect(auth.signOut).not.toHaveBeenCalled();
+  });
+
   test('o cădere de rețea lasă omul conectat și îi spune', async () => {
     auth.getSession.mockResolvedValue({ data: { session: { access_token: 't' } } });
     fetchMock.mockRejectedValue(new Error('Network request failed'));

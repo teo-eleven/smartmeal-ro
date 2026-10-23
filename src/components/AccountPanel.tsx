@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { ReminderSettings } from '../types';
 import { getAppTheme } from '../styles/theme';
 import { DataExportButton } from './DataExportButton';
@@ -34,7 +42,8 @@ interface AccountPanelProps {
   onSync?: () => void;
   onDownload?: () => void;
   onSignOut: () => void;
-  onDeleteAccount: () => Promise<void>;
+  /** `password`, when typed, re-confirms identity: the server wants a recent sign-in. */
+  onDeleteAccount: (password?: string) => Promise<void>;
   reminders: ReminderSettings;
   onChangeReminders: (patch: Partial<ReminderSettings>) => void;
   /**
@@ -93,8 +102,10 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
   const subscription = useSubscriptionStore((s) => s.status);
   const manageUrl = subscription.managementUrl ?? storeSubscriptionsPage();
 
+  const [deletePassword, setDeletePassword] = useState('');
   const confirmDelete = async () => {
-    await onDeleteAccount();
+    await onDeleteAccount(deletePassword || undefined);
+    setDeletePassword('');
     setConfirmingDelete(false);
   };
 
@@ -258,6 +269,17 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
               contului tău Apple sau Google Play, altfel plata continuă.
             </Text>
           )}
+          <TextInput
+            value={deletePassword}
+            onChangeText={setDeletePassword}
+            placeholder="Parola contului"
+            placeholderTextColor={theme.textMuted}
+            accessibilityLabel="Parola contului, pentru confirmarea ștergerii"
+            secureTextEntry
+            autoComplete="current-password"
+            textContentType="password"
+            style={[styles.passwordInput, { color: theme.text, borderColor: theme.border }]}
+          />
           <View style={styles.syncRow}>
             <TouchableOpacity
               accessibilityRole="button"
@@ -323,6 +345,13 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
 };
 
 const styles = StyleSheet.create({
+  passwordInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+  },
   section: { borderTopWidth: 1, paddingTop: 14, marginTop: 14 },
   columns: { flexDirection: 'row', gap: 28, alignItems: 'flex-start' },
   column: { flex: 1, minWidth: 0 },

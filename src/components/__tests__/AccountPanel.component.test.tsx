@@ -94,6 +94,19 @@ describe('panoul de cont', () => {
     await waitFor(() => expect(props.onDeleteAccount).toHaveBeenCalled());
   });
 
+  test('parola scrisă la confirmare pleacă odată cu ștergerea', async () => {
+    const props = show();
+
+    fireEvent.press(screen.getByLabelText('Șterge contul'));
+    fireEvent.changeText(
+      screen.getByLabelText('Parola contului, pentru confirmarea ștergerii'),
+      'Muntele7Verde'
+    );
+    fireEvent.press(screen.getByLabelText('Confirmă ștergerea definitivă a contului'));
+
+    await waitFor(() => expect(props.onDeleteAccount).toHaveBeenCalledWith('Muntele7Verde'));
+  });
+
   test('renunțarea la ștergere nu șterge nimic', () => {
     const props = show();
 

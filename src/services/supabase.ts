@@ -29,6 +29,20 @@ import { signingOutOnPurpose } from './signOutIntent';
  */
 const CLOUD_SAVE_FAILED = 'Nu am putut salva în cloud. Încearcă din nou.';
 
+const REAUTH_FOR_DELETE =
+  'Pentru siguranță, scrie parola contului și încearcă din nou. Dacă intri cu cod pe email, deconectează-te, conectează-te iar cu un cod nou și șterge contul în următoarele 5 minute.';
+
+/** The `error` field of a function's JSON answer, or null if there is none to read. */
+async function readErrorCode(response: Response): Promise<string | null> {
+  try {
+    const body: unknown = await response.json();
+    const code = typeof body === 'object' && body !== null ? Reflect.get(body, 'error') : null;
+    return typeof code === 'string' ? code : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Below the client's patience: a sync that hangs longer is reported as no connection. */
 const VERIFY_USER_TIMEOUT_MS = 8000;
 
@@ -307,11 +321,15 @@ export const cloudSyncService = {
    * edge function because removing a user needs the service-role key, which must never
    * reach the client; the function identifies the caller from their own token.
    */
-  async deleteAccount(): Promise<{ success: boolean; error: string | null }> {
-    return signingOutOnPurpose(() => this.deleteAccountNow());
+  /**
+   * `password` re-confirms who is asking: the server deletes only after an authentication
+   * from the last few minutes (delete-account, reauth_required).
+   */
+  async deleteAccount(password?: string): Promise<{ success: boolean; error: string | null }> {
+    return signingOutOnPurpose(() => this.deleteAccountNow(password));
   },
 
-  async deleteAccountNow(): Promise<{ success: boolean; error: string | null }> {
+  async deleteAccountNow(password?: string): Promise<{ success: boolean; error: string | null }> {
     if (localAuthSimulation.isActive()) {
       const email = await localAuthSimulation.currentEmail();
       await localAuthSimulation.deleteAccount();
@@ -337,14 +355,31 @@ export const cloudSyncService = {
         return { success: false, error: 'Autentifică-te din nou pentru a șterge contul.' };
       }
 
+      let accessToken = session.access_token;
+      if (password && session.user?.email) {
+        // A fresh sign-in gives a token whose amr says "just now", which the server wants.
+        const { error: reauthError } = await client.auth.signInWithPassword({
+          email: session.user.email,
+          password,
+        });
+        if (reauthError) {
+          return { success: false, error: 'Parola nu este corectă. Contul nu a fost șters.' };
+        }
+        const { data: fresh } = await client.auth.getSession();
+        accessToken = fresh.session?.access_token ?? accessToken;
+      }
+
       const response = await fetch(`${env.supabaseUrl}/functions/v1/delete-account`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
       });
 
+      if (response.status === 403 && (await readErrorCode(response)) === 'reauth_required') {
+        return { success: false, error: REAUTH_FOR_DELETE };
+      }
       if (!response.ok) {
         return {
           success: false,
