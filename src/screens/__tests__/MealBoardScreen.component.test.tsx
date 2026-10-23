@@ -163,3 +163,22 @@ describe('cititorul de ecran pe tabla de mese', () => {
     expect(screen.getByLabelText('Macro Săptămână')).toBeTruthy();
   });
 });
+
+describe('generarea automată a planului', () => {
+  test('o eroare neașteptată devine un mesaj, nu o tablă goală fără explicație', () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const realGenerate = useAppStore.getState().generatePlan;
+    useAppStore.setState({
+      currentPlan: null,
+      activeNotice: null,
+      generatePlan: () => {
+        throw new Error('boom');
+      },
+    });
+
+    render(<MealBoardScreen isDark={false} />);
+
+    expect(useAppStore.getState().activeNotice?.title).toBe('Meniul nu a putut fi generat');
+    useAppStore.setState({ generatePlan: realGenerate });
+  });
+});

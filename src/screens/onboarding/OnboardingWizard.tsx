@@ -219,9 +219,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
         onPlanGenerated?.();
         setActiveView('generating');
       } catch (err) {
+        // The detail goes to the log; the person gets a sentence they can act on. The raw
+        // message ("Cannot read properties of undefined") used to be shown as is.
         console.error('[OnboardingWizard] generatePlan error:', err);
-        const reason = err instanceof Error ? err.message : 'Nu s-a putut genera planul de mese.';
-        showNotice('Eroare Planificare', reason, 'error');
+        showNotice(
+          'Meniul nu a putut fi generat',
+          'A apărut o eroare neașteptată. Încearcă din nou sau schimbă una dintre alegeri.',
+          'error'
+        );
       }
     }
   };
@@ -2157,6 +2162,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
 
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityLabel={
+              currentStep === totalSteps ? 'Generează Meniul Săptămânal' : 'Continuă la pasul următor'
+            }
             onPress={handleNextOrFinish}
             activeOpacity={0.85}
             {...glass('btn-primary')}

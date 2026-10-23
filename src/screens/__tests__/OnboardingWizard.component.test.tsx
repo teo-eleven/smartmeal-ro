@@ -252,3 +252,28 @@ describe('OnboardingWizard, pasul de dietă (pasul 1)', () => {
     expect(useAppStore.getState().preferences.dietTypes).toContain('vegetarian');
   });
 });
+
+describe('ultimul pas, când generarea se strică', () => {
+  beforeEach(reset);
+
+  test('mesajul e pe înțeles, nu textul tehnic al erorii', () => {
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const realGenerate = useAppStore.getState().generatePlan;
+    useAppStore.setState((state) => ({
+      currentStep: state.totalSteps,
+      maxVisitedStep: state.totalSteps,
+      activeNotice: null,
+      generatePlan: () => {
+        throw new TypeError("Cannot read properties of undefined (reading 'days')");
+      },
+    }));
+    render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
+
+    fireEvent.press(screen.getByLabelText('Generează Meniul Săptămânal'));
+
+    const notice = useAppStore.getState().activeNotice;
+    expect(notice?.type).toBe('error');
+    expect(notice?.message).not.toMatch(/Cannot read|undefined/);
+    useAppStore.setState({ generatePlan: realGenerate });
+  });
+});

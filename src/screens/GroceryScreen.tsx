@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore } from '../store/useAppStore';
@@ -28,6 +28,9 @@ const AISLE_ORDER: AisleCategory[] = [
   'alcohol',
 ];
 
+/** How long the button says the list was copied. */
+const COPIED_FEEDBACK_MS = 2500;
+
 export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
   const {
     currentPlan,
@@ -39,10 +42,18 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
     setAllPurchased,
     setExcludePantryStaples,
     carryOverSurplus,
+    showNotice,
   } = useAppStore();
 
   const [showSnacksModal, setShowSnacksModal] = useState(false);
   const [shareCopiedFeedback, setShareCopiedFeedback] = useState(false);
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    },
+    []
+  );
   const { isDesktop, isTablet, contentMaxWidth } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;
   const theme = getAppTheme(isDark);
@@ -125,7 +136,8 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
       if (navigator?.clipboard?.writeText) {
         await navigator.clipboard.writeText(listText);
         setShareCopiedFeedback(true);
-        setTimeout(() => setShareCopiedFeedback(false), 2500);
+        if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+        feedbackTimer.current = setTimeout(() => setShareCopiedFeedback(false), COPIED_FEEDBACK_MS);
       } else {
         await Share.share({ message: listText });
       }
@@ -133,7 +145,12 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
       try {
         await Share.share({ message: listText });
       } catch (err) {
-        console.warn('Share error:', err);
+        console.warn('[GroceryScreen] Share failed:', err);
+        showNotice(
+          'Lista nu a putut fi trimisă',
+          'Telefonul nu a permis nici copierea, nici partajarea. Încearcă din nou sau fă o captură de ecran.',
+          'error'
+        );
       }
     }
   };

@@ -95,6 +95,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     currentPlan,
     preferences,
     generatePlan,
+    showNotice,
     reshufflePlan,
     updatePreferencesAndRebuild,
     cookDoubleFor,
@@ -177,8 +178,13 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
       generatePlan();
     } catch (err) {
       console.warn('[MealBoardScreen] Auto plan generation failed:', err);
+      showNotice(
+        'Meniul nu a putut fi generat',
+        'A apărut o eroare neașteptată. Apasă „Plan Nou” sau schimbă o preferință și încearcă din nou.',
+        'error'
+      );
     }
-  }, [currentPlan, generatePlan]);
+  }, [currentPlan, generatePlan, showNotice]);
 
   const theme = getAppTheme(isDark);
 
