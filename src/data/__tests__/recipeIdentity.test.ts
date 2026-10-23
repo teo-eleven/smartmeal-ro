@@ -88,3 +88,10 @@ test('nicio rețetă nu repetă un ingredient', () => {
 
   expect(repeats).toEqual([]);
 });
+
+/** Migration 0010 stores notes under the recipe id and accepts only short slugs. */
+test('fiecare id de rețetă poate primi notițe în cloud', () => {
+  const unfit = RECIPES.map((r) => r.id).filter((id) => !/^[a-z0-9_]{1,100}$/.test(id));
+
+  expect(unfit).toEqual([]);
+});

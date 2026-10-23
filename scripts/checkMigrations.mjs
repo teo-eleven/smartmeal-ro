@@ -347,10 +347,48 @@ await expectError(
 );
 await db.exec('reset role');
 
+// --- recipe notes (0010) ---
+await db.exec(
+  `${as(U1, S1)} insert into public.user_recipe_notes (user_id, recipe_id, note) values ('${U1}', 'ciorba', 'leuștean')`
+);
+await db.exec(as(U2, S3));
+r = await db.query(`select count(*)::int as n from public.user_recipe_notes`);
+check("a user cannot read another user's notes", r.rows[0].n === 0);
+await expectError(
+  "a user cannot write a note into another user's account",
+  `${as(U2, S3)} insert into public.user_recipe_notes (user_id, recipe_id, note) values ('${U1}', 'sarmale', 'x')`,
+  /row-level security/
+);
+await expectError(
+  'an empty note is refused',
+  `${as(U1, S1)} insert into public.user_recipe_notes (user_id, recipe_id, note) values ('${U1}', 'sarmale', '   ')`,
+  /check constraint/
+);
+await expectError(
+  'a note over 2000 characters is refused',
+  `${as(U1, S1)} insert into public.user_recipe_notes (user_id, recipe_id, note) values ('${U1}', 'sarmale', '${'x'.repeat(2001)}')`,
+  /check constraint/
+);
+await expectError(
+  'a recipe id that is not a slug is refused',
+  `${as(U1, S1)} insert into public.user_recipe_notes (user_id, recipe_id, note) values ('${U1}', '../etc', 'x')`,
+  /check constraint/
+);
+await expectError(
+  'anon cannot read notes',
+  `reset role; set role anon; select * from public.user_recipe_notes`,
+  /permission denied/
+);
+await db.exec('reset role');
+
 await db.exec(`reset role; delete from auth.users where id = '${U1}';`);
 r = await db.query(`select (select count(*) from public.profiles where user_id = '${U1}')::int as p,
-  (select count(*) from public.user_devices where user_id = '${U1}')::int as d`);
-check('deleting the account cascades profile and devices', r.rows[0].p === 0 && r.rows[0].d === 0);
+  (select count(*) from public.user_devices where user_id = '${U1}')::int as d,
+  (select count(*) from public.user_recipe_notes where user_id = '${U1}')::int as n`);
+check(
+  'deleting the account cascades profile, devices and notes',
+  r.rows[0].p === 0 && r.rows[0].d === 0 && r.rows[0].n === 0
+);
 
 console.log(failures === 0 ? '\nALL PASS' : `\n${failures} FAILED`);
 process.exit(failures === 0 ? 0 : 1);

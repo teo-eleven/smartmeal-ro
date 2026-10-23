@@ -300,7 +300,10 @@ export function createSessionActions(set: SetState, get: GetState) {
           cloudPlanVersion,
         }));
         // The row may have changed elsewhere, e.g. emails turned off from the link in one.
-        if (signedInEmail && !isLocked) void get().loadRemindersFromCloud();
+        if (signedInEmail && !isLocked) {
+          void get().loadRemindersFromCloud();
+          void get().pullRecipeNotes();
+        }
       } catch (e) {
         // Whatever went wrong, the user must not be told nothing: starting silently on the
         // defaults means an unrestricted omnivore with no allergies, which looks like a
@@ -433,6 +436,7 @@ export function createSessionActions(set: SetState, get: GetState) {
       if (email) {
         // A second phone starts from what the account already knows.
         void get().loadRemindersFromCloud();
+        void get().pullRecipeNotes();
       } else {
         // Signing out must not leave the previous account's nudges firing on this phone.
         void reminderScheduler.cancelAll();

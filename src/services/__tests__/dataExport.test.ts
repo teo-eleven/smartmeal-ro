@@ -4,6 +4,11 @@ import { DEFAULT_REMINDERS, UserPreferences } from '../../types';
 import { PRIVACY_POLICY_VERSION } from '../../../config/legal';
 
 jest.mock('../profile', () => ({ getDisplayName: jest.fn(async () => 'Ana') }));
+jest.mock('../recipeNotesCloud', () => ({
+  recipeNotesCloud: {
+    load: jest.fn(async () => ({ notes: { sarmale: 'din cont' }, error: null })),
+  },
+}));
 jest.mock('../devices', () => ({
   listDevices: jest.fn(async () => ({
     devices: [{ id: 'd1', name: 'iPhone', platform: 'ios', lastSeenAt: '2026-09-27T10:00:00Z' }],
@@ -176,6 +181,7 @@ describe('exportul de date', () => {
     const data = await collectDataExport(LOCAL, NOW);
 
     expect(data.inYourAccount?.displayName).toBe('Ana');
+    expect(data.inYourAccount?.recipeNotes).toEqual({ sarmale: 'din cont' });
     expect(data.inYourAccount?.devices).toEqual([expect.objectContaining({ name: 'iPhone' })]);
     expect(data.inYourAccount?.errors).toEqual([]);
     expect(data.onThisPhone.recipeNotes).toEqual({ ciorba: 'mai mult leuștean' });

@@ -135,6 +135,8 @@ export interface AppState {
   /** Personal notes per recipe id, on this phone. */
   recipeNotes: RecipeNotes;
   setRecipeNote: (recipeId: string, text: string) => void;
+  /** Brings the account's notes onto the phone, keeping the phone's where both exist. */
+  pullRecipeNotes: () => Promise<void>;
 
   // Actions
   setSupermarket: (id: SupermarketId) => void;

@@ -1,4 +1,5 @@
 import { storageService } from '../services/storage';
+import { cancelNoteUploads } from './recipeNotesSync';
 import { DEFAULT_REMINDERS } from '../types';
 import { StoreApi } from 'zustand';
 import { AppState } from './appState';
@@ -27,6 +28,7 @@ export function createAccountActions(set: SetState, get: GetState) {
     },
 
     clearLocalAccountData: () => {
+      cancelNoteUploads();
       void storageService.clearAccountData();
       set({
         preferences: { ...DEFAULT_PREFERENCES },

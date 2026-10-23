@@ -1,6 +1,7 @@
 import { cloudSyncService, RecordedConsent } from './supabase';
 import { getDisplayName } from './profile';
 import { DeviceInfo, listDevices } from './devices';
+import { recipeNotesCloud } from './recipeNotesCloud';
 import { PRIVACY_POLICY_VERSION } from '../../config/legal';
 import { GroceryListItem, MealPlan, ReminderSettings, SavedPlan, UserPreferences } from '../types';
 
@@ -21,6 +22,8 @@ export interface AccountData {
   displayName: string | null;
   /** The phones and browsers signed in to the account; null if they could not be read. */
   devices: DeviceInfo[] | null;
+  /** Recipe notes kept in the account (migration 0010); null if they could not be read. */
+  recipeNotes: Readonly<Record<string, string>> | null;
   /**
    * From user_consents, which only the sign-up trigger writes. Never from user_metadata: its
    * owner can rewrite that at any time, so it would prove nothing. Null when no record exists.
@@ -91,12 +94,13 @@ async function readAccount(): Promise<AccountData | null> {
   const user = await cloudSyncService.getCurrentUser();
   if (!user) return null;
 
-  const [cloud, reminders, consent, displayName, devices] = await Promise.allSettled([
+  const [cloud, reminders, consent, displayName, devices, notes] = await Promise.allSettled([
     cloudSyncService.loadMealPlan(user.id),
     cloudSyncService.loadReminders(user.id),
     cloudSyncService.loadConsent(user.id),
     getDisplayName(),
     listDevices(),
+    recipeNotesCloud.load(),
   ]);
 
   const errors: string[] = [];
@@ -107,12 +111,15 @@ async function readAccount(): Promise<AccountData | null> {
   const name = settledOrNull(displayName, 'numele din profil', errors);
   const deviceList = settledOrNull(devices, 'dispozitivele', errors);
   if (deviceList?.error) errors.push(`Nu am putut citi dispozitivele. ${RETRY}`);
+  const noteList = settledOrNull(notes, 'notițele la rețete', errors);
+  if (noteList?.error) errors.push(`Nu am putut citi notițele la rețete. ${RETRY}`);
 
   return {
     email: user.email ?? null,
     createdAt: user.created_at ?? null,
     displayName: name,
     devices: deviceList && !deviceList.error ? deviceList.devices : null,
+    recipeNotes: noteList && !noteList.error ? noteList.notes : null,
     consent: consentRow,
     plan: plan?.plan ?? null,
     groceryItems: plan?.groceryItems ?? [],
