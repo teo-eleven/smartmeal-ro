@@ -231,7 +231,8 @@ export interface AppState {
   updatePreferencesAndRebuild: (newPrefs: Partial<UserPreferences>) => void;
   swapMeal: (dayOfWeek: DayOfWeek, slot?: MealSlot) => void;
   replaceMealWithRecipe: (dayOfWeek: DayOfWeek, newRecipe: Recipe, slot?: MealSlot) => void;
-  toggleEatOut: (dayOfWeek: DayOfWeek, slot?: MealSlot) => void;
+  /** By meal id when given; otherwise the first meal cooked in that slot (never a leftover). */
+  toggleEatOut: (dayOfWeek: DayOfWeek, slot?: MealSlot, mealId?: string) => void;
   toggleGroceryItem: (ingredientId: string) => void;
   setActiveView: (view: 'onboarding' | 'generating' | 'meals' | 'grocery') => void;
 
@@ -487,6 +488,44 @@ function buildInfeasibleNotice(reason: string): SystemNotice {
  * actually produce a plan. Persisting first and generating second is what used to let a
  * failed rebuild leave storage holding a state the app could not start from.
  */
+/** The cooked-double meal back to its own servings, recosted. */
+function undoDoubleOnSource(meal: PlannedMeal, prefs: UserPreferences): PlannedMeal {
+  const servings = meal.servingsBeforeDouble ?? Math.max(1, Math.round(meal.servings / 2));
+  return {
+    ...meal,
+    servingsBeforeDouble: undefined,
+    servings,
+    estimatedCostRon: calculateRecipePortionCost(
+      meal.recipe,
+      servings,
+      prefs.supermarketId,
+      prefs.excludePantryStaples
+    ),
+  };
+}
+
+/** A leftover turned back into the meal it replaced (or its own dish when none is known). */
+function restoreReplacedMeal(meal: PlannedMeal, prefs: UserPreferences): PlannedMeal {
+  const recipe = meal.replacedRecipe ?? meal.recipe;
+  const servings = meal.replacedServings ?? meal.servings;
+  return {
+    ...meal,
+    replacedRecipe: undefined,
+    replacedServings: undefined,
+    leftoverFromMealId: undefined,
+    leftoverFromDay: undefined,
+    recipe,
+    servings,
+    isLeftover: false,
+    estimatedCostRon: calculateRecipePortionCost(
+      recipe,
+      servings,
+      prefs.supermarketId,
+      prefs.excludePantryStaples
+    ),
+  };
+}
+
 /**
  * Generation-only preferences that ask for a dessert on every day that has one now, so
  * regenerating a week keeps the user's desserts AND the budget pass sees them. Appending them
@@ -1945,7 +1984,12 @@ export const useAppStore = create<AppState>((set, get) => ({
         if (index === dayIndex) {
           const meals = day.meals.map((m) =>
             m.id === mealId
-              ? { ...m, servings: m.servings * 2, estimatedCostRon: m.estimatedCostRon * 2 }
+              ? {
+                  ...m,
+                  servingsBeforeDouble: m.servings,
+                  servings: m.servings * 2,
+                  estimatedCostRon: m.estimatedCostRon * 2,
+                }
               : m
           );
           return { ...day, meals, ...rebuildDayShape(meals, day) };
@@ -1960,6 +2004,8 @@ export const useAppStore = create<AppState>((set, get) => ({
                     isLeftover: true,
                     leftoverFromMealId: source.id,
                     leftoverFromDay: dayOfWeek,
+                    replacedRecipe: m.recipe,
+                    replacedServings: m.servings,
                     estimatedCostRon: 0,
                   }
                 : m
@@ -2030,11 +2076,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         if (index === dayIndex - 1 && source) {
           const meals = day.meals.map((m) =>
             m.id === source.id
-              ? {
-                  ...m,
-                  servings: Math.max(1, Math.round(m.servings / 2)),
-                  estimatedCostRon: Math.round((m.estimatedCostRon / 2) * 100) / 100,
-                }
+              ? undoDoubleOnSource(m, state.preferences)
               : m
           );
           return { ...day, meals, ...rebuildDayShape(meals, day) };
@@ -2045,19 +2087,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             return { ...day, meals, ...rebuildDayShape(meals, day) };
           }
           const meals = day.meals.map((m) =>
-            m.id === mealId
-              ? {
-                  ...m,
-                  isLeftover: false,
-                  leftoverFromMealId: undefined,
-                  estimatedCostRon: calculateRecipePortionCost(
-                    m.recipe,
-                    m.servings,
-                    state.preferences.supermarketId,
-                    state.preferences.excludePantryStaples
-                  ),
-                }
-              : m
+            m.id === mealId ? restoreReplacedMeal(m, state.preferences) : m
           );
           return { ...day, meals, ...rebuildDayShape(meals, day) };
         }
@@ -2465,15 +2495,19 @@ export const useAppStore = create<AppState>((set, get) => ({
 
         const updatedMeals = day.meals.map((meal) => {
           if (meal.id !== mealId) return meal;
+          // A reheated portion or a meal eaten out is not bought, whatever its servings.
+          const isBought = !meal.isLeftover && !meal.isEatenOut;
           return {
             ...meal,
             servings: safeServings,
-            estimatedCostRon: calculateRecipePortionCost(
-              meal.recipe,
-              safeServings,
-              state.preferences.supermarketId,
-              state.preferences.excludePantryStaples
-            ),
+            estimatedCostRon: isBought
+              ? calculateRecipePortionCost(
+                  meal.recipe,
+                  safeServings,
+                  state.preferences.supermarketId,
+                  state.preferences.excludePantryStaples
+                )
+              : 0,
           };
         });
 
@@ -3304,22 +3338,27 @@ export const useAppStore = create<AppState>((set, get) => ({
     }));
   },
 
-  toggleEatOut: (dayOfWeek: DayOfWeek, slot?: MealSlot) => {
+  toggleEatOut: (dayOfWeek: DayOfWeek, slot?: MealSlot, mealId?: string) => {
     const { currentPlan, preferences } = get();
     if (!currentPlan) return;
 
     const dayIndex = currentPlan.days.findIndex((d) => d.dayOfWeek === dayOfWeek);
     if (dayIndex === -1) return;
 
+    // One meal, never every meal sharing the slot: a leftover in the same slot used to be
+    // marked "eaten out" along with the dish the user meant.
     const targetDay = currentPlan.days[dayIndex];
-    const targetSlot: MealSlot =
-      slot || (targetDay.meals && targetDay.meals.length > 0 ? targetDay.meals[0].slot : 'dinner');
+    const target = mealId
+      ? targetDay.meals.find((m) => m.id === mealId)
+      : (targetDay.meals.find((m) => m.slot === slot && !m.isLeftover) ??
+        targetDay.meals.find((m) => !m.isLeftover));
+    if (!target) return;
 
     let wasUpdated = false;
     const updatedDays = currentPlan.days.map((d) => {
       if (d.dayOfWeek !== dayOfWeek) return d;
       const nextMeals = (d.meals || []).map((m) => {
-        if (m.slot !== targetSlot) return m;
+        if (m.id !== target.id) return m;
         wasUpdated = true;
         const newEatenOut = !m.isEatenOut;
         const cost = newEatenOut

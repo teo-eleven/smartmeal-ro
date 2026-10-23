@@ -224,6 +224,14 @@ export interface PlannedMeal {
    */
   isAddedLeftover?: boolean;
   /**
+   * The meal this leftover took the place of, so undoing the double brings it back. Undo used
+   * to keep the cooked dish on both days and lose what the user had planned.
+   */
+  replacedRecipe?: Recipe;
+  replacedServings?: number;
+  /** On a meal cooked double: its servings before doubling, restored exactly on undo. */
+  servingsBeforeDouble?: number;
+  /**
    * Eaten out at a restaurant, event, or work. Excluded from grocery cart and cost calculations.
    */
   isEatenOut?: boolean;

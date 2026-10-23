@@ -737,7 +737,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                         onChangeServings={(servings) =>
                           setMealServings(day.dayOfWeek, meal.id, servings)
                         }
-                        onToggleEatOut={() => toggleEatOut(day.dayOfWeek, meal.slot)}
+                        onToggleEatOut={() => toggleEatOut(day.dayOfWeek, meal.slot, meal.id)}
                         isDark={isDark}
                       />
                     </AnimatedMealSlot>
