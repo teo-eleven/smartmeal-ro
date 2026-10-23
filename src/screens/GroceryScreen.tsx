@@ -36,6 +36,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
     isReloading,
     triggerReload,
     toggleGroceryItem,
+    setAllPurchased,
     setExcludePantryStaples,
     carryOverSurplus,
   } = useAppStore();
@@ -137,17 +138,8 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
     }
   };
 
-  const checkAll = () => {
-    groceryItems.forEach((i) => {
-      if (!i.isPurchased) toggleGroceryItem(i.ingredientId);
-    });
-  };
-
-  const uncheckAll = () => {
-    groceryItems.forEach((i) => {
-      if (i.isPurchased) toggleGroceryItem(i.ingredientId);
-    });
-  };
+  const checkAll = () => setAllPurchased(true);
+  const uncheckAll = () => setAllPurchased(false);
 
   return (
     <ScrollView

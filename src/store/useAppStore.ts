@@ -237,6 +237,8 @@ export interface AppState {
   /** By meal id when given; otherwise the first meal cooked in that slot (never a leftover). */
   toggleEatOut: (dayOfWeek: DayOfWeek, slot?: MealSlot, mealId?: string) => void;
   toggleGroceryItem: (ingredientId: string) => void;
+  /** Ticks or unticks every item still to be bought, in one write. */
+  setAllPurchased: (purchased: boolean) => void;
   setActiveView: (view: 'onboarding' | 'generating' | 'meals' | 'grocery') => void;
 
   // Persistence & Sync Actions
@@ -3426,14 +3428,22 @@ export const useAppStore = create<AppState>((rawSet, get) => {
   },
 
   toggleGroceryItem: (ingredientId: string) => {
-    const { currentPlan } = get();
-    set((state) => {
-      const nextItems = state.groceryItems.map((item) =>
-        item.ingredientId === ingredientId ? { ...item, isPurchased: !item.isPurchased } : item
-      );
-      void storageService.savePlanAndGrocery(currentPlan, nextItems);
-      return { groceryItems: nextItems };
-    });
+    const { currentPlan, groceryItems } = get();
+    const nextItems = groceryItems.map((item) =>
+      item.ingredientId === ingredientId ? { ...item, isPurchased: !item.isPurchased } : item
+    );
+    set({ groceryItems: nextItems });
+    void storageService.savePlanAndGrocery(currentPlan, nextItems);
+  },
+
+  setAllPurchased: (purchased: boolean) => {
+    const { currentPlan, groceryItems } = get();
+    // What is already at home keeps its own state: "untick all" must not put it back on the list.
+    const nextItems = groceryItems.map((item) =>
+      item.isFromPantry ? item : { ...item, isPurchased: purchased }
+    );
+    set({ groceryItems: nextItems });
+    void storageService.savePlanAndGrocery(currentPlan, nextItems);
   },
   };
 });
