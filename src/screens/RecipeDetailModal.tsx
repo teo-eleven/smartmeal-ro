@@ -277,7 +277,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
           {targetDay && (
             <TouchableOpacity
-              accessibilityRole="button"
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: isEatenOut }}
               accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănânc în oraș'}
               onPress={() => {
                 const effectiveSlot = targetSlot || targetMeal?.slot || 'dinner';
@@ -566,7 +567,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
                   {targetDay && (
                     <TouchableOpacity
-                      accessibilityRole="button"
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isEatenOut }}
                       accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănâncă în oraș'}
                       onPress={() => {
                         const effectiveSlot = targetSlot || targetMeal?.slot || 'dinner';
@@ -660,7 +662,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
                     return (
                       <TouchableOpacity
-                        accessibilityRole="button"
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: isDone }}
                         key={step.stepNumber}
                         activeOpacity={0.8}
                         onPress={() => toggleStep(step.stepNumber)}

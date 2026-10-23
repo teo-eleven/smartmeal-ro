@@ -358,6 +358,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
 
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityLabel="Ce am în Cămară"
             onPress={() => setPantryModalVisible(true)}
             {...glass('pill')}
             style={[
@@ -396,6 +397,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
 
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityLabel="Ghid Meal Prep"
             onPress={() => setMealPrepModalVisible(true)}
             {...glass('pill')}
             style={[
@@ -415,6 +417,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
 
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityLabel="Macro Săptămână"
             onPress={() => setMacroModalVisible(true)}
             {...glass('pill')}
             style={[
@@ -448,6 +451,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                 <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>Mese pe zi:</Text>
                 <TouchableOpacity
                   accessibilityRole="button"
+                  accessibilityLabel="Personalizează pe zile"
                   onPress={() => {
                     setMealsModalInitialCount((baseMealsCount as 1 | 2 | 3) || 1);
                     setMealsModalVisible(true);
@@ -473,6 +477,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                 {([1, 2, 3] as const).map((cnt) => (
                   <TouchableOpacity
                     accessibilityRole="button"
+                    accessibilityState={{ selected: baseMealsCount === cnt }}
                     key={cnt}
                     onPress={() => {
                       if (cnt === 3) {
@@ -668,6 +673,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                     {!hasDessert ? (
                       <TouchableOpacity
                         accessibilityRole="button"
+                        accessibilityLabel="Adaugă Desert de Casă"
                         onPress={() => addExtraMealToDay(day.dayOfWeek, 'dessert')}
                         {...glass('pill')}
                         style={[

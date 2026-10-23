@@ -140,3 +140,26 @@ describe('MealBoardScreen, acțiunile rapide', () => {
     expect(screen.getByText(/Ghid Meal Prep Săptămânal/)).toBeTruthy();
   });
 });
+
+describe('cititorul de ecran pe tabla de mese', () => {
+  beforeEach(seedPlan);
+
+  test('segmentul cu numărul de mese spune care e ales', () => {
+    render(<MealBoardScreen isDark={false} />);
+    const count = useAppStore
+      .getState()
+      .preferences.mealSlots.filter((s) => s !== 'snack' && s !== 'dessert').length;
+
+    const segment = screen.getByText(`${count} ${count === 1 ? 'Masă' : 'Mese'}`);
+
+    expect(segment.parent?.parent?.props.accessibilityState).toEqual({ selected: true });
+  });
+
+  test('scurtăturile au etichete fără emoji', () => {
+    render(<MealBoardScreen isDark={false} />);
+
+    expect(screen.getByLabelText('Ce am în Cămară')).toBeTruthy();
+    expect(screen.getByLabelText('Ghid Meal Prep')).toBeTruthy();
+    expect(screen.getByLabelText('Macro Săptămână')).toBeTruthy();
+  });
+});

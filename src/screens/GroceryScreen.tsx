@@ -239,6 +239,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
           <View style={[styles.overviewColRight, isDesktop && styles.overviewColRightDesktop]}>
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel="Bifează tot"
               onPress={checkAll}
               style={[styles.actionBtn, { backgroundColor: theme.primary, borderColor: theme.primary, borderWidth: 1 }]}
               activeOpacity={0.7}
@@ -327,6 +328,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
       {/* Retail Snacks & Drinks Supermarket Bar */}
       <TouchableOpacity
         accessibilityRole="button"
+        accessibilityLabel="Ronțăieli și Băuturi de Magazin"
         onPress={() => setShowSnacksModal(true)}
         style={[
           styles.retailSnacksBanner,

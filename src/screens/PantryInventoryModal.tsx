@@ -165,6 +165,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
             <View style={styles.bulkRow}>
               <TouchableOpacity
                 accessibilityRole="button"
+                accessibilityLabel="Am cămara plină (Bifează tot)"
                 onPress={selectAllCommon}
                 style={[styles.bulkBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
                 activeOpacity={0.7}
@@ -224,7 +225,8 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
 
                 return (
                   <TouchableOpacity
-                    accessibilityRole="button"
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isSelected }}
                     key={item.id}
                     onPress={() => togglePantryItem(item.id)}
                     activeOpacity={0.75}

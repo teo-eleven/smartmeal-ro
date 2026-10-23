@@ -313,6 +313,7 @@ function AppShell() {
             >
               <TouchableOpacity
                 accessibilityRole="button"
+                accessibilityState={{ selected: activeView === 'meals' }}
                 onPress={() => setActiveView('meals')}
                 activeOpacity={0.8}
                 {...glass(activeView === 'meals' ? 'pill-active' : 'pill')}
@@ -339,6 +340,7 @@ function AppShell() {
 
               <TouchableOpacity
                 accessibilityRole="button"
+                accessibilityState={{ selected: activeView === 'grocery' }}
                 onPress={() => setActiveView('grocery')}
                 activeOpacity={0.8}
                 {...glass(activeView === 'grocery' ? 'pill-active' : 'pill')}
@@ -409,6 +411,7 @@ function AppShell() {
             >
               <TouchableOpacity
                 accessibilityRole="button"
+                accessibilityState={{ selected: activeView === 'meals' }}
                 onPress={() => setActiveView('meals')}
                 activeOpacity={0.8}
                 {...glass(activeView === 'meals' ? 'pill-active' : 'pill')}
@@ -435,6 +438,7 @@ function AppShell() {
 
               <TouchableOpacity
                 accessibilityRole="button"
+                accessibilityState={{ selected: activeView === 'grocery' }}
                 onPress={() => setActiveView('grocery')}
                 activeOpacity={0.8}
                 {...glass(activeView === 'grocery' ? 'pill-active' : 'pill')}

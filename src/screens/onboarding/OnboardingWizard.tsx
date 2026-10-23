@@ -542,7 +542,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
 
                       return (
                         <TouchableOpacity
-                          accessibilityRole="button"
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: isSelected }}
                           accessibilityLabel={`${diet.label}, ${diet.desc}`}
                           key={diet.id}
                           onPress={() => toggleDietType(diet.id)}
@@ -608,7 +609,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
 
                       return (
                         <TouchableOpacity
-                          accessibilityRole="button"
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: isSelected }}
                           accessibilityLabel={`${diet.label}, ${diet.desc}`}
                           key={diet.id}
                           onPress={() => toggleDietType(diet.id)}
@@ -709,7 +711,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         const isSelected = (preferences.healthGoalTags || []).includes(goal.id);
                         return (
                           <TouchableOpacity
-                            accessibilityRole="button"
+                            accessibilityRole="checkbox"
+                            accessibilityState={{ checked: isSelected }}
                             key={goal.id}
                             onPress={() => toggleHealthGoalTag(goal.id)}
                             activeOpacity={0.75}
@@ -895,6 +898,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   return (
                     <TouchableOpacity
                       accessibilityRole="button"
+                      accessibilityState={{ selected: isActive }}
                       key={num}
                       onPress={() => setPeopleCount(num)}
                       style={[
@@ -1016,6 +1020,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   return (
                     <TouchableOpacity
                       accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
                       key={preset.id}
                       onPress={() => setCookingDays(preset.days)}
                       activeOpacity={0.7}
@@ -1078,7 +1083,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   const isSelected = preferences.cookingDays.includes(day);
                   return (
                     <TouchableOpacity
-                      accessibilityRole="button"
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isSelected }}
                       key={day}
                       onPress={() => toggleCookingDay(day)}
                       style={[
@@ -1130,7 +1136,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   const isSelected = preferences.mealSlots.includes(option.slot);
                   return (
                     <TouchableOpacity
-                      accessibilityRole="button"
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isSelected }}
                       key={option.slot}
                       onPress={() => {
                         if (isSelected) {
@@ -1229,6 +1236,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   return (
                     <TouchableOpacity
                       accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
                       key={tierOpt.id}
                       onPress={() => setFoodTier(tierOpt.id)}
                       activeOpacity={0.7}
@@ -1442,6 +1450,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   return (
                     <TouchableOpacity
                       accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
                       key={market.id}
                       onPress={() => setSupermarket(market.id as SupermarketId)}
                       activeOpacity={0.7}
@@ -1592,6 +1601,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     return (
                       <TouchableOpacity
                         accessibilityRole="button"
+                        accessibilityState={{ selected: isCurrent }}
                         key={tab.id}
                         onPress={() =>
                           setSnackTastePreference(tab.id as 'sweet' | 'savory')
@@ -1643,7 +1653,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
                         return (
                           <TouchableOpacity
-                            accessibilityRole="button"
+                            accessibilityRole="checkbox"
+                            accessibilityState={{ checked: isSelected }}
                             key={prod.id}
                             onPress={() => toggleSnackProduct(prod.id)}
                             activeOpacity={0.7}
@@ -1720,7 +1731,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                         const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
                         return (
                           <TouchableOpacity
-                            accessibilityRole="button"
+                            accessibilityRole="checkbox"
+                            accessibilityState={{ checked: isSelected }}
                             key={prod.id}
                             onPress={() => toggleSnackProduct(prod.id)}
                             activeOpacity={0.7}
@@ -1797,7 +1809,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
                   return (
                     <TouchableOpacity
-                      accessibilityRole="button"
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isSelected }}
                       key={prod.id}
                       onPress={() => toggleDrinkProduct(prod.id)}
                       activeOpacity={0.7}
@@ -1860,7 +1873,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               </Text>
 
               <TouchableOpacity
-                accessibilityRole="button"
+                accessibilityRole="switch"
+                accessibilityLabel="Activează secțiunea de băuturi alcoolice (18+)"
+                accessibilityState={{ checked: Boolean(preferences.includeAlcohol) }}
                 onPress={() => setIncludeAlcohol(!preferences.includeAlcohol)}
                 activeOpacity={0.7}
                 style={[
@@ -1917,7 +1932,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
                     return (
                       <TouchableOpacity
-                        accessibilityRole="button"
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: isSelected }}
                         key={prod.id}
                         onPress={() => toggleDrinkProduct(prod.id)}
                         activeOpacity={0.7}

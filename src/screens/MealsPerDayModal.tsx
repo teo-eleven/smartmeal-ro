@@ -173,6 +173,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
             </View>
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel="Închide"
               onPress={onClose}
               style={[styles.closeBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
               activeOpacity={0.7}
@@ -228,6 +229,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                     <>
                       <TouchableOpacity
                         accessibilityRole="button"
+                        accessibilityLabel="Doar Mic Dejun"
                         onPress={() => applyPresetToAll(['breakfast'])}
                         style={[styles.presetPill, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}
                         activeOpacity={0.75}
@@ -236,6 +238,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                       </TouchableOpacity>
                       <TouchableOpacity
                         accessibilityRole="button"
+                        accessibilityLabel="Doar Prânz"
                         onPress={() => applyPresetToAll(['lunch'])}
                         style={[styles.presetPill, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}
                         activeOpacity={0.75}
@@ -244,6 +247,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                       </TouchableOpacity>
                       <TouchableOpacity
                         accessibilityRole="button"
+                        accessibilityLabel="Doar Cină"
                         onPress={() => applyPresetToAll(['dinner'])}
                         style={[styles.presetPill, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}
                         activeOpacity={0.75}
@@ -257,6 +261,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                     <>
                       <TouchableOpacity
                         accessibilityRole="button"
+                        accessibilityLabel="Prânz + Cină"
                         onPress={() => applyPresetToAll(['lunch', 'dinner'])}
                         style={[styles.presetPill, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}
                         activeOpacity={0.75}
@@ -265,6 +270,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                       </TouchableOpacity>
                       <TouchableOpacity
                         accessibilityRole="button"
+                        accessibilityLabel="Mic Dejun + Cină"
                         onPress={() => applyPresetToAll(['breakfast', 'dinner'])}
                         style={[styles.presetPill, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}
                         activeOpacity={0.75}
@@ -273,6 +279,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                       </TouchableOpacity>
                       <TouchableOpacity
                         accessibilityRole="button"
+                        accessibilityLabel="Mic Dejun + Prânz"
                         onPress={() => applyPresetToAll(['breakfast', 'lunch'])}
                         style={[styles.presetPill, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}
                         activeOpacity={0.75}
@@ -285,6 +292,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                   {activeCount === 3 && (
                     <TouchableOpacity
                       accessibilityRole="button"
+                      accessibilityLabel="Toate cele 3 mese"
                       onPress={() => applyPresetToAll(['breakfast', 'lunch', 'dinner'])}
                       style={[styles.presetPill, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}
                       activeOpacity={0.75}
@@ -328,7 +336,8 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                         return (
                           <TouchableOpacity
                             key={slot}
-                            accessibilityRole="button"
+                            accessibilityRole="checkbox"
+                            accessibilityState={{ checked: isSelected }}
                             onPress={() => handleToggleSlotForDay(day.dayOfWeek, slot)}
                             style={[
                               styles.slotPill,
@@ -362,6 +371,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
             {/* Bottom Confirm Button */}
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel="Aplică Mesele Selectate și Reîncarcă Meniul"
               onPress={handleConfirm}
               style={[styles.confirmBtn, { backgroundColor: theme.primary }]}
               activeOpacity={0.85}

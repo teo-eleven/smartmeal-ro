@@ -162,3 +162,22 @@ describe('cămara', () => {
     expect(after?.isFromPantry ?? false).toBe(true);
   });
 });
+
+describe('cititorul de ecran', () => {
+  test('fiecare aliment e o bifă care spune dacă e bifată', () => {
+    seed(['cartofi_albi']);
+    show();
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    const checked = checkboxes.filter((c) => c.props.accessibilityState?.checked);
+
+    expect(checkboxes).toHaveLength(PANTRY_STAPLES_LIST.length);
+    expect(checked).toHaveLength(1);
+  });
+
+  test('butoanele nu își încep eticheta cu un emoji', () => {
+    show();
+
+    expect(screen.getByLabelText('Am cămara plină (Bifează tot)')).toBeTruthy();
+  });
+});

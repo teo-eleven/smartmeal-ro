@@ -173,6 +173,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
         <View style={styles.modeSegment}>
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityState={{ selected: viewMode === 'swipe' }}
             accessibilityLabel="Mod Swipe Carduri"
             onPress={() => setViewMode('swipe')}
             style={[
@@ -198,6 +199,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityState={{ selected: viewMode === 'grid' }}
             accessibilityLabel="Vizualizare Grilă"
             onPress={() => setViewMode('grid')}
             style={[
@@ -469,7 +471,8 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 
               return (
                 <TouchableOpacity
-                  accessibilityRole="button"
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isSelected }}
                   accessibilityLabel={`${mood.label}, ${mood.desc}`}
                   key={mood.id}
                   onPress={() => onToggleMood(mood.id)}

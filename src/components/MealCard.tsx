@@ -255,26 +255,31 @@ export const MealCard: React.FC<MealCardProps> = ({
           },
         ]}
       >
-        {/* Visual Hero Image Container */}
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={`${recipe.title}. Vezi rețeta.`}
-          activeOpacity={0.92}
-          onPress={onPressRecipe}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          style={styles.imageContainer}
-        >
-          <RecipeVisual recipe={recipe} isDark={isDark} style={styles.image} />
+        {/* Visual Hero Image Container. The picture is the button; the badges float over it
+            and let taps through, so the dessert's ✕ is a sibling of the button, not inside
+            it (nested, a screen reader saw one element with two actions). */}
+        <View style={styles.imageContainer}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`${recipe.title}. Vezi rețeta.`}
+            activeOpacity={0.92}
+            onPress={onPressRecipe}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            style={StyleSheet.absoluteFill}
+          >
+            <RecipeVisual recipe={recipe} isDark={isDark} style={styles.image} />
 
-          {/* Smooth Bottom Subtle Edge Shading for Contrast */}
-          <LinearGradient
-            colors={['transparent', isDark ? 'rgba(0, 0, 0, 0.30)' : 'rgba(0, 0, 0, 0.15)']}
-            style={styles.gradientOverlay}
-          />
+            {/* Smooth Bottom Subtle Edge Shading for Contrast */}
+            <LinearGradient
+              colors={['transparent', isDark ? 'rgba(0, 0, 0, 0.30)' : 'rgba(0, 0, 0, 0.15)']}
+              style={styles.gradientOverlay}
+            />
+          </TouchableOpacity>
 
           {/* Floating Day Badge (Top-Left) */}
           <View
+            pointerEvents="box-none"
             style={[
               styles.floatingBadge,
               styles.dayBadge,
@@ -282,11 +287,16 @@ export const MealCard: React.FC<MealCardProps> = ({
               { backgroundColor: isDark ? 'rgba(28, 36, 30, 0.92)' : 'rgba(255, 255, 255, 0.94)' },
             ]}
           >
-            <Text style={[styles.dayBadgeText, { color: getSlotColor(meal?.slot, isDark) }]} numberOfLines={1}>
-              {isDessert
-                ? '🍰 DESERT'
-                : `${DAY_LABELS_RO[day.dayOfWeek].toUpperCase()}${effectiveSlotLabel ? ` • ${effectiveSlotLabel.toUpperCase()}` : ''}`}
-            </Text>
+            <View pointerEvents="none" style={styles.dayBadgeLabel}>
+              <Text
+                style={[styles.dayBadgeText, { color: getSlotColor(meal?.slot, isDark) }]}
+                numberOfLines={1}
+              >
+                {isDessert
+                  ? '🍰 DESERT'
+                  : `${DAY_LABELS_RO[day.dayOfWeek].toUpperCase()}${effectiveSlotLabel ? ` • ${effectiveSlotLabel.toUpperCase()}` : ''}`}
+              </Text>
+            </View>
             {isDessert && onRemoveMeal && (
               <TouchableOpacity
                 accessibilityRole="button"
@@ -303,6 +313,7 @@ export const MealCard: React.FC<MealCardProps> = ({
 
           {/* Floating Price Badge (Top-Right) */}
           <View
+            pointerEvents="none"
             style={[
               styles.floatingBadge,
               styles.priceBadge,
@@ -322,8 +333,7 @@ export const MealCard: React.FC<MealCardProps> = ({
             )}
           </View>
 
-          {/* Bottom Info Floating on Image */}
-        </TouchableOpacity>
+        </View>
 
         {/* Content Body */}
         <View style={styles.contentBody}>
@@ -464,6 +474,7 @@ export const MealCard: React.FC<MealCardProps> = ({
 
             {/* Cheapest suggestion the planner can make, so it sits with the other actions */}
             {meal?.isLeftover ? (
+              onUndoCookDouble && (
               <TouchableOpacity
                 accessibilityRole="button"
                 accessibilityLabel="Gătesc din nou în ziua asta"
@@ -481,6 +492,7 @@ export const MealCard: React.FC<MealCardProps> = ({
                   ♻️ Reîncălzit din ziua de dinainte · gătesc din nou
                 </Text>
               </TouchableOpacity>
+              )
             ) : (
               onCookDouble && (
                 <TouchableOpacity
@@ -504,6 +516,7 @@ export const MealCard: React.FC<MealCardProps> = ({
               {!meal?.isLeftover && (
                 <TouchableOpacity
                   accessibilityRole="button"
+                  accessibilityLabel="Schimbă"
                   onPress={onSwapMeal}
                   style={[styles.swapBtn, { backgroundColor: theme.accentBg, borderColor: theme.border }]}
                   activeOpacity={0.7}
@@ -602,6 +615,7 @@ const styles = StyleSheet.create({
     left: 12,
     maxWidth: '52%',
   },
+  dayBadgeLabel: { flexShrink: 1 },
   dessertBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -48,6 +48,7 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
           <TouchableOpacity
             key={time}
             accessibilityRole="button"
+            accessibilityState={{ selected: active }}
             accessibilityLabel={`${what} la ora ${time}`}
             onPress={() => onPick(time)}
             style={[
@@ -203,6 +204,7 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
                   <TouchableOpacity
                     key={days}
                     accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
                     accessibilityLabel={`Email la ${days} zile`}
                     onPress={() => onChange({ emailFrequencyDays: days })}
                     style={[
@@ -239,6 +241,7 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
                 <TouchableOpacity
                   key={label}
                   accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
                   accessibilityLabel={`Cumpărături ${label}`}
                   onPress={() => onChange({ shoppingWeekday: index })}
                   style={[
