@@ -196,7 +196,18 @@ export interface AppState {
 
   // Persistence & Sync Actions
   hydrateStorage: () => Promise<void>;
-  setUserEmail: (email: string | null) => void;
+  /**
+   * Signs the account in or out of this device. Signing out wipes the account's data from the
+   * phone unless `keepLocalData` (a session that expired on its own); a different account
+   * signing in first wipes whatever the previous one left.
+   */
+  setUserEmail: (email: string | null, options?: { keepLocalData?: boolean }) => void;
+  /** Whose data is on this phone, persisted, so another account never inherits it. */
+  dataOwnerEmail: string | null;
+  /** The plan last sent to or taken from the cloud; compared by reference. */
+  lastSyncedPlan: MealPlan | null;
+  hasUnsyncedPlan: () => boolean;
+  clearLocalAccountData: () => void;
   syncWithCloud: () => Promise<void>;
   syncFromCloud: () => Promise<void>;
   reminders: ReminderSettings;

@@ -328,6 +328,7 @@ export function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Part
   return {
     preferences: effectivePrefs,
     currentPlan: downloadedPlan,
+    lastSyncedPlan: downloadedPlan,
     groceryItems: aggregated.items,
     activeView: 'meals',
     confirmRequest: null,

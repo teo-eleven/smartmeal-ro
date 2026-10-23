@@ -49,6 +49,7 @@ export function createSessionActions(set: SetState, get: GetState) {
         const savedPlans = await storageService.loadSavedPlans();
         const storedReminders = parseReminderSettings(await storageService.loadReminders());
         const recipeNotes = parseRecipeNotes(await storageService.loadRecipeNotes());
+        const dataOwnerEmail = await storageService.loadDataOwner();
 
         // Read the session before anything renders, so the gate never flashes in front of
         // somebody who signed in three weeks ago and is still within their thirty days.
@@ -273,6 +274,7 @@ export function createSessionActions(set: SetState, get: GetState) {
             state.activeNotice,
           savedPlans,
           recipeNotes,
+          dataOwnerEmail,
         }));
       } catch (e) {
         // Whatever went wrong, the user must not be told nothing: starting silently on the
@@ -374,12 +376,25 @@ export function createSessionActions(set: SetState, get: GetState) {
       } finally {
         // One step, never through 'guest', which would show the plan for an instant; and
         // whatever the sign-out did, this device stops showing the account.
+        get().clearLocalAccountData();
         set({ userEmail: null, authStatus: 'checking' });
         void reminderScheduler.cancelAll();
       }
     },
 
-    setUserEmail: (email: string | null) => {
+    setUserEmail: (email: string | null, options: { keepLocalData?: boolean } = {}) => {
+      const previous = get().userEmail ?? get().dataOwnerEmail;
+      if (email === null && previous && !options.keepLocalData) {
+        get().clearLocalAccountData();
+      } else if (email && get().dataOwnerEmail && get().dataOwnerEmail !== email) {
+        // A session expired with its data kept, and now somebody else signs in.
+        get().clearLocalAccountData();
+      }
+      if (email && get().dataOwnerEmail !== email) {
+        set({ dataOwnerEmail: email });
+        void storageService.saveDataOwner(email);
+      }
+
       // At the lock, a sign-in does not open the app by itself: unlock checks that it was
       // recorded as a verification. Anything else calling this with an address cannot be a
       // way past the lock.
@@ -433,7 +448,10 @@ export function createSessionActions(set: SetState, get: GetState) {
           preferences
         );
         if (res.success) {
-          set({ lastSyncedAt: new Date().toLocaleTimeString('ro-RO') });
+          set({
+            lastSyncedAt: new Date().toLocaleTimeString('ro-RO'),
+            lastSyncedPlan: currentPlan,
+          });
         } else {
           set({
             activeNotice: {

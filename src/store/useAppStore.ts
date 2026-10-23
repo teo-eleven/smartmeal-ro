@@ -13,6 +13,7 @@ import { createMealsActions } from './storeMeals';
 import { createPlanActions } from './storePlan';
 import { createPreferencesActions } from './storePreferences';
 import { createSessionActions } from './storeSession';
+import { createAccountActions } from './storeAccount';
 
 export type {
   ActiveView,
@@ -173,6 +174,7 @@ export const useAppStore = create<AppState>((rawSet, get) => {
 
     setActiveView: (view) => set(() => ({ activeView: view })),
     ...createSessionActions(set, get),
+    ...createAccountActions(set, get),
     ...createPreferencesActions(set, get),
     ...createLeftoversActions(set, get),
     ...createMealsActions(set, get),

@@ -8,6 +8,7 @@ import { ReminderSettingsPanel } from './ReminderSettingsPanel';
 import { AccountIdentity } from './AccountIdentity';
 import { DevicesSection } from './DevicesSection';
 import { useSubscriptionStore } from '../store/subscriptionStore';
+import { useAppStore } from '../store/useAppStore';
 import { currentOs } from '../services/platformOs';
 
 /**
@@ -79,6 +80,16 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
 }) => {
   const theme = getAppTheme(isDark);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Signing out wipes the phone, so a plan never sent to the cloud would be lost with it.
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  const hasUnsyncedPlan = useAppStore(
+    (s) => Boolean(s.currentPlan) && s.currentPlan !== s.lastSyncedPlan
+  );
+  const requestSignOut = () => (hasUnsyncedPlan ? setConfirmingSignOut(true) : onSignOut());
+  const uploadInstead = () => {
+    setConfirmingSignOut(false);
+    onSync?.();
+  };
   const subscription = useSubscriptionStore((s) => s.status);
   const manageUrl = subscription.managementUrl ?? storeSubscriptionsPage();
 
@@ -96,13 +107,54 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel="Deconectare cont"
-          onPress={onSignOut}
+          onPress={requestSignOut}
           disabled={isBusy}
           style={[styles.smallBtn, { borderColor: theme.border }]}
         >
           <Text style={[styles.smallBtnText, { color: '#ef4444' }]}>Deconectare</Text>
         </TouchableOpacity>
       </View>
+      {confirmingSignOut && (
+        <View accessibilityRole="alert" style={styles.deleteConfirm}>
+          <Text style={[styles.note, { color: theme.text }]}>
+            Planul de pe telefon nu e urcat în cloud. La deconectare se șterg de pe acest telefon
+            planul, lista, planurile salvate și notițele.
+          </Text>
+          <View style={styles.syncRow}>
+            {isCloudAvailable && onSync && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Urcă planul în cloud înainte de deconectare"
+                onPress={uploadInstead}
+                disabled={isBusy || isSyncing}
+                style={[styles.syncBtn, { backgroundColor: theme.primary }]}
+              >
+                <Text style={[styles.syncBtnText, { color: theme.primaryText }]}>Urcă planul</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Deconectează oricum și șterge planul de pe telefon"
+              onPress={() => {
+                setConfirmingSignOut(false);
+                onSignOut();
+              }}
+              disabled={isBusy}
+              style={[styles.syncBtn, styles.syncBtnOutline, { borderColor: '#ef4444' }]}
+            >
+              <Text style={[styles.syncBtnText, { color: '#ef4444' }]}>Deconectează oricum</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Renunță la deconectare"
+            onPress={() => setConfirmingSignOut(false)}
+            style={styles.deleteLink}
+          >
+            <Text style={[styles.deleteLinkText, { color: theme.textMuted }]}>Renunț</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <AccountIdentity email={userEmail} isDark={isDark} />
       {subscription.isActive && (
         <View style={styles.subscriptionRow}>
