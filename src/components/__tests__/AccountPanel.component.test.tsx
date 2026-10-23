@@ -178,7 +178,7 @@ describe('panoul de cont, abonamentul', () => {
   });
 
   test('„Gestionează abonamentul” deschide pagina magazinului', () => {
-    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     useSubscriptionStore.setState({
       status: {
         ...NOT_SUBSCRIBED,

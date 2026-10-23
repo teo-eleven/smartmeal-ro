@@ -19,7 +19,7 @@ describe('butonul de export', () => {
       format: 'smartmeal-ro-export',
       onThisPhone: { preferences: { avoidedAllergens: ['arahide'] } },
     });
-    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' });
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction', activityType: undefined });
     render(<DataExportButton isDark={false} />);
 
     fireEvent.press(screen.getByLabelText('Descarcă datele mele'));

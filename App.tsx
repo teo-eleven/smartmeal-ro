@@ -30,6 +30,7 @@ import { glass } from './src/styles/glass';
 import { UndoBanner } from './src/components/UndoBanner';
 import { undoBannerCopy } from './src/utils/undoBannerCopy';
 import { startReminderSync } from './src/store/reminderSync';
+import { USE_NATIVE_DRIVER } from './src/styles/motion';
 import { PaywallScreen } from './src/screens/PaywallScreen';
 import { useSubscriptionStore } from './src/store/subscriptionStore';
 import { cloudSyncService } from './src/services/supabase';
@@ -159,13 +160,13 @@ function AppShell() {
       Animated.timing(viewFadeAnim, {
         toValue: 1,
         duration: 260,
-        useNativeDriver: true,
+        useNativeDriver: USE_NATIVE_DRIVER,
       }),
       Animated.spring(viewSlideAnim, {
         toValue: 0,
         friction: 8,
         tension: 60,
-        useNativeDriver: true,
+        useNativeDriver: USE_NATIVE_DRIVER,
       }),
     ]).start();
   }, [activeView, viewFadeAnim, viewSlideAnim]);
