@@ -49,7 +49,10 @@ describe('catalogul e destul de mare cât să nu se repete nimic', () => {
   test.each(DIETS)('%s: fiecare slot are cel puțin 7 rețete pentru 7 zile', (diet) => {
     const eligible = getEligibleRecipes(prefs(diet));
 
-    ([...MAIN_SLOTS, 'dessert'] as MealSlot[]).forEach((slot) => {
+    // Keto has no dessert by design: every dessert in the catalog is built on sugar, flour or
+    // fruit. The planner skips that slot instead (see ketoRules.test.ts).
+    const slotsToCheck: MealSlot[] = diet === 'keto' ? MAIN_SLOTS : [...MAIN_SLOTS, 'dessert'];
+    slotsToCheck.forEach((slot) => {
       const forSlot = eligible.filter((r) => !r.suitableSlots || r.suitableSlots.includes(slot));
       expect({ slot, count: forSlot.length }).toEqual({ slot, count: expect.any(Number) });
       expect(forSlot.length).toBeGreaterThanOrEqual(7);

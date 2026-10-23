@@ -212,6 +212,14 @@ export const RECIPE_EXACT_PHOTOS: Record<string, string> = {
   crema_cacao_avocado_banane: img('photo-1541781774459-bb2af2f05b55'), // Chocolate avocado pudding
   crema_cocos_cacao_banane: img('photo-1541781774459-bb2af2f05b55'), // Whipped coconut chocolate cream
   inghetata_banane_unt_arahide: img('photo-1501443762994-82bd5dace89a'), // Creamy homemade banana peanut butter ice cream
+
+  // --- 14. Mic dejun keto (provizoriu: refolosesc poze deja potrivite, verificate în Etapa 2) ---
+  ochiuri_bacon_rosii_cherry: img('photo-1533089860892-a7c6f0a88666'), // Fried eggs with sausage on a skillet
+  omleta_somon_afumat_spanac: img('photo-1510693206972-df098062cb71'), // Egg and cheese skillet omelette
+  iaurt_grecesc_nuci_chia_scortisoara: img('photo-1488477181946-6428a0291777'), // Yogurt cups
+  pulpe_pui_cuptor_dovlecei_ardei: img('photo-1598103442097-8b74394b95c6'), // Roast chicken in a skillet
+  curcan_ciuperci_smantana_tigaie: img('photo-1598103442097-8b74394b95c6'), // Roast chicken in a skillet
+  antricot_vita_spanac_unt_usturoi: img('photo-1558030006-450675393462'), // Sliced seared steak
 };
 
 /**

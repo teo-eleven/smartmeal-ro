@@ -232,10 +232,11 @@ const SHELF_DETAIL_WORDS = new Set([
 ]);
 
 /**
- * These introduce shelf detail ("Orez CU bob rotund", "Ciocolată amăruie PENTRU desert"), so
- * the name is cut before them. "de" is kept: "Piept de pui" needs it to mean anything.
+ * These introduce shelf detail ("Orez CU bob rotund", "Ciocolată amăruie PENTRU desert",
+ * "Băutură de migdale FĂRĂ zahăr"), so the name is cut before them. "de" is kept: "Piept de
+ * pui" needs it to mean anything.
  */
-const DETAIL_INTRODUCERS = new Set(['cu', 'din', 'pentru', 'la']);
+const DETAIL_INTRODUCERS = new Set(['cu', 'din', 'pentru', 'la', 'fără']);
 
 const MAX_LABEL_WORDS = 3;
 

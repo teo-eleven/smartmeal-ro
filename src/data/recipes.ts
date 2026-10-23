@@ -2503,8 +2503,8 @@ const NEW_RECIPES: Recipe[] = [
   },
   {
     id: 'mousse_ciocolata_cocos',
-    title: 'Mousse de ciocolată amăruie cu lapte de cocos',
-    description: '100% vegetal. Desert dens și catifelat din ciocolată amăruie topită în lapte de cocos cremos.',
+    title: 'Mousse de ciocolată neagră cu lapte de cocos',
+    description: '100% vegetal. Desert dens și catifelat din ciocolată neagră fără lactate topită în lapte de cocos cremos.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 5,
     dietType: 'vegan',
@@ -2512,7 +2512,7 @@ const NEW_RECIPES: Recipe[] = [
     moodTags: ['sweet_treat', 'family_fav'],
     nutritionPerServing: { calories: 390, proteinGrams: 6, carbsGrams: 34, fatGrams: 26 },
     ingredients: [
-      { ingredientId: 'ciocolata_menaj', amountPerServing: 55, unit: 'g' },
+      { ingredientId: 'ciocolata_neagra_vegana', amountPerServing: 55, unit: 'g' },
       { ingredientId: 'lapte_cocos', amountPerServing: 120, unit: 'ml' },
       { ingredientId: 'cacao_pudra', amountPerServing: 5, unit: 'g' },
       { ingredientId: 'zahar_tos', amountPerServing: 10, unit: 'g' },

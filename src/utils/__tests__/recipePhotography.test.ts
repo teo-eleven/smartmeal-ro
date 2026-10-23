@@ -8,8 +8,7 @@ import {
 import { getRecipeArchetype } from '../recipeVisual';
 
 describe('Recipe Photography System', () => {
-  test('all 143 recipes in the catalog have a dedicated, verified photo mapping', () => {
-    expect(RECIPES.length).toBe(143);
+  test('every recipe in the catalog has a dedicated photo mapping', () => {
 
     RECIPES.forEach((recipe) => {
       const uri = getRecipePhotographyUri(recipe, getRecipeArchetype(recipe));
