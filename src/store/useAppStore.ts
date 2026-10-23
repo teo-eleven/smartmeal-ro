@@ -14,7 +14,6 @@ import {
   MoodTag,
   PlannedMeal,
   Recipe,
-  RetailProduct,
   DEFAULT_REMINDERS,
   ReminderSettings,
   SupermarketId,
@@ -52,6 +51,7 @@ import {
   getActiveExtraProductIds,
   getActiveExtraProducts,
   mergePurchased,
+  rebuildCart,
 } from './cart';
 import {
   buildPreferenceRepairNotice,
@@ -225,7 +225,8 @@ export interface AppState {
   quickStart: () => void;
 
   // Plan Operations
-  generatePlan: () => void;
+  /** True when a plan was generated; false when the preferences allow none (a notice says why). */
+  generatePlan: () => boolean;
   reshufflePlan: () => void;
   updatePreferencesAndRebuild: (newPrefs: Partial<UserPreferences>) => void;
   swapMeal: (dayOfWeek: DayOfWeek, slot?: MealSlot) => void;
@@ -486,6 +487,26 @@ function buildInfeasibleNotice(reason: string): SystemNotice {
  * actually produce a plan. Persisting first and generating second is what used to let a
  * failed rebuild leave storage holding a state the app could not start from.
  */
+/**
+ * Generation-only preferences that ask for a dessert on every day that has one now, so
+ * regenerating a week keeps the user's desserts AND the budget pass sees them. Appending them
+ * afterwards let a plan end over budget while its budgetStatus still said "within budget".
+ * Never persisted: the user's own per-day slots stay as they were.
+ */
+function keepingDessertDays(prefs: UserPreferences, previous: MealPlan | null): UserPreferences {
+  const dessertDays = (previous?.days ?? [])
+    .filter((day) => day.meals.some((meal) => meal.slot === 'dessert'))
+    .map((day) => day.dayOfWeek);
+  if (dessertDays.length === 0) return prefs;
+
+  const dailyMealSlots = { ...(prefs.dailyMealSlots ?? {}) };
+  dessertDays.forEach((day) => {
+    const slots = dailyMealSlots[day] ?? prefs.mealSlots;
+    if (!slots.includes('dessert')) dailyMealSlots[day] = [...slots, 'dessert'];
+  });
+  return { ...prefs, dailyMealSlots };
+}
+
 /**
  * Moves the parked surplus into the cupboard, which is what starting a new week means.
  * Called wherever a fresh plan is generated, never while one is being shopped for.
@@ -2980,7 +3001,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           feasibility.reasonRo || 'Preferințele alese nu permit generarea unui plan.'
         ),
       });
-      return;
+      return false;
     }
 
     const plan = generateMealPlan(preferences);
@@ -3021,6 +3042,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       groceryItems: aggregated.items,
       activeView: 'meals',
     }));
+    return true;
   },
 
   reshufflePlan: () => {
@@ -3040,86 +3062,23 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
 
-    const currentRecipeIds = new Set<string>();
-    currentPlan.days.forEach((d) => {
-      d.meals.forEach((m) => currentRecipeIds.add(m.recipe.id));
-    });
-
-    const newPlan = generateMealPlan(preferences, {
+    const currentRecipeIds = new Set(
+      currentPlan.days.flatMap((day) => day.meals.map((meal) => meal.recipe.id))
+    );
+    const newPlan = generateMealPlan(keepingDessertDays(preferences, currentPlan), {
       reshuffle: true,
       excludedRecipeIds: currentRecipeIds,
     });
+    // A reshuffle is a new week: the basket starts empty.
+    const { plan: updatedPlan, items } = rebuildCart(newPlan, newPlan.days, preferences);
 
-    // Preserve any day-specific extra slots (like desserts) that user had added
-    const updatedDays = newPlan.days.map((newDay) => {
-      const existingDay = currentPlan.days.find((d) => d.dayOfWeek === newDay.dayOfWeek);
-      const hadDessert = existingDay?.meals.some((m) => m.slot === 'dessert');
-      const meals = [...newDay.meals];
-
-      if (hadDessert && !meals.some((m) => m.slot === 'dessert')) {
-        const optimalDessert = selectOptimalDessertForDay(newDay.dayOfWeek, newPlan, preferences);
-        if (optimalDessert) {
-          const dessertCost = calculateRecipePortionCost(
-            optimalDessert,
-            preferences.peopleCount,
-            preferences.supermarketId,
-            preferences.excludePantryStaples
-          );
-          meals.push({
-            id: `${newDay.dayOfWeek}-dessert-${Date.now()}`,
-            slot: 'dessert',
-            slotLabelRo: getSlotLabelRo('dessert'),
-            recipe: optimalDessert,
-            servings: preferences.peopleCount,
-            estimatedCostRon: dessertCost,
-          });
-        }
-      }
-
-      const primaryMeal = meals.find((m) => m.slot === 'dinner') || meals[0];
-      const dayCostSum = meals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
-
-      return {
-        ...newDay,
-        recipe: primaryMeal.recipe,
-        meals,
-        estimatedCostRon: Math.round(dayCostSum * 100) / 100,
-      };
-    });
-
-    const allMealsToAggregate = collectMealsFromDays(updatedDays);
-
-    const aggregated = aggregateGroceryList(
-      allMealsToAggregate,
-      preferences.supermarketId,
-      preferences.excludePantryStaples,
-      getActiveExtraProductIds(preferences),
-      preferences.pantryInventory || [],
-      preferences.pantryStock || {}
-    );
-
-    const updatedPlan: MealPlan = {
-      ...newPlan,
-      days: updatedDays,
-      totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
-      totalCartCostRon: aggregated.totalCartCostRon,
-      extraProducts: getActiveExtraProducts(preferences),
-    };
-
-    void storageService.savePlanAndGrocery(updatedPlan, aggregated.items);
-
-    set(() => ({
-      currentPlan: updatedPlan,
-      groceryItems: aggregated.items,
-    }));
+    void storageService.savePlanAndGrocery(updatedPlan, items);
+    set({ currentPlan: updatedPlan, groceryItems: items });
   },
 
   updatePreferencesAndRebuild: (newPrefs: Partial<UserPreferences>) => {
-    const { preferences, currentPlan } = get();
-    const nextPrefs: UserPreferences = {
-      ...preferences,
-      ...newPrefs,
-    };
+    const { preferences, currentPlan, groceryItems } = get();
+    const nextPrefs: UserPreferences = { ...preferences, ...newPrefs };
 
     // Feasibility is checked before anything is persisted: a rebuild that cannot succeed
     // must leave both memory and storage exactly as they were.
@@ -3133,74 +3092,30 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
 
-    void storageService.savePreferences(nextPrefs);
-
-    const newPlan = generateMealPlan(nextPrefs);
-
-    const updatedDays = newPlan.days.map((newDay) => {
-      const existingDay = currentPlan?.days.find((d) => d.dayOfWeek === newDay.dayOfWeek);
-      const hadDessert = existingDay?.meals.some((m) => m.slot === 'dessert');
-      const meals = [...newDay.meals];
-
-      if (hadDessert && !meals.some((m) => m.slot === 'dessert')) {
-        const optimalDessert = selectOptimalDessertForDay(newDay.dayOfWeek, newPlan, nextPrefs);
-        if (optimalDessert) {
-          const dessertCost = calculateRecipePortionCost(
-            optimalDessert,
-            nextPrefs.peopleCount,
-            nextPrefs.supermarketId,
-            nextPrefs.excludePantryStaples
-          );
-          meals.push({
-            id: `${newDay.dayOfWeek}-dessert-${Date.now()}`,
-            slot: 'dessert',
-            slotLabelRo: getSlotLabelRo('dessert'),
-            recipe: optimalDessert,
-            servings: nextPrefs.peopleCount,
-            estimatedCostRon: dessertCost,
-          });
-        }
-      }
-
-      const primaryMeal = meals.find((m) => m.slot === 'dinner') || meals[0];
-      const dayCostSum = meals.reduce((sum, m) => sum + m.estimatedCostRon, 0);
-
-      return {
-        ...newDay,
-        recipe: primaryMeal.recipe,
-        meals,
-        estimatedCostRon: Math.round(dayCostSum * 100) / 100,
-      };
-    });
-
-    const allMealsToAggregate = collectMealsFromDays(updatedDays);
-
-    const aggregated = aggregateGroceryList(
-      allMealsToAggregate,
-      nextPrefs.supermarketId,
-      nextPrefs.excludePantryStaples,
-      getActiveExtraProductIds(nextPrefs),
-      nextPrefs.pantryInventory || [],
-      nextPrefs.pantryStock || {}
+    // Generate first, persist second: a generation that throws must not leave storage holding
+    // preferences that memory never adopted.
+    let newPlan: MealPlan;
+    try {
+      newPlan = generateMealPlan(keepingDessertDays(nextPrefs, currentPlan));
+    } catch (error) {
+      console.warn('[useAppStore] Rebuild failed, preferences unchanged:', error);
+      set({
+        activeNotice: buildInfeasibleNotice(
+          'Nu am putut reface meniul cu aceste setări. Am păstrat meniul și setările de până acum.'
+        ),
+      });
+      return;
+    }
+    const { plan: updatedPlan, items } = rebuildCart(
+      newPlan,
+      newPlan.days,
+      nextPrefs,
+      groceryItems
     );
 
-    const cartItems = mergePurchased(get().groceryItems, aggregated.items);
-
-    const updatedPlan: MealPlan = {
-      ...newPlan,
-      days: updatedDays,
-      totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
-      totalCartCostRon: aggregated.totalCartCostRon,
-      extraProducts: getActiveExtraProducts(nextPrefs),
-    };
-
-    void storageService.savePlanAndGrocery(updatedPlan, cartItems);
-
-    set(() => ({
-      preferences: nextPrefs,
-      currentPlan: updatedPlan,
-      groceryItems: cartItems,
-    }));
+    void storageService.savePreferences(nextPrefs);
+    void storageService.savePlanAndGrocery(updatedPlan, items);
+    set({ preferences: nextPrefs, currentPlan: updatedPlan, groceryItems: items });
   },
 
   swapMeal: (dayOfWeek: DayOfWeek, slot?: MealSlot) => {

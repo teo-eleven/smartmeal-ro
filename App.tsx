@@ -252,10 +252,9 @@ function AppShell() {
         <GeneratingPlanModal
           isDark={isDark}
           onComplete={() => {
-            if (!useAppStore.getState().currentPlan) {
-              generatePlan();
-            }
-            setActiveView('meals');
+            const hasPlan = Boolean(useAppStore.getState().currentPlan) || generatePlan();
+            // Without a plan there is nothing to show on the board; back to the questions.
+            setActiveView(hasPlan ? 'meals' : 'onboarding');
           }}
         />
         <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />

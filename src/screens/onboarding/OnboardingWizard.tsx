@@ -221,7 +221,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       nextStep();
     } else {
       try {
-        generatePlan();
+        // An impossible combination stays on this step, where the notice explains it and the
+        // user can change it. It used to navigate on and leave an empty board spinning.
+        if (!generatePlan()) return;
         onPlanGenerated?.();
         setActiveView('generating');
       } catch (err) {
