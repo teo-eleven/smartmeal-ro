@@ -17,6 +17,8 @@ export function createAccountActions(set: SetState, get: GetState) {
   return {
     dataOwnerEmail: null as string | null,
     lastSyncedPlan: null,
+    cloudPlanVersion: null as string | null,
+    cloudConflictVersion: null as string | null,
 
     /** True when the plan on screen differs from the one last sent to or taken from the cloud. */
     hasUnsyncedPlan: () => {
@@ -38,6 +40,8 @@ export function createAccountActions(set: SetState, get: GetState) {
         confirmRequest: null,
         lastSyncedPlan: null,
         lastSyncedAt: null,
+        cloudPlanVersion: null,
+        cloudConflictVersion: null,
         dataOwnerEmail: null,
         activeView: 'onboarding',
         currentStep: 1,

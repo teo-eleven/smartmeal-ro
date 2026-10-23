@@ -110,7 +110,7 @@ describe('știm dacă planul de pe telefon e urcat în cloud', () => {
   test('după sincronizare e urcat, iar o editare îl face din nou neurcat', async () => {
     await signedInWithData();
     (cloudSyncService.getCurrentUser as jest.Mock).mockResolvedValue({ id: 'u1' });
-    (cloudSyncService.saveMealPlan as jest.Mock).mockResolvedValue({ success: true });
+    (cloudSyncService.saveMealPlan as jest.Mock).mockResolvedValue({ status: 'saved', updatedAt: '2026-10-23T10:00:00Z', error: null });
 
     await store().syncWithCloud();
     expect(store().hasUnsyncedPlan()).toBe(false);

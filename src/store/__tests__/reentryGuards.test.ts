@@ -6,7 +6,7 @@ jest.mock('../../services/supabase', () => ({
   cloudSyncService: {
     isConfigured: jest.fn(() => true),
     getCurrentUser: jest.fn(async () => ({ id: 'uuid-1', email: 'a@b.ro' })),
-    saveMealPlan: jest.fn(async () => ({ error: null })),
+    saveMealPlan: jest.fn(async () => ({ status: 'saved', updatedAt: '2026-10-23T10:00:00Z', error: null })),
     loadMealPlan: jest.fn(async () => ({
       plan: null,
       groceryItems: [],

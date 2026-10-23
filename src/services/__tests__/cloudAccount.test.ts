@@ -465,34 +465,81 @@ describe('mementourile din cont', () => {
 });
 
 describe('salvarea planului', () => {
-  test('preferințele pleacă odată cu planul, ca alergiile să ajungă pe alt telefon', async () => {
-    upsert.mockResolvedValue({ error: null });
+  const plan = { id: 'p1', days: [] } as never;
 
-    await cloudSyncService.saveMealPlan('u1', null, [], {
-      avoidedAllergens: ['arahide'],
+  test('trimite versiunea văzută ultima dată și preferințele, ca alergiile să ajungă pe alt telefon', async () => {
+    rpc.mockResolvedValueOnce({
+      data: [{ status: 'saved', updated_at: '2026-10-23T10:00:00Z' }],
+      error: null,
     } as never);
 
-    expect(upsert.mock.calls[0][0]).toEqual(
-      expect.objectContaining({ user_id: 'u1', preferences: { avoidedAllergens: ['arahide'] } })
-    );
+    const result = await cloudSyncService.saveMealPlan({
+      plan,
+      groceryItems: [],
+      preferences: { avoidedAllergens: ['arahide'] } as never,
+      expectedUpdatedAt: '2026-10-22T09:00:00Z',
+    });
+
+    expect(rpc).toHaveBeenCalledWith('save_meal_plan_if_unchanged', {
+      p_plan_data: plan,
+      p_grocery_items: [],
+      p_preferences: { avoidedAllergens: ['arahide'] },
+      p_expected_updated_at: '2026-10-22T09:00:00Z',
+    });
+    expect(result).toEqual({ status: 'saved', updatedAt: '2026-10-23T10:00:00Z', error: null });
   });
 
-  test('fără preferințe nu suprascrie coloana cu nimic', async () => {
-    upsert.mockResolvedValue({ error: null });
+  test('o versiune mai nouă în cloud vine înapoi ca un conflict, cu data ei', async () => {
+    rpc.mockResolvedValueOnce({
+      data: [{ status: 'conflict', updated_at: '2026-10-23T11:00:00Z' }],
+      error: null,
+    } as never);
 
-    await cloudSyncService.saveMealPlan('u1', null, []);
+    const result = await cloudSyncService.saveMealPlan({
+      plan,
+      groceryItems: [],
+      expectedUpdatedAt: null,
+    });
 
-    expect(upsert.mock.calls[0][0]).not.toHaveProperty('preferences');
+    expect(result).toEqual({ status: 'conflict', updatedAt: '2026-10-23T11:00:00Z', error: null });
+  });
+
+  test('fără plan nu trimite nimic', async () => {
+    const result = await cloudSyncService.saveMealPlan({
+      plan: null,
+      groceryItems: [],
+      expectedUpdatedAt: null,
+    });
+
+    expect(rpc).not.toHaveBeenCalled();
+    expect(result.status).toBe('error');
   });
 
   test('refuzul la salvare se transmite, în română, fără detaliile serverului', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-    upsert.mockResolvedValue({ error: { message: 'too large' } });
+    rpc.mockResolvedValueOnce({ data: null, error: { message: 'too large' } } as never);
 
-    expect(await cloudSyncService.saveMealPlan('u1', null, [])).toEqual({
-      success: false,
+    expect(
+      await cloudSyncService.saveMealPlan({ plan, groceryItems: [], expectedUpdatedAt: null })
+    ).toEqual({
+      status: 'error',
+      updatedAt: null,
       error: 'Nu am putut salva în cloud. Încearcă din nou.',
     });
+    warn.mockRestore();
+  });
+
+  test('un răspuns de formă necunoscută nu e luat drept salvare', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    rpc.mockResolvedValueOnce({ data: [{ status: 'ok?' }], error: null } as never);
+
+    const result = await cloudSyncService.saveMealPlan({
+      plan,
+      groceryItems: [],
+      expectedUpdatedAt: null,
+    });
+
+    expect(result.status).toBe('error');
     warn.mockRestore();
   });
 });

@@ -28,6 +28,30 @@ import { signingOutOnPurpose } from './signOutIntent';
  * security policy"). The user gets this; the detail goes to the log.
  */
 const CLOUD_SAVE_FAILED = 'Nu am putut salva în cloud. Încearcă din nou.';
+
+export interface SavePlanRequest {
+  plan: MealPlan | null;
+  groceryItems: GroceryListItem[];
+  preferences?: UserPreferences;
+  /** The cloud's updated_at this device last saw; null if it never saw one. */
+  expectedUpdatedAt: string | null;
+}
+
+export interface SavePlanResult {
+  status: 'saved' | 'conflict' | 'error';
+  /** The cloud's version after the call: the new one when saved, the newer one on conflict. */
+  updatedAt: string | null;
+  error: string | null;
+}
+
+/** The RPC's answer comes over the network; only the two known shapes are believed. */
+function parseSaveRow(data: unknown): Pick<SavePlanResult, 'status' | 'updatedAt'> | null {
+  const row = Array.isArray(data) ? data[0] : data;
+  if (typeof row !== 'object' || row === null) return null;
+  const { status, updated_at: updatedAt } = row as { status?: unknown; updated_at?: unknown };
+  if ((status !== 'saved' && status !== 'conflict') || typeof updatedAt !== 'string') return null;
+  return { status, updatedAt };
+}
 import { isWellFormedPlan } from './storage';
 
 let supabaseClientInstance: SupabaseClient | null = null;
@@ -521,38 +545,40 @@ export const cloudSyncService = {
     });
   },
 
-  async saveMealPlan(
-    userId: string,
-    plan: MealPlan | null,
-    groceryItems: GroceryListItem[],
-    preferences?: UserPreferences
-  ): Promise<{ success: boolean; error: string | null }> {
+  /**
+   * Saves the plan only if the cloud still holds the version this device last saw
+   * (migration 0009). Otherwise nothing is written and the cloud's version comes back as a
+   * conflict, so the app can ask before replacing a plan another device saved.
+   */
+  async saveMealPlan(request: SavePlanRequest): Promise<SavePlanResult> {
+    if (!request.plan) {
+      return { status: 'error', updatedAt: null, error: 'Nu ai niciun plan de urcat.' };
+    }
     const client = getSupabaseClient();
     if (!client) {
-      return { success: false, error: 'Cloud neconfigurat. Modul offline activ.' };
+      return { status: 'error', updatedAt: null, error: 'Cloud neconfigurat. Modul offline activ.' };
     }
     try {
-      const { error } = await client.from('user_meal_plans').upsert(
-        {
-          user_id: userId,
-          plan_data: plan,
-          grocery_items: groceryItems,
-          // Diet and allergies travel with the plan; an allergy that lives on one device
-          // only is exactly the gap this closes.
-          ...(preferences ? { preferences } : {}),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id' }
-      );
-
+      const { data, error } = await client.rpc('save_meal_plan_if_unchanged', {
+        p_plan_data: request.plan,
+        p_grocery_items: request.groceryItems,
+        // Diet and allergies travel with the plan; null keeps what the row already holds.
+        p_preferences: request.preferences ?? null,
+        p_expected_updated_at: request.expectedUpdatedAt,
+      });
       if (error) {
         console.warn('[Supabase] Could not save the plan:', error.message);
-        return { success: false, error: CLOUD_SAVE_FAILED };
+        return { status: 'error', updatedAt: null, error: CLOUD_SAVE_FAILED };
       }
-      return { success: true, error: null };
+      const row = parseSaveRow(data);
+      if (!row) {
+        console.warn('[Supabase] Unexpected answer from save_meal_plan_if_unchanged');
+        return { status: 'error', updatedAt: null, error: CLOUD_SAVE_FAILED };
+      }
+      return { ...row, error: null };
     } catch (e: unknown) {
       const message = describeFailure(e, 'Eroare la salvarea în cloud.');
-      return { success: false, error: message };
+      return { status: 'error', updatedAt: null, error: message };
     }
   },
 

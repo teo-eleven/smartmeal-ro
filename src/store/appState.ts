@@ -20,7 +20,7 @@ import { RecipeNotes } from '../utils/recipeNotes';
 export type ActiveView = 'onboarding' | 'generating' | 'meals' | 'grocery';
 
 /** Actions destructive enough to require an explicit yes before they run. */
-export type ConfirmActionId = 'reset_onboarding' | 'apply_cloud_plan';
+export type ConfirmActionId = 'reset_onboarding' | 'apply_cloud_plan' | 'overwrite_cloud_plan';
 
 /** Everything needed to put a reset week back exactly as it was. */
 /** What replaced the plan, so the Undo banner can say so. */
@@ -208,7 +208,12 @@ export interface AppState {
   lastSyncedPlan: MealPlan | null;
   hasUnsyncedPlan: () => boolean;
   clearLocalAccountData: () => void;
-  syncWithCloud: () => Promise<void>;
+  /** `overwriteVersion`: the newer cloud version the user agreed to replace. */
+  syncWithCloud: (options?: { overwriteVersion?: string }) => Promise<void>;
+  /** The cloud plan's updated_at this phone last saved or downloaded; persisted. */
+  cloudPlanVersion: string | null;
+  /** A newer cloud version found while saving, waiting for the user to decide. */
+  cloudConflictVersion: string | null;
   syncFromCloud: () => Promise<void>;
   reminders: ReminderSettings;
   updateReminders: (patch: Partial<ReminderSettings>) => void;

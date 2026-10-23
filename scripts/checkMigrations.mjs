@@ -316,6 +316,37 @@ await expectError(
   /permission denied/
 );
 
+// --- plans: save only if unchanged (0009) ---
+const save = (expected) =>
+  `select status, updated_at::text as v from public.save_meal_plan_if_unchanged('{"days":[]}'::jsonb, '[]'::jsonb, null, ${expected === null ? 'null' : `'${expected}'`})`;
+await db.exec(as(U1, S1));
+r = await db.query(save(null));
+check('first save of a plan is written', r.rows[0]?.status === 'saved', r.rows[0]?.status);
+const v1 = r.rows[0].v;
+r = await db.query(save(null));
+check('a device that never saw the cloud plan gets a conflict', r.rows[0]?.status === 'conflict');
+await db.exec('reset role');
+await db.exec(
+  `update public.user_meal_plans set updated_at = now() + interval '1 second' where user_id = '${U1}'`
+);
+await db.exec(as(U1, S1));
+r = await db.query(save(v1));
+check('a stale version gets a conflict, not an overwrite', r.rows[0]?.status === 'conflict');
+const v2 = r.rows[0].v;
+r = await db.query(save(v2));
+check('the current version is written', r.rows[0]?.status === 'saved');
+await db.exec(as(U2, S3));
+r = await db.query(`select count(*)::int as n from public.user_meal_plans`);
+check("a user cannot see another user's plan", r.rows[0].n === 0);
+r = await db.query(save(null));
+check('each user saves only their own row', r.rows[0]?.status === 'saved');
+await expectError(
+  'anon cannot call the plan save',
+  `reset role; set role anon; ${save(null)}`,
+  /permission denied/
+);
+await db.exec('reset role');
+
 await db.exec(`reset role; delete from auth.users where id = '${U1}';`);
 r = await db.query(`select (select count(*) from public.profiles where user_id = '${U1}')::int as p,
   (select count(*) from public.user_devices where user_id = '${U1}')::int as d`);

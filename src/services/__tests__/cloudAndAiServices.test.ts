@@ -96,8 +96,12 @@ describe('Phase 8: Offline Storage, Cloud Sync & AI Proxy Services', () => {
       const user = await cloudSyncService.getCurrentUser();
       expect(user).toBeNull();
 
-      const saveRes = await cloudSyncService.saveMealPlan('guest@test.ro', null, []);
-      expect(saveRes.success).toBe(false);
+      const saveRes = await cloudSyncService.saveMealPlan({
+        plan: null,
+        groceryItems: [],
+        expectedUpdatedAt: null,
+      });
+      expect(saveRes.status).toBe('error');
       expect(saveRes.error).toBeDefined();
 
       const loadRes = await cloudSyncService.loadMealPlan('guest@test.ro');

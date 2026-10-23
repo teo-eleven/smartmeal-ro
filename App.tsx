@@ -54,6 +54,7 @@ function AppShell() {
     clearNotice,
     confirmRequest,
     pendingCloudPlan,
+    cloudConflictVersion,
     requestConfirm,
     cancelConfirm,
     confirmPending,
@@ -82,6 +83,7 @@ function AppShell() {
       clearNotice: state.clearNotice,
       confirmRequest: state.confirmRequest,
       pendingCloudPlan: state.pendingCloudPlan,
+      cloudConflictVersion: state.cloudConflictVersion,
       requestConfirm: state.requestConfirm,
       cancelConfirm: state.cancelConfirm,
       confirmPending: state.confirmPending,
@@ -550,6 +552,19 @@ function AppShell() {
         }
         confirmLabel="Adu planul din cloud"
         cancelLabel="Păstrează ce am aici"
+        onConfirm={confirmPending}
+        onCancel={cancelConfirm}
+        isDark={isDark}
+      />
+
+      {/* Saving found a newer plan in the cloud: nothing is replaced without asking. */}
+      <ConfirmDialog
+        visible={confirmRequest === 'overwrite_cloud_plan'}
+        title="În cloud e un plan mai nou"
+        message={`Pe ${cloudConflictVersion ? new Date(cloudConflictVersion).toLocaleString('ro-RO') : 'alt dispozitiv'} a fost salvat în cloud un plan pe care nu l-ai văzut aici. Dacă urci planul de pe acest telefon, îl înlocuiești. Ca să-l vezi întâi, apasă „⬇ Adu” la Sincronizare, în Cont.`}
+        confirmLabel="Înlocuiește-l cu planul de aici"
+        cancelLabel="Nu urca acum"
+        isDestructive
         onConfirm={confirmPending}
         onCancel={cancelConfirm}
         isDark={isDark}

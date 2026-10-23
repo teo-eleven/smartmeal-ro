@@ -125,7 +125,7 @@ Status: **propus, așteaptă confirmare**.
 - [ ] F6: simularea de abonament verifică și `NODE_ENV`; o eroare SDK tranzitorie nu mai arată paywall-ul.
 - [ ] F7: reschedule după plan nou și după hidratare, serializat, cu debounce de 500 ms.
 - [ ] F10: exportul raportează erorile pe secțiuni și include `display_name` și dispozitivele. F12: `secureSessionStore` raportează erorile de scriere.
-- [ ] Notițe în cloud: migrarea `0009_user_recipe_notes.sql` (tabel + RLS doar pentru proprietar + grant-uri minime), teste în `test:sql`, export și ștergere la ștergerea contului.
+- [ ] Notițe în cloud: migrarea `0010_user_recipe_notes.sql` (0009 a devenit salvarea condiționată a planului) (tabel + RLS doar pentru proprietar + grant-uri minime), teste în `test:sql`, export și ștergere la ștergerea contului.
 - [ ] **Proxy AI → Claude Haiku:**
   - funcție nouă `proxy-ai-swap`;
   - `ANTHROPIC_API_KEY` din secretele Supabase;

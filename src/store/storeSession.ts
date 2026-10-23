@@ -50,6 +50,7 @@ export function createSessionActions(set: SetState, get: GetState) {
         const storedReminders = parseReminderSettings(await storageService.loadReminders());
         const recipeNotes = parseRecipeNotes(await storageService.loadRecipeNotes());
         const dataOwnerEmail = await storageService.loadDataOwner();
+        const cloudPlanVersion = await storageService.loadCloudPlanVersion();
 
         // Read the session before anything renders, so the gate never flashes in front of
         // somebody who signed in three weeks ago and is still within their thirty days.
@@ -275,6 +276,7 @@ export function createSessionActions(set: SetState, get: GetState) {
           savedPlans,
           recipeNotes,
           dataOwnerEmail,
+          cloudPlanVersion,
         }));
       } catch (e) {
         // Whatever went wrong, the user must not be told nothing: starting silently on the
@@ -414,13 +416,21 @@ export function createSessionActions(set: SetState, get: GetState) {
       }
     },
 
-    syncWithCloud: async () => {
+    syncWithCloud: async (options: { overwriteVersion?: string } = {}) => {
       const { userEmail, currentPlan, groceryItems, preferences, authStatus, isSyncing } = get();
       // Not from behind the monthly lock: the account has not been verified yet. Not twice at
       // once either: two quick taps used to send the plan twice and overwrite each other's flags.
       if (!userEmail || authStatus === 'locked' || isSyncing) return;
       if (!cloudSyncService.isConfigured()) {
         set({ activeNotice: syncUnavailableNotice() });
+        return;
+      }
+      if (!currentPlan) {
+        get().showNotice(
+          'Nu ai niciun plan de urcat',
+          'Generează un meniu mai întâi; apoi îl poți urca în cloud.',
+          'info'
+        );
         return;
       }
 
@@ -441,17 +451,24 @@ export function createSessionActions(set: SetState, get: GetState) {
           return;
         }
 
-        const res = await cloudSyncService.saveMealPlan(
-          user.id,
-          currentPlan,
+        // Replaces only the cloud version this phone last saw, or the newer one the user just
+        // agreed to replace; anything else comes back as a conflict.
+        const res = await cloudSyncService.saveMealPlan({
+          plan: currentPlan,
           groceryItems,
-          preferences
-        );
-        if (res.success) {
+          preferences,
+          expectedUpdatedAt: options.overwriteVersion ?? get().cloudPlanVersion,
+        });
+        if (res.status === 'saved') {
           set({
             lastSyncedAt: new Date().toLocaleTimeString('ro-RO'),
             lastSyncedPlan: currentPlan,
+            cloudPlanVersion: res.updatedAt,
+            cloudConflictVersion: null,
           });
+          void storageService.saveCloudPlanVersion(res.updatedAt);
+        } else if (res.status === 'conflict') {
+          set({ cloudConflictVersion: res.updatedAt, confirmRequest: 'overwrite_cloud_plan' });
         } else {
           set({
             activeNotice: {

@@ -102,13 +102,19 @@ export const useAppStore = create<AppState>((rawSet, get) => {
     confirmRequest: null,
     pendingCloudPlan: null,
     requestConfirm: (action: ConfirmActionId) => set({ confirmRequest: action }),
-    cancelConfirm: () => set({ confirmRequest: null, pendingCloudPlan: null }),
+    cancelConfirm: () =>
+      set({ confirmRequest: null, pendingCloudPlan: null, cloudConflictVersion: null }),
     confirmPending: () => {
       const pending = get().confirmRequest;
       if (!pending) return;
       set({ confirmRequest: null });
       if (pending === 'reset_onboarding') {
         get().resetOnboarding();
+        return;
+      }
+      if (pending === 'overwrite_cloud_plan') {
+        const version = get().cloudConflictVersion;
+        if (version) void get().syncWithCloud({ overwriteVersion: version });
         return;
       }
       if (pending === 'apply_cloud_plan') {
