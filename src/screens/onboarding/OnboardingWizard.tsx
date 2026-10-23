@@ -383,6 +383,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
 
                     <TouchableOpacity
                       accessibilityRole="button"
+                      accessibilityState={{
+                        selected: isCurrent,
+                        disabled: stepItem.step > maxVisitedStep,
+                      }}
                       onPress={() => {
                         if (stepItem.step <= maxVisitedStep) {
                           goToStep(stepItem.step);

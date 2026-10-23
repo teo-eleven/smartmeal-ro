@@ -38,6 +38,13 @@ interface AnimatedMealSlotProps {
   style?: StyleProp<ViewStyle>;
 }
 
+/** Spoken names for the tier segment; the visible labels start with a medal emoji. */
+const TIER_NAMES: Record<FoodTier, string> = {
+  basic: 'Basic',
+  medium: 'Medium',
+  premium: 'Premium',
+};
+
 const AnimatedMealSlot: React.FC<AnimatedMealSlotProps> = ({ children, isDessert, style }) => {
   const spawnAnim = useRef(new Animated.Value(isDessert ? 0 : 1)).current;
 
@@ -583,6 +590,8 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                   return (
                     <TouchableOpacity
                       accessibilityRole="button"
+                      accessibilityLabel={`Nivel ingrediente ${TIER_NAMES[tier]}`}
+                      accessibilityState={{ selected: isActive }}
                       key={tier}
                       onPress={() => {
                         if (preferences.foodTier === tier) return;

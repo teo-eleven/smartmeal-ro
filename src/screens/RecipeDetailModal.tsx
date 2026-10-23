@@ -501,7 +501,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
                     return (
                       <TouchableOpacity
-                        accessibilityRole="button"
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: isChecked }}
                         key={ing.ingredientId}
                         onPress={() => toggleIngredient(ing.ingredientId)}
                         activeOpacity={0.7}

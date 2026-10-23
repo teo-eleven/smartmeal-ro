@@ -207,6 +207,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                     <TouchableOpacity
                       key={cnt}
                       accessibilityRole="button"
+                      accessibilityState={{ selected: isActive }}
                       onPress={() => handleSwitchCount(cnt)}
                       style={[
                         styles.segmentBtn,
