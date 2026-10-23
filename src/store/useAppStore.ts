@@ -46,6 +46,7 @@ import { SUPERMARKETS } from '../data/supermarkets';
 import { ALLERGEN_CATALOG } from '../data/allergens';
 import { getRecipeAllergens } from '../utils/allergenFilter';
 import { mergeProtections, stricterDiet } from './preferenceProtections';
+import { nextNotice, withNoticeQueue } from './noticeQueue';
 import {
   collectMealsFromDays,
   getActiveExtraProductIds,
@@ -156,6 +157,8 @@ export interface AppState {
 
   // System Informative Notice
   activeNotice: SystemNotice | null;
+  /** Notices raised while another was on screen, shown in order as each is dismissed. */
+  noticeQueue: SystemNotice[];
   showNotice: (
     title: string,
     message: string,
@@ -874,7 +877,10 @@ function applyPreferenceStep(state: AppState, nextPrefs: UserPreferences): Parti
   return applyPreferencesWithRebuild(state, nextPrefs);
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((rawSet, get) => {
+  // Every notice an action raises waits its turn instead of replacing the one on screen.
+  const set = withNoticeQueue<AppState>(rawSet, get);
+  return {
   currentStep: 1,
   maxVisitedStep: 1,
   totalSteps: 8,
@@ -951,7 +957,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     message: string,
     type: 'info' | 'warning' | 'error' | 'success' = 'info'
   ) => set({ activeNotice: { id: Date.now().toString(), title, message, type } }),
-  clearNotice: () => set({ activeNotice: null }),
+  noticeQueue: [],
+  // Raw set on purpose: showing the next queued notice must not queue it behind itself.
+  clearNotice: () => rawSet((state) => nextNotice(state)),
 
   hydrateStorage: async () => {
     try {
@@ -3427,7 +3435,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       return { groceryItems: nextItems };
     });
   },
-}));
+  };
+});
 
 declare global {
   interface Window {
