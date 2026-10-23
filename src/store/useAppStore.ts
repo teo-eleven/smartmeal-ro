@@ -879,6 +879,9 @@ function applyPreferenceStep(state: AppState, nextPrefs: UserPreferences): Parti
   return applyPreferencesWithRebuild(state, nextPrefs);
 }
 
+/** Minimum time the reload overlay stays up, so it reads as feedback rather than a flicker. */
+const DEFAULT_RELOAD_MS = 650;
+
 export const useAppStore = create<AppState>((rawSet, get) => {
   // Every notice an action raises waits its turn instead of replacing the one on screen.
   const set = withNoticeQueue<AppState>(rawSet, get);
@@ -900,7 +903,9 @@ export const useAppStore = create<AppState>((rawSet, get) => {
   isReloading: false,
   reloadConfig: null,
   triggerReload: async (opts, task) => {
-    const durationMs = opts?.durationMs ?? 650;
+    // One reload at a time: a pull-to-refresh during a rebuild started a second one.
+    if (get().isReloading) return;
+    const durationMs = opts?.durationMs ?? DEFAULT_RELOAD_MS;
     set({
       isReloading: true,
       reloadConfig: {
@@ -915,6 +920,18 @@ export const useAppStore = create<AppState>((rawSet, get) => {
       if (task) {
         await task();
       }
+    } catch (error) {
+      // Every caller fires and forgets, so a throw here was an unhandled rejection and the
+      // user saw the overlay vanish with nothing changed and no explanation.
+      console.warn('[useAppStore] Reload task failed:', error);
+      set({
+        activeNotice: {
+          id: Date.now().toString(),
+          title: 'Nu am putut actualiza meniul',
+          message: 'Ceva n-a mers la reîncărcare. Meniul de dinainte a rămas neschimbat; încearcă din nou.',
+          type: 'error',
+        },
+      });
     } finally {
       const elapsed = Date.now() - startTime;
       const remaining = Math.max(0, durationMs - elapsed);
@@ -1334,9 +1351,10 @@ export const useAppStore = create<AppState>((rawSet, get) => {
   },
 
   syncWithCloud: async () => {
-    const { userEmail, currentPlan, groceryItems, preferences, authStatus } = get();
-    // Not from behind the monthly lock: the account has not been verified yet.
-    if (!userEmail || authStatus === 'locked') return;
+    const { userEmail, currentPlan, groceryItems, preferences, authStatus, isSyncing } = get();
+    // Not from behind the monthly lock: the account has not been verified yet. Not twice at
+    // once either: two quick taps used to send the plan twice and overwrite each other's flags.
+    if (!userEmail || authStatus === 'locked' || isSyncing) return;
     if (!cloudSyncService.isConfigured()) {
       set({ activeNotice: syncUnavailableNotice() });
       return;
@@ -1399,8 +1417,8 @@ export const useAppStore = create<AppState>((rawSet, get) => {
    * user saying so -- the fetched plan waits in `pendingCloudPlan` until they confirm.
    */
   syncFromCloud: async () => {
-    const { userEmail, authStatus } = get();
-    if (!userEmail || authStatus === 'locked') return;
+    const { userEmail, authStatus, isSyncing } = get();
+    if (!userEmail || authStatus === 'locked' || isSyncing) return;
     if (!cloudSyncService.isConfigured()) {
       set({ activeNotice: syncUnavailableNotice() });
       return;
