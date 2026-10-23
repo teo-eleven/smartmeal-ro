@@ -1,4 +1,4 @@
-import { SupermarketId } from '../types';
+import { Recipe, SupermarketId } from '../types';
 
 /**
  * Badge colour for a store's signature dishes. One copy for the whole app: the swap modal's
@@ -25,4 +25,16 @@ export function getStoreBadgeBg(store?: SupermarketId): string {
     default:
       return 'rgba(255, 255, 255, 0.2)';
   }
+}
+
+/**
+ * The store-signature badge to show on a recipe, or null. Only for the store the user shops
+ * at: a "Favorit Lidl" badge on a Kaufland plan advertised a shop the user had not chosen.
+ */
+export function getStoreSignatureBadge(
+  recipe: Pick<Recipe, 'storeBadgeLabel' | 'storeSignature'>,
+  supermarketId: SupermarketId
+): { label: string; color: string } | null {
+  if (!recipe.storeBadgeLabel || recipe.storeSignature !== supermarketId) return null;
+  return { label: recipe.storeBadgeLabel, color: getStoreBadgeBg(recipe.storeSignature) };
 }

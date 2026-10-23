@@ -15,7 +15,7 @@ import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { aiProxyService, SmartSwapResult } from '../services/aiProxy';
 import { getAppTheme } from '../styles/theme';
 import { DAY_LABELS_RO } from '../constants/days';
-import { getStoreBadgeBg } from '../utils/storeBadge';
+import { getStoreBadgeBg, getStoreSignatureBadge } from '../utils/storeBadge';
 
 interface MealSwapModalProps {
   visible: boolean;
@@ -224,7 +224,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                       <Text style={[styles.candidateTitle, { color: theme.text, flex: 1 }]}>
                         {candidate.title}
                       </Text>
-                      {candidate.storeBadgeLabel && (
+                      {getStoreSignatureBadge(candidate, preferences.supermarketId) && (
                         <View style={[styles.storeBadge, { backgroundColor: getStoreBadgeBg(candidate.storeSignature) }]}>
                           <Text style={styles.storeBadgeText}>{candidate.storeBadgeLabel}</Text>
                         </View>

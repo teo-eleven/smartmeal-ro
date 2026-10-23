@@ -14,7 +14,8 @@ import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
 import { getHealthGoalMeta } from '../data/healthTags';
 import { DAY_LABELS_RO } from '../constants/days';
-import { getStoreBadgeBg } from '../utils/storeBadge';
+import { useAppStore } from '../store/useAppStore';
+import { getStoreBadgeBg, getStoreSignatureBadge } from '../utils/storeBadge';
 
 interface MealCardProps {
   day: MealPlanDay;
@@ -117,6 +118,8 @@ export const MealCard: React.FC<MealCardProps> = ({
   onToggleEatOut,
   isDark,
 }) => {
+  // A narrow selector: the card re-renders when the store changes, not on every store write.
+  const supermarketId = useAppStore((state) => state.preferences.supermarketId);
   const recipe = meal ? meal.recipe : day.recipe;
   const costRon = meal ? meal.estimatedCostRon : day.estimatedCostRon;
   const servings = meal ? meal.servings : day.servings;
@@ -340,7 +343,7 @@ export const MealCard: React.FC<MealCardProps> = ({
                 </View>
               );
             })()}
-            {recipe.storeBadgeLabel && (
+            {getStoreSignatureBadge(recipe, supermarketId) && (
               <View style={[styles.pillBadge, { backgroundColor: getStoreBadgeBg(recipe.storeSignature) }]}>
                 <Text style={styles.pillText}>{recipe.storeBadgeLabel}</Text>
               </View>

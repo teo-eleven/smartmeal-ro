@@ -28,7 +28,7 @@ import { getEligibleRecipes, getEligibleDessertRecipes } from '../engine/planner
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { formatIngredientWithHousehold } from '../utils/householdUnits';
 import { getHealthGoalMeta } from '../data/healthTags';
-import { getStoreBadgeBg } from '../utils/storeBadge';
+import { getStoreBadgeBg, getStoreSignatureBadge } from '../utils/storeBadge';
 
 interface RecipeDetailModalProps {
   recipe: Recipe | null;
@@ -339,7 +339,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       </Text>
                     </View>
                   )}
-                  {recipe.storeBadgeLabel && (
+                  {getStoreSignatureBadge(recipe, preferences.supermarketId) && (
                     <View style={[styles.heroPill, { backgroundColor: getStoreBadgeBg(recipe.storeSignature) }]}>
                       <Text style={styles.heroPillText}>{recipe.storeBadgeLabel}</Text>
                     </View>
