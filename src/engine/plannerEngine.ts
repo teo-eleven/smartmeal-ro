@@ -320,8 +320,11 @@ export function collectDayMeals(days: MealPlanDay[]): { recipe: Recipe; servings
   const meals: { recipe: Recipe; servings: number }[] = [];
   days.forEach((day) =>
     day.meals.forEach((meal) => {
-      // A reheated portion was already shopped for on the day it was cooked.
-      if (!meal.isLeftover) meals.push({ recipe: meal.recipe, servings: meal.servings });
+      // A reheated portion was already shopped for on the day it was cooked, and a meal
+      // eaten out is not shopped for at all. Every cart in the app is built from this.
+      if (!meal.isLeftover && !meal.isEatenOut) {
+        meals.push({ recipe: meal.recipe, servings: meal.servings });
+      }
     })
   );
   return meals;
@@ -1031,12 +1034,7 @@ export function swapMealInPlan(
   });
 
   // Re-aggregate full grocery list
-  const allMealsToAggregate: { recipe: Recipe; servings: number }[] = [];
-  updatedDays.forEach((d) => {
-    d.meals.forEach((m) => {
-      if (!m.isLeftover) allMealsToAggregate.push({ recipe: m.recipe, servings: m.servings });
-    });
-  });
+  const allMealsToAggregate = collectDayMeals(updatedDays);
 
   // Extras and pantry belong here exactly as they do in every other aggregation: leaving
   // them out priced a cart the user never sees, and the header stopped matching the list.
