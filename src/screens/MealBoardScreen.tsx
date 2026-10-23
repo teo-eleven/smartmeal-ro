@@ -704,7 +704,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                     <AnimatedMealSlot
                       key={meal.id}
                       isDessert={meal.slot === 'dessert'}
-                      style={styles.mealCol}
+                      style={[styles.mealCol, !isLargeScreen && styles.mealColMobile]}
                     >
                       <MealCard
                         day={day}
@@ -1108,8 +1108,18 @@ const styles = StyleSheet.create({
     gap: 16,
     width: '100%',
   },
+  // A column must not wrap: in a wrapping column each line is as wide as its content, so the
+  // cards grew to their 460 px max on a 390 px phone and were cut off on the right.
   mealsRowMobile: {
     flexDirection: 'column',
+    flexWrap: 'nowrap',
+  },
+  mealColMobile: {
+    flexBasis: 'auto',
+    flexShrink: 1,
+    minWidth: 0,
+    maxWidth: '100%',
+    width: '100%',
   },
   mealCol: {
     flexGrow: 1,
