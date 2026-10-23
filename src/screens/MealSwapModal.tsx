@@ -15,6 +15,7 @@ import { DAY_LABELS_RO } from '../constants/days';
 import { formatCostDelta, rankSwapCandidates } from '../utils/swapCandidates';
 import { useAppStore } from '../store/useAppStore';
 import { getStoreBadgeBg, getStoreSignatureBadge } from '../utils/storeBadge';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface MealSwapModalProps {
   visible: boolean;
@@ -37,6 +38,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   onSelectReplacement,
   isDark,
 }) => {
+  useBlockingWindow(visible);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<SmartSwapResult | null>(null);
 

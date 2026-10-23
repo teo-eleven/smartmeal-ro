@@ -23,7 +23,7 @@ export type ConfirmActionId = 'reset_onboarding' | 'apply_cloud_plan';
 
 /** Everything needed to put a reset week back exactly as it was. */
 /** What replaced the plan, so the Undo banner can say so. */
-export type DiscardReason = 'reset' | 'restore' | 'cloud';
+export type DiscardReason = 'reset' | 'restore' | 'cloud' | 'rebuild';
 
 export interface DiscardedPlan {
   reason: DiscardReason;
@@ -112,6 +112,10 @@ export interface AppState {
     type?: 'info' | 'warning' | 'error' | 'success'
   ) => void;
   clearNotice: () => void;
+  /** Modals on screen; notices wait for zero, because iOS shows one Modal at a time. */
+  openWindowCount: number;
+  windowOpened: () => void;
+  windowClosed: () => void;
 
   // Domain State
   preferences: UserPreferences;

@@ -175,10 +175,7 @@ function AppShell() {
           isDark={isDark}
         />
         <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
-        <BiometricOptInPrompt
-          isDark={isDark}
-          isSuppressed={authModalVisible || Boolean(activeNotice)}
-        />
+        <BiometricOptInPrompt isDark={isDark} />
         <LoadingToast
           visible={isSyncing}
           message="Se sincronizează..."
@@ -222,10 +219,7 @@ function AppShell() {
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
         <PaywallScreen isDark={isDark} onBackToQuestions={() => setActiveView('onboarding')} />
         <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
-        <BiometricOptInPrompt
-          isDark={isDark}
-          isSuppressed={authModalVisible || Boolean(activeNotice)}
-        />
+        <BiometricOptInPrompt isDark={isDark} />
       </SafeAreaView>
     );
   }
@@ -498,10 +492,7 @@ function AppShell() {
 
       {/* Global Informative Notice Pop-up */}
       <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
-      <BiometricOptInPrompt
-        isDark={isDark}
-        isSuppressed={authModalVisible || Boolean(activeNotice)}
-      />
+      <BiometricOptInPrompt isDark={isDark} />
 
       <UndoBanner
         visible={Boolean(lastDiscardedPlan)}
@@ -518,8 +509,8 @@ function AppShell() {
         title="Înlocuiești planul de aici?"
         message={
           pendingCloudPlan?.updatedAt
-            ? `Planul din cloud a fost salvat pe ${new Date(pendingCloudPlan.updatedAt).toLocaleString('ro-RO')}. Îl aduci peste cel de aici? Poți reveni imediat cu „Anulează".`
-            : 'Aduci planul salvat pe celălalt dispozitiv peste cel de aici? Poți reveni imediat cu „Anulează".'
+            ? `Planul din cloud a fost salvat pe ${new Date(pendingCloudPlan.updatedAt).toLocaleString('ro-RO')}. Îl aduci peste cel de aici? Poți reveni imediat cu „Revino la planul anterior”.`
+            : 'Aduci planul salvat pe celălalt dispozitiv peste cel de aici? Poți reveni imediat cu „Revino la planul anterior”.'
         }
         confirmLabel="Adu planul din cloud"
         cancelLabel="Păstrează ce am aici"

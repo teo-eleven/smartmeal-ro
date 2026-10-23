@@ -1,4 +1,5 @@
 import React from 'react';
+import { Modal } from 'react-native';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { BiometricOptInPrompt } from '../BiometricOptInPrompt';
 import { useAppStore } from '../../store/useAppStore';
@@ -18,7 +19,12 @@ beforeEach(() => {
 
 afterEach(() => {
   useAuthSessionStore.getState().clear();
-  useAppStore.setState({ authStatus: 'checking', userEmail: null });
+  useAppStore.setState({
+    authStatus: 'checking',
+    userEmail: null,
+    activeNotice: null,
+    confirmRequest: null,
+  });
 });
 
 /** "Folosești Face ID data viitoare?" — once, after signing in, where it can work. */
@@ -81,4 +87,30 @@ describe('întrebarea despre Face ID', () => {
 
     await waitFor(() => expect(screen.queryByText(/data viitoare/)).toBeNull());
   }, 10000);
+
+  test('butonul Înapoi de pe Android o închide ca „Nu acum”', async () => {
+    render(<BiometricOptInPrompt isDark={false} />);
+
+    screen.UNSAFE_getByType(Modal).props.onRequestClose();
+
+    await waitFor(() => expect(answer).toHaveBeenCalledWith('ana@b.ro', false));
+  });
+
+  test('așteaptă cât timp e deschisă o notificare, fără să i se spună', () => {
+    useAppStore.setState({
+      activeNotice: { id: '1', title: 'Plan gata', message: 'x', type: 'info' },
+    });
+
+    render(<BiometricOptInPrompt isDark={false} />);
+
+    expect(screen.queryByText(/data viitoare/)).toBeNull();
+  });
+
+  test('așteaptă cât timp e deschisă o confirmare', () => {
+    useAppStore.setState({ confirmRequest: 'reset_onboarding' });
+
+    render(<BiometricOptInPrompt isDark={false} />);
+
+    expect(screen.queryByText(/data viitoare/)).toBeNull();
+  });
 });

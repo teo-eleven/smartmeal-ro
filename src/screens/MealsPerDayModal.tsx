@@ -13,6 +13,7 @@ import { DayOfWeek, MealSlot } from '../types';
 import { getAppTheme } from '../styles/theme';
 import { useResponsive } from '../hooks/useResponsive';
 import { DAY_LABELS_RO } from '../constants/days';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface MealsPerDayModalProps {
   visible: boolean;
@@ -33,6 +34,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
   onClose,
   isDark,
 }) => {
+  useBlockingWindow(visible);
   const { currentPlan, preferences, setDailyMealSlots } = useAppStore();
   const theme = getAppTheme(isDark);
   const { contentMaxWidth } = useResponsive();

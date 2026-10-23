@@ -17,6 +17,7 @@ import { AuthForm } from './auth/AuthForm';
 import { ResetPasswordFlow } from './auth/ResetPasswordFlow';
 import { AuthMessages } from './auth/AuthMessages';
 import { getAuthTheme } from './auth/authStyles';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface AuthModalProps {
   visible: boolean;
@@ -45,6 +46,7 @@ export function AuthModal({
   isSyncing = false,
   lastSyncedAt = null,
 }: AuthModalProps) {
+  useBlockingWindow(visible);
   const form = useAuthForm({ onUserChanged, onSignedIn: onClose });
   const { reminders, updateReminders } = useAppStore();
   const theme = getAuthTheme(isDark);

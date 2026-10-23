@@ -11,6 +11,7 @@ import {
 import { MealPlan, MealPrepPhase } from '../types';
 import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface MealPrepModalProps {
   visible: boolean;
@@ -25,6 +26,7 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
   plan,
   isDark,
 }) => {
+  useBlockingWindow(visible);
   const { contentMaxWidth } = useResponsive();
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({});
 

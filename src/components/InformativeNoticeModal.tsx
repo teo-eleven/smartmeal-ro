@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SystemNotice } from '../store/useAppStore';
+import { SystemNotice, useAppStore } from '../store/useAppStore';
 import { glass } from '../styles/glass';
 
 interface InformativeNoticeModalProps {
@@ -10,10 +10,13 @@ interface InformativeNoticeModalProps {
 }
 
 export const InformativeNoticeModal: React.FC<InformativeNoticeModalProps> = ({
-  notice,
+  notice: queuedNotice,
   onDismiss,
   isDark,
 }) => {
+  // Shown over another Modal it would be dropped on iOS; it stays queued until they close.
+  const isWindowOpen = useAppStore((state) => state.openWindowCount > 0);
+  const notice = isWindowOpen ? null : queuedNotice;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
   const scaleAnim = useRef(new Animated.Value(0.92)).current;

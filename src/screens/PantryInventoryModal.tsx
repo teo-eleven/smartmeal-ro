@@ -10,6 +10,7 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { INGREDIENTS } from '../data/ingredients';
 import { getAppTheme } from '../styles/theme';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface PantryInventoryModalProps {
   visible: boolean;
@@ -45,6 +46,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
   onClose,
   isDark,
 }) => {
+  useBlockingWindow(visible);
   const { preferences, setPantryInventory, currentPlan } = useAppStore();
   const currentPantry: string[] = preferences.pantryInventory || [];
 

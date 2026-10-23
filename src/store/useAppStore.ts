@@ -156,6 +156,11 @@ export const useAppStore = create<AppState>((rawSet, get) => {
 
     dismissUndo: () => set({ lastDiscardedPlan: null }),
 
+    openWindowCount: 0,
+    windowOpened: () => set((state) => ({ openWindowCount: state.openWindowCount + 1 })),
+    windowClosed: () =>
+      set((state) => ({ openWindowCount: Math.max(0, state.openWindowCount - 1) })),
+
     setActiveView: (view) => set(() => ({ activeView: view })),
     ...createSessionActions(set, get),
     ...createPreferencesActions(set, get),

@@ -71,3 +71,30 @@ describe('„Salvează” apăsat de două ori', () => {
     expect(store().savedPlans).toHaveLength(countBefore + 1);
   });
 });
+
+describe('refacerea meniului la schimbarea numărului de mese se poate anula', () => {
+  test('meniul de dinainte, cu modificările manuale, rămâne disponibil pentru Undo', () => {
+    const planBefore = store().currentPlan;
+
+    store().setMealsPerDayCount(3);
+
+    expect(store().lastDiscardedPlan).toMatchObject({ reason: 'rebuild', plan: planBefore });
+  });
+
+  test('Undo aduce înapoi și numărul de mese de dinainte', () => {
+    const slotsBefore = store().preferences.mealSlots;
+
+    store().setMealsPerDayCount(3);
+    store().undoReset();
+
+    expect(store().preferences.mealSlots).toEqual(slotsBefore);
+  });
+
+  test('schimbarea unei alergii nu oferă Undo, ca protecția să nu dispară pe nesimțite', () => {
+    store().dismissUndo();
+
+    store().toggleAvoidedAllergen('oua');
+
+    expect(store().lastDiscardedPlan).toBeNull();
+  });
+});

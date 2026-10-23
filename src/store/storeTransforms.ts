@@ -177,6 +177,17 @@ export function applyPreferencesWithRebuild(
 }
 
 /**
+ * A rebuild the user can take back: the week on screen, swaps included, goes to the Undo
+ * banner. Only for layout changes (meals per day, tier); a safety setting such as an allergy
+ * is never offered, or one tap would silently drop the protection with the old menu.
+ */
+export function rebuildKeepingUndo(state: AppState, nextPrefs: UserPreferences): Partial<AppState> {
+  const result = applyPreferencesWithRebuild(state, nextPrefs);
+  if (!result.currentPlan) return result;
+  return { ...result, lastDiscardedPlan: keepForUndo(state, 'rebuild') };
+}
+
+/**
  * Recalculates the shopping cart for preference changes that affect prices but not the
  * menu itself, such as marking an ingredient as already at home. The meals are untouched.
  */

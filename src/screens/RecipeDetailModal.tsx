@@ -29,6 +29,7 @@ import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { formatIngredientWithHousehold } from '../utils/householdUnits';
 import { getHealthGoalMeta } from '../data/healthTags';
 import { getStoreBadgeBg, getStoreSignatureBadge } from '../utils/storeBadge';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface RecipeDetailModalProps {
   recipe: Recipe | null;
@@ -102,6 +103,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   targetDay,
   targetSlot,
 }) => {
+  useBlockingWindow(visible);
   const [personalNotes, setPersonalNotes] = useState('');
   const [activeServings, setActiveServings] = useState(initialServings);
   const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>({});

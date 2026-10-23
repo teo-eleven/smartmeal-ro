@@ -12,6 +12,7 @@ import { SUPERMARKET_LIST } from '../data/supermarkets';
 import { getRetailProductsByCategory } from '../data/retailProducts';
 import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface SnacksAndDrinksModalProps {
   visible: boolean;
@@ -24,6 +25,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
   onClose,
   isDark,
 }) => {
+  useBlockingWindow(visible);
   const { preferences, toggleSnackProduct, toggleDrinkProduct, setIncludeAlcohol, setSnackTastePreference } = useAppStore();
   const { contentMaxWidth, isDesktop, isTablet } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;

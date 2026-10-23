@@ -20,3 +20,7 @@ describe('textul bannerului de Undo', () => {
     expect(undoBannerCopy(undefined)).toEqual(undoBannerCopy('reset'));
   });
 });
+
+test('după refacerea meniului spune că meniul a fost refăcut', () => {
+  expect(undoBannerCopy('rebuild').message).toMatch(/refăcut/);
+});

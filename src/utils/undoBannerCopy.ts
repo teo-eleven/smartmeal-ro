@@ -11,6 +11,10 @@ const COPY: Record<DiscardReason, UndoBannerCopy> = {
     message: 'Ai încărcat un plan salvat în locul celui curent.',
     actionLabel: 'Revino la planul anterior',
   },
+  rebuild: {
+    message: 'Meniul a fost refăcut pentru noile setări.',
+    actionLabel: 'Revino la meniul anterior',
+  },
   cloud: {
     message: 'Planul din cloud l-a înlocuit pe cel de pe telefon.',
     actionLabel: 'Revino la planul anterior',

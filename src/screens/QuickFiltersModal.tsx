@@ -12,6 +12,7 @@ import {
 import { Appliance, DayOfWeek, HealthGoalTag, MoodTag, UserPreferences } from '../types';
 import { HEALTH_GOALS_CATALOG } from '../data/healthTags';
 import { getAppTheme } from '../styles/theme';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface QuickFiltersModalProps {
   visible: boolean;
@@ -66,6 +67,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
   onResetOnboarding,
   isDark,
 }) => {
+  useBlockingWindow(visible);
   const [cookingDays, setCookingDays] = useState<DayOfWeek[]>(preferences.cookingDays);
   const [peopleCount, setPeopleCount] = useState<number>(preferences.peopleCount);
   const [budgetRon, setBudgetRon] = useState<number>(preferences.budgetRon);

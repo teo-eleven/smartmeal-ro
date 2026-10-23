@@ -35,6 +35,7 @@ import {
   applyPreferenceStep,
   applyPreferencesWithRebuild,
   recalculateCartForPreferences,
+  rebuildKeepingUndo,
   rejectIfInfeasible,
 } from './storeTransforms';
 
@@ -583,7 +584,7 @@ export function createPreferencesActions(set: SetState, _get: GetState) {
           mealSlots: combinedSlots,
           dailyMealSlots: undefined,
         };
-        return applyPreferencesWithRebuild(state, nextPrefs);
+        return rebuildKeepingUndo(state, nextPrefs);
       });
     },
 
@@ -614,14 +615,14 @@ export function createPreferencesActions(set: SetState, _get: GetState) {
           dailyMealSlots: dailySlots,
           mealSlots: combinedSlots.length > 0 ? combinedSlots : ['dinner'],
         };
-        return applyPreferencesWithRebuild(state, nextPrefs);
+        return rebuildKeepingUndo(state, nextPrefs);
       });
     },
 
     setFoodTier: (tier: FoodTier) => {
       set((state) => {
         const nextPrefs = { ...state.preferences, foodTier: tier };
-        return applyPreferencesWithRebuild(state, nextPrefs);
+        return rebuildKeepingUndo(state, nextPrefs);
       });
     },
   } satisfies Partial<AppState>;
