@@ -12,16 +12,7 @@ import { useAppStore } from '../store/useAppStore';
 import { DayOfWeek, MealSlot } from '../types';
 import { getAppTheme } from '../styles/theme';
 import { useResponsive } from '../hooks/useResponsive';
-
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  monday: 'Luni',
-  tuesday: 'Marți',
-  wednesday: 'Miercuri',
-  thursday: 'Joi',
-  friday: 'Vineri',
-  saturday: 'Sâmbătă',
-  sunday: 'Duminică',
-};
+import { DAY_LABELS_RO } from '../constants/days';
 
 interface MealsPerDayModalProps {
   visible: boolean;
@@ -322,7 +313,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                   >
                     <View style={styles.dayLabelGroup}>
                       <Text style={[styles.dayLabelText, { color: theme.text }]}>
-                        📅 {DAY_LABELS[day.dayOfWeek]}
+                        📅 {DAY_LABELS_RO[day.dayOfWeek]}
                       </Text>
                       <Text style={[styles.daySelectedSummary, { color: theme.textMuted }]}>
                         {selectedForDay.length} {selectedForDay.length === 1 ? 'masă aleasă' : 'mese alese'}

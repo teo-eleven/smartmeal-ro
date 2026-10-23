@@ -28,6 +28,7 @@ import { glass } from '../styles/glass';
 import { StoreComparisonModal } from './StoreComparisonModal';
 import { SavedPlansModal } from './SavedPlansModal';
 import { AppLoadingScreen } from '../components/AppLoadingScreen';
+import { DAY_LABELS_RO } from '../constants/days';
 
 interface AnimatedMealSlotProps {
   children: React.ReactNode;
@@ -87,16 +88,6 @@ const AnimatedMealSlot: React.FC<AnimatedMealSlotProps> = ({ children, isDessert
 interface MealBoardScreenProps {
   isDark: boolean;
 }
-
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  monday: 'Luni',
-  tuesday: 'Marți',
-  wednesday: 'Miercuri',
-  thursday: 'Joi',
-  friday: 'Vineri',
-  saturday: 'Sâmbătă',
-  sunday: 'Duminică',
-};
 
 export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
   const {
@@ -647,7 +638,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                   <View style={styles.dayHeaderLeft}>
                     <View style={styles.dayTitleBadgeRow}>
                       <Text style={[styles.dayGroupTitle, { color: theme.text }]}>
-                        📅 {DAY_LABELS[day.dayOfWeek].toUpperCase()}
+                        📅 {DAY_LABELS_RO[day.dayOfWeek].toUpperCase()}
                       </Text>
                       <View
                         style={[
