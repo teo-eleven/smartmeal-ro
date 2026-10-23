@@ -133,9 +133,6 @@ export interface Recipe {
  */
 export type RecipeSource = Omit<Recipe, 'nutritionPerServing'>;
 
-/** Follows the phone unless the user overrides it. */
-export type ThemeMode = 'system' | 'light' | 'dark';
-
 /**
  * When the user wants to be nudged.
  *

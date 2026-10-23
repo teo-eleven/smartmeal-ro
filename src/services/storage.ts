@@ -6,7 +6,6 @@ const STORAGE_KEYS = {
   CURRENT_PLAN: '@smartmeal_current_plan',
   GROCERY_ITEMS: '@smartmeal_grocery_items',
   SAVED_PLANS: '@smartmeal_saved_plans',
-  THEME_MODE: '@smartmeal_theme_mode',
   REMINDERS: '@smartmeal_reminders',
 };
 
@@ -146,22 +145,7 @@ export const storageService = {
     }
   },
 
-  async saveThemeMode(mode: string): Promise<void> {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.THEME_MODE, mode);
-    } catch (e) {
-      console.warn('[StorageService] Failed to save the theme choice', e);
-    }
-  },
 
-  async loadThemeMode(): Promise<string | null> {
-    try {
-      return await AsyncStorage.getItem(STORAGE_KEYS.THEME_MODE);
-    } catch (e) {
-      console.warn('[StorageService] Failed to load the theme choice', e);
-      return null;
-    }
-  },
 
   async saveReminders(reminders: unknown): Promise<void> {
     try {

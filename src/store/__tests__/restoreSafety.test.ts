@@ -122,7 +122,7 @@ describe('restoring a saved plan never lowers the user protections', () => {
     useAppStore.getState().generatePlan();
     useAppStore.getState().saveCurrentPlan('Plan omnivor');
     const savedId = useAppStore.getState().savedPlans[0].id;
-    useAppStore.getState().setDietTypes(['vegetarian']);
+    useAppStore.getState().toggleDietType('vegetarian');
 
     // Act
     useAppStore.getState().restoreSavedPlan(savedId);

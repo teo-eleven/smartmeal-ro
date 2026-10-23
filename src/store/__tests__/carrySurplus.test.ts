@@ -110,14 +110,4 @@ describe('reportarea surplusului în cămară', () => {
     Object.values(stock).forEach((amount) => expect(amount).toBeGreaterThanOrEqual(0));
   });
 
-  test('golirea cămării șterge stocul', () => {
-    boot();
-    useAppStore.getState().carryOverSurplus();
-    useAppStore.getState().generatePlan();
-    expect(Object.keys(useAppStore.getState().preferences.pantryStock!).length).toBeGreaterThan(0);
-
-    useAppStore.getState().clearPantryStock();
-
-    expect(useAppStore.getState().preferences.pantryStock).toEqual({});
-  });
 });

@@ -14,7 +14,6 @@ describe('Loading Screens & Toasts Integration Flows', () => {
       currentPlan: null,
       activeView: 'meals',
       isSyncing: false,
-      globalLoadingMessage: null,
     });
   });
 
@@ -65,12 +64,12 @@ describe('Loading Screens & Toasts Integration Flows', () => {
   test('Scenario 4: Shows floating Dynamic Island LoadingToast when background sync or reload occurs', () => {
     useSubscriptionStore.setState({ isChecked: true });
     useAppStore.getState().quickStart();
-    useAppStore.setState({ isSyncing: true, globalLoadingMessage: 'Se reîncarcă datele...' });
+    useAppStore.setState({ isSyncing: true });
 
     render(<App />);
 
-    expect(screen.getByText('Se reîncarcă datele...')).toBeTruthy();
-    expect(screen.getByLabelText('Se reîncarcă datele...')).toBeTruthy();
+    expect(screen.getByText('Se sincronizează...')).toBeTruthy();
+    expect(screen.getByLabelText('Se sincronizează...')).toBeTruthy();
   });
 
   test('Scenario 5: Shows full branded AppLoadingScreen overlay during meal plan regeneration/reload', () => {

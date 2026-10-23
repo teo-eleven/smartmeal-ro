@@ -17,7 +17,6 @@ import {
   DEFAULT_REMINDERS,
   ReminderSettings,
   SupermarketId,
-  ThemeMode,
   UserPreferences,
 } from '../types';
 import {
@@ -30,7 +29,6 @@ import {
   hasRequiredAppliances,
   isSupermarketCompatible,
   selectOptimalDessertForDay,
-  swapMealInPlan,
 } from '../engine/plannerEngine';
 import { aggregateGroceryList } from '../engine/groceryAggregator';
 import {
@@ -127,8 +125,6 @@ export interface AppState {
   signOutToLogin: () => Promise<void>;
   isSyncing: boolean;
   lastSyncedAt: string | null;
-  globalLoadingMessage: string | null;
-  setGlobalLoading: (loading: boolean, message?: string | null) => void;
   isReloading: boolean;
   reloadConfig: {
     title?: string;
@@ -188,9 +184,7 @@ export interface AppState {
   setBudget: (budget: number) => void;
   toggleMoodTag: (tag: MoodTag) => void;
   setMoodTags: (tags: MoodTag[]) => void;
-  setDietType: (diet: DietType) => void;
   toggleDietType: (diet: DietType) => void;
-  setDietTypes: (diets: DietType[]) => void;
   togglePantryItem: (ingredientId: string) => void;
   setPantryInventory: (items: string[]) => void;
   carryOverSurplus: () => void;
@@ -198,7 +192,6 @@ export interface AppState {
   cookDoubleFor: (dayOfWeek: DayOfWeek, mealId: string) => void;
   undoCookDouble: (dayOfWeek: DayOfWeek, mealId: string) => void;
   toggleFavouriteRecipe: (recipeId: string) => void;
-  clearPantryStock: () => void;
   toggleAvoidedAllergen: (allergen: Allergen) => void;
   toggleHealthGoalTag: (tag: HealthGoalTag) => void;
   setHealthGoalTags: (tags: HealthGoalTag[]) => void;
@@ -209,7 +202,6 @@ export interface AppState {
   setMealsPerDayCount: (count: 1 | 2 | 3) => void;
   setDailyMealSlots: (dailySlots: Partial<Record<DayOfWeek, MealSlot[]>>, count?: 1 | 2 | 3) => void;
   setFoodTier: (tier: FoodTier) => void;
-  toggleExtraSlot: (slot: 'dessert') => void;
   addExtraMealToDay: (dayOfWeek: DayOfWeek, slot: 'dessert') => void;
   removeMealFromDay: (dayOfWeek: DayOfWeek, mealId: string) => void;
   setMealServings: (dayOfWeek: DayOfWeek, mealId: string, servings: number) => void;
@@ -218,7 +210,6 @@ export interface AppState {
   toggleSnackProduct: (productId: string) => void;
   toggleDrinkProduct: (productId: string) => void;
   setIncludeAlcohol: (include: boolean) => void;
-  clearSnacksAndDrinks: () => void;
 
   // Wizard Navigation
   nextStep: () => void;
@@ -232,7 +223,6 @@ export interface AppState {
   generatePlan: () => boolean;
   reshufflePlan: () => void;
   updatePreferencesAndRebuild: (newPrefs: Partial<UserPreferences>) => void;
-  swapMeal: (dayOfWeek: DayOfWeek, slot?: MealSlot) => void;
   replaceMealWithRecipe: (dayOfWeek: DayOfWeek, newRecipe: Recipe, slot?: MealSlot) => void;
   /** By meal id when given; otherwise the first meal cooked in that slot (never a leftover). */
   toggleEatOut: (dayOfWeek: DayOfWeek, slot?: MealSlot, mealId?: string) => void;
@@ -246,8 +236,6 @@ export interface AppState {
   setUserEmail: (email: string | null) => void;
   syncWithCloud: () => Promise<void>;
   syncFromCloud: () => Promise<void>;
-  themeMode: ThemeMode;
-  cycleThemeMode: () => void;
   reminders: ReminderSettings;
   updateReminders: (patch: Partial<ReminderSettings>) => void;
   loadRemindersFromCloud: () => Promise<void>;
@@ -891,15 +879,11 @@ export const useAppStore = create<AppState>((rawSet, get) => {
   totalSteps: 8,
   activeView: 'onboarding',
   isHydrated: false,
-  themeMode: 'dark',
   reminders: { ...DEFAULT_REMINDERS },
   userEmail: null,
   authStatus: 'checking',
   isSyncing: false,
   lastSyncedAt: null,
-  globalLoadingMessage: null,
-  setGlobalLoading: (loading: boolean, message?: string | null) =>
-    set({ globalLoadingMessage: loading ? message || 'Se actualizează...' : null }),
   isReloading: false,
   reloadConfig: null,
   triggerReload: async (opts, task) => {
@@ -985,7 +969,6 @@ export const useAppStore = create<AppState>((rawSet, get) => {
       const rawStoredPrefs = await storageService.loadPreferences();
       const { plan, items } = await storageService.loadPlanAndGrocery();
       const savedPlans = await storageService.loadSavedPlans();
-      const storedTheme = await storageService.loadThemeMode();
       const storedReminders = parseReminderSettings(await storageService.loadReminders());
 
       // Read the session before anything renders, so the gate never flashes in front of
@@ -1198,7 +1181,6 @@ export const useAppStore = create<AppState>((rawSet, get) => {
           forceOnboarding && !isNaN(targetStep)
             ? Math.max(state.maxVisitedStep, targetStep)
             : state.maxVisitedStep,
-        themeMode: storedTheme === 'light' ? 'light' : 'dark',
         reminders: storedReminders,
         userEmail: signedInEmail ?? state.userEmail,
         // Not signed in means the gate, on every start. "Without an account" is chosen per
@@ -1275,19 +1257,6 @@ export const useAppStore = create<AppState>((rawSet, get) => {
     }
   },
 
-  cycleThemeMode: () => {
-    set((state) => {
-      const next: ThemeMode = state.themeMode === 'light' ? 'dark' : 'light';
-      void storageService.saveThemeMode(next);
-      return { themeMode: next };
-    });
-  },
-
-  /**
-   * Skips the gate. Kept deliberately explicit rather than implicit, because Apple's
-   * guideline 5.1.1(i) requires an app whose core works offline to be usable without an
-   * account -- and because a meal planner genuinely is useful without one.
-   */
   continueAsGuest: async () => {
     // From the monthly lock, "without an account" means without this one: the session is
     // ended rather than left open behind a guest screen, which would be a way round the lock.
@@ -1796,17 +1765,6 @@ export const useAppStore = create<AppState>((rawSet, get) => {
     });
   },
 
-  setDietType: (diet: DietType) => {
-    set((state) => {
-      const nextPrefs = {
-        ...state.preferences,
-        dietType: diet,
-        dietTypes: [diet],
-      };
-      return applyPreferenceStep(state, nextPrefs);
-    });
-  },
-
   toggleDietType: (diet: DietType) => {
     set((state) => {
       const current =
@@ -1880,19 +1838,6 @@ export const useAppStore = create<AppState>((rawSet, get) => {
         ...state.preferences,
         dietType: baseDiet,
         dietTypes: nextDiets,
-      };
-      return applyPreferenceStep(state, nextPrefs);
-    });
-  },
-
-  setDietTypes: (diets: DietType[]) => {
-    set((state) => {
-      const safeDiets = diets.length > 0 ? diets : (['omnivore'] as DietType[]);
-      const primaryDiet = safeDiets.find(isBaseDiet) || safeDiets[0] || 'omnivore';
-      const nextPrefs: UserPreferences = {
-        ...state.preferences,
-        dietType: primaryDiet,
-        dietTypes: safeDiets,
       };
       return applyPreferenceStep(state, nextPrefs);
     });
@@ -2253,20 +2198,6 @@ export const useAppStore = create<AppState>((rawSet, get) => {
     });
   },
 
-  /** Forgets the cupboard, for when it no longer matches reality. */
-  clearPantryStock: () => {
-    set((state) => {
-      // recalculateCartForPreferences persists the preferences itself; saving here too wrote
-      // the same blob twice on one tap.
-      const nextPrefs: UserPreferences = {
-        ...state.preferences,
-        pantryStock: {},
-        pendingPantryStock: {},
-      };
-      return recalculateCartForPreferences(state, nextPrefs);
-    });
-  },
-
   setPantryInventory: (items: string[]) => {
     set((state) =>
       recalculateCartForPreferences(state, { ...state.preferences, pantryInventory: items })
@@ -2371,19 +2302,6 @@ export const useAppStore = create<AppState>((rawSet, get) => {
   setFoodTier: (tier: FoodTier) => {
     set((state) => {
       const nextPrefs = { ...state.preferences, foodTier: tier };
-      return applyPreferencesWithRebuild(state, nextPrefs);
-    });
-  },
-
-  toggleExtraSlot: (slot: 'dessert') => {
-    set((state) => {
-      const current = state.preferences.mealSlots;
-      const nextSlots = current.includes(slot)
-        ? current.filter((s) => s !== slot)
-        : [...current, slot];
-
-      const safeSlots: MealSlot[] = nextSlots.length > 0 ? nextSlots : ['dinner'];
-      const nextPrefs = { ...state.preferences, mealSlots: safeSlots };
       return applyPreferencesWithRebuild(state, nextPrefs);
     });
   },
@@ -2748,48 +2666,6 @@ export const useAppStore = create<AppState>((rawSet, get) => {
           nextPrefs.pantryInventory || [],
           nextPrefs.pantryStock || {}
         );
-        const cartItems = mergePurchased(state.groceryItems, aggregated.items);
-
-        const updatedPlan: MealPlan = {
-          ...state.currentPlan,
-          totalCartCostRon: aggregated.totalCartCostRon,
-          extraProducts: getActiveExtraProducts(nextPrefs),
-        };
-
-        void storageService.savePlanAndGrocery(updatedPlan, cartItems);
-
-        return {
-          preferences: nextPrefs,
-          currentPlan: updatedPlan,
-          groceryItems: cartItems,
-        };
-      }
-
-      return { preferences: nextPrefs };
-    });
-  },
-
-  clearSnacksAndDrinks: () => {
-    set((state) => {
-      const nextPrefs = {
-        ...state.preferences,
-        selectedSnackIds: [],
-        selectedDrinkIds: [],
-      };
-      void storageService.savePreferences(nextPrefs);
-
-      if (state.currentPlan) {
-        const allMealsToAggregate = collectMealsFromDays(state.currentPlan.days);
-
-        const aggregated = aggregateGroceryList(
-          allMealsToAggregate,
-          nextPrefs.supermarketId,
-          nextPrefs.excludePantryStaples,
-          [],
-          nextPrefs.pantryInventory || [],
-          nextPrefs.pantryStock || {}
-        );
-
         const cartItems = mergePurchased(state.groceryItems, aggregated.items);
 
         const updatedPlan: MealPlan = {
@@ -3178,41 +3054,6 @@ export const useAppStore = create<AppState>((rawSet, get) => {
     void storageService.savePreferences(nextPrefs);
     void storageService.savePlanAndGrocery(updatedPlan, items);
     set({ preferences: nextPrefs, currentPlan: updatedPlan, groceryItems: items });
-  },
-
-  swapMeal: (dayOfWeek: DayOfWeek, slot?: MealSlot) => {
-    const { currentPlan, preferences } = get();
-    if (!currentPlan) return;
-
-    const updatedPlan = swapMealInPlan(currentPlan, dayOfWeek, preferences, slot);
-    const allMealsToAggregate = collectMealsFromDays(updatedPlan.days);
-
-    const aggregated = aggregateGroceryList(
-      allMealsToAggregate,
-      preferences.supermarketId,
-      preferences.excludePantryStaples,
-      getActiveExtraProductIds(preferences),
-      preferences.pantryInventory || [],
-      preferences.pantryStock || {}
-    );
-
-    const cartItems = mergePurchased(get().groceryItems, aggregated.items);
-
-    // The totals travel with the list they were computed from, the way every other
-    // meal-mutating action here does it.
-    const swappedPlan: MealPlan = {
-      ...updatedPlan,
-      totalRecipeCostRon: aggregated.totalRecipePortionCostRon,
-      totalCartCostRon: aggregated.totalCartCostRon,
-      extraProducts: getActiveExtraProducts(preferences),
-    };
-
-    void storageService.savePlanAndGrocery(swappedPlan, cartItems);
-
-    set(() => ({
-      currentPlan: swappedPlan,
-      groceryItems: cartItems,
-    }));
   },
 
   replaceMealWithRecipe: (dayOfWeek: DayOfWeek, newRecipe: Recipe, slot?: MealSlot) => {

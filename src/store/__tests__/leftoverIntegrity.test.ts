@@ -1,3 +1,4 @@
+import { swapLikeTheUi } from '../../__tests__/helpers/swapLikeTheUi';
 import { useAppStore } from '../useAppStore';
 import { compareBasketAcrossStores } from '../../engine/storeComparator';
 import { RECIPES } from '../../data/recipes';
@@ -54,7 +55,7 @@ describe('integritatea meselor reîncălzite', () => {
     bootWithLeftover();
     const before = days()[1].meals[0].recipe.id;
 
-    useAppStore.getState().swapMeal('tuesday');
+    swapLikeTheUi('tuesday');
 
     const after = days()[1].meals[0];
     expect(after.recipe.id).toBe(before);

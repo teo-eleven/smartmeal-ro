@@ -1,3 +1,4 @@
+import { swapLikeTheUi } from '../../__tests__/helpers/swapLikeTheUi';
 import { useAppStore } from '../useAppStore';
 import { DayOfWeek, UserPreferences } from '../../types';
 
@@ -48,7 +49,7 @@ function boot(overrides: Partial<UserPreferences> = {}) {
 describe('totalul coșului rămâne egal cu lista după un swap', () => {
   test('cu cămara goală și fără extra', () => {
     boot();
-    useAppStore.getState().swapMeal('monday');
+    swapLikeTheUi('monday');
 
     expect(cartDrift()).toBeLessThan(0.02);
   });
@@ -57,7 +58,7 @@ describe('totalul coșului rămâne egal cu lista după un swap', () => {
     boot();
     const owned = useAppStore.getState().groceryItems.find((item) => item.estimatedPriceRon > 0)!;
     useAppStore.getState().togglePantryItem(owned.ingredientId);
-    useAppStore.getState().swapMeal('tuesday');
+    swapLikeTheUi('tuesday');
 
     expect(cartDrift()).toBeLessThan(0.02);
   });
@@ -65,7 +66,7 @@ describe('totalul coșului rămâne egal cu lista după un swap', () => {
   test('cu snacks și băuturi adăugate', () => {
     boot();
     useAppStore.getState().toggleSnackProduct('chipsuri_cartofi_sare');
-    useAppStore.getState().swapMeal('wednesday');
+    swapLikeTheUi('wednesday');
 
     expect(cartDrift()).toBeLessThan(0.02);
   });
@@ -76,7 +77,7 @@ describe('totalul coșului rămâne egal cu lista după un swap', () => {
     useAppStore.getState().togglePantryItem(owned.ingredientId);
     useAppStore.getState().toggleSnackProduct('chipsuri_cartofi_sare');
 
-    WEEK.forEach((day) => useAppStore.getState().swapMeal(day));
+    WEEK.forEach((day) => swapLikeTheUi(day));
 
     expect(cartDrift()).toBeLessThan(0.02);
   });
@@ -84,7 +85,7 @@ describe('totalul coșului rămâne egal cu lista după un swap', () => {
   test('snacks-urile alese rămân în plan după un swap', () => {
     boot();
     useAppStore.getState().toggleSnackProduct('chipsuri_cartofi_sare');
-    useAppStore.getState().swapMeal('thursday');
+    swapLikeTheUi('thursday');
 
     expect(useAppStore.getState().currentPlan!.extraProducts!.map((p) => p.id)).toContain(
       'chipsuri_cartofi_sare'

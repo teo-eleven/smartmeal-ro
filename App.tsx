@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { useAppStore } from './src/store/useAppStore';
-import { ThemeMode } from './src/types';
 import { OnboardingWizard } from './src/screens/onboarding/OnboardingWizard';
 import { GeneratingPlanModal } from './src/screens/onboarding/GeneratingPlanModal';
 import { MealBoardScreen } from './src/screens/MealBoardScreen';
@@ -35,26 +34,17 @@ import { cloudSyncService } from './src/services/supabase';
 import { AppLoadingScreen } from './src/components/AppLoadingScreen';
 import { LoadingToast } from './src/components/LoadingToast';
 
-const THEME_ICONS: Record<ThemeMode, string> = { system: '🌙', light: '☀️', dark: '🌙' };
-const THEME_LABELS: Record<ThemeMode, string> = {
-  system: 'întunecată',
-  light: 'luminoasă',
-  dark: 'întunecată',
-};
-
 function AppShell() {
   const [authModalVisible, setAuthModalVisible] = useState(false);
 
   const {
     authStatus,
     isHydrated,
-    themeMode,
     activeView,
     currentPlan,
     groceryItems,
     userEmail,
     isSyncing,
-    globalLoadingMessage,
     isReloading,
     reloadConfig,
     lastSyncedAt,
@@ -188,8 +178,8 @@ function AppShell() {
           isSuppressed={authModalVisible || Boolean(activeNotice)}
         />
         <LoadingToast
-          visible={isSyncing || Boolean(globalLoadingMessage)}
-          message={globalLoadingMessage || 'Se sincronizează...'}
+          visible={isSyncing}
+          message="Se sincronizează..."
           isDark={isDark}
         />
         {isReloading && (
@@ -550,8 +540,8 @@ function AppShell() {
       />
 
       <LoadingToast
-        visible={isSyncing || Boolean(globalLoadingMessage)}
-        message={globalLoadingMessage || 'Se sincronizează...'}
+        visible={isSyncing}
+        message="Se sincronizează..."
         isDark={isDark}
       />
 

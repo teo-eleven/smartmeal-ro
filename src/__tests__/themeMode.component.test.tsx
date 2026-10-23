@@ -11,7 +11,6 @@ describe('tematica permanentă a aplicației', () => {
     asSubscriber();
     await AsyncStorage.clear();
     useAppStore.setState({
-      themeMode: 'dark',
       activeView: 'meals',
       activeNotice: null,
       authStatus: 'guest',
