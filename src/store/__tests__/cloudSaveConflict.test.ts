@@ -7,6 +7,11 @@ jest.mock('../../services/supabase', () => ({
   cloudSyncService: {
     isConfigured: jest.fn(() => true),
     getCurrentUser: jest.fn(async () => ({ id: 'u1' })),
+    // Sync asks the server first (F1); in these tests it answers like getCurrentUser.
+    verifyUser: jest.fn(async function (this: { getCurrentUser: () => Promise<unknown> }) {
+      const user = await this.getCurrentUser();
+      return { user, reason: user ? 'ok' : 'signed_out' };
+    }),
     saveMealPlan: jest.fn(),
     loadMealPlan: jest.fn(),
     loadReminders: jest.fn(async () => null),
@@ -104,4 +109,44 @@ test('versiunea văzută rezistă la repornire', async () => {
   await store().hydrateStorage();
 
   expect(store().cloudPlanVersion).toBe(V2);
+});
+
+/**
+ * The 2026-10-21 audit (F1): with no connection the sync said the session had expired,
+ * which sends people to sign in again for nothing.
+ */
+describe('fără internet', () => {
+  test('sincronizarea spune că nu e conexiune, nu că sesiunea a expirat', async () => {
+    (cloudSyncService.verifyUser as jest.Mock).mockResolvedValueOnce({
+      user: null,
+      reason: 'offline',
+    });
+
+    await store().syncWithCloud();
+
+    expect(save).not.toHaveBeenCalled();
+    expect(store().activeNotice?.title).toBe('Fără conexiune');
+  });
+
+  test('descărcarea spune la fel', async () => {
+    (cloudSyncService.verifyUser as jest.Mock).mockResolvedValueOnce({
+      user: null,
+      reason: 'offline',
+    });
+
+    await store().syncFromCloud();
+
+    expect(store().activeNotice?.title).toBe('Fără conexiune');
+  });
+
+  test('o sesiune respinsă de server cere reconectarea', async () => {
+    (cloudSyncService.verifyUser as jest.Mock).mockResolvedValueOnce({
+      user: null,
+      reason: 'signed_out',
+    });
+
+    await store().syncWithCloud();
+
+    expect(store().activeNotice?.title).toBe('Sesiune expirată');
+  });
 });

@@ -36,6 +36,27 @@ import {
 import { applyCloudPlan, syncUnavailableNotice } from './storeTransforms';
 import { parseRecipeNotes } from '../utils/recipeNotes';
 
+/**
+ * Why a sync could not start. No connection used to be reported as an expired session,
+ * which sent people to sign in again for nothing (F1).
+ */
+function sessionProblemNotice(reason: string, action: 'upload' | 'download'): SystemNotice {
+  const what = action === 'upload' ? 'urca planul în cloud' : 'aduce planul din cloud';
+  return reason === 'offline'
+    ? {
+        id: Date.now().toString(),
+        title: 'Fără conexiune',
+        message: `Nu am putut ${what}: telefonul nu are internet. Planul rămâne salvat pe telefon; încearcă din nou când ai conexiune.`,
+        type: 'warning',
+      }
+    : {
+        id: Date.now().toString(),
+        title: 'Sesiune expirată',
+        message: `Conectează-te din nou ca să poți ${what}.`,
+        type: 'warning',
+      };
+}
+
 type SetState = StoreApi<AppState>['setState'];
 type GetState = () => AppState;
 
@@ -438,16 +459,9 @@ export function createSessionActions(set: SetState, get: GetState) {
       try {
         // The row is keyed by the authenticated user's id, not their email: user_id is a uuid
         // referencing auth.users, and row-level security compares it against auth.uid().
-        const user = await cloudSyncService.getCurrentUser();
+        const { user, reason } = await cloudSyncService.verifyUser();
         if (!user) {
-          set({
-            activeNotice: {
-              id: Date.now().toString(),
-              title: 'Sesiune expirată',
-              message: 'Autentifică-te din nou pentru a sincroniza planul în cloud.',
-              type: 'warning',
-            },
-          });
+          set({ activeNotice: sessionProblemNotice(reason, 'upload') });
           return;
         }
 
@@ -510,16 +524,9 @@ export function createSessionActions(set: SetState, get: GetState) {
 
       set({ isSyncing: true });
       try {
-        const user = await cloudSyncService.getCurrentUser();
+        const { user, reason } = await cloudSyncService.verifyUser();
         if (!user) {
-          set({
-            activeNotice: {
-              id: Date.now().toString(),
-              title: 'Sesiune expirată',
-              message: 'Autentifică-te din nou pentru a aduce planul din cloud.',
-              type: 'warning',
-            },
-          });
+          set({ activeNotice: sessionProblemNotice(reason, 'download') });
           return;
         }
 

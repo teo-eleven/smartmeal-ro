@@ -202,16 +202,61 @@ describe('conectare și cont nou', () => {
     expect(await cloudSyncService.loadConsent('u1')).toBeNull();
   });
 
-  test('adresa curentă vine din sesiunea Supabase', async () => {
-    auth.getUser.mockResolvedValue({ data: { user: { email: 'a@b.ro' } } });
+  /**
+   * The 2026-10-21 audit (F1): identity came from getUser(), a network call, so a phone
+   * that started offline looked signed out. It now comes from the stored session.
+   */
+  test('adresa curentă vine din sesiunea salvată pe telefon, fără rețea', async () => {
+    auth.getSession.mockResolvedValue({ data: { session: { user: { email: 'a@b.ro' } } } });
+    auth.getUser.mockRejectedValue(new Error('offline'));
 
     expect(await cloudSyncService.currentEmail()).toBe('a@b.ro');
   });
 
-  test('un client care aruncă la citirea utilizatorului înseamnă „deconectat"', async () => {
-    auth.getUser.mockRejectedValue(new Error('offline'));
+  test('fără sesiune salvată, nimeni nu e conectat', async () => {
+    auth.getSession.mockResolvedValue({ data: { session: null } });
 
     expect(await cloudSyncService.currentEmail()).toBeNull();
+  });
+
+  test('un client care aruncă la citirea sesiunii înseamnă „deconectat"', async () => {
+    auth.getSession.mockRejectedValue(new Error('storage'));
+
+    expect(await cloudSyncService.currentEmail()).toBeNull();
+  });
+
+  describe('verificarea cu serverul, înainte de sincronizare', () => {
+    test('serverul confirmă utilizatorul', async () => {
+      auth.getUser.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null });
+
+      expect(await cloudSyncService.verifyUser()).toEqual({ user: { id: 'u1' }, reason: 'ok' });
+    });
+
+    test('fără rețea spune „offline”, nu „deconectat”', async () => {
+      auth.getUser.mockRejectedValue(new AuthRetryableFetchError('Failed to fetch', 0));
+
+      expect((await cloudSyncService.verifyUser()).reason).toBe('offline');
+    });
+
+    test('un server care nu răspunde la timp contează ca offline', async () => {
+      jest.useFakeTimers();
+      auth.getUser.mockReturnValue(new Promise(() => undefined));
+
+      const pending = cloudSyncService.verifyUser(1000);
+      jest.advanceTimersByTime(1001);
+
+      expect((await pending).reason).toBe('offline');
+      jest.useRealTimers();
+    });
+
+    test('o sesiune respinsă de server înseamnă „deconectat”', async () => {
+      auth.getUser.mockResolvedValue({
+        data: { user: null },
+        error: { message: 'invalid JWT', status: 401 },
+      });
+
+      expect(await cloudSyncService.verifyUser()).toEqual({ user: null, reason: 'signed_out' });
+    });
   });
 
   test('deconectarea nu aruncă nici când clientul aruncă', async () => {

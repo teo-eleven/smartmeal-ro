@@ -29,6 +29,14 @@ import { signingOutOnPurpose } from './signOutIntent';
  */
 const CLOUD_SAVE_FAILED = 'Nu am putut salva în cloud. Încearcă din nou.';
 
+/** Below the client's patience: a sync that hangs longer is reported as no connection. */
+const VERIFY_USER_TIMEOUT_MS = 8000;
+
+export interface VerifiedUser {
+  user: User | null;
+  reason: 'ok' | 'offline' | 'signed_out';
+}
+
 export interface SavePlanRequest {
   plan: MealPlan | null;
   groceryItems: GroceryListItem[];
@@ -133,6 +141,7 @@ export const cloudSyncService = {
    * in for thirty days" is a project setting (Authentication → Sessions), not something the
    * client can decide. The simulation honours the same thirty days locally.
    */
+  /** From the session stored on the phone: works offline (F1). */
   async currentEmail(): Promise<string | null> {
     if (localAuthSimulation.isActive()) {
       return localAuthSimulation.currentEmail();
@@ -141,16 +150,45 @@ export const cloudSyncService = {
     return user?.email ?? null;
   },
 
+  /**
+   * The signed-in user as the stored session knows it, without asking the server. Starting
+   * offline used to look like being signed out, because this called getUser(). Requests
+   * still carry the token, and the server still checks it.
+   */
   async getCurrentUser(): Promise<User | null> {
     const client = getSupabaseClient();
     if (!client) return null;
     try {
       const {
-        data: { user },
-      } = await client.auth.getUser();
-      return user;
+        data: { session },
+      } = await client.auth.getSession();
+      return session?.user ?? null;
     } catch {
       return null;
+    }
+  },
+
+  /**
+   * Asks the server whether the session is still good, before a sync. Tells a phone with no
+   * connection ('offline') apart from a session the server refused ('signed_out').
+   */
+  async verifyUser(timeoutMs = VERIFY_USER_TIMEOUT_MS): Promise<VerifiedUser> {
+    const client = getSupabaseClient();
+    if (!client) return { user: null, reason: 'signed_out' };
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<'timeout'>((resolve) => {
+      timer = setTimeout(() => resolve('timeout'), timeoutMs);
+    });
+    try {
+      const answer = await Promise.race([client.auth.getUser(), timeout]);
+      if (answer === 'timeout') return { user: null, reason: 'offline' };
+      const { data, error } = answer;
+      if (data?.user) return { user: data.user, reason: 'ok' };
+      return { user: null, reason: isAuthRetryableFetchError(error) ? 'offline' : 'signed_out' };
+    } catch (e) {
+      return { user: null, reason: isAuthRetryableFetchError(e) ? 'offline' : 'signed_out' };
+    } finally {
+      clearTimeout(timer);
     }
   },
 

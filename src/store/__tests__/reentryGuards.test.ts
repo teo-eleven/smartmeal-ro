@@ -6,7 +6,16 @@ jest.mock('../../services/supabase', () => ({
   cloudSyncService: {
     isConfigured: jest.fn(() => true),
     getCurrentUser: jest.fn(async () => ({ id: 'uuid-1', email: 'a@b.ro' })),
-    saveMealPlan: jest.fn(async () => ({ status: 'saved', updatedAt: '2026-10-23T10:00:00Z', error: null })),
+    // Sync asks the server first (F1); in these tests it answers like getCurrentUser.
+    verifyUser: jest.fn(async function (this: { getCurrentUser: () => Promise<unknown> }) {
+      const user = await this.getCurrentUser();
+      return { user, reason: user ? 'ok' : 'signed_out' };
+    }),
+    saveMealPlan: jest.fn(async () => ({
+      status: 'saved',
+      updatedAt: '2026-10-23T10:00:00Z',
+      error: null,
+    })),
     loadMealPlan: jest.fn(async () => ({
       plan: null,
       groceryItems: [],

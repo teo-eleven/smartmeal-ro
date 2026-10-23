@@ -7,6 +7,11 @@ jest.mock('../../services/supabase', () => ({
   cloudSyncService: {
     isConfigured: jest.fn(() => true),
     getCurrentUser: jest.fn(),
+    // Sync asks the server first (F1); in these tests it answers like getCurrentUser.
+    verifyUser: jest.fn(async function (this: { getCurrentUser: () => Promise<unknown> }) {
+      const user = await this.getCurrentUser();
+      return { user, reason: user ? 'ok' : 'signed_out' };
+    }),
     saveMealPlan: jest.fn(),
     loadMealPlan: jest.fn(),
     loadReminders: jest.fn(async () => null),
@@ -110,7 +115,11 @@ describe('știm dacă planul de pe telefon e urcat în cloud', () => {
   test('după sincronizare e urcat, iar o editare îl face din nou neurcat', async () => {
     await signedInWithData();
     (cloudSyncService.getCurrentUser as jest.Mock).mockResolvedValue({ id: 'u1' });
-    (cloudSyncService.saveMealPlan as jest.Mock).mockResolvedValue({ status: 'saved', updatedAt: '2026-10-23T10:00:00Z', error: null });
+    (cloudSyncService.saveMealPlan as jest.Mock).mockResolvedValue({
+      status: 'saved',
+      updatedAt: '2026-10-23T10:00:00Z',
+      error: null,
+    });
 
     await store().syncWithCloud();
     expect(store().hasUnsyncedPlan()).toBe(false);
