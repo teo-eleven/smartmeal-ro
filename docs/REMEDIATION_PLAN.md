@@ -120,7 +120,7 @@ Status: **propus, așteaptă confirmare**.
 - [ ] F1: identitatea vine din `getSession()` (offline-safe); `getUser()` cu timeout doar unde e nevoie de validare; mesajele disting „offline” de „deconectat”.
 - [ ] F2: guard pentru „nu ai plan”; compare-and-swap pe `updated_at` (RPC `save_meal_plan_if_unchanged`) + dialog „versiune mai nouă în cloud”.
 - [ ] F3: reminderele trimit doar câmpurile modificate (patch); se reîncarcă din cloud la hidratare și la revenirea în aplicație, deci dezabonarea e respectată.
-- [ ] F4/F11: deconectarea și ștergerea contului golesc datele locale (cu confirmare dacă planul nu e urcat); mesaj despre anularea abonamentului din magazin.
+- [ ] F4/F11: deconectarea și ștergerea contului golesc datele locale (inclusiv notițele `@smartmeal_recipe_notes`, adăugate în 4b) (cu confirmare dacă planul nu e urcat); mesaj despre anularea abonamentului din magazin.
 - [ ] F6: simularea de abonament verifică și `NODE_ENV`; o eroare SDK tranzitorie nu mai arată paywall-ul.
 - [ ] F7: reschedule după plan nou și după hidratare, serializat, cu debounce de 500 ms.
 - [ ] F10: exportul raportează erorile pe secțiuni și include `display_name` și dispozitivele. F12: `secureSessionStore` raportează erorile de scriere.

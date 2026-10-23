@@ -15,6 +15,7 @@ import {
   SupermarketId,
   UserPreferences,
 } from '../types';
+import { RecipeNotes } from '../utils/recipeNotes';
 
 export type ActiveView = 'onboarding' | 'generating' | 'meals' | 'grocery';
 
@@ -130,6 +131,10 @@ export interface AppState {
   deleteSavedPlan: (savedPlanId: string) => void;
   undoReset: () => void;
   dismissUndo: () => void;
+
+  /** Personal notes per recipe id, on this phone. */
+  recipeNotes: RecipeNotes;
+  setRecipeNote: (recipeId: string, text: string) => void;
 
   // Actions
   setSupermarket: (id: SupermarketId) => void;

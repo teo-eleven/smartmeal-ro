@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { DEFAULT_REMINDERS } from '../types';
+import { storageService } from '../services/storage';
+import { withRecipeNote } from '../utils/recipeNotes';
 import { nextNotice, withNoticeQueue } from './noticeQueue';
 
 import { AppState, ConfirmActionId } from './appState';
@@ -155,6 +157,14 @@ export const useAppStore = create<AppState>((rawSet, get) => {
       }),
 
     dismissUndo: () => set({ lastDiscardedPlan: null }),
+
+    recipeNotes: {},
+    setRecipeNote: (recipeId, text) =>
+      set((state) => {
+        const recipeNotes = withRecipeNote(state.recipeNotes, recipeId, text);
+        void storageService.saveRecipeNotes(recipeNotes);
+        return { recipeNotes };
+      }),
 
     openWindowCount: 0,
     windowOpened: () => set((state) => ({ openWindowCount: state.openWindowCount + 1 })),
