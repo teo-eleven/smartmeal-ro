@@ -106,7 +106,7 @@ const MOOD_LABELS: Record<string, string> = {
   sweet_treat: '🍰 Deserturi',
 };
 
-export const MealCard: React.FC<MealCardProps> = ({
+const MealCardView: React.FC<MealCardProps> = ({
   day,
   meal,
   slotLabel,
@@ -553,6 +553,33 @@ export const MealCard: React.FC<MealCardProps> = ({
     </Animated.View>
   );
 };
+
+const CALLBACK_PROPS = [
+  'onPressRecipe',
+  'onSwapMeal',
+  'onRemoveMeal',
+  'onToggleEatOut',
+  'onCookDouble',
+  'onUndoCookDouble',
+  'onChangeServings',
+] as const;
+
+/**
+ * The board rebuilds every card's callbacks on each render, so comparing them by identity
+ * re-rendered all cards on any edit. They close over only `day`, `meal` and stable store
+ * actions, which are compared here, so a callback's presence is all that can change.
+ */
+export function areMealCardPropsEqual(prev: MealCardProps, next: MealCardProps): boolean {
+  return (
+    prev.day === next.day &&
+    prev.meal === next.meal &&
+    prev.slotLabel === next.slotLabel &&
+    prev.isDark === next.isDark &&
+    CALLBACK_PROPS.every((key) => Boolean(prev[key]) === Boolean(next[key]))
+  );
+}
+
+export const MealCard = React.memo(MealCardView, areMealCardPropsEqual);
 
 const styles = StyleSheet.create({
   leftoverBtn: {

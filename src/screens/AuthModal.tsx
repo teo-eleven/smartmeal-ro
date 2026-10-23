@@ -18,6 +18,7 @@ import { ResetPasswordFlow } from './auth/ResetPasswordFlow';
 import { AuthMessages } from './auth/AuthMessages';
 import { getAuthTheme } from './auth/authStyles';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { useShallow } from 'zustand/react/shallow';
 
 interface AuthModalProps {
   visible: boolean;
@@ -48,7 +49,15 @@ export function AuthModal({
 }: AuthModalProps) {
   useBlockingWindow(visible);
   const form = useAuthForm({ onUserChanged, onSignedIn: onClose });
-  const { reminders, updateReminders } = useAppStore();
+  const {
+    reminders,
+    updateReminders,
+  } = useAppStore(
+    useShallow((state) => ({
+      reminders: state.reminders,
+      updateReminders: state.updateReminders,
+    }))
+  );
   const theme = getAuthTheme(isDark);
   const { isMobile, height: windowHeight } = useResponsive();
 

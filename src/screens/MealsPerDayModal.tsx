@@ -14,6 +14,7 @@ import { getAppTheme } from '../styles/theme';
 import { useResponsive } from '../hooks/useResponsive';
 import { DAY_LABELS_RO } from '../constants/days';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { useShallow } from 'zustand/react/shallow';
 
 interface MealsPerDayModalProps {
   visible: boolean;
@@ -35,7 +36,17 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
   isDark,
 }) => {
   useBlockingWindow(visible);
-  const { currentPlan, preferences, setDailyMealSlots } = useAppStore();
+  const {
+    currentPlan,
+    preferences,
+    setDailyMealSlots,
+  } = useAppStore(
+    useShallow((state) => ({
+      currentPlan: state.currentPlan,
+      preferences: state.preferences,
+      setDailyMealSlots: state.setDailyMealSlots,
+    }))
+  );
   const theme = getAppTheme(isDark);
   const { contentMaxWidth } = useResponsive();
 

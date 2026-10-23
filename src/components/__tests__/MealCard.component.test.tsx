@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
-import { MealCard } from '../MealCard';
+import { MealCard, areMealCardPropsEqual } from '../MealCard';
 import { RECIPES } from '../../data/recipes';
 import { MealPlanDay, PlannedMeal } from '../../types';
 
@@ -337,5 +337,33 @@ describe('o masă reîncălzită fără acțiune de anulare', () => {
     );
 
     expect(screen.queryByLabelText('Gătesc din nou în ziua asta')).toBeNull();
+  });
+});
+
+/**
+ * The board rebuilds every card's callbacks on each render, so a plain React.memo never
+ * skipped anything and editing one meal re-rendered all twenty-odd cards.
+ */
+describe('cardul nu se redesenează degeaba', () => {
+  const meal = buildMeal();
+  const day = buildDay(meal);
+  const props = {
+    day,
+    meal,
+    onPressRecipe: jest.fn(),
+    onSwapMeal: jest.fn(),
+    isDark: false,
+  };
+
+  test('aceleași date cu funcții noi: nu se redesenează', () => {
+    expect(areMealCardPropsEqual(props, { ...props, onPressRecipe: jest.fn() })).toBe(true);
+  });
+
+  test('o masă schimbată: se redesenează', () => {
+    expect(areMealCardPropsEqual(props, { ...props, meal: { ...meal, servings: 5 } })).toBe(false);
+  });
+
+  test('o acțiune care apare sau dispare: se redesenează', () => {
+    expect(areMealCardPropsEqual(props, { ...props, onRemoveMeal: jest.fn() })).toBe(false);
   });
 });

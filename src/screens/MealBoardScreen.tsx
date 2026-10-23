@@ -30,6 +30,7 @@ import { SavedPlansModal } from './SavedPlansModal';
 import { AppLoadingScreen } from '../components/AppLoadingScreen';
 import { DAY_LABELS_RO } from '../constants/days';
 import { USE_NATIVE_DRIVER } from '../styles/motion';
+import { useShallow } from 'zustand/react/shallow';
 
 interface AnimatedMealSlotProps {
   children: React.ReactNode;
@@ -115,7 +116,33 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     restoreSavedPlan,
     deleteSavedPlan,
     toggleEatOut,
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((state) => ({
+      currentPlan: state.currentPlan,
+      preferences: state.preferences,
+      generatePlan: state.generatePlan,
+      showNotice: state.showNotice,
+      reshufflePlan: state.reshufflePlan,
+      updatePreferencesAndRebuild: state.updatePreferencesAndRebuild,
+      cookDoubleFor: state.cookDoubleFor,
+      undoCookDouble: state.undoCookDouble,
+      requestConfirm: state.requestConfirm,
+      replaceMealWithRecipe: state.replaceMealWithRecipe,
+      setMealsPerDayCount: state.setMealsPerDayCount,
+      setFoodTier: state.setFoodTier,
+      setSupermarket: state.setSupermarket,
+      addExtraMealToDay: state.addExtraMealToDay,
+      removeMealFromDay: state.removeMealFromDay,
+      setMealServings: state.setMealServings,
+      isReloading: state.isReloading,
+      triggerReload: state.triggerReload,
+      savedPlans: state.savedPlans,
+      saveCurrentPlan: state.saveCurrentPlan,
+      restoreSavedPlan: state.restoreSavedPlan,
+      deleteSavedPlan: state.deleteSavedPlan,
+      toggleEatOut: state.toggleEatOut,
+    }))
+  );
 
   const [filtersModalVisible, setFiltersModalVisible] = useState(false);
   const [pantryModalVisible, setPantryModalVisible] = useState(false);

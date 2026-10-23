@@ -23,6 +23,7 @@ import { PreGenerationSummaryCard } from '../../components/PreGenerationSummaryC
 import { FoodMoodSwiper } from '../../components/FoodMoodSwiper';
 import { DAY_LABELS_RO } from '../../constants/days';
 import { USE_NATIVE_DRIVER } from '../../styles/motion';
+import { useShallow } from 'zustand/react/shallow';
 
 interface OnboardingWizardProps {
   isDark: boolean;
@@ -170,7 +171,38 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
     quickStart,
     setActiveView,
     showNotice,
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((state) => ({
+      currentStep: state.currentStep,
+      maxVisitedStep: state.maxVisitedStep,
+      totalSteps: state.totalSteps,
+      preferences: state.preferences,
+      setSupermarket: state.setSupermarket,
+      setPeopleCount: state.setPeopleCount,
+      toggleCookingDay: state.toggleCookingDay,
+      setCookingDays: state.setCookingDays,
+      setMealSlots: state.setMealSlots,
+      setFoodTier: state.setFoodTier,
+      setBudget: state.setBudget,
+      toggleMoodTag: state.toggleMoodTag,
+      setMoodTags: state.setMoodTags,
+      toggleDietType: state.toggleDietType,
+      toggleAvoidedAllergen: state.toggleAvoidedAllergen,
+      toggleHealthGoalTag: state.toggleHealthGoalTag,
+      setSnackTastePreference: state.setSnackTastePreference,
+      toggleAppliance: state.toggleAppliance,
+      toggleSnackProduct: state.toggleSnackProduct,
+      toggleDrinkProduct: state.toggleDrinkProduct,
+      setIncludeAlcohol: state.setIncludeAlcohol,
+      nextStep: state.nextStep,
+      prevStep: state.prevStep,
+      goToStep: state.goToStep,
+      generatePlan: state.generatePlan,
+      quickStart: state.quickStart,
+      setActiveView: state.setActiveView,
+      showNotice: state.showNotice,
+    }))
+  );
 
   const { isDesktop, isTablet, contentMaxWidth } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;

@@ -10,6 +10,7 @@ import { SnacksAndDrinksModal } from './SnacksAndDrinksModal';
 import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
+import { useShallow } from 'zustand/react/shallow';
 
 interface GroceryScreenProps {
   isDark: boolean;
@@ -43,7 +44,20 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
     setExcludePantryStaples,
     carryOverSurplus,
     showNotice,
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((state) => ({
+      currentPlan: state.currentPlan,
+      groceryItems: state.groceryItems,
+      preferences: state.preferences,
+      isReloading: state.isReloading,
+      triggerReload: state.triggerReload,
+      toggleGroceryItem: state.toggleGroceryItem,
+      setAllPurchased: state.setAllPurchased,
+      setExcludePantryStaples: state.setExcludePantryStaples,
+      carryOverSurplus: state.carryOverSurplus,
+      showNotice: state.showNotice,
+    }))
+  );
 
   const [showSnacksModal, setShowSnacksModal] = useState(false);
   const [shareCopiedFeedback, setShareCopiedFeedback] = useState(false);

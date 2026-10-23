@@ -34,6 +34,7 @@ import { useSubscriptionStore } from './src/store/subscriptionStore';
 import { cloudSyncService } from './src/services/supabase';
 import { AppLoadingScreen } from './src/components/AppLoadingScreen';
 import { LoadingToast } from './src/components/LoadingToast';
+import { useShallow } from 'zustand/react/shallow';
 
 function AppShell() {
   const [authModalVisible, setAuthModalVisible] = useState(false);
@@ -65,7 +66,36 @@ function AppShell() {
     syncWithCloud,
     syncFromCloud,
     generatePlan,
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((state) => ({
+      authStatus: state.authStatus,
+      isHydrated: state.isHydrated,
+      activeView: state.activeView,
+      currentPlan: state.currentPlan,
+      groceryItems: state.groceryItems,
+      userEmail: state.userEmail,
+      isSyncing: state.isSyncing,
+      isReloading: state.isReloading,
+      reloadConfig: state.reloadConfig,
+      lastSyncedAt: state.lastSyncedAt,
+      activeNotice: state.activeNotice,
+      clearNotice: state.clearNotice,
+      confirmRequest: state.confirmRequest,
+      pendingCloudPlan: state.pendingCloudPlan,
+      requestConfirm: state.requestConfirm,
+      cancelConfirm: state.cancelConfirm,
+      confirmPending: state.confirmPending,
+      lastDiscardedPlan: state.lastDiscardedPlan,
+      undoReset: state.undoReset,
+      dismissUndo: state.dismissUndo,
+      setActiveView: state.setActiveView,
+      hydrateStorage: state.hydrateStorage,
+      setUserEmail: state.setUserEmail,
+      syncWithCloud: state.syncWithCloud,
+      syncFromCloud: state.syncFromCloud,
+      generatePlan: state.generatePlan,
+    }))
+  );
 
   // Permanently locked to the luxury Warm Forest & Amber Lantern theme
   const isDark = true;

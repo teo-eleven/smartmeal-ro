@@ -32,6 +32,7 @@ import { getHealthGoalMeta } from '../data/healthTags';
 import { MAX_NOTE_LENGTH } from '../utils/recipeNotes';
 import { getStoreBadgeBg, getStoreSignatureBadge } from '../utils/storeBadge';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { useShallow } from 'zustand/react/shallow';
 
 interface RecipeDetailModalProps {
   recipe: Recipe | null;
@@ -130,7 +131,19 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     showNotice,
     recipeNotes,
     setRecipeNote,
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((state) => ({
+      preferences: state.preferences,
+      currentPlan: state.currentPlan,
+      replaceMealWithRecipe: state.replaceMealWithRecipe,
+      toggleFavouriteRecipe: state.toggleFavouriteRecipe,
+      toggleDislikedRecipe: state.toggleDislikedRecipe,
+      toggleEatOut: state.toggleEatOut,
+      showNotice: state.showNotice,
+      recipeNotes: state.recipeNotes,
+      setRecipeNote: state.setRecipeNote,
+    }))
+  );
 
   const targetMeal = useMemo(() => {
     if (!currentPlan || !targetDay) return null;

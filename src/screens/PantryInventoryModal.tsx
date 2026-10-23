@@ -11,6 +11,7 @@ import { useAppStore } from '../store/useAppStore';
 import { INGREDIENTS } from '../data/ingredients';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { useShallow } from 'zustand/react/shallow';
 
 interface PantryInventoryModalProps {
   visible: boolean;
@@ -47,7 +48,17 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
   isDark,
 }) => {
   useBlockingWindow(visible);
-  const { preferences, setPantryInventory, currentPlan } = useAppStore();
+  const {
+    preferences,
+    setPantryInventory,
+    currentPlan,
+  } = useAppStore(
+    useShallow((state) => ({
+      preferences: state.preferences,
+      setPantryInventory: state.setPantryInventory,
+      currentPlan: state.currentPlan,
+    }))
+  );
   const currentPantry: string[] = preferences.pantryInventory || [];
 
   const togglePantryItem = (id: string) => {
