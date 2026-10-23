@@ -15,7 +15,7 @@ import {
 import { describeUnsafeRecipe } from './planSafety';
 import { mergeProtections, stricterDiet } from './preferenceProtections';
 
-import { AppState, PendingCloudPlan, SystemNotice } from './appState';
+import { AppState, DiscardReason, DiscardedPlan, PendingCloudPlan, SystemNotice } from './appState';
 import {
   buildInfeasibleNotice,
   buildNothingSafeNotice,
@@ -177,6 +177,17 @@ export function applyPreferencesWithRebuild(
 }
 
 /**
+ * A rebuild the user can take back: the week on screen, swaps included, goes to the Undo
+ * banner. Only for layout changes (meals per day, tier); a safety setting such as an allergy
+ * is never offered, or one tap would silently drop the protection with the old menu.
+ */
+export function rebuildKeepingUndo(state: AppState, nextPrefs: UserPreferences): Partial<AppState> {
+  const result = applyPreferencesWithRebuild(state, nextPrefs);
+  if (!result.currentPlan) return result;
+  return { ...result, lastDiscardedPlan: keepForUndo(state, 'rebuild') };
+}
+
+/**
  * Recalculates the shopping cart for preference changes that affect prices but not the
  * menu itself, such as marking an ingredient as already at home. The meals are untouched.
  */
@@ -240,6 +251,17 @@ export function rejectIfInfeasible(nextPrefs: UserPreferences): Partial<AppState
  * the allergies, which only ever grow when two devices meet. The plan is then re-checked
  * against the result, and the shopping list is recomputed rather than believed.
  */
+/** The plan about to be replaced, held in memory so the Undo banner can bring it back. */
+export function keepForUndo(state: AppState, reason: DiscardReason): DiscardedPlan | null {
+  if (!state.currentPlan) return state.lastDiscardedPlan;
+  return {
+    reason,
+    plan: state.currentPlan,
+    groceryItems: state.groceryItems,
+    preferences: state.preferences,
+  };
+}
+
 export function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Partial<AppState> {
   // The row crossed a network and was written by another copy of this app, possibly older.
   // It gets the same whitelist as anything read from storage, falling back field by field to
@@ -311,13 +333,7 @@ export function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Part
     confirmRequest: null,
     pendingCloudPlan: null,
     // Whatever this replaced stays recoverable, the same way a reset does.
-    lastDiscardedPlan: state.currentPlan
-      ? {
-          plan: state.currentPlan,
-          groceryItems: state.groceryItems,
-          preferences: state.preferences,
-        }
-      : state.lastDiscardedPlan,
+    lastDiscardedPlan: keepForUndo(state, 'cloud'),
     activeNotice: {
       id: Date.now().toString(),
       title: replacedCount > 0 ? 'Plan adaptat la setările tale' : 'Plan descărcat din cloud',

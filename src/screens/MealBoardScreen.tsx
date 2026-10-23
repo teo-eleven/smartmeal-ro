@@ -29,12 +29,21 @@ import { StoreComparisonModal } from './StoreComparisonModal';
 import { SavedPlansModal } from './SavedPlansModal';
 import { AppLoadingScreen } from '../components/AppLoadingScreen';
 import { DAY_LABELS_RO } from '../constants/days';
+import { USE_NATIVE_DRIVER } from '../styles/motion';
+import { useShallow } from 'zustand/react/shallow';
 
 interface AnimatedMealSlotProps {
   children: React.ReactNode;
   isDessert?: boolean;
   style?: StyleProp<ViewStyle>;
 }
+
+/** Spoken names for the tier segment; the visible labels start with a medal emoji. */
+const TIER_NAMES: Record<FoodTier, string> = {
+  basic: 'Basic',
+  medium: 'Medium',
+  premium: 'Premium',
+};
 
 const AnimatedMealSlot: React.FC<AnimatedMealSlotProps> = ({ children, isDessert, style }) => {
   const spawnAnim = useRef(new Animated.Value(isDessert ? 0 : 1)).current;
@@ -45,13 +54,13 @@ const AnimatedMealSlot: React.FC<AnimatedMealSlotProps> = ({ children, isDessert
         Animated.timing(spawnAnim, {
           toValue: 1,
           duration: 400,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
         Animated.spring(spawnAnim, {
           toValue: 1,
           tension: 48,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
       ]).start();
     }
@@ -94,6 +103,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     currentPlan,
     preferences,
     generatePlan,
+    showNotice,
     reshufflePlan,
     updatePreferencesAndRebuild,
     cookDoubleFor,
@@ -113,7 +123,33 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
     restoreSavedPlan,
     deleteSavedPlan,
     toggleEatOut,
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((state) => ({
+      currentPlan: state.currentPlan,
+      preferences: state.preferences,
+      generatePlan: state.generatePlan,
+      showNotice: state.showNotice,
+      reshufflePlan: state.reshufflePlan,
+      updatePreferencesAndRebuild: state.updatePreferencesAndRebuild,
+      cookDoubleFor: state.cookDoubleFor,
+      undoCookDouble: state.undoCookDouble,
+      requestConfirm: state.requestConfirm,
+      replaceMealWithRecipe: state.replaceMealWithRecipe,
+      setMealsPerDayCount: state.setMealsPerDayCount,
+      setFoodTier: state.setFoodTier,
+      setSupermarket: state.setSupermarket,
+      addExtraMealToDay: state.addExtraMealToDay,
+      removeMealFromDay: state.removeMealFromDay,
+      setMealServings: state.setMealServings,
+      isReloading: state.isReloading,
+      triggerReload: state.triggerReload,
+      savedPlans: state.savedPlans,
+      saveCurrentPlan: state.saveCurrentPlan,
+      restoreSavedPlan: state.restoreSavedPlan,
+      deleteSavedPlan: state.deleteSavedPlan,
+      toggleEatOut: state.toggleEatOut,
+    }))
+  );
 
   const [filtersModalVisible, setFiltersModalVisible] = useState(false);
   const [pantryModalVisible, setPantryModalVisible] = useState(false);
@@ -149,15 +185,18 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
   const [mealsModalVisible, setMealsModalVisible] = useState(false);
   const [mealsModalInitialCount, setMealsModalInitialCount] = useState<1 | 2 | 3>(1);
   const [budgetOverrunModalVisible, setBudgetOverrunModalVisible] = useState(false);
-  const lastOverrunPromptCostRef = useRef<number | null>(null);
+  const budgetOverrunPromptedCost = useAppStore((s) => s.budgetOverrunPromptedCost);
+  const markBudgetOverrunPrompted = useAppStore((s) => s.markBudgetOverrunPrompted);
 
+  // Prompt once per cart total, remembered in the store: the board unmounts on every tab
+  // switch, and a per-mount ref brought the prompt back each time the user returned.
   useEffect(() => {
     if (!currentPlan) return;
     if (
       currentPlan.totalCartCostRon > currentPlan.totalBudgetRon &&
-      lastOverrunPromptCostRef.current !== currentPlan.totalCartCostRon
+      budgetOverrunPromptedCost !== currentPlan.totalCartCostRon
     ) {
-      lastOverrunPromptCostRef.current = currentPlan.totalCartCostRon;
+      markBudgetOverrunPrompted(currentPlan.totalCartCostRon);
       setBudgetOverrunModalVisible(true);
     }
   }, [currentPlan?.totalCartCostRon, currentPlan?.totalBudgetRon]);
@@ -173,8 +212,13 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
       generatePlan();
     } catch (err) {
       console.warn('[MealBoardScreen] Auto plan generation failed:', err);
+      showNotice(
+        'Meniul nu a putut fi generat',
+        'A apărut o eroare neașteptată. Apasă „Plan Nou” sau schimbă o preferință și încearcă din nou.',
+        'error'
+      );
     }
-  }, [currentPlan, generatePlan]);
+  }, [currentPlan, generatePlan, showNotice]);
 
   const theme = getAppTheme(isDark);
 
@@ -355,6 +399,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
 
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityLabel="Ce am în Cămară"
             onPress={() => setPantryModalVisible(true)}
             {...glass('pill')}
             style={[
@@ -393,6 +438,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
 
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityLabel="Ghid Meal Prep"
             onPress={() => setMealPrepModalVisible(true)}
             {...glass('pill')}
             style={[
@@ -412,6 +458,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
 
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityLabel="Macro Săptămână"
             onPress={() => setMacroModalVisible(true)}
             {...glass('pill')}
             style={[
@@ -445,6 +492,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                 <Text style={[styles.mealsPerDayTitle, { color: theme.text }]}>Mese pe zi:</Text>
                 <TouchableOpacity
                   accessibilityRole="button"
+                  accessibilityLabel="Personalizează pe zile"
                   onPress={() => {
                     setMealsModalInitialCount((baseMealsCount as 1 | 2 | 3) || 1);
                     setMealsModalVisible(true);
@@ -470,6 +518,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                 {([1, 2, 3] as const).map((cnt) => (
                   <TouchableOpacity
                     accessibilityRole="button"
+                    accessibilityState={{ selected: baseMealsCount === cnt }}
                     key={cnt}
                     onPress={() => {
                       if (cnt === 3) {
@@ -541,6 +590,8 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                   return (
                     <TouchableOpacity
                       accessibilityRole="button"
+                      accessibilityLabel={`Nivel ingrediente ${TIER_NAMES[tier]}`}
+                      accessibilityState={{ selected: isActive }}
                       key={tier}
                       onPress={() => {
                         if (preferences.foodTier === tier) return;
@@ -665,6 +716,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                     {!hasDessert ? (
                       <TouchableOpacity
                         accessibilityRole="button"
+                        accessibilityLabel="Adaugă Desert de Casă"
                         onPress={() => addExtraMealToDay(day.dayOfWeek, 'dessert')}
                         {...glass('pill')}
                         style={[
@@ -704,7 +756,7 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
                     <AnimatedMealSlot
                       key={meal.id}
                       isDessert={meal.slot === 'dessert'}
-                      style={styles.mealCol}
+                      style={[styles.mealCol, !isLargeScreen && styles.mealColMobile]}
                     >
                       <MealCard
                         day={day}
@@ -1108,8 +1160,18 @@ const styles = StyleSheet.create({
     gap: 16,
     width: '100%',
   },
+  // A column must not wrap: in a wrapping column each line is as wide as its content, so the
+  // cards grew to their 460 px max on a 390 px phone and were cut off on the right.
   mealsRowMobile: {
     flexDirection: 'column',
+    flexWrap: 'nowrap',
+  },
+  mealColMobile: {
+    flexBasis: 'auto',
+    flexShrink: 1,
+    minWidth: 0,
+    maxWidth: '100%',
+    width: '100%',
   },
   mealCol: {
     flexGrow: 1,

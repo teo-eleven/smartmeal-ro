@@ -65,6 +65,7 @@ export const PlanHeader: React.FC<PlanHeaderProps> = ({
 
         <TouchableOpacity
           accessibilityRole="button"
+          accessibilityLabel="Filtre"
           onPress={onOpenFilters || onResetOnboarding}
           {...glass('pill')}
           style={[

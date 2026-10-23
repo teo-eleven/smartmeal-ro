@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   GROCERY_ITEMS: '@smartmeal_grocery_items',
   SAVED_PLANS: '@smartmeal_saved_plans',
   REMINDERS: '@smartmeal_reminders',
+  RECIPE_NOTES: '@smartmeal_recipe_notes',
 };
 
 /** Shape check for a row read back from storage, before anything relies on it. */
@@ -145,7 +146,24 @@ export const storageService = {
     }
   },
 
+  async saveRecipeNotes(notes: Record<string, string>): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.RECIPE_NOTES, JSON.stringify(notes));
+    } catch (e) {
+      console.warn('[StorageService] Failed to save the recipe notes', e);
+    }
+  },
 
+  /** Raw on purpose, like loadPreferences: the caller validates before believing it. */
+  async loadRecipeNotes(): Promise<unknown> {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.RECIPE_NOTES);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.warn('[StorageService] Failed to load the recipe notes', e);
+      return null;
+    }
+  },
 
   async saveReminders(reminders: unknown): Promise<void> {
     try {

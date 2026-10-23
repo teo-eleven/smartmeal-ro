@@ -1,9 +1,8 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 import { LoadingToast } from '../LoadingToast';
 
 describe('LoadingToast Component', () => {
-
   test('does not render when visible is false', () => {
     render(<LoadingToast visible={false} isDark={true} message="Sincronizare..." />);
 
@@ -29,5 +28,25 @@ describe('LoadingToast Component', () => {
 
     expect(screen.getByText('Salvat cu succes!')).toBeTruthy();
     expect(screen.getByLabelText('Notificare salvare')).toBeTruthy();
+  });
+
+  test('when hidden it plays its exit, then leaves the screen', () => {
+    const { rerender } = render(<LoadingToast visible isDark message="Se sincronizează..." />);
+
+    rerender(<LoadingToast visible={false} isDark message="Se sincronizează..." />);
+    expect(screen.getByText('Se sincronizează...')).toBeTruthy();
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(screen.queryByText('Se sincronizează...')).toBeNull();
+  });
+
+  test('unmounting mid-animation leaves nothing running', () => {
+    const { unmount } = render(<LoadingToast visible isDark message="Se sincronizează..." />);
+
+    unmount();
+
+    expect(() => act(() => jest.advanceTimersByTime(1000))).not.toThrow();
   });
 });

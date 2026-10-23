@@ -34,8 +34,10 @@ function roundUpToFive(value: number): number {
  * the floor is only trusted while the cart still matches it.
  */
 export function summarizeBudget(plan: MealPlan): BudgetSummary {
-  const isOverBudget = plan.totalCartCostRon > plan.totalBudgetRon;
+  // Decided on the rounded amount the user will read: an overshoot of 0.04 lei used to be
+  // "over budget by 0 lei".
   const overspendRon = Math.round((plan.totalCartCostRon - plan.totalBudgetRon) * 10) / 10;
+  const isOverBudget = overspendRon > 0;
   const status = plan.budgetStatus;
   const swapsApplied = status?.swapsApplied ?? 0;
 

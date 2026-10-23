@@ -28,11 +28,13 @@ import { useAccountSession } from './src/hooks/useAccountSession';
 import { injectEmeraldGlassStyles, getAppTheme } from './src/styles/theme';
 import { glass } from './src/styles/glass';
 import { UndoBanner } from './src/components/UndoBanner';
+import { undoBannerCopy } from './src/utils/undoBannerCopy';
 import { PaywallScreen } from './src/screens/PaywallScreen';
 import { useSubscriptionStore } from './src/store/subscriptionStore';
 import { cloudSyncService } from './src/services/supabase';
 import { AppLoadingScreen } from './src/components/AppLoadingScreen';
 import { LoadingToast } from './src/components/LoadingToast';
+import { useShallow } from 'zustand/react/shallow';
 
 function AppShell() {
   const [authModalVisible, setAuthModalVisible] = useState(false);
@@ -64,10 +66,40 @@ function AppShell() {
     syncWithCloud,
     syncFromCloud,
     generatePlan,
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((state) => ({
+      authStatus: state.authStatus,
+      isHydrated: state.isHydrated,
+      activeView: state.activeView,
+      currentPlan: state.currentPlan,
+      groceryItems: state.groceryItems,
+      userEmail: state.userEmail,
+      isSyncing: state.isSyncing,
+      isReloading: state.isReloading,
+      reloadConfig: state.reloadConfig,
+      lastSyncedAt: state.lastSyncedAt,
+      activeNotice: state.activeNotice,
+      clearNotice: state.clearNotice,
+      confirmRequest: state.confirmRequest,
+      pendingCloudPlan: state.pendingCloudPlan,
+      requestConfirm: state.requestConfirm,
+      cancelConfirm: state.cancelConfirm,
+      confirmPending: state.confirmPending,
+      lastDiscardedPlan: state.lastDiscardedPlan,
+      undoReset: state.undoReset,
+      dismissUndo: state.dismissUndo,
+      setActiveView: state.setActiveView,
+      hydrateStorage: state.hydrateStorage,
+      setUserEmail: state.setUserEmail,
+      syncWithCloud: state.syncWithCloud,
+      syncFromCloud: state.syncFromCloud,
+      generatePlan: state.generatePlan,
+    }))
+  );
 
   // Permanently locked to the luxury Warm Forest & Amber Lantern theme
   const isDark = true;
+  const undoCopy = undoBannerCopy(lastDiscardedPlan?.reason);
 
   const { isDesktop, isMobile, contentMaxWidth } = useResponsive();
 
@@ -166,17 +198,15 @@ function AppShell() {
         />
         <UndoBanner
           visible={Boolean(lastDiscardedPlan)}
-          message="Planul săptămânal a fost șters."
-          actionLabel="Anulează ștergerea"
+          message={undoCopy.message}
+          actionLabel={undoCopy.actionLabel}
           onAction={undoReset}
           onDismiss={dismissUndo}
+          resetKey={lastDiscardedPlan}
           isDark={isDark}
         />
         <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
-        <BiometricOptInPrompt
-          isDark={isDark}
-          isSuppressed={authModalVisible || Boolean(activeNotice)}
-        />
+        <BiometricOptInPrompt isDark={isDark} />
         <LoadingToast
           visible={isSyncing}
           message="Se sincronizează..."
@@ -220,10 +250,7 @@ function AppShell() {
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
         <PaywallScreen isDark={isDark} onBackToQuestions={() => setActiveView('onboarding')} />
         <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
-        <BiometricOptInPrompt
-          isDark={isDark}
-          isSuppressed={authModalVisible || Boolean(activeNotice)}
-        />
+        <BiometricOptInPrompt isDark={isDark} />
       </SafeAreaView>
     );
   }
@@ -317,6 +344,7 @@ function AppShell() {
             >
               <TouchableOpacity
                 accessibilityRole="button"
+                accessibilityState={{ selected: activeView === 'meals' }}
                 onPress={() => setActiveView('meals')}
                 activeOpacity={0.8}
                 {...glass(activeView === 'meals' ? 'pill-active' : 'pill')}
@@ -343,6 +371,7 @@ function AppShell() {
 
               <TouchableOpacity
                 accessibilityRole="button"
+                accessibilityState={{ selected: activeView === 'grocery' }}
                 onPress={() => setActiveView('grocery')}
                 activeOpacity={0.8}
                 {...glass(activeView === 'grocery' ? 'pill-active' : 'pill')}
@@ -413,6 +442,7 @@ function AppShell() {
             >
               <TouchableOpacity
                 accessibilityRole="button"
+                accessibilityState={{ selected: activeView === 'meals' }}
                 onPress={() => setActiveView('meals')}
                 activeOpacity={0.8}
                 {...glass(activeView === 'meals' ? 'pill-active' : 'pill')}
@@ -439,6 +469,7 @@ function AppShell() {
 
               <TouchableOpacity
                 accessibilityRole="button"
+                accessibilityState={{ selected: activeView === 'grocery' }}
                 onPress={() => setActiveView('grocery')}
                 activeOpacity={0.8}
                 {...glass(activeView === 'grocery' ? 'pill-active' : 'pill')}
@@ -496,17 +527,15 @@ function AppShell() {
 
       {/* Global Informative Notice Pop-up */}
       <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
-      <BiometricOptInPrompt
-        isDark={isDark}
-        isSuppressed={authModalVisible || Boolean(activeNotice)}
-      />
+      <BiometricOptInPrompt isDark={isDark} />
 
       <UndoBanner
         visible={Boolean(lastDiscardedPlan)}
-        message="Planul săptămânal a fost șters."
-        actionLabel="Anulează ștergerea"
+        message={undoCopy.message}
+        actionLabel={undoCopy.actionLabel}
         onAction={undoReset}
         onDismiss={dismissUndo}
+        resetKey={lastDiscardedPlan}
         isDark={isDark}
       />
 
@@ -516,8 +545,8 @@ function AppShell() {
         title="Înlocuiești planul de aici?"
         message={
           pendingCloudPlan?.updatedAt
-            ? `Planul din cloud a fost salvat pe ${new Date(pendingCloudPlan.updatedAt).toLocaleString('ro-RO')}. Îl aduci peste cel de aici? Poți reveni imediat cu „Anulează".`
-            : 'Aduci planul salvat pe celălalt dispozitiv peste cel de aici? Poți reveni imediat cu „Anulează".'
+            ? `Planul din cloud a fost salvat pe ${new Date(pendingCloudPlan.updatedAt).toLocaleString('ro-RO')}. Îl aduci peste cel de aici? Poți reveni imediat cu „Revino la planul anterior”.`
+            : 'Aduci planul salvat pe celălalt dispozitiv peste cel de aici? Poți reveni imediat cu „Revino la planul anterior”.'
         }
         confirmLabel="Adu planul din cloud"
         cancelLabel="Păstrează ce am aici"
@@ -530,7 +559,7 @@ function AppShell() {
       <ConfirmDialog
         visible={confirmRequest === 'reset_onboarding'}
         title="Ștergi planul curent?"
-        message="Se șterg meniul săptămânal, lista de cumpărături și preferințele salvate. Acțiunea nu poate fi anulată."
+        message="Se șterg meniul săptămânal, lista de cumpărături și preferințele. Cămara și rețetele preferate rămân. Timp de câteva secunde poți reveni cu „Anulează ștergerea”."
         confirmLabel="Șterge și începe din nou"
         cancelLabel="Păstrează planul"
         isDestructive

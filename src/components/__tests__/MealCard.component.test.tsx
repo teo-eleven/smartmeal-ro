@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
-import { MealCard } from '../MealCard';
+import { MealCard, areMealCardPropsEqual } from '../MealCard';
 import { RECIPES } from '../../data/recipes';
 import { MealPlanDay, PlannedMeal } from '../../types';
 
@@ -179,7 +179,7 @@ describe('MealCard variants', () => {
       />
     );
     // The name is drawn over the visual; the body below carries the description.
-      expect(screen.getByText(recipe.title)).toBeTruthy();
+    expect(screen.getByText(recipe.title)).toBeTruthy();
   });
 
   test('falls back to the day when no explicit meal is given', () => {
@@ -193,7 +193,7 @@ describe('MealCard variants', () => {
       />
     );
     // The name is drawn over the visual; the body below carries the description.
-      expect(screen.getByText(recipe.title)).toBeTruthy();
+    expect(screen.getByText(recipe.title)).toBeTruthy();
   });
 });
 
@@ -271,3 +271,99 @@ describe('MealCard, butoane imbricate', () => {
   });
 });
 
+/**
+ * The 2026-10-21 audit: the dessert's ✕ was nested inside the button that opens the recipe,
+ * so a screen reader saw one element with two actions and a tap could trigger both.
+ */
+describe('ștergerea desertului', () => {
+  const dessert = buildMeal({ id: 'monday-dessert', slot: 'dessert', slotLabelRo: 'Desert' });
+
+  function showDessert(onPressRecipe = jest.fn(), onRemoveMeal = jest.fn()) {
+    render(
+      <MealCard
+        day={buildDay(dessert)}
+        meal={dessert}
+        onPressRecipe={onPressRecipe}
+        onSwapMeal={jest.fn()}
+        onRemoveMeal={onRemoveMeal}
+        isDark={false}
+      />
+    );
+    return { onPressRecipe, onRemoveMeal };
+  }
+
+  test('✕ nu e în interiorul butonului care deschide rețeta', () => {
+    showDessert();
+
+    const openRecipe = screen.getByLabelText(`${recipe.title}. Vezi rețeta.`);
+
+    expect(
+      openRecipe.findAll(
+        (node: { props: { accessibilityLabel?: string } }) =>
+          node.props.accessibilityLabel === 'Șterge desertul din această zi'
+      )
+    ).toHaveLength(0);
+  });
+
+  test('✕ șterge desertul fără să deschidă rețeta', () => {
+    const { onPressRecipe, onRemoveMeal } = showDessert();
+
+    fireEvent.press(screen.getByLabelText('Șterge desertul din această zi'));
+
+    expect(onRemoveMeal).toHaveBeenCalledTimes(1);
+    expect(onPressRecipe).not.toHaveBeenCalled();
+  });
+
+  test('imaginea deschide în continuare rețeta', () => {
+    const { onPressRecipe } = showDessert();
+
+    fireEvent.press(screen.getByLabelText(`${recipe.title}. Vezi rețeta.`));
+
+    expect(onPressRecipe).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('o masă reîncălzită fără acțiune de anulare', () => {
+  test('nu arată un buton care nu face nimic', () => {
+    const leftover = buildMeal({ isLeftover: true });
+    render(
+      <MealCard
+        day={buildDay(leftover)}
+        meal={leftover}
+        onPressRecipe={jest.fn()}
+        onSwapMeal={jest.fn()}
+        isDark={false}
+      />
+    );
+
+    expect(screen.queryByLabelText('Gătesc din nou în ziua asta')).toBeNull();
+  });
+});
+
+/**
+ * The board rebuilds every card's callbacks on each render, so a plain React.memo never
+ * skipped anything and editing one meal re-rendered all twenty-odd cards.
+ */
+describe('cardul nu se redesenează degeaba', () => {
+  const meal = buildMeal();
+  const day = buildDay(meal);
+  const props = {
+    day,
+    meal,
+    onPressRecipe: jest.fn(),
+    onSwapMeal: jest.fn(),
+    isDark: false,
+  };
+
+  test('aceleași date cu funcții noi: nu se redesenează', () => {
+    expect(areMealCardPropsEqual(props, { ...props, onPressRecipe: jest.fn() })).toBe(true);
+  });
+
+  test('o masă schimbată: se redesenează', () => {
+    expect(areMealCardPropsEqual(props, { ...props, meal: { ...meal, servings: 5 } })).toBe(false);
+  });
+
+  test('o acțiune care apare sau dispare: se redesenează', () => {
+    expect(areMealCardPropsEqual(props, { ...props, onRemoveMeal: jest.fn() })).toBe(false);
+  });
+});

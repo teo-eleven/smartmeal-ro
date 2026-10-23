@@ -15,6 +15,7 @@ import {
   SupermarketId,
   UserPreferences,
 } from '../types';
+import { RecipeNotes } from '../utils/recipeNotes';
 
 export type ActiveView = 'onboarding' | 'generating' | 'meals' | 'grocery';
 
@@ -22,7 +23,11 @@ export type ActiveView = 'onboarding' | 'generating' | 'meals' | 'grocery';
 export type ConfirmActionId = 'reset_onboarding' | 'apply_cloud_plan';
 
 /** Everything needed to put a reset week back exactly as it was. */
+/** What replaced the plan, so the Undo banner can say so. */
+export type DiscardReason = 'reset' | 'restore' | 'cloud' | 'rebuild';
+
 export interface DiscardedPlan {
+  reason: DiscardReason;
   plan: MealPlan;
   groceryItems: GroceryListItem[];
   preferences: UserPreferences;
@@ -94,6 +99,12 @@ export interface AppState {
 
   // System Informative Notice
   activeNotice: SystemNotice | null;
+  /**
+   * Cart total the budget-overrun prompt was last shown for. Kept here, not in the board,
+   * because the board unmounts on every tab switch and the prompt came back each time.
+   */
+  budgetOverrunPromptedCost: number | null;
+  markBudgetOverrunPrompted: (cartCostRon: number) => void;
   /** Notices raised while another was on screen, shown in order as each is dismissed. */
   noticeQueue: SystemNotice[];
   showNotice: (
@@ -102,6 +113,10 @@ export interface AppState {
     type?: 'info' | 'warning' | 'error' | 'success'
   ) => void;
   clearNotice: () => void;
+  /** Modals on screen; notices wait for zero, because iOS shows one Modal at a time. */
+  openWindowCount: number;
+  windowOpened: () => void;
+  windowClosed: () => void;
 
   // Domain State
   preferences: UserPreferences;
@@ -116,6 +131,10 @@ export interface AppState {
   deleteSavedPlan: (savedPlanId: string) => void;
   undoReset: () => void;
   dismissUndo: () => void;
+
+  /** Personal notes per recipe id, on this phone. */
+  recipeNotes: RecipeNotes;
+  setRecipeNote: (recipeId: string, text: string) => void;
 
   // Actions
   setSupermarket: (id: SupermarketId) => void;

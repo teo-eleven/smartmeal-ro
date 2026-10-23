@@ -76,6 +76,8 @@ export function getAppTheme(isDark: boolean = true) {
   return isDark ? APPLE_IOS_THEME.dark : APPLE_IOS_THEME.light;
 }
 
+export type AppTheme = ReturnType<typeof getAppTheme>;
+
 /**
  * Hardware-accelerated Apple Glassmorphism styles for React Native components.
  * Automatically polyfills backdrop-filter and specular box-shadows on web.

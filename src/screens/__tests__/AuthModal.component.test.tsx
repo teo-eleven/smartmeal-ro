@@ -696,3 +696,95 @@ describe('AuthModal, închiderea după conectare', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * The 2026-10-21 audit (S11): only sign-out and delete went through the one-at-a-time guard,
+ * so a double tap on "Conectare" sent two requests; the reset steps had no catch, so a
+ * network drop left the button spinning; and Enter on the keyboard did nothing.
+ */
+describe('formularele nu trimit de două ori și nu rămân blocate', () => {
+  function deferred() {
+    let resolve: (value: unknown) => void = () => undefined;
+    const promise = new Promise((r) => (resolve = r));
+    return { promise, resolve };
+  }
+
+  test('o apăsare dublă pe „Conectare” trimite o singură cerere', async () => {
+    const pending = deferred();
+    (cloudSyncService.signInWithEmail as jest.Mock).mockReturnValue(pending.promise);
+    render(<AuthModal {...baseProps} />);
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'a@b.ro');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'parola123');
+
+    fireEvent.press(screen.getByLabelText('Conectare cu parola'));
+    fireEvent.press(screen.getByLabelText('Conectare cu parola'));
+
+    expect(cloudSyncService.signInWithEmail).toHaveBeenCalledTimes(1);
+    await act(async () => pending.resolve({ user: null, error: 'Parolă greșită' }));
+  });
+
+  test('o eroare de rețea la trimiterea codului devine un mesaj', async () => {
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockRejectedValue(new Error('offline'));
+    render(<AuthModal {...baseProps} />);
+    fireEvent.press(screen.getByLabelText('Am uitat parola'));
+    fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
+
+    fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
+
+    await waitFor(() => expect(screen.getByText(/comunicarea cu serverul/i)).toBeTruthy());
+    expect(screen.getByLabelText('Trimite codul pe email')).toBeTruthy();
+  });
+
+  test('o eroare de rețea la verificarea codului devine un mesaj', async () => {
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+    (cloudSyncService.verifyPasswordResetCode as jest.Mock).mockRejectedValue(new Error('offline'));
+    render(<AuthModal {...baseProps} />);
+    fireEvent.press(screen.getByLabelText('Am uitat parola'));
+    fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
+    fireEvent.press(screen.getByLabelText('Trimite codul pe email'));
+    await waitFor(() => screen.getByLabelText('Codul primit pe email'));
+
+    fireEvent.changeText(screen.getByLabelText('Codul primit pe email'), '123456');
+    fireEvent.press(screen.getByLabelText('Verifică codul'));
+
+    await waitFor(() => expect(screen.getByText(/comunicarea cu serverul/i)).toBeTruthy());
+  });
+
+  test('Enter în câmpul de parolă trimite formularul', async () => {
+    (cloudSyncService.signInWithEmail as jest.Mock).mockResolvedValue({
+      user: null,
+      error: 'Parolă greșită',
+    });
+    render(<AuthModal {...baseProps} />);
+    fireEvent.changeText(screen.getByPlaceholderText('exemplu@email.ro'), 'a@b.ro');
+    fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'parola123');
+
+    fireEvent(screen.getByPlaceholderText('••••••••'), 'submitEditing');
+
+    await waitFor(() => expect(cloudSyncService.signInWithEmail).toHaveBeenCalledTimes(1));
+  });
+
+  test('Enter în câmpul de cod trimite verificarea', async () => {
+    (cloudSyncService.requestPasswordReset as jest.Mock).mockResolvedValue({
+      success: true,
+      error: null,
+    });
+    (cloudSyncService.verifyPasswordResetCode as jest.Mock).mockResolvedValue({
+      success: false,
+      error: 'Codul nu este valid.',
+    });
+    render(<AuthModal {...baseProps} />);
+    fireEvent.press(screen.getByLabelText('Am uitat parola'));
+    fireEvent.changeText(screen.getByLabelText('Adresa de email pentru resetare'), 'a@b.ro');
+    fireEvent(screen.getByLabelText('Adresa de email pentru resetare'), 'submitEditing');
+    await waitFor(() => screen.getByLabelText('Codul primit pe email'));
+
+    fireEvent.changeText(screen.getByLabelText('Codul primit pe email'), '123456');
+    fireEvent(screen.getByLabelText('Codul primit pe email'), 'submitEditing');
+
+    await waitFor(() => expect(cloudSyncService.verifyPasswordResetCode).toHaveBeenCalled());
+  });
+});

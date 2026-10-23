@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { getAppTheme } from '../styles/theme';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface BudgetOverrunModalProps {
   visible: boolean;
@@ -25,6 +26,7 @@ export const BudgetOverrunModal: React.FC<BudgetOverrunModalProps> = ({
   onDismiss,
   isDark,
 }) => {
+  useBlockingWindow(visible);
   const theme = getAppTheme(isDark);
 
   if (!visible) return null;

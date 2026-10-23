@@ -34,6 +34,7 @@ import {
   sanitizeAllergens,
 } from './planSafety';
 import { applyCloudPlan, syncUnavailableNotice } from './storeTransforms';
+import { parseRecipeNotes } from '../utils/recipeNotes';
 
 type SetState = StoreApi<AppState>['setState'];
 type GetState = () => AppState;
@@ -47,6 +48,7 @@ export function createSessionActions(set: SetState, get: GetState) {
         const { plan, items } = await storageService.loadPlanAndGrocery();
         const savedPlans = await storageService.loadSavedPlans();
         const storedReminders = parseReminderSettings(await storageService.loadReminders());
+        const recipeNotes = parseRecipeNotes(await storageService.loadRecipeNotes());
 
         // Read the session before anything renders, so the gate never flashes in front of
         // somebody who signed in three weeks ago and is still within their thirty days.
@@ -270,6 +272,7 @@ export function createSessionActions(set: SetState, get: GetState) {
             repairedPrefsNotice ??
             state.activeNotice,
           savedPlans,
+          recipeNotes,
         }));
       } catch (e) {
         // Whatever went wrong, the user must not be told nothing: starting silently on the

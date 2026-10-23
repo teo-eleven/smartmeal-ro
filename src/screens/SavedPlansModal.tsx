@@ -13,6 +13,7 @@ import { SUPERMARKETS } from '../data/supermarkets';
 import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
 import { sheetStyles } from '../styles/sheet';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface SavedPlansModalProps {
   visible: boolean;
@@ -40,6 +41,7 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
   onClose,
   isDark,
 }) => {
+  useBlockingWindow(visible);
   const theme = getAppTheme(isDark);
   const [name, setName] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);

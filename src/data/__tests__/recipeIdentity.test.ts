@@ -74,3 +74,17 @@ describe('ID-urile vechi duc la rețeta nouă', () => {
     expect(resolveRecipeId('ghiveci_legume_cuptor')).toBe('ghiveci_legume_cuptor');
   });
 });
+
+/**
+ * The recipe sheet keys each ingredient row, and keeps its tick, by ingredient id. A recipe
+ * listing the same ingredient twice gave React a duplicate key and ticked both rows at once;
+ * the amounts belong on one line.
+ */
+test('nicio rețetă nu repetă un ingredient', () => {
+  const repeats = RECIPES.flatMap((recipe) => {
+    const ids = recipe.ingredients.map((line) => line.ingredientId);
+    return ids.filter((id, index) => ids.indexOf(id) !== index).map((id) => `${recipe.id}: ${id}`);
+  });
+
+  expect(repeats).toEqual([]);
+});

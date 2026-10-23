@@ -14,7 +14,9 @@ import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
 import { getHealthGoalMeta } from '../data/healthTags';
 import { DAY_LABELS_RO } from '../constants/days';
-import { getStoreBadgeBg } from '../utils/storeBadge';
+import { useAppStore } from '../store/useAppStore';
+import { getStoreBadgeBg, getStoreSignatureBadge } from '../utils/storeBadge';
+import { USE_NATIVE_DRIVER } from '../styles/motion';
 
 interface MealCardProps {
   day: MealPlanDay;
@@ -104,7 +106,7 @@ const MOOD_LABELS: Record<string, string> = {
   sweet_treat: '🍰 Deserturi',
 };
 
-export const MealCard: React.FC<MealCardProps> = ({
+const MealCardView: React.FC<MealCardProps> = ({
   day,
   meal,
   slotLabel,
@@ -117,6 +119,8 @@ export const MealCard: React.FC<MealCardProps> = ({
   onToggleEatOut,
   isDark,
 }) => {
+  // A narrow selector: the card re-renders when the store changes, not on every store write.
+  const supermarketId = useAppStore((state) => state.preferences.supermarketId);
   const recipe = meal ? meal.recipe : day.recipe;
   const costRon = meal ? meal.estimatedCostRon : day.estimatedCostRon;
   const servings = meal ? meal.servings : day.servings;
@@ -132,7 +136,7 @@ export const MealCard: React.FC<MealCardProps> = ({
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
       toValue: 0.98,
-      useNativeDriver: true,
+      useNativeDriver: USE_NATIVE_DRIVER,
       speed: 40,
       bounciness: 4,
     }).start();
@@ -141,7 +145,7 @@ export const MealCard: React.FC<MealCardProps> = ({
   const handlePressOut = () => {
     Animated.spring(scaleAnim, {
       toValue: 1,
-      useNativeDriver: true,
+      useNativeDriver: USE_NATIVE_DRIVER,
       speed: 30,
       bounciness: 6,
     }).start();
@@ -252,26 +256,31 @@ export const MealCard: React.FC<MealCardProps> = ({
           },
         ]}
       >
-        {/* Visual Hero Image Container */}
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={`${recipe.title}. Vezi rețeta.`}
-          activeOpacity={0.92}
-          onPress={onPressRecipe}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          style={styles.imageContainer}
-        >
-          <RecipeVisual recipe={recipe} isDark={isDark} style={styles.image} />
+        {/* Visual Hero Image Container. The picture is the button; the badges float over it
+            and let taps through, so the dessert's ✕ is a sibling of the button, not inside
+            it (nested, a screen reader saw one element with two actions). */}
+        <View style={styles.imageContainer}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`${recipe.title}. Vezi rețeta.`}
+            activeOpacity={0.92}
+            onPress={onPressRecipe}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            style={StyleSheet.absoluteFill}
+          >
+            <RecipeVisual recipe={recipe} isDark={isDark} style={styles.image} />
 
-          {/* Smooth Bottom Subtle Edge Shading for Contrast */}
-          <LinearGradient
-            colors={['transparent', isDark ? 'rgba(0, 0, 0, 0.30)' : 'rgba(0, 0, 0, 0.15)']}
-            style={styles.gradientOverlay}
-          />
+            {/* Smooth Bottom Subtle Edge Shading for Contrast */}
+            <LinearGradient
+              colors={['transparent', isDark ? 'rgba(0, 0, 0, 0.30)' : 'rgba(0, 0, 0, 0.15)']}
+              style={styles.gradientOverlay}
+            />
+          </TouchableOpacity>
 
           {/* Floating Day Badge (Top-Left) */}
           <View
+            pointerEvents="box-none"
             style={[
               styles.floatingBadge,
               styles.dayBadge,
@@ -279,11 +288,16 @@ export const MealCard: React.FC<MealCardProps> = ({
               { backgroundColor: isDark ? 'rgba(28, 36, 30, 0.92)' : 'rgba(255, 255, 255, 0.94)' },
             ]}
           >
-            <Text style={[styles.dayBadgeText, { color: getSlotColor(meal?.slot, isDark) }]} numberOfLines={1}>
-              {isDessert
-                ? '🍰 DESERT'
-                : `${DAY_LABELS_RO[day.dayOfWeek].toUpperCase()}${effectiveSlotLabel ? ` • ${effectiveSlotLabel.toUpperCase()}` : ''}`}
-            </Text>
+            <View pointerEvents="none" style={styles.dayBadgeLabel}>
+              <Text
+                style={[styles.dayBadgeText, { color: getSlotColor(meal?.slot, isDark) }]}
+                numberOfLines={1}
+              >
+                {isDessert
+                  ? '🍰 DESERT'
+                  : `${DAY_LABELS_RO[day.dayOfWeek].toUpperCase()}${effectiveSlotLabel ? ` • ${effectiveSlotLabel.toUpperCase()}` : ''}`}
+              </Text>
+            </View>
             {isDessert && onRemoveMeal && (
               <TouchableOpacity
                 accessibilityRole="button"
@@ -300,6 +314,7 @@ export const MealCard: React.FC<MealCardProps> = ({
 
           {/* Floating Price Badge (Top-Right) */}
           <View
+            pointerEvents="none"
             style={[
               styles.floatingBadge,
               styles.priceBadge,
@@ -319,8 +334,7 @@ export const MealCard: React.FC<MealCardProps> = ({
             )}
           </View>
 
-          {/* Bottom Info Floating on Image */}
-        </TouchableOpacity>
+        </View>
 
         {/* Content Body */}
         <View style={styles.contentBody}>
@@ -340,7 +354,7 @@ export const MealCard: React.FC<MealCardProps> = ({
                 </View>
               );
             })()}
-            {recipe.storeBadgeLabel && (
+            {getStoreSignatureBadge(recipe, supermarketId) && (
               <View style={[styles.pillBadge, { backgroundColor: getStoreBadgeBg(recipe.storeSignature) }]}>
                 <Text style={styles.pillText}>{recipe.storeBadgeLabel}</Text>
               </View>
@@ -461,6 +475,7 @@ export const MealCard: React.FC<MealCardProps> = ({
 
             {/* Cheapest suggestion the planner can make, so it sits with the other actions */}
             {meal?.isLeftover ? (
+              onUndoCookDouble && (
               <TouchableOpacity
                 accessibilityRole="button"
                 accessibilityLabel="Gătesc din nou în ziua asta"
@@ -478,6 +493,7 @@ export const MealCard: React.FC<MealCardProps> = ({
                   ♻️ Reîncălzit din ziua de dinainte · gătesc din nou
                 </Text>
               </TouchableOpacity>
+              )
             ) : (
               onCookDouble && (
                 <TouchableOpacity
@@ -501,6 +517,7 @@ export const MealCard: React.FC<MealCardProps> = ({
               {!meal?.isLeftover && (
                 <TouchableOpacity
                   accessibilityRole="button"
+                  accessibilityLabel="Schimbă"
                   onPress={onSwapMeal}
                   style={[styles.swapBtn, { backgroundColor: theme.accentBg, borderColor: theme.border }]}
                   activeOpacity={0.7}
@@ -536,6 +553,33 @@ export const MealCard: React.FC<MealCardProps> = ({
     </Animated.View>
   );
 };
+
+const CALLBACK_PROPS = [
+  'onPressRecipe',
+  'onSwapMeal',
+  'onRemoveMeal',
+  'onToggleEatOut',
+  'onCookDouble',
+  'onUndoCookDouble',
+  'onChangeServings',
+] as const;
+
+/**
+ * The board rebuilds every card's callbacks on each render, so comparing them by identity
+ * re-rendered all cards on any edit. They close over only `day`, `meal` and stable store
+ * actions, which are compared here, so a callback's presence is all that can change.
+ */
+export function areMealCardPropsEqual(prev: MealCardProps, next: MealCardProps): boolean {
+  return (
+    prev.day === next.day &&
+    prev.meal === next.meal &&
+    prev.slotLabel === next.slotLabel &&
+    prev.isDark === next.isDark &&
+    CALLBACK_PROPS.every((key) => Boolean(prev[key]) === Boolean(next[key]))
+  );
+}
+
+export const MealCard = React.memo(MealCardView, areMealCardPropsEqual);
 
 const styles = StyleSheet.create({
   leftoverBtn: {
@@ -599,6 +643,7 @@ const styles = StyleSheet.create({
     left: 12,
     maxWidth: '52%',
   },
+  dayBadgeLabel: { flexShrink: 1 },
   dessertBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',

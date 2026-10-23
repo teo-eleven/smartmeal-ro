@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,8 +9,9 @@ import {
 } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
 import { INGREDIENTS } from '../data/ingredients';
-import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { useShallow } from 'zustand/react/shallow';
 
 interface PantryInventoryModalProps {
   visible: boolean;
@@ -47,9 +47,19 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
   onClose,
   isDark,
 }) => {
-  const { preferences, setPantryInventory, currentPlan } = useAppStore();
+  useBlockingWindow(visible);
+  const {
+    preferences,
+    setPantryInventory,
+    currentPlan,
+  } = useAppStore(
+    useShallow((state) => ({
+      preferences: state.preferences,
+      setPantryInventory: state.setPantryInventory,
+      currentPlan: state.currentPlan,
+    }))
+  );
   const currentPantry: string[] = preferences.pantryInventory || [];
-  const { contentMaxWidth } = useResponsive();
 
   const togglePantryItem = (id: string) => {
     if (currentPantry.includes(id)) {
@@ -63,8 +73,16 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
     setPantryInventory(PANTRY_STAPLES_LIST.map((s) => s.id));
   };
 
+  // Clearing throws away every tick at once, so it asks first. Inline rather than a dialog,
+  // because a second Modal on top of this one is unreliable on iOS.
+  const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+  useEffect(() => {
+    if (!visible) setIsConfirmingClear(false);
+  }, [visible]);
+
   const clearPantry = () => {
     setPantryInventory([]);
+    setIsConfirmingClear(false);
   };
 
   const theme = getAppTheme(isDark);
@@ -158,6 +176,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
             <View style={styles.bulkRow}>
               <TouchableOpacity
                 accessibilityRole="button"
+                accessibilityLabel="Am cămara plină (Bifează tot)"
                 onPress={selectAllCommon}
                 style={[styles.bulkBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
                 activeOpacity={0.7}
@@ -167,13 +186,46 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
 
               <TouchableOpacity
                 accessibilityRole="button"
-                onPress={clearPantry}
-                style={[styles.bulkBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
+                accessibilityState={{ disabled: currentPantry.length === 0 }}
+                disabled={currentPantry.length === 0}
+                onPress={() => setIsConfirmingClear(true)}
+                style={[
+                  styles.bulkBtn,
+                  { backgroundColor: theme.btnBg, borderColor: theme.border },
+                  currentPantry.length === 0 && styles.bulkBtnDisabled,
+                ]}
                 activeOpacity={0.7}
               >
                 <Text style={[styles.bulkBtnText, { color: theme.textMuted }]}>Deselectează tot</Text>
               </TouchableOpacity>
             </View>
+
+            {isConfirmingClear && (
+              <View
+                accessibilityRole="alert"
+                style={[styles.confirmRow, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
+              >
+                <Text style={[styles.confirmText, { color: theme.text }]}>
+                  Debifezi toate cele {currentPantry.length} ingrediente din cămară?
+                </Text>
+                <View style={[styles.bulkRow, styles.confirmActions]}>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={() => setIsConfirmingClear(false)}
+                    style={[styles.bulkBtn, { borderColor: theme.border }]}
+                  >
+                    <Text style={[styles.bulkBtnText, { color: theme.text }]}>Renunță</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={clearPantry}
+                    style={[styles.bulkBtn, { borderColor: theme.border }]}
+                  >
+                    <Text style={[styles.bulkBtnText, { color: theme.primary }]}>Da, debifează</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
 
             {/* Grid of Pantry Staples */}
             <View style={styles.staplesGrid}>
@@ -184,7 +236,8 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
 
                 return (
                   <TouchableOpacity
-                    accessibilityRole="button"
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isSelected }}
                     key={item.id}
                     onPress={() => togglePantryItem(item.id)}
                     activeOpacity={0.75}
@@ -361,6 +414,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
   },
+  bulkBtnDisabled: { opacity: 0.45 },
+  confirmRow: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    gap: 10,
+    marginBottom: 16,
+  },
+  confirmText: { fontSize: 14, fontWeight: '600' },
+  confirmActions: { marginBottom: 0 },
   bulkBtnText: {
     fontSize: 12,
     fontWeight: '700',

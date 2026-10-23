@@ -11,6 +11,7 @@ import {
 import { MealPlan } from '../types';
 import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface WeeklyMacroModalProps {
   visible: boolean;
@@ -25,6 +26,7 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
   plan,
   isDark,
 }) => {
+  useBlockingWindow(visible && Boolean(plan));
   const { contentMaxWidth } = useResponsive();
 
   if (!visible || !plan) return null;

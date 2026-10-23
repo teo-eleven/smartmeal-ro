@@ -140,3 +140,45 @@ describe('MealBoardScreen, acțiunile rapide', () => {
     expect(screen.getByText(/Ghid Meal Prep Săptămânal/)).toBeTruthy();
   });
 });
+
+describe('cititorul de ecran pe tabla de mese', () => {
+  beforeEach(seedPlan);
+
+  test('segmentul cu numărul de mese spune care e ales', () => {
+    render(<MealBoardScreen isDark={false} />);
+    const count = useAppStore
+      .getState()
+      .preferences.mealSlots.filter((s) => s !== 'snack' && s !== 'dessert').length;
+
+    const segment = screen.getByText(`${count} ${count === 1 ? 'Masă' : 'Mese'}`);
+
+    expect(segment.parent?.parent?.props.accessibilityState).toEqual({ selected: true });
+  });
+
+  test('scurtăturile au etichete fără emoji', () => {
+    render(<MealBoardScreen isDark={false} />);
+
+    expect(screen.getByLabelText('Ce am în Cămară')).toBeTruthy();
+    expect(screen.getByLabelText('Ghid Meal Prep')).toBeTruthy();
+    expect(screen.getByLabelText('Macro Săptămână')).toBeTruthy();
+  });
+});
+
+describe('generarea automată a planului', () => {
+  test('o eroare neașteptată devine un mesaj, nu o tablă goală fără explicație', () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const realGenerate = useAppStore.getState().generatePlan;
+    useAppStore.setState({
+      currentPlan: null,
+      activeNotice: null,
+      generatePlan: () => {
+        throw new Error('boom');
+      },
+    });
+
+    render(<MealBoardScreen isDark={false} />);
+
+    expect(useAppStore.getState().activeNotice?.title).toBe('Meniul nu a putut fi generat');
+    useAppStore.setState({ generatePlan: realGenerate });
+  });
+});

@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SystemNotice } from '../store/useAppStore';
+import { SystemNotice, useAppStore } from '../store/useAppStore';
 import { glass } from '../styles/glass';
+import { USE_NATIVE_DRIVER } from '../styles/motion';
 
 interface InformativeNoticeModalProps {
   notice: SystemNotice | null;
@@ -10,40 +11,45 @@ interface InformativeNoticeModalProps {
 }
 
 export const InformativeNoticeModal: React.FC<InformativeNoticeModalProps> = ({
-  notice,
+  notice: queuedNotice,
   onDismiss,
   isDark,
 }) => {
+  // Shown over another Modal it would be dropped on iOS; it stays queued until they close.
+  const isWindowOpen = useAppStore((state) => state.openWindowCount > 0);
+  const notice = isWindowOpen ? null : queuedNotice;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
   const scaleAnim = useRef(new Animated.Value(0.92)).current;
 
   useEffect(() => {
-    if (notice) {
-      fadeAnim.setValue(0);
-      slideAnim.setValue(25);
-      scaleAnim.setValue(0.92);
+    if (!notice) return undefined;
+    fadeAnim.setValue(0);
+    slideAnim.setValue(25);
+    scaleAnim.setValue(0.92);
 
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          tension: 70,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 70,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
+    const enter = Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: USE_NATIVE_DRIVER,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 70,
+        friction: 8,
+        useNativeDriver: USE_NATIVE_DRIVER,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 70,
+        friction: 8,
+        useNativeDriver: USE_NATIVE_DRIVER,
+      }),
+    ]);
+    enter.start();
+    // The next notice, or closing, stops this one mid-flight instead of animating a ghost.
+    return () => enter.stop();
   }, [notice, fadeAnim, slideAnim, scaleAnim]);
 
   if (!notice) return null;

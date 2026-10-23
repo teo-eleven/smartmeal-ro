@@ -1,26 +1,20 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Text,
   View,
   TouchableOpacity,
   ScrollView,
   Platform,
-  Dimensions,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
 } from 'react-native';
 import { DietType, MoodTag } from '../types';
 import { MOOD_OPTIONS_CATALOG, MoodOptionInfo } from '../utils/moodCatalog';
 import { MoodCardBody } from './foodMood/MoodCardBody';
+import { shouldHandleSwiperKey, useMoodCarousel } from './foodMood/useMoodCarousel';
 import { styles } from './foodMood/styles';
 import { getAppTheme } from '../styles/theme';
 import { RECIPES } from '../data/recipes';
 import { isRecipeMatchingDiets } from '../utils/dietCompatibility';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_WIDTH = Math.min(SCREEN_WIDTH - 56, 360);
-const CARD_SPACING = 14;
-const CARD_INTERVAL = CARD_WIDTH + CARD_SPACING;
 
 export interface FoodMoodSwiperProps {
   selectedMoods: MoodTag[];
@@ -50,11 +44,9 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 }) => {
   const theme = getAppTheme(isDark);
   const [viewMode, setViewMode] = useState<'swipe' | 'grid'>('swipe');
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [history, setHistory] = useState<SwipeHistoryItem[]>([]);
-
-  const scrollViewRef = useRef<ScrollView>(null);
-  const isProgrammaticScroll = useRef(false);
+  const { layout, currentIndex, scrollViewRef, scrollToCard, handleScroll, handleMomentumScrollEnd } =
+    useMoodCarousel(MOOD_OPTIONS_CATALOG.length);
 
   // Pre-calculate matching recipe counts per mood according to user's diet preferences
   const moodRecipeMap = useMemo(() => {
@@ -72,29 +64,6 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
     });
     return map;
   }, [dietTypes]);
-
-  const scrollToCard = useCallback((index: number, animated = true) => {
-    const targetIndex = Math.max(0, Math.min(index, MOOD_OPTIONS_CATALOG.length - 1));
-    setCurrentIndex(targetIndex);
-    isProgrammaticScroll.current = true;
-    scrollViewRef.current?.scrollTo({
-      x: targetIndex * CARD_INTERVAL,
-      animated,
-    });
-    setTimeout(() => {
-      isProgrammaticScroll.current = false;
-    }, 250);
-  }, []);
-
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    if (isProgrammaticScroll.current) return;
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const computedIndex = Math.round(offsetX / CARD_INTERVAL);
-    const clamped = Math.max(0, Math.min(computedIndex, MOOD_OPTIONS_CATALOG.length - 1));
-    if (clamped !== currentIndex) {
-      setCurrentIndex(clamped);
-    }
-  };
 
   const advanceCard = useCallback(
     (action: 'liked' | 'passed', item: MoodOptionInfo) => {
@@ -173,6 +142,10 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (viewMode !== 'swipe') return;
+      // Typing "z" or deleting text in another field must not undo a swipe.
+      if (!shouldHandleSwiperKey(e as unknown as Parameters<typeof shouldHandleSwiperKey>[0])) {
+        return;
+      }
       if (e.key === 'ArrowRight') {
         if (currentIndex < MOOD_OPTIONS_CATALOG.length - 1) {
           scrollToCard(currentIndex + 1);
@@ -200,6 +173,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
         <View style={styles.modeSegment}>
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityState={{ selected: viewMode === 'swipe' }}
             accessibilityLabel="Mod Swipe Carduri"
             onPress={() => setViewMode('swipe')}
             style={[
@@ -225,6 +199,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityState={{ selected: viewMode === 'grid' }}
             accessibilityLabel="Vizualizare Grilă"
             onPress={() => setViewMode('grid')}
             style={[
@@ -303,9 +278,10 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
             horizontal
             showsHorizontalScrollIndicator={false}
             decelerationRate="fast"
-            snapToInterval={CARD_INTERVAL}
+            snapToInterval={layout.interval}
             snapToAlignment="start"
             onScroll={handleScroll}
+            onMomentumScrollEnd={handleMomentumScrollEnd}
             scrollEventThrottle={16}
             contentContainerStyle={styles.carouselScrollContent}
             style={styles.carouselScrollView}
@@ -321,8 +297,8 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                   style={[
                     styles.carouselCardWrapper,
                     {
-                      width: CARD_WIDTH,
-                      marginRight: CARD_SPACING,
+                      width: layout.cardWidth,
+                      marginRight: layout.spacing,
                       transform: [{ scale: isActive ? 1.0 : 0.94 }],
                       opacity: isActive ? 1.0 : 0.85,
                     },
@@ -495,7 +471,8 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 
               return (
                 <TouchableOpacity
-                  accessibilityRole="button"
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isSelected }}
                   accessibilityLabel={`${mood.label}, ${mood.desc}`}
                   key={mood.id}
                   onPress={() => onToggleMood(mood.id)}

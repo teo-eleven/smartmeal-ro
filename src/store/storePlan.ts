@@ -10,7 +10,7 @@ import {
   getActiveExtraProducts,
   rebuildCart,
 } from './cart';
-import { mergeProtections } from './preferenceProtections';
+import { mergeProtections, stricterDiet } from './preferenceProtections';
 
 import { StoreApi } from 'zustand';
 import { AppState } from './appState';
@@ -21,7 +21,7 @@ import {
   buildRestoreNotice,
   tryMakePlanSafe,
 } from './planSafety';
-import { keepingDessertDays, promotePendingStock } from './storeTransforms';
+import { keepForUndo, keepingDessertDays, promotePendingStock } from './storeTransforms';
 
 type SetState = StoreApi<AppState>['setState'];
 type GetState = () => AppState;
@@ -51,13 +51,7 @@ export function createPlanActions(set: SetState, get: GetState) {
           favouriteRecipeIds: state.preferences.favouriteRecipeIds,
         },
         // Held in memory only, so the user can take the reset back straight away.
-        lastDiscardedPlan: state.currentPlan
-          ? {
-              plan: state.currentPlan,
-              groceryItems: state.groceryItems,
-              preferences: state.preferences,
-            }
-          : state.lastDiscardedPlan,
+        lastDiscardedPlan: keepForUndo(state, 'reset'),
       }));
     },
 
@@ -121,15 +115,40 @@ export function createPlanActions(set: SetState, get: GetState) {
         const discarded = state.lastDiscardedPlan;
         if (!discarded) return state;
 
-        void storageService.savePreferences(discarded.preferences);
-        void storageService.savePlanAndGrocery(discarded.plan, discarded.groceryItems);
+        // An allergy or diet added since the snapshot must survive the undo: the old menu comes
+        // back under today's protections and is re-checked, exactly like a restored plan.
+        const preferences: UserPreferences = {
+          ...discarded.preferences,
+          ...mergeProtections(discarded.preferences, state.preferences),
+          ...stricterDiet(discarded.preferences, state.preferences),
+        };
+        const checked = tryMakePlanSafe(discarded.plan.days, preferences);
+        if (!checked) {
+          return { lastDiscardedPlan: null, activeNotice: buildNothingSafeNotice('restore') };
+        }
+        const { plan, items } =
+          checked.replacedCount > 0
+            ? rebuildCart(discarded.plan, checked.days, preferences, discarded.groceryItems)
+            : { plan: discarded.plan, items: discarded.groceryItems };
+
+        void storageService.savePreferences(preferences);
+        void storageService.savePlanAndGrocery(plan, items);
 
         return {
-          preferences: discarded.preferences,
-          currentPlan: discarded.plan,
-          groceryItems: discarded.groceryItems,
+          preferences,
+          currentPlan: plan,
+          groceryItems: items,
           activeView: 'meals',
           lastDiscardedPlan: null,
+          activeNotice:
+            checked.replacedCount > 0
+              ? {
+                  id: Date.now().toString(),
+                  title: 'Plan adaptat la setările tale',
+                  message: buildRestoreNotice(checked.replacedCount, checked.offendingAllergens),
+                  type: 'warning',
+                }
+              : state.activeNotice,
         };
       });
     },
@@ -137,6 +156,9 @@ export function createPlanActions(set: SetState, get: GetState) {
     saveCurrentPlan: (name: string) => {
       set((state) => {
         if (!state.currentPlan) return state;
+        // A double tap fires twice before the button can disable itself; the plan object is
+        // never mutated, so the same reference at the top of the list means it is already in.
+        if (state.savedPlans[0]?.plan === state.currentPlan) return state;
 
         const entry: SavedPlan = {
           id: nextSavedPlanId(),
@@ -210,6 +232,8 @@ export function createPlanActions(set: SetState, get: GetState) {
           currentPlan: restoredPlan,
           groceryItems: aggregated.items,
           activeView: 'meals',
+          // Restoring replaces the week on screen, so it gets the same Undo as a reset.
+          lastDiscardedPlan: keepForUndo(state, 'restore'),
           activeNotice:
             replacedCount > 0
               ? {

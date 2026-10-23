@@ -11,6 +11,7 @@ import {
 import { MealPlan, MealPrepPhase } from '../types';
 import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface MealPrepModalProps {
   visible: boolean;
@@ -25,6 +26,7 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
   plan,
   isDark,
 }) => {
+  useBlockingWindow(visible && Boolean(plan));
   const { contentMaxWidth } = useResponsive();
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({});
 
@@ -208,7 +210,8 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
                       const isDone = Boolean(completedTasks[task.id]);
                       return (
                         <TouchableOpacity
-                          accessibilityRole="button"
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: isDone }}
                           key={task.id}
                           onPress={() => toggleTask(task.id)}
                           activeOpacity={0.75}

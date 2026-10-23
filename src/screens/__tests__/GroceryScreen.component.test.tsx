@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { Share } from 'react-native';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { GroceryScreen } from '../GroceryScreen';
 import { useAppStore } from '../../store/useAppStore';
 import { UserPreferences } from '../../types';
@@ -107,5 +108,25 @@ describe('GroceryScreen', () => {
     fireEvent.press(screen.getByText(/Trimite \/ Copiază/));
 
     expect(writeText).not.toHaveBeenCalled();
+  });
+
+  test('dacă nici copierea, nici partajarea nu merg, utilizatorul află', async () => {
+    seedPlan();
+    useAppStore.setState({ activeNotice: null });
+    Object.defineProperty(globalThis, 'navigator', {
+      value: { clipboard: { writeText: jest.fn().mockRejectedValue(new Error('denied')) } },
+      configurable: true,
+      writable: true,
+    });
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const share = jest.spyOn(Share, 'share').mockRejectedValue(new Error('no share'));
+    render(<GroceryScreen isDark={false} />);
+
+    fireEvent.press(screen.getByText(/Trimite \/ Copiază/));
+
+    await waitFor(() =>
+      expect(useAppStore.getState().activeNotice?.title).toBe('Lista nu a putut fi trimisă')
+    );
+    share.mockRestore();
   });
 });

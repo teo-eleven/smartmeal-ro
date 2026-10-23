@@ -1,4 +1,8 @@
 import { MeasurementUnit } from '../types';
+import { GRAMS_PER_UNIT } from '../data/ingredientNutrition';
+
+/** A medium onion, pepper or potato; used when the catalog has no weight for the piece. */
+const DEFAULT_PIECE_GRAMS = 130;
 
 /**
  * Returns practical Romanian kitchen household equivalents for recipe ingredients.
@@ -41,7 +45,8 @@ export function getHouseholdEquivalent(
     id.includes('dovlecel') ||
     id.includes('ardei')
   ) {
-    const pieces = Math.round((amount / 130) * 10) / 10;
+    const pieceGrams = GRAMS_PER_UNIT[ingredientId] ?? DEFAULT_PIECE_GRAMS;
+    const pieces = Math.round((amount / pieceGrams) * 10) / 10;
     if (pieces >= 0.8 && pieces <= 1.2) return '1 buc. medie';
     if (pieces >= 1.8 && pieces <= 2.2) return '2 bucăți';
     if (pieces >= 2.8 && pieces <= 3.2) return '3 bucăți';

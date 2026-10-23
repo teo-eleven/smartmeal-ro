@@ -12,6 +12,8 @@ import { SUPERMARKET_LIST } from '../data/supermarkets';
 import { getRetailProductsByCategory } from '../data/retailProducts';
 import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { useShallow } from 'zustand/react/shallow';
 
 interface SnacksAndDrinksModalProps {
   visible: boolean;
@@ -24,7 +26,22 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
   onClose,
   isDark,
 }) => {
-  const { preferences, toggleSnackProduct, toggleDrinkProduct, setIncludeAlcohol, setSnackTastePreference } = useAppStore();
+  useBlockingWindow(visible);
+  const {
+    preferences,
+    toggleSnackProduct,
+    toggleDrinkProduct,
+    setIncludeAlcohol,
+    setSnackTastePreference,
+  } = useAppStore(
+    useShallow((state) => ({
+      preferences: state.preferences,
+      toggleSnackProduct: state.toggleSnackProduct,
+      toggleDrinkProduct: state.toggleDrinkProduct,
+      setIncludeAlcohol: state.setIncludeAlcohol,
+      setSnackTastePreference: state.setSnackTastePreference,
+    }))
+  );
   const { contentMaxWidth, isDesktop, isTablet } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;
 
@@ -103,6 +120,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                   return (
                     <TouchableOpacity
                       accessibilityRole="button"
+                      accessibilityState={{ selected: isCurrent }}
                       key={tab.id}
                       onPress={() => setSnackTastePreference(tab.id as 'sweet' | 'savory')}
                       style={[
@@ -141,7 +159,8 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                       const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
                       return (
                         <TouchableOpacity
-                          accessibilityRole="button"
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: isSelected }}
                           key={prod.id}
                           onPress={() => toggleSnackProduct(prod.id)}
                           activeOpacity={0.7}
@@ -197,7 +216,8 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                       const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
                       return (
                         <TouchableOpacity
-                          accessibilityRole="button"
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: isSelected }}
                           key={prod.id}
                           onPress={() => toggleSnackProduct(prod.id)}
                           activeOpacity={0.7}
@@ -256,7 +276,8 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                 const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
                 return (
                   <TouchableOpacity
-                    accessibilityRole="button"
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isSelected }}
                     key={prod.id}
                     onPress={() => toggleDrinkProduct(prod.id)}
                     activeOpacity={0.7}
@@ -305,7 +326,9 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
             </Text>
 
             <TouchableOpacity
-              accessibilityRole="button"
+              accessibilityRole="switch"
+              accessibilityLabel="Băuturi alcoolice permise (18+)"
+              accessibilityState={{ checked: Boolean(preferences.includeAlcohol) }}
               onPress={() => setIncludeAlcohol(!preferences.includeAlcohol)}
               activeOpacity={0.7}
               style={[
@@ -356,7 +379,8 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                   const price = prod.typicalPriceRon[preferences.supermarketId] ?? 0;
                   return (
                     <TouchableOpacity
-                      accessibilityRole="button"
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isSelected }}
                       key={prod.id}
                       onPress={() => toggleDrinkProduct(prod.id)}
                       activeOpacity={0.7}

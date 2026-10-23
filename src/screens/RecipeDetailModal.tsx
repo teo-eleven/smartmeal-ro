@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
+  KeyboardAvoidingView,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -28,7 +29,10 @@ import { getEligibleRecipes, getEligibleDessertRecipes } from '../engine/planner
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { formatIngredientWithHousehold } from '../utils/householdUnits';
 import { getHealthGoalMeta } from '../data/healthTags';
-import { getStoreBadgeBg } from '../utils/storeBadge';
+import { MAX_NOTE_LENGTH } from '../utils/recipeNotes';
+import { getStoreBadgeBg, getStoreSignatureBadge } from '../utils/storeBadge';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { useShallow } from 'zustand/react/shallow';
 
 interface RecipeDetailModalProps {
   recipe: Recipe | null;
@@ -102,7 +106,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   targetDay,
   targetSlot,
 }) => {
-  const [personalNotes, setPersonalNotes] = useState('');
+  useBlockingWindow(visible);
   const [activeServings, setActiveServings] = useState(initialServings);
   const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>({});
   const [checkedIngredients, setCheckedIngredients] = useState<Record<string, boolean>>({});
@@ -125,7 +129,21 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     toggleDislikedRecipe,
     toggleEatOut,
     showNotice,
-  } = useAppStore();
+    recipeNotes,
+    setRecipeNote,
+  } = useAppStore(
+    useShallow((state) => ({
+      preferences: state.preferences,
+      currentPlan: state.currentPlan,
+      replaceMealWithRecipe: state.replaceMealWithRecipe,
+      toggleFavouriteRecipe: state.toggleFavouriteRecipe,
+      toggleDislikedRecipe: state.toggleDislikedRecipe,
+      toggleEatOut: state.toggleEatOut,
+      showNotice: state.showNotice,
+      recipeNotes: state.recipeNotes,
+      setRecipeNote: state.setRecipeNote,
+    }))
+  );
 
   const targetMeal = useMemo(() => {
     if (!currentPlan || !targetDay) return null;
@@ -233,7 +251,11 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
+      {/* The notes box sits low in the sheet; without this the keyboard covered it. */}
+      <KeyboardAvoidingView
+        style={styles.modalOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <View style={[styles.modalCard, isWide && styles.modalCardWide, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* Floating Top Navigation Header */}
           <View style={[styles.topBar, { backgroundColor: theme.glassBg, borderBottomColor: theme.border }]}>
@@ -268,7 +290,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
           {targetDay && (
             <TouchableOpacity
-              accessibilityRole="button"
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: isEatenOut }}
               accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănânc în oraș'}
               onPress={() => {
                 const effectiveSlot = targetSlot || targetMeal?.slot || 'dinner';
@@ -339,7 +362,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       </Text>
                     </View>
                   )}
-                  {recipe.storeBadgeLabel && (
+                  {getStoreSignatureBadge(recipe, preferences.supermarketId) && (
                     <View style={[styles.heroPill, { backgroundColor: getStoreBadgeBg(recipe.storeSignature) }]}>
                       <Text style={styles.heroPillText}>{recipe.storeBadgeLabel}</Text>
                     </View>
@@ -478,7 +501,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
                     return (
                       <TouchableOpacity
-                        accessibilityRole="button"
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: isChecked }}
                         key={ing.ingredientId}
                         onPress={() => toggleIngredient(ing.ingredientId)}
                         activeOpacity={0.7}
@@ -557,7 +581,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
                   {targetDay && (
                     <TouchableOpacity
-                      accessibilityRole="button"
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isEatenOut }}
                       accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănâncă în oraș'}
                       onPress={() => {
                         const effectiveSlot = targetSlot || targetMeal?.slot || 'dinner';
@@ -651,7 +676,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
                     return (
                       <TouchableOpacity
-                        accessibilityRole="button"
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: isDone }}
                         key={step.stepNumber}
                         activeOpacity={0.8}
                         onPress={() => toggleStep(step.stepNumber)}
@@ -765,7 +791,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               {/* Personal Notes Box */}
               <View style={[styles.cardSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <Text style={[styles.sectionHeading, { color: theme.text }]}>
-                  📝 Notițele tale personale pentru această rețetă
+                  📝 Notițele tale pentru această rețetă
                 </Text>
                 <TextInput
                   style={[
@@ -778,10 +804,14 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   ]}
                   placeholder="Ex: Adaugă mai mult ardei iute data viitoare, iese perfect la 200°C..."
                   placeholderTextColor={theme.textMuted}
+                  accessibilityLabel="Notițele tale pentru această rețetă"
                   multiline
                   numberOfLines={3}
-                  value={personalNotes}
-                  onChangeText={setPersonalNotes}
+                  maxLength={MAX_NOTE_LENGTH}
+                  // Read from the store by recipe id: kept after closing, and never carried
+                  // over to the next recipe opened.
+                  value={recipeNotes[recipe.id] ?? ''}
+                  onChangeText={(text) => setRecipeNote(recipe.id, text)}
                 />
               </View>
 
@@ -803,7 +833,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   <Text
                     style={[styles.verdictText, { color: isFavourite ? '#16a34a' : theme.textMuted }]}
                   >
-                    {isFavourite ? '👍 Îmi place' : '👍 Îmi place'}
+                    {isFavourite ? 'Preferat ✓' : '👍 Îmi place'}
                   </Text>
                 </TouchableOpacity>
 
@@ -949,7 +979,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           </View>
         </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

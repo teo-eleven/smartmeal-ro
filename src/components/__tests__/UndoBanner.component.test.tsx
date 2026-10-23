@@ -49,4 +49,27 @@ describe('UndoBanner', () => {
     });
     expect(baseProps.onDismiss).toHaveBeenCalledTimes(1);
   });
+
+  /**
+   * A second replacement while the banner is up (restore, then a new meals count) kept
+   * `visible` true, so the countdown carried on from the first one and the new Undo got
+   * whatever was left of five seconds.
+   */
+  test('a new undo while the banner is up gets the full five seconds', () => {
+    const { rerender } = render(<UndoBanner {...baseProps} resetKey="first" />);
+    act(() => {
+      jest.advanceTimersByTime(4000);
+    });
+
+    rerender(<UndoBanner {...baseProps} resetKey="second" message="Meniul a fost refăcut." />);
+    act(() => {
+      jest.advanceTimersByTime(4000);
+    });
+    expect(baseProps.onDismiss).not.toHaveBeenCalled();
+
+    act(() => {
+      jest.advanceTimersByTime(1100);
+    });
+    expect(baseProps.onDismiss).toHaveBeenCalledTimes(1);
+  });
 });

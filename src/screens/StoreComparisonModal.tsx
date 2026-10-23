@@ -5,6 +5,7 @@ import { compareBasketAcrossStores } from '../engine/storeComparator';
 import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
 import { sheetStyles } from '../styles/sheet';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface StoreComparisonModalProps {
   visible: boolean;
@@ -23,6 +24,7 @@ export const StoreComparisonModal: React.FC<StoreComparisonModalProps> = ({
   onSwitchStore,
   isDark,
 }) => {
+  useBlockingWindow(visible && Boolean(plan));
   const theme = getAppTheme(isDark);
 
   if (!plan) return null;

@@ -8,8 +8,9 @@ import { getAppTheme } from '../styles/theme';
 interface BiometricOptInPromptProps {
   isDark: boolean;
   /**
-   * Another window is open (the account window, a notice). iOS shows one at a time, and a
-   * second would be dropped, so the question waits until the screen is clear.
+   * A window the store does not know about is open (the account window). iOS shows one at a
+   * time, and a second would be dropped, so the question waits until the screen is clear.
+   * Notices and confirmations are read from the store here, so no caller can forget them.
    */
   isSuppressed?: boolean;
 }
@@ -26,9 +27,14 @@ export function BiometricOptInPrompt({ isDark, isSuppressed = false }: Biometric
   const email = useAppStore((s) => s.userEmail);
   const isSignedIn = useAppStore((s) => s.authStatus === 'signedIn');
   const { shouldOfferBiometric, biometricLabel, answerBiometricOffer } = useAuthSessionStore();
+  const isStoreWindowOpen = useAppStore((s) =>
+    Boolean(s.activeNotice || s.confirmRequest || s.openWindowCount > 0)
+  );
   const [isSaving, setIsSaving] = useState(false);
 
-  if (!email || !isSignedIn || !shouldOfferBiometric || isSuppressed) return null;
+  if (!email || !isSignedIn || !shouldOfferBiometric || isSuppressed || isStoreWindowOpen) {
+    return null;
+  }
 
   const answer = async (accepted: boolean) => {
     if (isSaving) return;
@@ -45,7 +51,8 @@ export function BiometricOptInPrompt({ isDark, isSuppressed = false }: Biometric
   };
 
   return (
-    <Modal visible transparent animationType="fade">
+    // Android's back button answers like "Nu acum"; without it the prompt could not be left.
+    <Modal visible transparent animationType="fade" onRequestClose={() => void answer(false)}>
       <View style={styles.backdrop}>
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <Text style={styles.mark}>🔐</Text>

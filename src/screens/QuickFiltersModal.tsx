@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   SafeAreaView,
@@ -12,6 +12,7 @@ import {
 import { Appliance, DayOfWeek, HealthGoalTag, MoodTag, UserPreferences } from '../types';
 import { HEALTH_GOALS_CATALOG } from '../data/healthTags';
 import { getAppTheme } from '../styles/theme';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface QuickFiltersModalProps {
   visible: boolean;
@@ -66,6 +67,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
   onResetOnboarding,
   isDark,
 }) => {
+  useBlockingWindow(visible);
   const [cookingDays, setCookingDays] = useState<DayOfWeek[]>(preferences.cookingDays);
   const [peopleCount, setPeopleCount] = useState<number>(preferences.peopleCount);
   const [budgetRon, setBudgetRon] = useState<number>(preferences.budgetRon);
@@ -73,6 +75,20 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
   const [appliances, setAppliances] = useState<Appliance[]>(preferences.appliances || ['hob', 'oven']);
   const [healthGoalTags, setHealthGoalTags] = useState<HealthGoalTag[]>(preferences.healthGoalTags || []);
   const [budgetInputText, setBudgetInputText] = useState<string>(String(preferences.budgetRon));
+
+  // The modal stays mounted while hidden, so every opening starts from the preferences in
+  // force now. It copied them once, and "Aplică" then wrote stale values over newer ones.
+  useEffect(() => {
+    if (!visible) return;
+    setCookingDays(preferences.cookingDays);
+    setPeopleCount(preferences.peopleCount);
+    setBudgetRon(preferences.budgetRon);
+    setMoodTags(preferences.moodTags);
+    setAppliances(preferences.appliances || ['hob', 'oven']);
+    setHealthGoalTags(preferences.healthGoalTags || []);
+    setBudgetInputText(String(preferences.budgetRon));
+    // Only on opening: syncing while open would erase what the user is editing.
+  }, [visible]);
 
   if (!visible) return null;
 
@@ -139,6 +155,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
             <Text style={[styles.headerTitle, { color: theme.text }]}>Filtre & Preferințe Meniu</Text>
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel="Aplică"
               onPress={handleSave}
               style={[styles.saveHeaderBtn, { backgroundColor: theme.primary }]}
               activeOpacity={0.7}
@@ -163,7 +180,8 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                   const isActive = cookingDays.includes(day);
                   return (
                     <TouchableOpacity
-                      accessibilityRole="button"
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isActive }}
                       key={day}
                       onPress={() => toggleDay(day)}
                       style={[
@@ -260,6 +278,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                 {[100, 150, 200, 250, 350].map((amount) => (
                   <TouchableOpacity
                     accessibilityRole="button"
+                    accessibilityState={{ selected: Number(budgetInputText) === amount }}
                     key={amount}
                     onPress={() => {
                       setBudgetRon(amount);
@@ -302,7 +321,8 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                   const isActive = moodTags.includes(mood.id);
                   return (
                     <TouchableOpacity
-                      accessibilityRole="button"
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isActive }}
                       key={mood.id}
                       onPress={() => toggleMood(mood.id)}
                       style={[
@@ -344,7 +364,8 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                   const isActive = appliances.includes(app.id);
                   return (
                     <TouchableOpacity
-                      accessibilityRole="button"
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isActive }}
                       key={app.id}
                       onPress={() => toggleAppliance(app.id)}
                       style={[
@@ -388,7 +409,8 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                   const isActive = healthGoalTags.includes(goal.id);
                   return (
                     <TouchableOpacity
-                      accessibilityRole="button"
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isActive }}
                       key={goal.id}
                       onPress={() => toggleHealthGoal(goal.id)}
                       style={[
@@ -423,6 +445,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
             <View style={styles.bottomActionsCol}>
               <TouchableOpacity
                 accessibilityRole="button"
+                accessibilityLabel="Aplică Filtre și Actualizează Meniul"
                 onPress={handleSave}
                 style={[styles.applyBtn, { backgroundColor: theme.primary }]}
                 activeOpacity={0.85}
@@ -432,6 +455,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
 
               <TouchableOpacity
                 accessibilityRole="button"
+                accessibilityLabel="Reia Configuratorul Complet (de la zero)"
                 onPress={() => {
                   onClose();
                   onResetOnboarding();

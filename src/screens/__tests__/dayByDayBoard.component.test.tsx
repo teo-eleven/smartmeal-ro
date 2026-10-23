@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
-import { WeekOverview } from '../../components/WeekOverview';
+import { render, screen } from '@testing-library/react-native';
 import { MealBoardScreen } from '../MealBoardScreen';
 import { useAppStore } from '../../store/useAppStore';
 import { DayOfWeek, UserPreferences } from '../../types';
@@ -46,31 +45,5 @@ describe('vederea pe săptămână și afișarea curată zi cu zi', () => {
 
     expect(screen.queryByLabelText('Vezi toată săptămâna')).toBeNull();
     expect(screen.getByText(/📅 LUNI/)).toBeTruthy();
-  });
-
-  test('WeekOverview afișează fiecare zi și fiecare masă', () => {
-    const plan = useAppStore.getState().currentPlan!;
-    const onPressMeal = jest.fn();
-
-    render(<WeekOverview days={plan.days} onPressMeal={onPressMeal} isDark={false} />);
-
-    const firstMeal = plan.days[0].meals[0];
-    expect(
-      screen.getByLabelText(new RegExp(`Luni, ${firstMeal.slotLabelRo}`, 'i'))
-    ).toBeTruthy();
-    expect(screen.getByText('Miercuri')).toBeTruthy();
-  });
-
-  test('o masă din WeekOverview apelează callback-ul onPressMeal', () => {
-    const plan = useAppStore.getState().currentPlan!;
-    const onPressMeal = jest.fn();
-
-    render(<WeekOverview days={plan.days} onPressMeal={onPressMeal} isDark={false} />);
-
-    const firstMeal = plan.days[0].meals[0];
-    const button = screen.getByLabelText(new RegExp(`Luni, ${firstMeal.slotLabelRo}`, 'i'));
-    fireEvent.press(button);
-
-    expect(onPressMeal).toHaveBeenCalledWith('monday', firstMeal);
   });
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore } from '../store/useAppStore';
@@ -10,6 +10,7 @@ import { SnacksAndDrinksModal } from './SnacksAndDrinksModal';
 import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
+import { useShallow } from 'zustand/react/shallow';
 
 interface GroceryScreenProps {
   isDark: boolean;
@@ -28,6 +29,9 @@ const AISLE_ORDER: AisleCategory[] = [
   'alcohol',
 ];
 
+/** How long the button says the list was copied. */
+const COPIED_FEEDBACK_MS = 2500;
+
 export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
   const {
     currentPlan,
@@ -39,10 +43,31 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
     setAllPurchased,
     setExcludePantryStaples,
     carryOverSurplus,
-  } = useAppStore();
+    showNotice,
+  } = useAppStore(
+    useShallow((state) => ({
+      currentPlan: state.currentPlan,
+      groceryItems: state.groceryItems,
+      preferences: state.preferences,
+      isReloading: state.isReloading,
+      triggerReload: state.triggerReload,
+      toggleGroceryItem: state.toggleGroceryItem,
+      setAllPurchased: state.setAllPurchased,
+      setExcludePantryStaples: state.setExcludePantryStaples,
+      carryOverSurplus: state.carryOverSurplus,
+      showNotice: state.showNotice,
+    }))
+  );
 
   const [showSnacksModal, setShowSnacksModal] = useState(false);
   const [shareCopiedFeedback, setShareCopiedFeedback] = useState(false);
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    },
+    []
+  );
   const { isDesktop, isTablet, contentMaxWidth } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;
   const theme = getAppTheme(isDark);
@@ -125,7 +150,8 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
       if (navigator?.clipboard?.writeText) {
         await navigator.clipboard.writeText(listText);
         setShareCopiedFeedback(true);
-        setTimeout(() => setShareCopiedFeedback(false), 2500);
+        if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+        feedbackTimer.current = setTimeout(() => setShareCopiedFeedback(false), COPIED_FEEDBACK_MS);
       } else {
         await Share.share({ message: listText });
       }
@@ -133,7 +159,12 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
       try {
         await Share.share({ message: listText });
       } catch (err) {
-        console.warn('Share error:', err);
+        console.warn('[GroceryScreen] Share failed:', err);
+        showNotice(
+          'Lista nu a putut fi trimisă',
+          'Telefonul nu a permis nici copierea, nici partajarea. Încearcă din nou sau fă o captură de ecran.',
+          'error'
+        );
       }
     }
   };
@@ -239,6 +270,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
           <View style={[styles.overviewColRight, isDesktop && styles.overviewColRightDesktop]}>
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityLabel="Bifează tot"
               onPress={checkAll}
               style={[styles.actionBtn, { backgroundColor: theme.primary, borderColor: theme.primary, borderWidth: 1 }]}
               activeOpacity={0.7}
@@ -327,6 +359,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
       {/* Retail Snacks & Drinks Supermarket Bar */}
       <TouchableOpacity
         accessibilityRole="button"
+        accessibilityLabel="Ronțăieli și Băuturi de Magazin"
         onPress={() => setShowSnacksModal(true)}
         style={[
           styles.retailSnacksBanner,

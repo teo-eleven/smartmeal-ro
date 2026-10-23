@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getAppTheme } from '../styles/theme';
+import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -26,6 +27,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onCancel,
   isDark,
 }) => {
+  useBlockingWindow(visible);
   const theme = getAppTheme(isDark);
 
   return (

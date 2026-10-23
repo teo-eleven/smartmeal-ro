@@ -66,13 +66,43 @@ describe('cămara', () => {
     );
   });
 
-  test('„deselectează tot" golește lista', () => {
+  test('„deselectează tot" cere confirmare înainte să golească lista', () => {
     seed(['cartofi_albi', 'sare_fina']);
     show();
 
     fireEvent.press(screen.getByText(/Deselectează tot/));
 
+    expect(useAppStore.getState().preferences.pantryInventory).toEqual(['cartofi_albi', 'sare_fina']);
+    expect(screen.getByText(/Debifezi toate cele 2/)).toBeTruthy();
+  });
+
+  test('după confirmare lista se golește', () => {
+    seed(['cartofi_albi', 'sare_fina']);
+    show();
+
+    fireEvent.press(screen.getByText(/Deselectează tot/));
+    fireEvent.press(screen.getByText('Da, debifează'));
+
     expect(useAppStore.getState().preferences.pantryInventory).toEqual([]);
+  });
+
+  test('„Renunță" păstrează bifele și ascunde întrebarea', () => {
+    seed(['cartofi_albi', 'sare_fina']);
+    show();
+
+    fireEvent.press(screen.getByText(/Deselectează tot/));
+    fireEvent.press(screen.getByText('Renunță'));
+
+    expect(useAppStore.getState().preferences.pantryInventory).toHaveLength(2);
+    expect(screen.queryByText(/Debifezi toate/)).toBeNull();
+  });
+
+  test('cu nimic bifat, „deselectează tot" e dezactivat', () => {
+    show();
+
+    fireEvent.press(screen.getByText(/Deselectează tot/));
+
+    expect(screen.queryByText(/Debifezi toate/)).toBeNull();
   });
 
   test('fără nimic bifat nu promite nicio economie', () => {
@@ -130,5 +160,24 @@ describe('cămara', () => {
 
     const after = useAppStore.getState().groceryItems.find((i) => i.ingredientId === onList[0]);
     expect(after?.isFromPantry ?? false).toBe(true);
+  });
+});
+
+describe('cititorul de ecran', () => {
+  test('fiecare aliment e o bifă care spune dacă e bifată', () => {
+    seed(['cartofi_albi']);
+    show();
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    const checked = checkboxes.filter((c) => c.props.accessibilityState?.checked);
+
+    expect(checkboxes).toHaveLength(PANTRY_STAPLES_LIST.length);
+    expect(checked).toHaveLength(1);
+  });
+
+  test('butoanele nu își încep eticheta cu un emoji', () => {
+    show();
+
+    expect(screen.getByLabelText('Am cămara plină (Bifează tot)')).toBeTruthy();
   });
 });

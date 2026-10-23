@@ -35,11 +35,21 @@ import {
   applyPreferenceStep,
   applyPreferencesWithRebuild,
   recalculateCartForPreferences,
+  rebuildKeepingUndo,
   rejectIfInfeasible,
 } from './storeTransforms';
 
 type SetState = StoreApi<AppState>['setState'];
 type GetState = () => AppState;
+
+const EXTRA_SLOTS: readonly MealSlot[] = ['snack', 'dessert'];
+
+/** True when the week already has exactly these main meals, with no per-day override. */
+function hasBaseSlots(prefs: UserPreferences, baseSlots: MealSlot[]): boolean {
+  if (prefs.dailyMealSlots) return false;
+  const current = prefs.mealSlots.filter((slot) => !EXTRA_SLOTS.includes(slot));
+  return current.length === baseSlots.length && baseSlots.every((slot) => current.includes(slot));
+}
 
 /** Preference setters: household, diet, allergies, kitchen, slots and tier. */
 export function createPreferencesActions(set: SetState, _get: GetState) {
@@ -342,7 +352,19 @@ export function createPreferencesActions(set: SetState, _get: GetState) {
           mealSlots: nextSlots,
         };
         void storageService.savePreferences(nextPrefs);
-        return { preferences: nextPrefs };
+        // A plan needs at least one craving; say so instead of swapping one in silently.
+        return tags.length > 0
+          ? { preferences: nextPrefs }
+          : {
+              preferences: nextPrefs,
+              activeNotice: {
+                id: Date.now().toString(),
+                title: 'Am păstrat o poftă',
+                message:
+                  'Meniul are nevoie de cel puțin o poftă, așa că am lăsat „Comfort food”. O poți schimba oricând.',
+                type: 'info' as const,
+              },
+            };
       });
     },
 
@@ -549,6 +571,8 @@ export function createPreferencesActions(set: SetState, _get: GetState) {
       }
 
       set((state) => {
+        // Pressing the active count again used to regenerate the week and lose manual swaps.
+        if (hasBaseSlots(state.preferences, baseSlots)) return state;
         // Preserve existing snack or dessert toggles if any
         const activeExtras = state.preferences.mealSlots.filter(
           (s) => s === 'snack' || s === 'dessert'
@@ -560,7 +584,7 @@ export function createPreferencesActions(set: SetState, _get: GetState) {
           mealSlots: combinedSlots,
           dailyMealSlots: undefined,
         };
-        return applyPreferencesWithRebuild(state, nextPrefs);
+        return rebuildKeepingUndo(state, nextPrefs);
       });
     },
 
@@ -591,14 +615,14 @@ export function createPreferencesActions(set: SetState, _get: GetState) {
           dailyMealSlots: dailySlots,
           mealSlots: combinedSlots.length > 0 ? combinedSlots : ['dinner'],
         };
-        return applyPreferencesWithRebuild(state, nextPrefs);
+        return rebuildKeepingUndo(state, nextPrefs);
       });
     },
 
     setFoodTier: (tier: FoodTier) => {
       set((state) => {
         const nextPrefs = { ...state.preferences, foodTier: tier };
-        return applyPreferencesWithRebuild(state, nextPrefs);
+        return rebuildKeepingUndo(state, nextPrefs);
       });
     },
   } satisfies Partial<AppState>;

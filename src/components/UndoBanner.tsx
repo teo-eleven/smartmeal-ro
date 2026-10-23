@@ -1,14 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  Animated,
-  Easing,
-  Platform,
-} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Animated, Easing } from 'react-native';
 import { getAppTheme } from '../styles/theme';
+import { USE_NATIVE_DRIVER } from '../styles/motion';
 
 interface UndoBannerProps {
   visible: boolean;
@@ -18,6 +11,8 @@ interface UndoBannerProps {
   onDismiss: () => void;
   isDark: boolean;
   autoDismissTimeoutMs?: number;
+  /** Changes when a different plan is held for undo, so the countdown starts again. */
+  resetKey?: unknown;
 }
 
 /**
@@ -33,6 +28,7 @@ export const UndoBanner: React.FC<UndoBannerProps> = ({
   onDismiss,
   isDark,
   autoDismissTimeoutMs = 5000,
+  resetKey,
 }) => {
   const theme = getAppTheme(isDark);
   const [isRendered, setIsRendered] = useState(visible);
@@ -40,8 +36,17 @@ export const UndoBanner: React.FC<UndoBannerProps> = ({
   const fadeAnim = useRef(new Animated.Value(visible ? 1 : 0)).current;
   const slideAnim = useRef(new Animated.Value(visible ? 0 : 20)).current;
   const progressAnim = useRef(new Animated.Value(1)).current;
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const runningRef = useRef<Animated.CompositeAnimation | null>(null);
   const isDismissing = useRef(false);
+
+  /** Stops whatever is moving; an interrupted exit then reports finished=false and does nothing. */
+  const stopMotion = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+    runningRef.current?.stop();
+    runningRef.current = null;
+  }, []);
 
   const startDismissTransition = useCallback(() => {
     if (isDismissing.current) return;
@@ -53,73 +58,94 @@ export const UndoBanner: React.FC<UndoBannerProps> = ({
       return;
     }
 
-    Animated.parallel([
+    runningRef.current?.stop();
+    const exit = Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 260,
         easing: Easing.in(Easing.cubic),
-        useNativeDriver: Platform.OS !== 'web',
+        useNativeDriver: USE_NATIVE_DRIVER,
       }),
       Animated.timing(slideAnim, {
         toValue: 24,
         duration: 260,
         easing: Easing.in(Easing.cubic),
-        useNativeDriver: Platform.OS !== 'web',
+        useNativeDriver: USE_NATIVE_DRIVER,
       }),
-    ]).start(() => {
+    ]);
+    runningRef.current = exit;
+    exit.start(({ finished }) => {
+      // A new undo arrived mid-exit: it stopped this animation, and dismissing now would
+      // throw away the plan that undo is holding.
+      if (!finished || !isDismissing.current) return;
+      runningRef.current = null;
       setIsRendered(false);
       isDismissing.current = false;
       onDismiss();
     });
   }, [fadeAnim, onDismiss, slideAnim]);
 
+  // Restarts on `resetKey` too: a second replacement while the banner is up keeps `visible`
+  // true, and must still get the full countdown.
   useEffect(() => {
-    if (visible) {
-      setIsRendered(true);
-      isDismissing.current = false;
-      fadeAnim.setValue(0);
-      slideAnim.setValue(20);
-      progressAnim.setValue(1);
-
-      // Smooth enter transition
-      if (process.env.NODE_ENV !== 'test') {
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 320,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: Platform.OS !== 'web',
-          }),
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 320,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: Platform.OS !== 'web',
-          }),
-          Animated.timing(progressAnim, {
-            toValue: 0,
-            duration: autoDismissTimeoutMs,
-            easing: Easing.linear,
-            useNativeDriver: false,
-          }),
-        ]).start();
-      }
-
-      // Auto-dismiss countdown
-      if (autoDismissTimeoutMs > 0) {
-        timerRef.current = setTimeout(() => {
-          startDismissTransition();
-        }, autoDismissTimeoutMs);
-      }
-    } else {
-      if (timerRef.current) clearTimeout(timerRef.current);
+    if (!visible) {
+      stopMotion();
       startDismissTransition();
+      return undefined;
+    }
+
+    stopMotion();
+    setIsRendered(true);
+    isDismissing.current = false;
+    fadeAnim.setValue(0);
+    slideAnim.setValue(20);
+    progressAnim.setValue(1);
+
+    if (process.env.NODE_ENV !== 'test') {
+      const enter = Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 320,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: USE_NATIVE_DRIVER,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 320,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: USE_NATIVE_DRIVER,
+        }),
+        Animated.timing(progressAnim, {
+          toValue: 0,
+          duration: autoDismissTimeoutMs,
+          easing: Easing.linear,
+          useNativeDriver: false,
+        }),
+      ]);
+      runningRef.current = enter;
+      enter.start();
+    }
+
+    if (autoDismissTimeoutMs > 0) {
+      timerRef.current = setTimeout(startDismissTransition, autoDismissTimeoutMs);
     }
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [visible, autoDismissTimeoutMs, fadeAnim, slideAnim, progressAnim, startDismissTransition]);
+  }, [
+    visible,
+    resetKey,
+    autoDismissTimeoutMs,
+    fadeAnim,
+    slideAnim,
+    progressAnim,
+    startDismissTransition,
+    stopMotion,
+  ]);
+
+  // Nothing keeps animating, or calls back into a component that is gone.
+  useEffect(() => stopMotion, [stopMotion]);
 
   if (!isRendered) return null;
 

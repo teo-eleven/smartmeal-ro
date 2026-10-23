@@ -43,6 +43,8 @@ export function EmailCodeForm({
           placeholder="exemplu@email.ro"
           placeholderTextColor={theme.textMuted}
           accessibilityLabel="Adresa de email pentru cod"
+          returnKeyType="go"
+          onSubmitEditing={() => void code.requestCode()}
           autoCapitalize="none"
           keyboardType="email-address"
           autoComplete="email"
@@ -58,6 +60,8 @@ export function EmailCodeForm({
           placeholder="123456"
           placeholderTextColor={theme.textMuted}
           accessibilityLabel="Codul de conectare"
+          returnKeyType="go"
+          onSubmitEditing={() => void code.verifyCode()}
           keyboardType="number-pad"
           autoComplete="one-time-code"
           textContentType="oneTimeCode"
