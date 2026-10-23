@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-import { secureSessionStore } from '../secureSessionStore';
+import { secureSessionStore, subscribeToSessionWriteFailures } from '../secureSessionStore';
 
 // No DOM means native, which is where the keychain lives.
 const realDocument = globalThis.document;
@@ -89,5 +89,39 @@ describe('sesiunea în seiful sistemului', () => {
 
     expect(await secureSessionStore.getItem('sb-proiect.supabase.co/auth')).toBe('valoare');
     Object.keys(vault).forEach((k) => expect(k).toMatch(/^[A-Za-z0-9._-]+$/));
+  });
+
+  /**
+   * The 2026-10-21 audit (F12): a write that failed was only logged. Chunks already written
+   * stayed behind, and the person was signed out at the next start without knowing why.
+   */
+  test('o scriere eșuată nu lasă bucăți și anunță aplicația', async () => {
+    const failures = jest.fn();
+    const stop = subscribeToSessionWriteFailures(failures);
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (SecureStore.setItemAsync as jest.Mock)
+      .mockImplementationOnce(async (k: string, v: string) => {
+        vault[k] = v;
+      })
+      .mockRejectedValueOnce(new Error('keychain locked'));
+
+    await secureSessionStore.setItem('sb-session', 'x'.repeat(4000));
+
+    expect(failures).toHaveBeenCalledTimes(1);
+    expect(Object.keys(vault)).toEqual([]);
+    stop();
+    warn.mockRestore();
+  });
+
+  test('după dezabonare, ascultătorul nu mai e anunțat', async () => {
+    const failures = jest.fn();
+    subscribeToSessionWriteFailures(failures)();
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (SecureStore.setItemAsync as jest.Mock).mockRejectedValueOnce(new Error('keychain locked'));
+
+    await secureSessionStore.setItem('sb-session', 'abc');
+
+    expect(failures).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

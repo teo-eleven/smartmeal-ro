@@ -45,7 +45,7 @@ export const DataExportButton: React.FC<DataExportButtonProps> = ({ isDark }) =>
     setIsBusy(true);
     setError(null);
     try {
-      const { preferences, currentPlan, groceryItems, savedPlans, reminders } =
+      const { preferences, currentPlan, groceryItems, savedPlans, reminders, recipeNotes } =
         useAppStore.getState();
       const data = await collectDataExport({
         preferences,
@@ -53,6 +53,7 @@ export const DataExportButton: React.FC<DataExportButtonProps> = ({ isDark }) =>
         groceryItems,
         savedPlans,
         reminders,
+        recipeNotes,
       });
       await hand(JSON.stringify(data, null, 2));
     } catch {

@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { verifyDeviceSession, watchSessionEnd } from '../store/deviceSession';
 import { useAuthSessionStore } from '../store/authSessionStore';
 import { useAppStore } from '../store/useAppStore';
+import { subscribeToSessionWriteFailures } from '../services/secureSessionStore';
 
 /**
  * Keeps the signed-in account current while the app runs, once the stored session is known:
@@ -19,6 +20,23 @@ export function useAccountSession(isHydrated: boolean, userEmail: string | null)
     if (!isHydrated) return;
     return watchSessionEnd();
   }, [isHydrated]);
+
+  // A keychain that refuses the session means signing in again at the next start; said once,
+  // now, rather than discovered then (F12).
+  useEffect(() => {
+    let isTold = false;
+    return subscribeToSessionWriteFailures(() => {
+      if (isTold) return;
+      isTold = true;
+      useAppStore
+        .getState()
+        .showNotice(
+          'Sesiunea nu a putut fi salvată',
+          'Telefonul nu a permis păstrarea în siguranță a conectării. Aplicația merge acum, dar la următoarea pornire va trebui să te conectezi din nou.',
+          'warning'
+        );
+    });
+  }, []);
 
   useEffect(() => {
     if (!isHydrated) return;
