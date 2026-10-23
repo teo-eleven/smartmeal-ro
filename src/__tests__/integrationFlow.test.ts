@@ -1,3 +1,4 @@
+import { swapLikeTheUi } from './helpers/swapLikeTheUi';
 import { useAppStore } from '../store/useAppStore';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { isDietCompatible, hasRequiredAppliances } from '../engine/plannerEngine';
@@ -52,7 +53,7 @@ describe('End-to-End User Flow & Inter-Phase Synchronization', () => {
     expect(useAppStore.getState().currentStep).toBe(6);
 
     // Step 6: Select Diet (e.g. Vegetarian)
-    store.setDietType('vegetarian');
+    store.toggleDietType('vegetarian');
     expect(useAppStore.getState().preferences.dietType).toBe('vegetarian');
     store.nextStep();
     expect(useAppStore.getState().currentStep).toBe(7);
@@ -99,7 +100,7 @@ describe('End-to-End User Flow & Inter-Phase Synchronization', () => {
       (d) => d.dayOfWeek === 'wednesday'
     )!.recipe;
 
-    store.swapMeal('wednesday');
+    swapLikeTheUi('wednesday');
 
     const stateAfterSwap = useAppStore.getState();
     const swappedWednesdayRecipe = stateAfterSwap.currentPlan!.days.find(

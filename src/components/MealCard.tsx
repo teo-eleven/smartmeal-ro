@@ -7,12 +7,14 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { DayOfWeek, FoodTier, MealPlanDay, MealSlot, PlannedMeal, SupermarketId } from '../types';
+import { FoodTier, MealPlanDay, MealSlot, PlannedMeal } from '../types';
 import { RecipeVisual } from './RecipeVisual';
 
 import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
 import { getHealthGoalMeta } from '../data/healthTags';
+import { DAY_LABELS_RO } from '../constants/days';
+import { getStoreBadgeBg } from '../utils/storeBadge';
 
 interface MealCardProps {
   day: MealPlanDay;
@@ -44,29 +46,6 @@ function getSlotColor(slot?: MealSlot, isDark: boolean = true): string {
       return isDark ? '#F3C06D' : '#D98E3A';
     default:
       return isDark ? '#E6A756' : '#C88232';
-  }
-}
-
-function getStoreBadgeBg(store?: SupermarketId): string {
-  switch (store) {
-    case 'carrefour':
-      return 'rgba(2, 132, 199, 0.9)';
-    case 'kaufland':
-      return 'rgba(220, 38, 38, 0.9)';
-    case 'mega_image':
-      return 'rgba(147, 51, 234, 0.9)';
-    case 'lidl':
-      return 'rgba(217, 119, 6, 0.9)';
-    case 'auchan':
-      return 'rgba(225, 29, 72, 0.9)';
-    case 'penny':
-      return 'rgba(185, 28, 28, 0.9)';
-    case 'profi':
-      return 'rgba(234, 88, 12, 0.9)';
-    case 'sezamo':
-      return 'rgba(21, 128, 61, 0.9)';
-    default:
-      return 'rgba(255, 255, 255, 0.2)';
   }
 }
 
@@ -107,16 +86,6 @@ function getTierBadgeStyle(tier?: FoodTier, isDark: boolean = true): { bg: strin
       };
   }
 }
-
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  monday: 'Luni',
-  tuesday: 'Marți',
-  wednesday: 'Miercuri',
-  thursday: 'Joi',
-  friday: 'Vineri',
-  saturday: 'Sâmbătă',
-  sunday: 'Duminică',
-};
 
 const MOOD_LABELS: Record<string, string> = {
   speedy: '⚡ Rapid',
@@ -205,7 +174,7 @@ export const MealCard: React.FC<MealCardProps> = ({
             ]}
           >
             <Text style={[styles.dayBadgeText, { color: theme.textMuted }]}>
-              {DAY_LABELS[day.dayOfWeek].toUpperCase()} • {effectiveSlotLabel ? effectiveSlotLabel.toUpperCase() : 'MASĂ'}
+              {DAY_LABELS_RO[day.dayOfWeek].toUpperCase()} • {effectiveSlotLabel ? effectiveSlotLabel.toUpperCase() : 'MASĂ'}
             </Text>
           </View>
           <View style={[styles.pillBadge, { backgroundColor: isDark ? 'rgba(234, 179, 8, 0.2)' : '#fef9c3', borderColor: isDark ? '#ca8a04' : '#eab308' }]}>
@@ -313,7 +282,7 @@ export const MealCard: React.FC<MealCardProps> = ({
             <Text style={[styles.dayBadgeText, { color: getSlotColor(meal?.slot, isDark) }]} numberOfLines={1}>
               {isDessert
                 ? '🍰 DESERT'
-                : `${DAY_LABELS[day.dayOfWeek].toUpperCase()}${effectiveSlotLabel ? ` • ${effectiveSlotLabel.toUpperCase()}` : ''}`}
+                : `${DAY_LABELS_RO[day.dayOfWeek].toUpperCase()}${effectiveSlotLabel ? ` • ${effectiveSlotLabel.toUpperCase()}` : ''}`}
             </Text>
             {isDessert && onRemoveMeal && (
               <TouchableOpacity

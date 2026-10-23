@@ -55,16 +55,16 @@ const meals = () => useAppStore.getState().currentPlan!.days.flatMap((day) => da
  * board has to follow the preferences instead of keeping meals they no longer allow.
  */
 describe('setările pas-cu-pas reconstruiesc planul când există unul', () => {
-  test('setDietType nu lasă mese în afara dietei', () => {
+  test('alegerea dietei vegane nu lasă mese în afara dietei', () => {
     bootWithPlan();
-    useAppStore.getState().setDietType('vegan');
+    useAppStore.getState().toggleDietType('vegan');
 
     expect(meals().filter((m) => !isRecipeMatchingDiets(m.recipe, ['vegan']))).toEqual([]);
   });
 
-  test('setDietTypes nu lasă mese în afara dietei', () => {
+  test('alegerea dietei vegetariene nu lasă mese în afara dietei', () => {
     bootWithPlan();
-    useAppStore.getState().setDietTypes(['vegetarian']);
+    useAppStore.getState().toggleDietType('vegetarian');
 
     expect(meals().filter((m) => !isRecipeMatchingDiets(m.recipe, ['vegetarian']))).toEqual([]);
   });
@@ -73,7 +73,7 @@ describe('setările pas-cu-pas reconstruiesc planul când există unul', () => {
     // Omnivore and vegetarian cannot be combined, so the reachable pairing is a base diet
     // plus a restriction on top of it.
     bootWithPlan();
-    useAppStore.getState().setDietTypes(['vegetarian']);
+    useAppStore.getState().toggleDietType('vegetarian');
     useAppStore.getState().toggleDietType('gluten_free');
 
     const active = useAppStore.getState().preferences.dietTypes!;
@@ -83,7 +83,8 @@ describe('setările pas-cu-pas reconstruiesc planul când există unul', () => {
 
   test('toggleDietType reconstruiește și când scoate o dietă', () => {
     bootWithPlan();
-    useAppStore.getState().setDietTypes(['vegetarian', 'gluten_free']);
+    useAppStore.getState().toggleDietType('vegetarian');
+    useAppStore.getState().toggleDietType('gluten_free');
     useAppStore.getState().toggleDietType('gluten_free');
 
     const active = useAppStore.getState().preferences.dietTypes!;
@@ -131,7 +132,7 @@ describe('setările pas-cu-pas reconstruiesc planul când există unul', () => {
   test('alergiile declarate rămân respectate după o schimbare de dietă', () => {
     bootWithPlan();
     useAppStore.getState().toggleAvoidedAllergen('lactate');
-    useAppStore.getState().setDietTypes(['vegetarian']);
+    useAppStore.getState().toggleDietType('vegetarian');
 
     expect(meals().filter((m) => getRecipeAllergens(m.recipe).includes('lactate'))).toEqual([]);
   });
@@ -140,7 +141,7 @@ describe('setările pas-cu-pas reconstruiesc planul când există unul', () => {
 describe('fluxul de onboarding rămâne neatins', () => {
   test('fără plan, setările se salvează fără să genereze nimic', () => {
     bootWithoutPlan();
-    useAppStore.getState().setDietType('vegan');
+    useAppStore.getState().toggleDietType('vegan');
     useAppStore.getState().setPeopleCount(4);
     useAppStore.getState().setCookingDays(['monday']);
 

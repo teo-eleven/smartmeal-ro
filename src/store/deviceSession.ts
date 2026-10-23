@@ -37,15 +37,9 @@ export function resetDeviceSessionForTests(): void {
 function endSessionHere(message: string): void {
   if (!useAppStore.getState().userEmail) return;
   useAppStore.getState().setUserEmail(null);
-  useAppStore.setState({
-    authStatus: 'checking',
-    activeNotice: {
-      id: `session-ended-${Date.now()}`,
-      title: 'Ai fost deconectat',
-      message,
-      type: 'warning',
-    },
-  });
+  useAppStore.setState({ authStatus: 'checking' });
+  // Through the store action, so it queues behind a safety warning instead of replacing it.
+  useAppStore.getState().showNotice('Ai fost deconectat', message, 'warning');
 }
 
 async function checkIn(email: string): Promise<void> {

@@ -21,6 +21,7 @@ import { AllergenSelector } from '../../components/AllergenSelector';
 import { HEALTH_GOALS_CATALOG } from '../../data/healthTags';
 import { PreGenerationSummaryCard } from '../../components/PreGenerationSummaryCard';
 import { FoodMoodSwiper } from '../../components/FoodMoodSwiper';
+import { DAY_LABELS_RO } from '../../constants/days';
 
 interface OnboardingWizardProps {
   isDark: boolean;
@@ -49,16 +50,6 @@ const ONBOARDING_STEPS_META: StepMeta[] = [
   { step: 7, title: 'Ronțăieli', icon: '🍿', shortDesc: 'Snacks & Băuturi' },
   { step: 8, title: 'Buget', icon: '💰', shortDesc: 'Optimizare cost' },
 ];
-
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  monday: 'Luni',
-  tuesday: 'Marți',
-  wednesday: 'Miercuri',
-  thursday: 'Joi',
-  friday: 'Vineri',
-  saturday: 'Sâmbătă',
-  sunday: 'Duminică',
-};
 
 const COOKING_DAY_PRESETS: {
   id: string;
@@ -221,7 +212,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       nextStep();
     } else {
       try {
-        generatePlan();
+        // An impossible combination stays on this step, where the notice explains it and the
+        // user can change it. It used to navigate on and leave an empty board spinning.
+        if (!generatePlan()) return;
         onPlanGenerated?.();
         setActiveView('generating');
       } catch (err) {
@@ -1103,7 +1096,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                           { color: theme.text, fontWeight: isSelected ? '700' : '500' },
                         ]}
                       >
-                        {DAY_LABELS[day]}
+                        {DAY_LABELS_RO[day]}
                       </Text>
                       <View
                         style={[

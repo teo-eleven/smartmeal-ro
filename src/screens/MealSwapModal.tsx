@@ -9,26 +9,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { DayOfWeek, MealPlan, MealSlot, Recipe, SupermarketId, UserPreferences } from '../types';
+import { DayOfWeek, MealPlan, MealSlot, Recipe, UserPreferences } from '../types';
 import { getEligibleRecipes, getEligibleDessertRecipes } from '../engine/plannerEngine';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { aiProxyService, SmartSwapResult } from '../services/aiProxy';
 import { getAppTheme } from '../styles/theme';
-
-function getStoreBadgeBg(store?: SupermarketId): string {
-  switch (store) {
-    case 'carrefour':
-      return 'rgba(2, 132, 199, 0.9)';
-    case 'kaufland':
-      return 'rgba(220, 38, 38, 0.9)';
-    case 'mega_image':
-      return 'rgba(147, 51, 234, 0.9)';
-    case 'lidl':
-      return 'rgba(217, 119, 6, 0.9)';
-    default:
-      return 'rgba(255, 255, 255, 0.2)';
-  }
-}
+import { DAY_LABELS_RO } from '../constants/days';
+import { getStoreBadgeBg } from '../utils/storeBadge';
 
 interface MealSwapModalProps {
   visible: boolean;
@@ -40,16 +27,6 @@ interface MealSwapModalProps {
   onSelectReplacement: (recipe: Recipe) => void;
   isDark: boolean;
 }
-
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  monday: 'Luni',
-  tuesday: 'Marți',
-  wednesday: 'Miercuri',
-  thursday: 'Joi',
-  friday: 'Vineri',
-  saturday: 'Sâmbătă',
-  sunday: 'Duminică',
-};
 
 export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   visible,
@@ -145,7 +122,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
               <Text style={[styles.closeBtnText, { color: theme.text }]}>✕ Închide</Text>
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: theme.text }]}>
-              Schimbă{slotTitle ? ` ${slotTitle}` : ''} de {DAY_LABELS[dayOfWeek]}
+              Schimbă{slotTitle ? ` ${slotTitle}` : ''} de {DAY_LABELS_RO[dayOfWeek]}
             </Text>
             <View style={{ width: 60 }} />
           </View>

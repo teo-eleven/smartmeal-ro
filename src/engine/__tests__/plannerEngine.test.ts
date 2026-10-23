@@ -5,7 +5,6 @@ import {
 import { aggregateGroceryList } from '../groceryAggregator';
 import {
   generateMealPlan,
-  swapMealInPlan,
   isDietCompatible,
   hasRequiredAppliances,
   isSupermarketCompatible,
@@ -91,19 +90,6 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
       });
     });
 
-    it('successfully swaps a meal in the weekly plan with a different valid recipe', () => {
-      const initialPlan = generateMealPlan(defaultPrefs);
-      const originalWednesdayRecipeId = initialPlan.days[2].recipe.id;
-
-      const updatedPlan = swapMealInPlan(initialPlan, 'wednesday', defaultPrefs);
-
-      expect(updatedPlan.days.length).toBe(5);
-      const newWednesdayRecipeId = updatedPlan.days[2].recipe.id;
-
-      expect(newWednesdayRecipeId).not.toBe(originalWednesdayRecipeId);
-      expect(updatedPlan.totalCartCostRon).toBeGreaterThan(0);
-    });
-
     it('generates multi-meal plans with 2 meals per day (lunch + dinner)', () => {
       const twoMealsPrefs: UserPreferences = {
         ...defaultPrefs,
@@ -140,22 +126,6 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
         expect(breakfastMeal).toBeDefined();
         expect(breakfastMeal?.recipe).toBeDefined();
       });
-    });
-
-    it('swaps a specific meal slot within a day', () => {
-      const threeMealsPrefs: UserPreferences = {
-        ...defaultPrefs,
-        mealSlots: ['breakfast', 'lunch', 'dinner'],
-        cookingDays: ['monday'],
-      };
-
-      const initialPlan = generateMealPlan(threeMealsPrefs);
-      const originalBreakfastId = initialPlan.days[0].meals.find((m) => m.slot === 'breakfast')?.recipe.id;
-
-      const swappedPlan = swapMealInPlan(initialPlan, 'monday', threeMealsPrefs, 'breakfast');
-      const newBreakfastId = swappedPlan.days[0].meals.find((m) => m.slot === 'breakfast')?.recipe.id;
-
-      expect(newBreakfastId).not.toBe(originalBreakfastId);
     });
 
     it('strictly enforces meal slot timing appropriateness (no burgers or heavy beans for breakfast, only dessert for dessert slot)', () => {
@@ -391,15 +361,5 @@ describe('Planner Engine & Budget Solver Suite (Phase 3)', () => {
       ).toThrow('[PlannerEngine] budgetRon must be greater than 0.');
     });
 
-    it('throws when trying to swap a day that is not in the plan', () => {
-      const plan = generateMealPlan({
-        ...defaultPrefs,
-        cookingDays: ['monday'],
-      });
-
-      expect(() => swapMealInPlan(plan, 'sunday', defaultPrefs)).toThrow(
-        '[PlannerEngine] Ziua "sunday" nu se găsește în planul curent.'
-      );
-    });
   });
 });

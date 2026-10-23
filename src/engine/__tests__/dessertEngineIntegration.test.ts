@@ -1,7 +1,6 @@
 import {
   generateMealPlan,
   getEligibleDessertRecipes,
-  swapMealInPlan,
   getAlternativeRecipes,
 } from '../plannerEngine';
 import { UserPreferences, DayOfWeek } from '../../types';
@@ -138,24 +137,6 @@ describe('Dessert System & Pipeline Integration', () => {
         const titleLower = dessertMeal!.recipe.title.toLowerCase();
         expect(titleLower).not.toMatch(/ciorbă|supă|friptură|tocăniță|piept de pui|mușchiuleț/i);
       });
-    });
-  });
-
-  describe('swapMealInPlan for desserts', () => {
-    test('swapping a dessert meal replaces it with another valid dessert, never a savory meal', () => {
-      const prefs = buildPreferences({
-        mealSlots: ['dinner', 'dessert'],
-        healthGoalTags: ['heart_healthy'],
-      });
-      const plan = generateMealPlan(prefs);
-      const originalDessert = plan.days[0].meals.find((m) => m.slot === 'dessert')!;
-
-      const swappedPlan = swapMealInPlan(plan, 'monday', prefs, 'dessert');
-      const newDessertMeal = swappedPlan.days[0].meals.find((m) => m.slot === 'dessert')!;
-
-      expect(newDessertMeal).toBeDefined();
-      expect(newDessertMeal.recipe.id).not.toBe(originalDessert.recipe.id);
-      expect(newDessertMeal.recipe.suitableSlots).toContain('dessert');
     });
   });
 

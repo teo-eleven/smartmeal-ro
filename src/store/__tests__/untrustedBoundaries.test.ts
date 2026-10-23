@@ -1,3 +1,4 @@
+import { swapLikeTheUi } from '../../__tests__/helpers/swapLikeTheUi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppStore } from '../useAppStore';
 import { cloudSyncService } from '../../services/supabase';
@@ -88,7 +89,7 @@ describe('preferințele venite din storage sunt verificate', () => {
 
     expect(state.preferences.moodTags).toEqual(expect.any(Array));
     expect(() => state.generatePlan()).not.toThrow();
-    expect(() => state.swapMeal('monday')).not.toThrow();
+    expect(() => swapLikeTheUi('monday')).not.toThrow();
   });
 
   test('un număr de persoane imposibil e adus între limite la pornire', async () => {
@@ -134,14 +135,14 @@ describe('preferințele venite din cloud sunt verificate', () => {
     const state = await pullCloudPrefs({ ...SAFE, peopleCount: -3 });
 
     expect(state.preferences.peopleCount).toBeGreaterThanOrEqual(1);
-    expect(() => state.swapMeal('monday')).not.toThrow();
+    expect(() => swapLikeTheUi('monday')).not.toThrow();
   });
 
   test('un rând gol nu mai arunca', async () => {
     const state = await pullCloudPrefs({});
 
     expect(state.preferences.appliances.length).toBeGreaterThan(0);
-    expect(() => state.swapMeal('monday')).not.toThrow();
+    expect(() => swapLikeTheUi('monday')).not.toThrow();
   });
 
   test('alergiile din cloud nu mai ajung litere în preferințe', async () => {

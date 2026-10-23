@@ -200,13 +200,7 @@ describe('Zustand App Store & Onboarding Flow (Phase 4)', () => {
       const store = useAppStore.getState();
       store.generatePlan();
 
-      // Toggle dessert slot globally
-      store.toggleExtraSlot('dessert');
-      expect(useAppStore.getState().preferences.mealSlots).toContain('dessert');
-      expect(useAppStore.getState().currentPlan?.days[0].meals.some((m) => m.slot === 'dessert')).toBe(true);
-
-      // Remove global dessert to test adding to a single day
-      store.toggleExtraSlot('dessert');
+      // A dessert is added to one day at a time, as the board's "+ Desert" button does
       const mondayMealsBefore = useAppStore.getState().currentPlan?.days.find((d) => d.dayOfWeek === 'monday')?.meals || [];
       store.addExtraMealToDay('monday', 'dessert');
       const mondayMealsAfter = useAppStore.getState().currentPlan?.days.find((d) => d.dayOfWeek === 'monday')?.meals || [];
