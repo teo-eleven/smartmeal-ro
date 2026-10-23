@@ -1,14 +1,8 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  Platform,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Platform, StyleSheet, Text, View } from 'react-native';
 import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
+import { USE_NATIVE_DRIVER } from '../styles/motion';
 
 export interface LoadingToastProps {
   visible: boolean;
@@ -27,50 +21,63 @@ export const LoadingToast: React.FC<LoadingToastProps> = ({
   const slideAnim = useRef(new Animated.Value(-50)).current;
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+  // Kept on screen until the exit has played; returning null the moment `visible` went false
+  // cut the exit animation off before it started.
+  const [isRendered, setIsRendered] = useState(visible);
+  const runningRef = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          friction: 7,
-          tension: 70,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 6,
-          tension: 80,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 180,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: -50,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 0.85,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 0,
-          duration: 180,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
+    runningRef.current?.stop();
+    if (visible) setIsRendered(true);
+
+    const motion = visible
+      ? Animated.parallel([
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            friction: 7,
+            tension: 70,
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+          Animated.spring(scaleAnim, {
+            toValue: 1,
+            friction: 6,
+            tension: 80,
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 1,
+            duration: 180,
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+        ])
+      : Animated.parallel([
+          Animated.timing(slideAnim, {
+            toValue: -50,
+            duration: 220,
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 0.85,
+            duration: 220,
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 0,
+            duration: 180,
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+        ]);
+
+    runningRef.current = motion;
+    motion.start(({ finished }) => {
+      // Interrupted by the opposite change: that one decides what stays on screen.
+      if (finished && !visible) setIsRendered(false);
+    });
   }, [visible, slideAnim, scaleAnim, opacityAnim]);
 
-  if (!visible) return null;
+  useEffect(() => () => runningRef.current?.stop(), []);
+
+  if (!isRendered) return null;
 
   return (
     <Animated.View

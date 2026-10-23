@@ -172,6 +172,7 @@ function AppShell() {
           actionLabel={undoCopy.actionLabel}
           onAction={undoReset}
           onDismiss={dismissUndo}
+          resetKey={lastDiscardedPlan}
           isDark={isDark}
         />
         <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
@@ -504,6 +505,7 @@ function AppShell() {
         actionLabel={undoCopy.actionLabel}
         onAction={undoReset}
         onDismiss={dismissUndo}
+        resetKey={lastDiscardedPlan}
         isDark={isDark}
       />
 

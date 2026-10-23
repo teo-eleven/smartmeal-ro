@@ -22,6 +22,7 @@ import { HEALTH_GOALS_CATALOG } from '../../data/healthTags';
 import { PreGenerationSummaryCard } from '../../components/PreGenerationSummaryCard';
 import { FoodMoodSwiper } from '../../components/FoodMoodSwiper';
 import { DAY_LABELS_RO } from '../../constants/days';
+import { USE_NATIVE_DRIVER } from '../../styles/motion';
 
 interface OnboardingWizardProps {
   isDark: boolean;
@@ -187,13 +188,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 220,
-        useNativeDriver: Platform.OS !== 'web',
+        useNativeDriver: USE_NATIVE_DRIVER,
       }),
       Animated.spring(slideAnim, {
         toValue: 0,
         tension: 65,
         friction: 11,
-        useNativeDriver: Platform.OS !== 'web',
+        useNativeDriver: USE_NATIVE_DRIVER,
       }),
     ]).start();
   }, [currentStep]);

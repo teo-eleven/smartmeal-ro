@@ -16,6 +16,7 @@ import { getHealthGoalMeta } from '../data/healthTags';
 import { DAY_LABELS_RO } from '../constants/days';
 import { useAppStore } from '../store/useAppStore';
 import { getStoreBadgeBg, getStoreSignatureBadge } from '../utils/storeBadge';
+import { USE_NATIVE_DRIVER } from '../styles/motion';
 
 interface MealCardProps {
   day: MealPlanDay;
@@ -135,7 +136,7 @@ export const MealCard: React.FC<MealCardProps> = ({
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
       toValue: 0.98,
-      useNativeDriver: true,
+      useNativeDriver: USE_NATIVE_DRIVER,
       speed: 40,
       bounciness: 4,
     }).start();
@@ -144,7 +145,7 @@ export const MealCard: React.FC<MealCardProps> = ({
   const handlePressOut = () => {
     Animated.spring(scaleAnim, {
       toValue: 1,
-      useNativeDriver: true,
+      useNativeDriver: USE_NATIVE_DRIVER,
       speed: 30,
       bounciness: 6,
     }).start();

@@ -3,6 +3,7 @@ import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import { GroceryListItem } from '../types';
 
 import { getAppTheme } from '../styles/theme';
+import { USE_NATIVE_DRIVER } from '../styles/motion';
 
 interface GroceryItemRowProps {
   item: GroceryListItem;
@@ -25,13 +26,13 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({
       Animated.timing(scaleAnim, {
         toValue: 0.95,
         duration: 80,
-        useNativeDriver: true,
+        useNativeDriver: USE_NATIVE_DRIVER,
       }),
       Animated.spring(scaleAnim, {
         toValue: 1,
         friction: 4,
         tension: 100,
-        useNativeDriver: true,
+        useNativeDriver: USE_NATIVE_DRIVER,
       }),
     ]).start();
 

@@ -29,6 +29,7 @@ import { StoreComparisonModal } from './StoreComparisonModal';
 import { SavedPlansModal } from './SavedPlansModal';
 import { AppLoadingScreen } from '../components/AppLoadingScreen';
 import { DAY_LABELS_RO } from '../constants/days';
+import { USE_NATIVE_DRIVER } from '../styles/motion';
 
 interface AnimatedMealSlotProps {
   children: React.ReactNode;
@@ -45,13 +46,13 @@ const AnimatedMealSlot: React.FC<AnimatedMealSlotProps> = ({ children, isDessert
         Animated.timing(spawnAnim, {
           toValue: 1,
           duration: 400,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
         Animated.spring(spawnAnim, {
           toValue: 1,
           tension: 48,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: USE_NATIVE_DRIVER,
         }),
       ]).start();
     }

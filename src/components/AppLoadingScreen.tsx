@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { getAppTheme } from '../styles/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { USE_NATIVE_DRIVER } from '../styles/motion';
 
 export interface AppLoadingScreenProps {
   isDark: boolean;
@@ -62,7 +63,7 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
         toValue: 1,
         duration: 180,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: USE_NATIVE_DRIVER,
       }).start();
     }
   }, [overlay, overlayFadeAnim]);
@@ -74,7 +75,7 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
         toValue: 1,
         duration: 1500,
         easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-        useNativeDriver: Platform.OS !== 'web',
+        useNativeDriver: USE_NATIVE_DRIVER,
       })
     );
     progressLoop.start();
@@ -87,12 +88,12 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
           Animated.timing(tipFadeAnim, {
             toValue: 0,
             duration: 180,
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
           }),
           Animated.timing(tipFadeAnim, {
             toValue: 1,
             duration: 220,
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
           }),
         ]).start();
 
