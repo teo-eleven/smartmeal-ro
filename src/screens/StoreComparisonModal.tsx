@@ -24,7 +24,7 @@ export const StoreComparisonModal: React.FC<StoreComparisonModalProps> = ({
   onSwitchStore,
   isDark,
 }) => {
-  useBlockingWindow(visible);
+  useBlockingWindow(visible && Boolean(plan));
   const theme = getAppTheme(isDark);
 
   if (!plan) return null;

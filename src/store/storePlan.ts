@@ -10,7 +10,7 @@ import {
   getActiveExtraProducts,
   rebuildCart,
 } from './cart';
-import { mergeProtections } from './preferenceProtections';
+import { mergeProtections, stricterDiet } from './preferenceProtections';
 
 import { StoreApi } from 'zustand';
 import { AppState } from './appState';
@@ -115,15 +115,40 @@ export function createPlanActions(set: SetState, get: GetState) {
         const discarded = state.lastDiscardedPlan;
         if (!discarded) return state;
 
-        void storageService.savePreferences(discarded.preferences);
-        void storageService.savePlanAndGrocery(discarded.plan, discarded.groceryItems);
+        // An allergy or diet added since the snapshot must survive the undo: the old menu comes
+        // back under today's protections and is re-checked, exactly like a restored plan.
+        const preferences: UserPreferences = {
+          ...discarded.preferences,
+          ...mergeProtections(discarded.preferences, state.preferences),
+          ...stricterDiet(discarded.preferences, state.preferences),
+        };
+        const checked = tryMakePlanSafe(discarded.plan.days, preferences);
+        if (!checked) {
+          return { lastDiscardedPlan: null, activeNotice: buildNothingSafeNotice('restore') };
+        }
+        const { plan, items } =
+          checked.replacedCount > 0
+            ? rebuildCart(discarded.plan, checked.days, preferences, discarded.groceryItems)
+            : { plan: discarded.plan, items: discarded.groceryItems };
+
+        void storageService.savePreferences(preferences);
+        void storageService.savePlanAndGrocery(plan, items);
 
         return {
-          preferences: discarded.preferences,
-          currentPlan: discarded.plan,
-          groceryItems: discarded.groceryItems,
+          preferences,
+          currentPlan: plan,
+          groceryItems: items,
           activeView: 'meals',
           lastDiscardedPlan: null,
+          activeNotice:
+            checked.replacedCount > 0
+              ? {
+                  id: Date.now().toString(),
+                  title: 'Plan adaptat la setările tale',
+                  message: buildRestoreNotice(checked.replacedCount, checked.offendingAllergens),
+                  type: 'warning',
+                }
+              : state.activeNotice,
         };
       });
     },

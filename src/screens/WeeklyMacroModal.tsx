@@ -26,7 +26,7 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
   plan,
   isDark,
 }) => {
-  useBlockingWindow(visible);
+  useBlockingWindow(visible && Boolean(plan));
   const { contentMaxWidth } = useResponsive();
 
   if (!visible || !plan) return null;

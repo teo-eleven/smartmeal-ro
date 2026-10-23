@@ -1,5 +1,6 @@
 import { useAppStore } from '../useAppStore';
 import { asSubscriber } from '../../__tests__/helpers/subscriber';
+import { getRecipeAllergens } from '../../utils/allergenFilter';
 
 /**
  * The 2026-10-21 audit: "3 Mese" pressed while already active regenerated the week and threw
@@ -96,5 +97,24 @@ describe('refacerea meniului la schimbarea numărului de mese se poate anula', (
     store().toggleAvoidedAllergen('oua');
 
     expect(store().lastDiscardedPlan).toBeNull();
+  });
+});
+
+/**
+ * Review of stage 4b: an allergy added while an older menu was still held for Undo came
+ * back out with it. Undo now keeps today's protections and re-checks the menu it restores.
+ */
+describe('Undo nu șterge o alergie adăugată între timp', () => {
+  test('după refacere + alergie nouă, Undo păstrează alergia și nu aduce mese cu ea', () => {
+    store().setMealsPerDayCount(3);
+    store().toggleAvoidedAllergen('oua');
+
+    store().undoReset();
+
+    expect(store().preferences.avoidedAllergens).toContain('oua');
+    const withEggs = store()
+      .currentPlan!.days.flatMap((d) => d.meals)
+      .filter((m) => getRecipeAllergens(m.recipe).includes('oua'));
+    expect(withEggs.map((m) => m.recipe.id)).toEqual([]);
   });
 });

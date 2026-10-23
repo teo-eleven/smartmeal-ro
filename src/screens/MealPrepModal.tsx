@@ -26,7 +26,7 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
   plan,
   isDark,
 }) => {
-  useBlockingWindow(visible);
+  useBlockingWindow(visible && Boolean(plan));
   const { contentMaxWidth } = useResponsive();
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({});
 

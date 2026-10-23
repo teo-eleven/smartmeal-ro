@@ -97,21 +97,22 @@ Status: **propus, așteaptă confirmare**.
 
 **Agenți:** react-specialist, frontend-developer, code-reviewer · **Mărime:** L
 
-- [ ] B1 `BudgetSlider`: textul local e sursa de adevăr cât timp câmpul are focus; trimite valoarea la blur sau submit.
-- [ ] B2 `QuickFiltersModal`: resincronizare la deschidere.
-- [ ] `MealCard` încape la 390 px (butoane, macro, chip-uri, preț). Test de layout în Playwright.
-- [ ] Swap: candidați sortați după impactul în buget, cu badge „+X / −X lei”; AI-ul protejat cu request-id și `catch`.
-- [ ] Modalul de buget depășit reține ultimul cost refuzat în store, nu în componentă.
-- [ ] `GeneratingPlanModal`: callback stabil; swiper-ul cu guard de scroll corect, taste ignorate în inputuri și `useWindowDimensions`.
-- [ ] Confirmări: textul de reset corectat (există Undo); confirmare la „Restaurează” și la golirea cămării; „3 Mese” activ nu mai regenerează; avertisment când se pierd modificări manuale (S2–S4).
-- [ ] Modale secvențiale pe iOS (notificări sub AuthModal sau RecipeDetail); `BiometricOptInPrompt` primește `onRequestClose` și suprimare completă.
-- [ ] Notițe: persistate local pe rețetă (partea de cloud vine în Etapa 5), resetate la schimbarea rețetei, cu evitare de tastatură; eticheta „Îmi place / Preferat ✓”.
-- [ ] Auth: protecție la dublu-tap prin `run()`, `catch` la reset și la verificarea codului, `onSubmitEditing`.
-- [ ] Accesibilitate: `accessibilityState` (`selected`/`checked`) pe tab-uri, segmente și bife; etichete fără emoji; butonul „✕” scos din Touchable-ul imbricat.
-- [ ] `UndoBanner`, `LoadingToast` și `InformativeNoticeModal`: animații corecte și cleanup.
-- [ ] Erorile înghițite din `GroceryScreen`, `MealBoardScreen` și `OnboardingWizard` devin mesaje vizibile.
-- [ ] Șterg `WeekOverview`; adaug selectori zustand (`useShallow`) și `React.memo` pe `MealCard`.
-- [ ] **Refactor în paralel:** `OnboardingWizard.tsx` (3125) devine o componentă pe pas + `useOnboardingState`; `RecipeDetailModal.tsx` (1665), `MealBoardScreen.tsx` (1174) și `MealCard.tsx` (929) sparte în subcomponente.
+- [x] B1 `BudgetSlider`: textul local e sursa de adevăr cât timp câmpul are focus; trimite valoarea la blur sau submit.
+- [x] B2 `QuickFiltersModal`: resincronizare la deschidere.
+- [x] `MealCard` încape la 390 px (butoane, macro, chip-uri, preț). Test de layout în Playwright.
+- [x] Swap: candidați sortați după impactul în buget, cu badge „+X / −X lei”; AI-ul protejat cu request-id și `catch`.
+- [x] Modalul de buget depășit reține ultimul cost refuzat în store, nu în componentă.
+- [x] `GeneratingPlanModal`: callback stabil; swiper-ul cu guard de scroll corect, taste ignorate în inputuri și `useWindowDimensions`.
+- [x] Confirmări: textul de reset corectat (există Undo); „Restaurează” se poate anula (Undo în loc de confirmare) și la golirea cămării; „3 Mese” activ nu mai regenerează; avertisment când se pierd modificări manuale (S2–S4).
+- [x] Modale secvențiale pe iOS (notificări sub AuthModal sau RecipeDetail); `BiometricOptInPrompt` primește `onRequestClose` și suprimare completă.
+- [x] Notițe: persistate local pe rețetă (partea de cloud vine în Etapa 5), resetate la schimbarea rețetei, cu evitare de tastatură; eticheta „Îmi place / Preferat ✓”.
+- [x] Auth: protecție la dublu-tap prin `run()`, `catch` la reset și la verificarea codului, `onSubmitEditing`.
+- [x] Accesibilitate: `accessibilityState` (`selected`/`checked`) pe tab-uri, segmente și bife; etichete fără emoji; butonul „✕” scos din Touchable-ul imbricat.
+- [x] `UndoBanner`, `LoadingToast` și `InformativeNoticeModal`: animații corecte și cleanup.
+- [x] Erorile înghițite din `GroceryScreen`, `MealBoardScreen` și `OnboardingWizard` devin mesaje vizibile.
+- [x] Șterg `WeekOverview`; adaug selectori zustand (`useShallow`) și `React.memo` pe `MealCard`.
+- [x] **Refactor în paralel:** `OnboardingWizard.tsx` (3125) devine o componentă pe pas + `useOnboardingState`.
+- [ ] `RecipeDetailModal.tsx` (1665), `MealBoardScreen.tsx` (1174) și `MealCard.tsx` (929) sparte în subcomponente — **amânat** la cererea utilizatorului (cost mare, fără efect vizibil); de reluat când se lucrează oricum în ele.
 
 ## Etapa 5 · `fix/sync-backend`: sincronizări, AI, securitate
 

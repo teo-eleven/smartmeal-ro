@@ -38,7 +38,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   onSelectReplacement,
   isDark,
 }) => {
-  useBlockingWindow(visible);
+  useBlockingWindow(visible && Boolean(dayOfWeek));
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<SmartSwapResult | null>(null);
 
