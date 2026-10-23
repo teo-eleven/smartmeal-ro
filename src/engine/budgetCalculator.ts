@@ -80,6 +80,8 @@ export function calculateMinimumViableBudget(
   const startIdx = Math.floor(sortedCosts.length * 0.25);
   const endIdx = Math.max(startIdx + 1, Math.floor(sortedCosts.length * 0.65));
   const realisticSlice = sortedCosts.slice(startIdx, endIdx);
+  // No recipe to evaluate (not reachable with today's catalog) must not become NaN.
+  if (realisticSlice.length === 0) return 0;
   const avgRealisticMealCost =
     realisticSlice.reduce((sum, cost) => sum + cost, 0) / realisticSlice.length;
 
