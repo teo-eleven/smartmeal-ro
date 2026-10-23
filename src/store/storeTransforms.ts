@@ -15,7 +15,7 @@ import {
 import { describeUnsafeRecipe } from './planSafety';
 import { mergeProtections, stricterDiet } from './preferenceProtections';
 
-import { AppState, PendingCloudPlan, SystemNotice } from './appState';
+import { AppState, DiscardReason, DiscardedPlan, PendingCloudPlan, SystemNotice } from './appState';
 import {
   buildInfeasibleNotice,
   buildNothingSafeNotice,
@@ -240,6 +240,17 @@ export function rejectIfInfeasible(nextPrefs: UserPreferences): Partial<AppState
  * the allergies, which only ever grow when two devices meet. The plan is then re-checked
  * against the result, and the shopping list is recomputed rather than believed.
  */
+/** The plan about to be replaced, held in memory so the Undo banner can bring it back. */
+export function keepForUndo(state: AppState, reason: DiscardReason): DiscardedPlan | null {
+  if (!state.currentPlan) return state.lastDiscardedPlan;
+  return {
+    reason,
+    plan: state.currentPlan,
+    groceryItems: state.groceryItems,
+    preferences: state.preferences,
+  };
+}
+
 export function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Partial<AppState> {
   // The row crossed a network and was written by another copy of this app, possibly older.
   // It gets the same whitelist as anything read from storage, falling back field by field to
@@ -311,13 +322,7 @@ export function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Part
     confirmRequest: null,
     pendingCloudPlan: null,
     // Whatever this replaced stays recoverable, the same way a reset does.
-    lastDiscardedPlan: state.currentPlan
-      ? {
-          plan: state.currentPlan,
-          groceryItems: state.groceryItems,
-          preferences: state.preferences,
-        }
-      : state.lastDiscardedPlan,
+    lastDiscardedPlan: keepForUndo(state, 'cloud'),
     activeNotice: {
       id: Date.now().toString(),
       title: replacedCount > 0 ? 'Plan adaptat la setările tale' : 'Plan descărcat din cloud',

@@ -41,6 +41,15 @@ import {
 type SetState = StoreApi<AppState>['setState'];
 type GetState = () => AppState;
 
+const EXTRA_SLOTS: readonly MealSlot[] = ['snack', 'dessert'];
+
+/** True when the week already has exactly these main meals, with no per-day override. */
+function hasBaseSlots(prefs: UserPreferences, baseSlots: MealSlot[]): boolean {
+  if (prefs.dailyMealSlots) return false;
+  const current = prefs.mealSlots.filter((slot) => !EXTRA_SLOTS.includes(slot));
+  return current.length === baseSlots.length && baseSlots.every((slot) => current.includes(slot));
+}
+
 /** Preference setters: household, diet, allergies, kitchen, slots and tier. */
 export function createPreferencesActions(set: SetState, _get: GetState) {
   return {
@@ -561,6 +570,8 @@ export function createPreferencesActions(set: SetState, _get: GetState) {
       }
 
       set((state) => {
+        // Pressing the active count again used to regenerate the week and lose manual swaps.
+        if (hasBaseSlots(state.preferences, baseSlots)) return state;
         // Preserve existing snack or dessert toggles if any
         const activeExtras = state.preferences.mealSlots.filter(
           (s) => s === 'snack' || s === 'dessert'

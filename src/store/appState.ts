@@ -22,7 +22,11 @@ export type ActiveView = 'onboarding' | 'generating' | 'meals' | 'grocery';
 export type ConfirmActionId = 'reset_onboarding' | 'apply_cloud_plan';
 
 /** Everything needed to put a reset week back exactly as it was. */
+/** What replaced the plan, so the Undo banner can say so. */
+export type DiscardReason = 'reset' | 'restore' | 'cloud';
+
 export interface DiscardedPlan {
+  reason: DiscardReason;
   plan: MealPlan;
   groceryItems: GroceryListItem[];
   preferences: UserPreferences;

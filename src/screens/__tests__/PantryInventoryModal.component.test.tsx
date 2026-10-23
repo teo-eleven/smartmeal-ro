@@ -66,13 +66,43 @@ describe('cămara', () => {
     );
   });
 
-  test('„deselectează tot" golește lista', () => {
+  test('„deselectează tot" cere confirmare înainte să golească lista', () => {
     seed(['cartofi_albi', 'sare_fina']);
     show();
 
     fireEvent.press(screen.getByText(/Deselectează tot/));
 
+    expect(useAppStore.getState().preferences.pantryInventory).toEqual(['cartofi_albi', 'sare_fina']);
+    expect(screen.getByText(/Debifezi toate cele 2/)).toBeTruthy();
+  });
+
+  test('după confirmare lista se golește', () => {
+    seed(['cartofi_albi', 'sare_fina']);
+    show();
+
+    fireEvent.press(screen.getByText(/Deselectează tot/));
+    fireEvent.press(screen.getByText('Da, debifează'));
+
     expect(useAppStore.getState().preferences.pantryInventory).toEqual([]);
+  });
+
+  test('„Renunță" păstrează bifele și ascunde întrebarea', () => {
+    seed(['cartofi_albi', 'sare_fina']);
+    show();
+
+    fireEvent.press(screen.getByText(/Deselectează tot/));
+    fireEvent.press(screen.getByText('Renunță'));
+
+    expect(useAppStore.getState().preferences.pantryInventory).toHaveLength(2);
+    expect(screen.queryByText(/Debifezi toate/)).toBeNull();
+  });
+
+  test('cu nimic bifat, „deselectează tot" e dezactivat', () => {
+    show();
+
+    fireEvent.press(screen.getByText(/Deselectează tot/));
+
+    expect(screen.queryByText(/Debifezi toate/)).toBeNull();
   });
 
   test('fără nimic bifat nu promite nicio economie', () => {

@@ -21,7 +21,7 @@ import {
   buildRestoreNotice,
   tryMakePlanSafe,
 } from './planSafety';
-import { keepingDessertDays, promotePendingStock } from './storeTransforms';
+import { keepForUndo, keepingDessertDays, promotePendingStock } from './storeTransforms';
 
 type SetState = StoreApi<AppState>['setState'];
 type GetState = () => AppState;
@@ -51,13 +51,7 @@ export function createPlanActions(set: SetState, get: GetState) {
           favouriteRecipeIds: state.preferences.favouriteRecipeIds,
         },
         // Held in memory only, so the user can take the reset back straight away.
-        lastDiscardedPlan: state.currentPlan
-          ? {
-              plan: state.currentPlan,
-              groceryItems: state.groceryItems,
-              preferences: state.preferences,
-            }
-          : state.lastDiscardedPlan,
+        lastDiscardedPlan: keepForUndo(state, 'reset'),
       }));
     },
 
@@ -137,6 +131,9 @@ export function createPlanActions(set: SetState, get: GetState) {
     saveCurrentPlan: (name: string) => {
       set((state) => {
         if (!state.currentPlan) return state;
+        // A double tap fires twice before the button can disable itself; the plan object is
+        // never mutated, so the same reference at the top of the list means it is already in.
+        if (state.savedPlans[0]?.plan === state.currentPlan) return state;
 
         const entry: SavedPlan = {
           id: nextSavedPlanId(),
@@ -210,6 +207,8 @@ export function createPlanActions(set: SetState, get: GetState) {
           currentPlan: restoredPlan,
           groceryItems: aggregated.items,
           activeView: 'meals',
+          // Restoring replaces the week on screen, so it gets the same Undo as a reset.
+          lastDiscardedPlan: keepForUndo(state, 'restore'),
           activeNotice:
             replacedCount > 0
               ? {

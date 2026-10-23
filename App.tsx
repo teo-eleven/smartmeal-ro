@@ -28,6 +28,7 @@ import { useAccountSession } from './src/hooks/useAccountSession';
 import { injectEmeraldGlassStyles, getAppTheme } from './src/styles/theme';
 import { glass } from './src/styles/glass';
 import { UndoBanner } from './src/components/UndoBanner';
+import { undoBannerCopy } from './src/utils/undoBannerCopy';
 import { PaywallScreen } from './src/screens/PaywallScreen';
 import { useSubscriptionStore } from './src/store/subscriptionStore';
 import { cloudSyncService } from './src/services/supabase';
@@ -68,6 +69,7 @@ function AppShell() {
 
   // Permanently locked to the luxury Warm Forest & Amber Lantern theme
   const isDark = true;
+  const undoCopy = undoBannerCopy(lastDiscardedPlan?.reason);
 
   const { isDesktop, isMobile, contentMaxWidth } = useResponsive();
 
@@ -166,8 +168,8 @@ function AppShell() {
         />
         <UndoBanner
           visible={Boolean(lastDiscardedPlan)}
-          message="Planul săptămânal a fost șters."
-          actionLabel="Anulează ștergerea"
+          message={undoCopy.message}
+          actionLabel={undoCopy.actionLabel}
           onAction={undoReset}
           onDismiss={dismissUndo}
           isDark={isDark}
@@ -503,8 +505,8 @@ function AppShell() {
 
       <UndoBanner
         visible={Boolean(lastDiscardedPlan)}
-        message="Planul săptămânal a fost șters."
-        actionLabel="Anulează ștergerea"
+        message={undoCopy.message}
+        actionLabel={undoCopy.actionLabel}
         onAction={undoReset}
         onDismiss={dismissUndo}
         isDark={isDark}
@@ -530,7 +532,7 @@ function AppShell() {
       <ConfirmDialog
         visible={confirmRequest === 'reset_onboarding'}
         title="Ștergi planul curent?"
-        message="Se șterg meniul săptămânal, lista de cumpărături și preferințele salvate. Acțiunea nu poate fi anulată."
+        message="Se șterg meniul săptămânal, lista de cumpărături și preferințele. Cămara și rețetele preferate rămân. Timp de câteva secunde poți reveni cu „Anulează ștergerea”."
         confirmLabel="Șterge și începe din nou"
         cancelLabel="Păstrează planul"
         isDestructive
