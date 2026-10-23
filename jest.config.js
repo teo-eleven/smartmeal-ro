@@ -12,7 +12,6 @@ const sharedTransform = {
 };
 
 const sharedModuleNameMapper = {
-  '^@/(.*)$': '<rootDir>/src/$1',
   '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.js',
 };
 
@@ -59,7 +58,7 @@ module.exports = {
     },
     {
       displayName: 'components',
-      preset: 'react-native',
+      preset: '@react-native/jest-preset',
       setupFiles: ['<rootDir>/jest.setup.js'],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.components.js'],
       moduleNameMapper: sharedModuleNameMapper,

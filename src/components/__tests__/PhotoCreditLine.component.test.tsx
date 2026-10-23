@@ -33,7 +33,7 @@ describe('PhotoCreditLine', () => {
 
   test('apăsarea deschide pagina fișierului, unde se poate verifica licența', () => {
     mockPhoto.mockReturnValue({ url: 'https://upload.wikimedia.org/x.jpg', credit: CREDIT });
-    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     render(<PhotoCreditLine recipe={RECIPES[0]} color="#fff" />);
 
     fireEvent.press(screen.getByRole('link'));

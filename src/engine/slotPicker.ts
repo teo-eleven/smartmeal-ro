@@ -37,6 +37,11 @@ export interface SlotPickerContext {
  * already served (usage counts, the last dish, ingredients in play) so variety and
  * ingredient synergy hold across the whole week; a new picker starts a new week.
  */
+/** Cheaper first: a craving may pull in a dish of a cheaper tier, never a dearer one. */
+const TIER_RANK: Record<FoodTier, number> = { basic: 0, medium: 1, premium: 2 };
+/** Once the chosen tier has no unused dish left for a craving, a cheaper tier may serve it. */
+const MIN_TIER_OPTIONS_PER_CRAVING = 1;
+
 export function createSlotPicker(ctx: SlotPickerContext) {
   const {
     preferences,
@@ -51,6 +56,10 @@ export function createSlotPicker(ctx: SlotPickerContext) {
   const recipeUsageCount = new Map<string, number>();
   const usedIngredientsInPlan = new Set<string>();
   let lastUsedRecipeId: string | null = null;
+  // Meals served from a cheaper tier because of a craving, and meals picked in all: at most
+  // half may be the former, so the chosen tier still shows in the plan.
+  let cravingFromCheaperTier = 0;
+  let mealsPicked = 0;
 
   const scoreFallbackRecipes = (recipes: Recipe[]) => scoreFallback(recipes, preferences);
 
@@ -143,8 +152,27 @@ export function createSlotPicker(ctx: SlotPickerContext) {
     // before any score is consulted, so without this a favourite of another tier is dropped
     // from the pool and its bonus is never read at all.
     const isWanted = (id: string) => (preferences.favouriteRecipeIds ?? []).includes(id);
+    // A craving the chosen tier has run out of may reach into a cheaper tier. Without it the
+    // tier emptied cravings before they were read: 17 of the 19 soups are Basic, so a Medium
+    // household asking for soups got the two Medium ones and nothing more. The tier's own
+    // dishes still come first, so the tier keeps deciding the overall level.
+    // Only for the day's own craving (each craving gets its days), so the other days keep
+    // the chosen tier and the plan's overall level does not slide down.
+    const isSpotlightScarce =
+      Boolean(daySpotlightMood) &&
+      cravingFromCheaperTier * 2 <= mealsPicked &&
+      candidates.filter(
+        (c) =>
+          c.recipe.tier === effectiveTier &&
+          c.recipe.moodTags.includes(daySpotlightMood as MoodTag) &&
+          !recipeUsageCount.has(c.recipe.id)
+      ).length < MIN_TIER_OPTIONS_PER_CRAVING;
+    const isCraved = (recipe: Recipe) =>
+      isSpotlightScarce &&
+      TIER_RANK[recipe.tier ?? 'medium'] <= TIER_RANK[effectiveTier] &&
+      recipe.moodTags.includes(daySpotlightMood as MoodTag);
     const matchesTier = (s: (typeof candidates)[number]) =>
-      s.recipe.tier === effectiveTier || isWanted(s.recipe.id);
+      s.recipe.tier === effectiveTier || isWanted(s.recipe.id) || isCraved(s.recipe);
 
     const unused = candidates.filter((c) => !recipeUsageCount.has(c.recipe.id));
     const tierMatches = candidates.filter(matchesTier);
@@ -243,6 +271,8 @@ export function createSlotPicker(ctx: SlotPickerContext) {
 
     if (sorted.length === 0) return null;
     const chosen = sorted[0].recipe;
+    mealsPicked += 1;
+    if (TIER_RANK[chosen.tier ?? 'medium'] < TIER_RANK[effectiveTier]) cravingFromCheaperTier += 1;
     const currentUsage = recipeUsageCount.get(chosen.id) || 0;
     recipeUsageCount.set(chosen.id, currentUsage + 1);
     lastUsedRecipeId = chosen.id;
