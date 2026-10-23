@@ -1,5 +1,6 @@
 import { useAppStore } from '../useAppStore';
 import { asSubscriber } from '../../__tests__/helpers/subscriber';
+import { getRecipeAllergens } from '../../utils/allergenFilter';
 
 /**
  * S5, S6 and S7 from the 2026-10-21 audit: edits that reached the wrong meal or forgot what
@@ -83,5 +84,24 @@ describe('porțiile unui rest nu umflă costul zilei (S6)', () => {
     store().setMealServings(day.dayOfWeek, meal.id, meal.servings + 2);
 
     expect(dayOf(day.dayOfWeek).meals.find((m) => m.id === meal.id)!.estimatedCostRon).toBe(0);
+  });
+});
+
+describe('anularea nu readuce o rețetă devenită nesigură între timp', () => {
+  test('dacă masa înlocuită conține un alergen declarat după gătitul dublu, nu se mai readuce', () => {
+    const { tomorrow, replacedTomorrow } = cookDoubleFirstDinner();
+    const leftover = dayOf(tomorrow.dayOfWeek).meals.find((m) => m.isLeftover)!;
+    // The user now avoids everything the replaced meal contains, so it must not come back.
+    const allergens = getRecipeAllergens(replacedTomorrow!.recipe);
+    if (allergens.length === 0) return; // nothing to declare for this catalog pairing
+    useAppStore.setState({
+      preferences: { ...store().preferences, avoidedAllergens: allergens },
+    });
+
+    store().undoCookDouble(tomorrow.dayOfWeek, leftover.id);
+
+    const restored = dayOf(tomorrow.dayOfWeek).meals.find((m) => m.id === leftover.id)!;
+    expect(restored.recipe.id).not.toBe(replacedTomorrow!.recipe.id);
+    expect(restored.isLeftover).toBeFalsy();
   });
 });

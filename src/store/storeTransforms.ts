@@ -1,3 +1,5 @@
+import { resolveRecipeId } from '../data/recipeIdAliases';
+import { RECIPES_MAP } from '../data/recipes';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { aggregateGroceryList } from '../engine/groceryAggregator';
 import { checkPlanFeasibility, generateMealPlan } from '../engine/plannerEngine';
@@ -10,6 +12,7 @@ import {
   getActiveExtraProducts,
   mergePurchased,
 } from './cart';
+import { describeUnsafeRecipe } from './planSafety';
 import { mergeProtections, stricterDiet } from './preferenceProtections';
 
 import { AppState, PendingCloudPlan, SystemNotice } from './appState';
@@ -60,8 +63,14 @@ export function undoDoubleOnSource(meal: PlannedMeal, prefs: UserPreferences): P
 
 /** A leftover turned back into the meal it replaced (or its own dish when none is known). */
 export function restoreReplacedMeal(meal: PlannedMeal, prefs: UserPreferences): PlannedMeal {
-  const recipe = meal.replacedRecipe ?? meal.recipe;
-  const servings = meal.replacedServings ?? meal.servings;
+  // The replaced dish comes back only as the catalog defines it today, and only if today's
+  // rules still allow it: an allergy declared since the double must not be undone by undo.
+  const canonical = meal.replacedRecipe
+    ? RECIPES_MAP[resolveRecipeId(meal.replacedRecipe.id)]
+    : undefined;
+  const canRestore = canonical !== undefined && describeUnsafeRecipe(canonical, prefs) === null;
+  const recipe = canRestore ? canonical : meal.recipe;
+  const servings = canRestore ? (meal.replacedServings ?? meal.servings) : meal.servings;
   return {
     ...meal,
     replacedRecipe: undefined,
