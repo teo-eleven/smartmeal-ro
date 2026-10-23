@@ -316,6 +316,9 @@ const MAX_RECIPE_REPEATS = 2;
  */
 const BUDGET_TIE_TOLERANCE_RATIO = 0.15;
 
+/** Random score spread used by "Regenerează" so a reshuffle actually changes the week. */
+const RESHUFFLE_JITTER_POINTS = 25;
+
 export function collectDayMeals(days: MealPlanDay[]): { recipe: Recipe; servings: number }[] {
   const meals: { recipe: Recipe; servings: number }[] = [];
   days.forEach((day) =>
@@ -726,6 +729,15 @@ export function generateMealPlan(
     // 2. No back-to-back repetitions (penalty if id === lastUsedRecipeId)
     // 3. Synergy bonus: sharing ingredients with existing meals
     // 4. Mood tag score & portion cost
+    // One draw per candidate, made before sorting: drawn inside the comparator, the same
+    // recipe scored differently on every comparison and the resulting order was undefined.
+    const jitterById = new Map(
+      candidatePool.map((c) => [
+        c.recipe.id,
+        options?.reshuffle ? Math.floor(Math.random() * RESHUFFLE_JITTER_POINTS) : 0,
+      ])
+    );
+
     const sorted = [...candidatePool].sort((a, b) => {
       const aUsage = recipeUsageCount.get(a.recipe.id) || 0;
       const bUsage = recipeUsageCount.get(b.recipe.id) || 0;
@@ -758,8 +770,8 @@ export function generateMealPlan(
       const bExcludedPenalty =
         options?.reshuffle && options?.excludedRecipeIds?.has(b.recipe.id) ? 75 : 0;
 
-      const aJitter = options?.reshuffle ? Math.floor(Math.random() * 25) : 0;
-      const bJitter = options?.reshuffle ? Math.floor(Math.random() * 25) : 0;
+      const aJitter = jitterById.get(a.recipe.id) ?? 0;
+      const bJitter = jitterById.get(b.recipe.id) ?? 0;
 
       const aTotalScore =
         a.score +
