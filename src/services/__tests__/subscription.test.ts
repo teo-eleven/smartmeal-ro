@@ -62,13 +62,28 @@ describe('abonamentul simulat', () => {
     expect(subscriptionService.mode()).toBe('unavailable');
   });
 
+  /** The 2026-10-21 audit (F6): a release that forgot EXPO_PUBLIC_APP_ENV opened the simulation. */
+  test('nici într-un build de producție fără variabila de mediu', () => {
+    const before = process.env.NODE_ENV;
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
+    try {
+      expect(subscriptionService.mode()).toBe('unavailable');
+    } finally {
+      (process.env as Record<string, string | undefined>).NODE_ENV = before;
+    }
+  });
+
   test('la început nu ai abonament', async () => {
-    expect((await subscriptionService.status()).isActive).toBe(false);
+    expect((await subscriptionService.status())?.isActive).toBe(false);
   });
 
   test('oferta simulată: 9,99 €, cu probă de 7 zile', async () => {
     const offer = await subscriptionService.offer();
-    expect(offer).toEqual({ packageId: 'sim_monthly', priceString: '9,99 €', trialDays: SIMULATED_TRIAL_DAYS });
+    expect(offer).toEqual({
+      packageId: 'sim_monthly',
+      priceString: '9,99 €',
+      trialDays: SIMULATED_TRIAL_DAYS,
+    });
   });
 
   test('„cumpărarea” pornește proba, iar aplicația se deschide', async () => {
@@ -76,7 +91,7 @@ describe('abonamentul simulat', () => {
 
     expect(result.status.isActive).toBe(true);
     expect(result.status.isTrial).toBe(true);
-    expect((await subscriptionService.status()).isActive).toBe(true);
+    expect((await subscriptionService.status())?.isActive).toBe(true);
   });
 
   test('după 7 zile proba devine abonament plătit, tot activ', async () => {
@@ -86,8 +101,8 @@ describe('abonamentul simulat', () => {
 
     const status = await subscriptionService.status();
 
-    expect(status.isActive).toBe(true);
-    expect(status.isTrial).toBe(false);
+    expect(status?.isActive).toBe(true);
+    expect(status?.isTrial).toBe(false);
     (Date.now as jest.Mock).mockRestore();
   });
 });
@@ -108,7 +123,7 @@ describe('abonamentul prin magazin', () => {
   test('starea vine din RevenueCat și e validată', async () => {
     P.getCustomerInfo.mockResolvedValue(ACTIVE);
 
-    expect((await subscriptionService.status()).isActive).toBe(true);
+    expect((await subscriptionService.status())?.isActive).toBe(true);
   });
 
   test('prețul și proba vin din magazin', async () => {
@@ -165,7 +180,10 @@ describe('abonamentul prin magazin', () => {
 
   test('fără rețea: mesaj în română, nu textul SDK-ului', async () => {
     P.getOfferings.mockResolvedValue(OFFERINGS);
-    P.purchasePackage.mockRejectedValue({ code: '10', message: 'The operation couldn’t be completed' });
+    P.purchasePackage.mockRejectedValue({
+      code: '10',
+      message: 'The operation couldn’t be completed',
+    });
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     const result = await subscriptionService.purchase('$rc_monthly');
@@ -192,11 +210,12 @@ describe('abonamentul prin magazin', () => {
     expect(P.logOut).toHaveBeenCalled();
   });
 
-  test('o eroare la citire înseamnă „fără abonament”, nu o excepție', async () => {
+  /** F6: a failed read is "unknown", not "not subscribed"; the store decides what to show. */
+  test('o eroare la citire înseamnă „nu știu”, nu „fără abonament” și nici o excepție', async () => {
     P.getCustomerInfo.mockRejectedValue(new Error('boom'));
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    expect((await subscriptionService.status()).isActive).toBe(false);
+    expect(await subscriptionService.status()).toBeNull();
     warn.mockRestore();
   });
 });
