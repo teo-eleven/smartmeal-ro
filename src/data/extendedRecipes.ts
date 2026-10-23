@@ -1,6 +1,6 @@
-import { Recipe } from '../types';
+import { RecipeSource } from '../types';
 
-export const EXTENDED_RECIPES: Recipe[] = [
+export const EXTENDED_RECIPES: RecipeSource[] = [
   // --- 1. REȚETE RAPIDE ROMÂNEȘTI (< 25 min) ---
   {
     id: 'ochiuri_mamaliga_telemea',
@@ -13,12 +13,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['speedy', 'romanian_classic', 'high_protein', 'healthy_comfort'],
     suitableSlots: ['breakfast', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 460,
-      proteinGrams: 22,
-      carbsGrams: 48,
-      fatGrams: 20,
-    },
     ingredients: [
       { ingredientId: 'malai_superior', amountPerServing: 80, unit: 'g' },
       { ingredientId: 'oua_m', amountPerServing: 2, unit: 'buc' },
@@ -46,12 +40,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['speedy', 'pasta_italian', 'family_fav', 'healthy_comfort'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 490,
-      proteinGrams: 18,
-      carbsGrams: 62,
-      fatGrams: 19,
-    },
     ingredients: [
       { ingredientId: 'paste_penne', amountPerServing: 100, unit: 'g' },
       { ingredientId: 'telemea_vaca', amountPerServing: 70, unit: 'g' },
@@ -76,12 +64,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['speedy', 'romanian_classic', 'high_protein', 'healthy_comfort'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 450,
-      proteinGrams: 42,
-      carbsGrams: 40,
-      fatGrams: 12,
-    },
     ingredients: [
       { ingredientId: 'piept_pui_file', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'malai_superior', amountPerServing: 60, unit: 'g' },
@@ -107,12 +89,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['speedy', 'fresh_salad', 'light_dinner', 'healthy_comfort'],
     suitableSlots: ['dinner', 'lunch'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 275,
-      proteinGrams: 14,
-      carbsGrams: 16,
-      fatGrams: 17,
-    },
     ingredients: [
       { ingredientId: 'fasole_verde_congelata', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'oua_m', amountPerServing: 2, unit: 'buc' },
@@ -138,12 +114,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['speedy', 'romanian_classic', 'high_protein', 'healthy_comfort'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 340,
-      proteinGrams: 32,
-      carbsGrams: 10,
-      fatGrams: 18,
-    },
     ingredients: [
       { ingredientId: 'ficatei_pui_proaspeti', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'ceapa_galbena', amountPerServing: 120, unit: 'g' },
@@ -171,12 +141,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['family_fav', 'romanian_classic', 'healthy_comfort'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 420,
-      proteinGrams: 36,
-      carbsGrams: 32,
-      fatGrams: 14,
-    },
     ingredients: [
       { ingredientId: 'mazare_congelata', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'pulpe_pui_dezosate', amountPerServing: 160, unit: 'g' },
@@ -203,12 +167,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['family_fav', 'healthy_comfort', 'romanian_classic'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 395,
-      proteinGrams: 15,
-      carbsGrams: 48,
-      fatGrams: 16,
-    },
     ingredients: [
       { ingredientId: 'cartofi_albi', amountPerServing: 250, unit: 'g' },
       { ingredientId: 'ciuperci_champignon', amountPerServing: 180, unit: 'g' },
@@ -235,12 +193,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['romanian_classic', 'healthy_comfort', 'family_fav'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 360,
-      proteinGrams: 11,
-      carbsGrams: 28,
-      fatGrams: 22,
-    },
     ingredients: [
       { ingredientId: 'ciuperci_champignon', amountPerServing: 220, unit: 'g' },
       { ingredientId: 'ceapa_galbena', amountPerServing: 80, unit: 'g' },
@@ -267,12 +219,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['family_fav', 'grill_meat', 'romanian_classic'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 520,
-      proteinGrams: 42,
-      carbsGrams: 44,
-      fatGrams: 18,
-    },
     ingredients: [
       { ingredientId: 'pulpe_pui_dezosate', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'cartofi_albi', amountPerServing: 250, unit: 'g' },
@@ -300,12 +246,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['high_protein', 'speedy', 'healthy_comfort', 'light_dinner'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 320,
-      proteinGrams: 16,
-      carbsGrams: 42,
-      fatGrams: 9,
-    },
     ingredients: [
       { ingredientId: 'naut_conserva', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'spanac_baby', amountPerServing: 80, unit: 'g' },
@@ -331,12 +271,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['high_protein', 'romanian_classic', 'healthy_comfort'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 370,
-      proteinGrams: 22,
-      carbsGrams: 54,
-      fatGrams: 7,
-    },
     ingredients: [
       { ingredientId: 'linte_verde_uscata', amountPerServing: 100, unit: 'g' },
       { ingredientId: 'ceapa_galbena', amountPerServing: 80, unit: 'g' },
@@ -363,12 +297,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['high_protein', 'speedy', 'healthy_comfort'],
     suitableSlots: ['breakfast', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 390,
-      proteinGrams: 23,
-      carbsGrams: 16,
-      fatGrams: 26,
-    },
     ingredients: [
       { ingredientId: 'oua_m', amountPerServing: 2, unit: 'buc' },
       { ingredientId: 'ardei_gras_rosu', amountPerServing: 100, unit: 'g' },
@@ -395,12 +323,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['high_protein', 'speedy', 'fresh_salad', 'light_dinner'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 345,
-      proteinGrams: 33,
-      carbsGrams: 28,
-      fatGrams: 11,
-    },
     ingredients: [
       { ingredientId: 'ton_conserva', amountPerServing: 120, unit: 'g' },
       { ingredientId: 'fasole_boabe_conserva', amountPerServing: 150, unit: 'g' },
@@ -426,12 +348,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['high_protein', 'speedy', 'healthy_comfort'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: {
-      calories: 430,
-      proteinGrams: 25,
-      carbsGrams: 52,
-      fatGrams: 14,
-    },
     ingredients: [
       { ingredientId: 'tofu_clasic', amountPerServing: 150, unit: 'g' },
       { ingredientId: 'orez_basmati', amountPerServing: 70, unit: 'g' },
@@ -459,7 +375,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['pasta_italian', 'speedy', 'spicy_fiesta', 'light_dinner'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: { calories: 380, proteinGrams: 12, carbsGrams: 68, fatGrams: 6 },
     ingredients: [
       { ingredientId: 'paste_penne', amountPerServing: 90, unit: 'g' },
       { ingredientId: 'rosii_pasate', amountPerServing: 140, unit: 'g' },
@@ -486,7 +401,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['pasta_italian', 'family_fav', 'healthy_comfort'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'medium',
-    nutritionPerServing: { calories: 470, proteinGrams: 15, carbsGrams: 58, fatGrams: 20 },
     ingredients: [
       { ingredientId: 'paste_spaghete', amountPerServing: 90, unit: 'g' },
       { ingredientId: 'ciuperci_champignon', amountPerServing: 120, unit: 'g' },
@@ -513,7 +427,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['soups_stews', 'romanian_classic', 'healthy_comfort'],
     suitableSlots: ['lunch'],
     tier: 'medium',
-    nutritionPerServing: { calories: 290, proteinGrams: 10, carbsGrams: 22, fatGrams: 17 },
     ingredients: [
       { ingredientId: 'ciuperci_champignon', amountPerServing: 160, unit: 'g' },
       { ingredientId: 'morcovi', amountPerServing: 50, unit: 'g' },
@@ -541,9 +454,9 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['soups_stews', 'romanian_classic', 'light_dinner', 'low_calorie'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: { calories: 210, proteinGrams: 6, carbsGrams: 38, fatGrams: 4 },
     ingredients: [
       { ingredientId: 'cartofi_albi', amountPerServing: 100, unit: 'g' },
+      { ingredientId: 'sfecla_rosie', amountPerServing: 90, unit: 'g' },
       { ingredientId: 'varza_alba', amountPerServing: 80, unit: 'g' },
       { ingredientId: 'morcovi', amountPerServing: 50, unit: 'g' },
       { ingredientId: 'ceapa_galbena', amountPerServing: 40, unit: 'g' },
@@ -552,7 +465,7 @@ export const EXTENDED_RECIPES: Recipe[] = [
       { ingredientId: 'ulei_floarea_soarelui', amountPerServing: 10, unit: 'ml' },
     ],
     steps: [
-      { stepNumber: 1, instruction: 'Fierbe cartofii cuburi, varza fideluță și morcovul în apă cu sare timp de 15 minute.' },
+      { stepNumber: 1, instruction: 'Fierbe sfecla rasă, cartofii cuburi, varza fideluță și morcovul în apă cu sare timp de 15 minute.' },
       { stepNumber: 2, instruction: 'Călește ceapa în ulei până devine translucidă, adaugă roșiile pasate și toarnă în oala cu ciorbă.' },
       { stepNumber: 3, instruction: 'Lasă să dea în clocot 5 minute pentru întrepătrunderea gusturilor.' },
       { stepNumber: 4, instruction: 'Servește fierbinte, presărat din belșug cu pătrunjel proaspăt tocat.' },
@@ -569,7 +482,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['grill_meat', 'high_protein', 'speedy', 'light_dinner'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'medium',
-    nutritionPerServing: { calories: 340, proteinGrams: 38, carbsGrams: 12, fatGrams: 14 },
     ingredients: [
       { ingredientId: 'piept_pui_file', amountPerServing: 170, unit: 'g' },
       { ingredientId: 'ardei_gras_rosu', amountPerServing: 60, unit: 'g' },
@@ -595,7 +507,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['grill_meat', 'romanian_classic', 'family_fav', 'high_protein'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'medium',
-    nutritionPerServing: { calories: 480, proteinGrams: 39, carbsGrams: 36, fatGrams: 18 },
     ingredients: [
       { ingredientId: 'muschiulet_porc', amountPerServing: 170, unit: 'g' },
       { ingredientId: 'cartofi_albi', amountPerServing: 150, unit: 'g' },
@@ -622,7 +533,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['fresh_salad', 'high_protein', 'speedy', 'fakeaway'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'medium',
-    nutritionPerServing: { calories: 370, proteinGrams: 36, carbsGrams: 18, fatGrams: 16 },
     ingredients: [
       { ingredientId: 'salata_verde', amountPerServing: 120, unit: 'g' },
       { ingredientId: 'piept_pui_file', amountPerServing: 150, unit: 'g' },
@@ -650,7 +560,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['fresh_salad', 'speedy', 'light_dinner', 'romanian_classic'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'basic',
-    nutritionPerServing: { calories: 250, proteinGrams: 12, carbsGrams: 14, fatGrams: 16 },
     ingredients: [
       { ingredientId: 'rosii_proaspete', amountPerServing: 180, unit: 'g' },
       { ingredientId: 'castraveti', amountPerServing: 90, unit: 'g' },
@@ -676,7 +585,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['spicy_fiesta', 'fakeaway', 'high_protein', 'speedy'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'medium',
-    nutritionPerServing: { calories: 460, proteinGrams: 34, carbsGrams: 32, fatGrams: 21 },
     ingredients: [
       { ingredientId: 'lipii_tortilla', amountPerServing: 1, unit: 'buc' },
       { ingredientId: 'piept_pui_file', amountPerServing: 120, unit: 'g' },
@@ -702,7 +610,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['spicy_fiesta', 'fakeaway', 'high_protein'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'medium',
-    nutritionPerServing: { calories: 470, proteinGrams: 32, carbsGrams: 35, fatGrams: 22 },
     ingredients: [
       { ingredientId: 'lipii_tortilla', amountPerServing: 1, unit: 'buc' },
       { ingredientId: 'carne_tocata_amestec', amountPerServing: 130, unit: 'g' },
@@ -729,7 +636,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['light_dinner', 'high_protein', 'healthy_comfort'],
     suitableSlots: ['lunch', 'dinner'],
     tier: 'medium',
-    nutritionPerServing: { calories: 310, proteinGrams: 34, carbsGrams: 4, fatGrams: 16 },
     ingredients: [
       { ingredientId: 'pastrav_proaspat', amountPerServing: 200, unit: 'g' },
       { ingredientId: 'lamaie', amountPerServing: 30, unit: 'g' },
@@ -755,7 +661,6 @@ export const EXTENDED_RECIPES: Recipe[] = [
     moodTags: ['sweet_treat', 'romanian_classic', 'family_fav', 'speedy'],
     suitableSlots: ['dessert', 'breakfast'],
     tier: 'basic',
-    nutritionPerServing: { calories: 340, proteinGrams: 8, carbsGrams: 64, fatGrams: 6 },
     ingredients: [
       { ingredientId: 'orez_bob_rotund', amountPerServing: 60, unit: 'g' },
       { ingredientId: 'lapte_3_5', amountPerServing: 250, unit: 'ml' },

@@ -12,6 +12,7 @@ const TITLE_PROMISES: [RegExp, string[]][] = [
   [/mămăligu?ț?ă|mămăligă/i, ['malai_superior']],
   [/curcan/i, ['piept_curcan']],
   [/creveți/i, ['creveti_decorticati']],
+  [/sfeclă/i, ['sfecla_rosie']],
   [/aripioare/i, []],
   [/sparanghel/i, []],
   [/tagliatelle/i, []],

@@ -24,6 +24,7 @@ export const INGREDIENT_ICONS: Record<string, string> = {
   spanac_baby: '🥬',
   salata_verde: '🥬',
   varza_alba: '🥬',
+  sfecla_rosie: '🥬',
   avocado: '🥑',
   banane: '🍌',
   fasole_verde_congelata: '🫛',

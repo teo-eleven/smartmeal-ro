@@ -136,6 +136,7 @@ export const ALLERGEN_FREE_INGREDIENT_IDS: ReadonlySet<string> = new Set([
   'spanac_baby',
   'salata_verde',
   'varza_alba',
+  'sfecla_rosie',
   'avocado',
   'piept_pui_file',
   'pulpe_pui_dezosate',
