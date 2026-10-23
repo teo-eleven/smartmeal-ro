@@ -334,8 +334,8 @@ export function createSessionActions(set: SetState, get: GetState) {
       const next: ReminderSettings = { ...get().reminders, ...patch };
       set({ reminders: next });
 
+      // Rescheduling follows the change through reminderSync, debounced.
       void storageService.saveReminders(next);
-      void reminderScheduler.reschedule(next, get().currentPlan);
 
       const email = get().userEmail;
       if (email) {
@@ -359,7 +359,6 @@ export function createSessionActions(set: SetState, get: GetState) {
 
         set({ reminders: remote });
         void storageService.saveReminders(remote);
-        void reminderScheduler.reschedule(remote, get().currentPlan);
       } catch (e) {
         console.warn('[useAppStore] Could not read the reminder settings:', e);
       }

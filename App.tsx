@@ -29,6 +29,7 @@ import { injectEmeraldGlassStyles, getAppTheme } from './src/styles/theme';
 import { glass } from './src/styles/glass';
 import { UndoBanner } from './src/components/UndoBanner';
 import { undoBannerCopy } from './src/utils/undoBannerCopy';
+import { startReminderSync } from './src/store/reminderSync';
 import { PaywallScreen } from './src/screens/PaywallScreen';
 import { useSubscriptionStore } from './src/store/subscriptionStore';
 import { cloudSyncService } from './src/services/supabase';
@@ -132,6 +133,12 @@ function AppShell() {
   }, [isHydrated]);
 
   useAccountSession(isHydrated, userEmail);
+
+  // Reminders follow the plan and the settings from here on, starting with what was stored.
+  useEffect(() => {
+    if (!isHydrated) return undefined;
+    return startReminderSync();
+  }, [isHydrated]);
 
   // The subscription follows the account: on sign-in it is linked to the account's id, so a
   // second phone signed in to it is unlocked too; on sign-out it is unlinked.
