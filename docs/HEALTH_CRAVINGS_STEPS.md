@@ -51,15 +51,15 @@ Intru în rolul de tester și verific **etapa nouă + tot ce exista înainte**. 
 
 Ramura: `chore/test-harness`
 
-| #   | Pas                                                                                                                                     | Unealtă                 |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| 0.1 | ✅ Docker Desktop (instalat de Claude, pornit) și Supabase CLI (dependență npm, fără Homebrew)                                          | –                       |
-| 0.2 | `supabase init` local, `supabase start`, aplic migrările 0001–0010 pe baza locală și verific că pornesc curat                           | `database-migrations`   |
-| 0.3 | `.env.test` cu cheile **locale** (nu cele reale); verific că nu ajunge în git                                                           | `security-reviewer`     |
-| 0.4 | Suita de sync real `src/__tests__/integration/` (proiect Jest separat, `npm run test:sync`): cont, salvare/încărcare plan, conflict CAS | `tdd-guide`             |
-| 0.5 | Completez suita: notițe, mementouri, consimțăminte, deconectare, ștergerea contului                                                     | `tdd-guide`             |
-| 0.6 | ✅ Teste E2E în browser (`npm run test:e2e`, port 8099), cu gardă automată contra serverului real                                       | `frontend-developer`    |
-| 0.7 | ✅ Poarta de tester pe aplicația de azi: `docs/testing/BASELINE_REPORT.md`. Partea de sync real se adaugă după 0.2–0.5                  | reviewerii + Playwright |
+| #   | Pas                                                                                                                                                                                  | Unealtă                 |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------- |
+| 0.1 | ✅ Docker Desktop (instalat de Claude, pornit) și Supabase CLI (dependență npm, fără Homebrew)                                                                                       | –                       |
+| 0.2 | ✅ Supabase local (`npm run db:start` / `db:stop` / `db:reset` / `db:status`): migrările 0001–0010 aplicate pe Postgres 17, RLS activ pe toate cele 7 tabele, accesul anonim refuzat | `database-migrations`   |
+| 0.3 | `.env.test` cu cheile **locale** (nu cele reale); verific că nu ajunge în git                                                                                                        | `security-reviewer`     |
+| 0.4 | Suita de sync real `src/__tests__/integration/` (proiect Jest separat, `npm run test:sync`): cont, salvare/încărcare plan, conflict CAS                                              | `tdd-guide`             |
+| 0.5 | Completez suita: notițe, mementouri, consimțăminte, deconectare, ștergerea contului                                                                                                  | `tdd-guide`             |
+| 0.6 | ✅ Teste E2E în browser (`npm run test:e2e`, port 8099), cu gardă automată contra serverului real                                                                                    | `frontend-developer`    |
+| 0.7 | ✅ Poarta de tester pe aplicația de azi: `docs/testing/BASELINE_REPORT.md`. Partea de sync real se adaugă după 0.2–0.5                                                               | reviewerii + Playwright |
 
 ---
 

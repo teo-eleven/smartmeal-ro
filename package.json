@@ -16,7 +16,11 @@
     "test:components": "jest --selectProjects components",
     "photos:sheet": "node scripts/photoContactSheet.mjs",
     "build:web": "expo export -p web && node scripts/injectCsp.mjs dist",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:start": "PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH supabase start -x realtime,storage-api,imgproxy,postgres-meta,studio,logflare,vector,supavisor",
+    "db:stop": "PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH supabase stop",
+    "db:reset": "PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH supabase db reset",
+    "db:status": "PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH supabase status"
   },
   "dependencies": {
     "@expo/metro-runtime": "~58.0.15",
