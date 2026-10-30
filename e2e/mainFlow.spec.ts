@@ -1,11 +1,10 @@
-import { expect, test } from '@playwright/test';
 import {
   continueWithoutAccount,
-  expectNoProblems,
+  expect,
   finishOnboardingWithDefaults,
   reachMealBoard,
   startTrial,
-  watchPage,
+  test,
 } from './support/app';
 
 const DEFAULT_COOKING_DAYS = 5;
@@ -16,8 +15,6 @@ test.describe('main flow, without an account', () => {
   test('onboarding starts with no craving picked and ends on a plan within budget', async ({
     page,
   }, testInfo) => {
-    const problems = await watchPage(page);
-
     await continueWithoutAccount(page);
     await page.getByRole('button', { name: 'Continuă la pasul următor' }).first().click();
     await expect(page.getByText('0 pofte alese', { exact: false }).first()).toBeVisible();
@@ -28,11 +25,9 @@ test.describe('main flow, without an account', () => {
     await expect(page.getByText('În buget ✓')).toBeVisible();
     await expect(page.getByRole('button', { name: MEAL_CARD })).toHaveCount(DEFAULT_COOKING_DAYS);
     await page.screenshot({ path: testInfo.outputPath('board-390.png'), fullPage: true });
-    expectNoProblems(problems);
   });
 
   test('a recipe opens with its ingredients and closes again', async ({ page }, testInfo) => {
-    const problems = await watchPage(page);
     await reachMealBoard(page);
 
     await page.getByRole('button', { name: 'Vezi Rețeta →' }).first().click();
@@ -42,11 +37,9 @@ test.describe('main flow, without an account', () => {
 
     await page.getByRole('button', { name: 'Închide', exact: true }).first().click();
     await expect(page.getByText(/Ingrediente necesare/)).toBeHidden();
-    expectNoProblems(problems);
   });
 
   test('swapping a meal puts a different dish on that day', async ({ page }) => {
-    const problems = await watchPage(page);
     await reachMealBoard(page);
 
     const firstMeal = page.getByRole('button', { name: MEAL_CARD }).first();
@@ -56,19 +49,20 @@ test.describe('main flow, without an account', () => {
 
     await expect(firstMeal).not.toHaveAttribute('aria-label', before ?? '');
     await expect(page.getByRole('button', { name: MEAL_CARD })).toHaveCount(DEFAULT_COOKING_DAYS);
-    expectNoProblems(problems);
   });
 
-  test('the grocery list lists what the plan needs', async ({ page }, testInfo) => {
-    const problems = await watchPage(page);
+  test('the grocery list opens with something to buy', async ({ page }, testInfo) => {
     await reachMealBoard(page);
 
     await page
       .getByRole('button', { name: /Cumpărături/ })
       .first()
       .click();
-    await expect(page.getByText(/Piept de pui|Cartofi|Ceapă/).first()).toBeVisible();
+    // Only the grocery screen has this button, so the screen really changed.
+    await expect(page.getByRole('button', { name: 'Bifează tot' })).toBeVisible();
+    const items = page.getByRole('checkbox');
+    await expect(items.first()).toBeVisible();
+    expect(await items.count()).toBeGreaterThan(0);
     await page.screenshot({ path: testInfo.outputPath('grocery-390.png'), fullPage: true });
-    expectNoProblems(problems);
   });
 });

@@ -1,11 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 8081;
+// Not 8081, the port `npm run web` uses: the tests must never attach to a server that has real keys.
+const PORT = 8099;
 
 /**
  * The app in a real browser, on a phone-sized viewport. The dev server runs without Supabase
  * keys, so the app uses its local account and subscription simulation and never writes to the
- * real project; e2e/support/app.ts also fails any test that reaches supabase.co.
+ * real project; e2e/support/app.ts also fails any test that calls a Supabase API.
  */
 export default defineConfig({
   testDir: './e2e',
@@ -28,7 +29,8 @@ export default defineConfig({
   webServer: {
     command: `npx expo start --web --port ${PORT}`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: true,
+    // Opt-in only, for a server you started yourself with the same empty keys.
+    reuseExistingServer: Boolean(process.env.PW_REUSE_SERVER),
     timeout: 240_000,
     env: {
       CI: '1',
