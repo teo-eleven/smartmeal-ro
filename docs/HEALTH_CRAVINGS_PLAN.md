@@ -162,11 +162,6 @@ Recomandare: **A și D întâi** (rapide, vizibile, A deblochează lansarea), ap
 
 ---
 
-## 5. Decizii pe care le ai de luat
+## 5. Decizii
 
-1. Accepți numele noi ale obiectivelor (tabelul din Etapa A)? Alternativa: păstrăm cuvântul bolii doar ca text informativ, ceea ce e riscant juridic.
-2. Angajezi un dietetician autorizat și ceri o opinie de la un avocat înainte de lansare? Recomand da, cel puțin pentru dietetician.
-3. Treci contul Apple pe firmă (cerință Apple pentru aplicațiile de sănătate)?
-4. „Mâncare caldă & nutritivă”: o redefinim strict, o contopim cu „Stil mediteranean” sau o scoatem?
-5. Ce obiective noi vrei la lansare? Recomand: fier, puțină sare, post, plus sarcina ca filtru de siguranță.
-6. Câte rețete noi în Etapa E? Recomand ~40–50 la început.
+Luate pe 2026-10-30. Sunt trecute, împreună cu pașii mici și poarta de tester, în `docs/HEALTH_CRAVINGS_STEPS.md`.
