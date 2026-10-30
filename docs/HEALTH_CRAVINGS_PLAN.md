@@ -19,7 +19,7 @@ Marcaje folosite în rapoarte: [V] verificat direct, [S] din surse secundare, [M
 | Obiectiv            | Rețete | Problemă găsită                                                                                                      |
 | ------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
 | `high_fiber`        | 27     | rețete cu 3–5 g fibre (chiftele de legume, salată caldă cu crutoane); 48 de rețete cu ≥ 6 g fibre **nu** au eticheta |
-| `diabetic_friendly` | 35     | 19 au < 6 g fibre; supă cremă cu crutoane de 70 g carbohidrați; budincă cu zahăr                                     |
+| `diabetic_friendly` | 35     | 19 au < 6 g fibre; supă cremă cu crutoane de 70 g carbohidrați; budincă cu zahăr (diabet sau SOP) |
 | `heart_healthy`     | 43     | nachos cu guacamole (41 g grăsimi), telemea sărată; nu avem date despre sare și grăsimi saturate                     |
 | `pcos_friendly`     | 33     | 23 au < 6 g fibre; omletă cu 35 g grăsimi                                                                            |
 | `anti_inflammatory` | 44     | criteriu neclar; curry cu lapte de cocos (42 g grăsimi)                                                              |
