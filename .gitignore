@@ -37,3 +37,10 @@ deno.lock
 
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# Playwright output
+e2e/.results/
+playwright-report/
+
+# Supabase CLI cache
+supabase/.temp/

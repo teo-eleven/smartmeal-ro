@@ -1,4 +1,6 @@
 const COMPONENT_TESTS = '**/?(*.)component.test.(ts|tsx)';
+/** Copies of the repo that Claude Code agents work in; their tests are not this checkout's. */
+const AGENT_WORKTREES = '/\\.claude/';
 
 /**
  * One transform for both projects, so both instrument every file identically.
@@ -47,7 +49,14 @@ module.exports = {
       moduleNameMapper: sharedModuleNameMapper,
       testMatch: ['**/__tests__/**/*.(test|spec).(ts|tsx|js)', '**/?(*.)+(spec|test).(ts|tsx|js)'],
       // supabase/functions runs on Deno and has its own tests: `deno test supabase/functions`.
-      testPathIgnorePatterns: ['/node_modules/', '\\.component\\.test\\.(ts|tsx)$', '/supabase/'],
+      // e2e/ runs in a real browser under Playwright: `npm run test:e2e`.
+      testPathIgnorePatterns: [
+        '/node_modules/',
+        '\\.component\\.test\\.(ts|tsx)$',
+        '/supabase/',
+        '/e2e/',
+        AGENT_WORKTREES,
+      ],
       // Babel, the same transformer the components project uses. Both projects load the
       // engine and the store, and coverage merges the two instrumentations of each file.
       // With ts-jest here the two maps counted different statements for the same file
@@ -64,6 +73,7 @@ module.exports = {
       moduleNameMapper: sharedModuleNameMapper,
       transform: sharedTransform,
       testMatch: [COMPONENT_TESTS],
+      testPathIgnorePatterns: ['/node_modules/', AGENT_WORKTREES],
       transformIgnorePatterns: [
         'node_modules/(?!(?:jest-)?react-native|@react-native|@testing-library|expo(nent)?|@expo(nent)?/.*|expo-.*)',
       ],
