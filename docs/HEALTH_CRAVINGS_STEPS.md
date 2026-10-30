@@ -51,15 +51,15 @@ Intru în rolul de tester și verific **etapa nouă + tot ce exista înainte**. 
 
 Ramura: `chore/test-harness`
 
-| #   | Pas                                                                                                                                     | Unealtă               |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| 0.1 | Tu instalezi Docker Desktop și Supabase CLI (`brew install supabase/tap/supabase`); eu îți dau comenzile exacte                         | –                     |
-| 0.2 | `supabase init` local, `supabase start`, aplic migrările 0001–0010 pe baza locală și verific că pornesc curat                           | `database-migrations` |
-| 0.3 | `.env.test` cu cheile **locale** (nu cele reale); verific că nu ajunge în git                                                           | `security-reviewer`   |
-| 0.4 | Suita de sync real `src/__tests__/integration/` (proiect Jest separat, `npm run test:sync`): cont, salvare/încărcare plan, conflict CAS | `tdd-guide`           |
-| 0.5 | Completez suita: notițe, mementouri, consimțăminte, deconectare, ștergerea contului                                                     | `tdd-guide`           |
-| 0.6 | Scriptul E2E în browser (Playwright): fluxurile principale + capturi la 390 px, `npm run test:e2e`                                      | `frontend-developer`  |
-| 0.7 | **Poarta de tester pe aplicația de azi**, ca reper: tot ce pică acum se notează separat, ca să nu fie confundat cu probleme noi         | toate de mai sus      |
+| #   | Pas                                                                                                                                     | Unealtă                 |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| 0.1 | ✅ Docker Desktop (instalat de Claude, pornit) și Supabase CLI (dependență npm, fără Homebrew)                                          | –                       |
+| 0.2 | `supabase init` local, `supabase start`, aplic migrările 0001–0010 pe baza locală și verific că pornesc curat                           | `database-migrations`   |
+| 0.3 | `.env.test` cu cheile **locale** (nu cele reale); verific că nu ajunge în git                                                           | `security-reviewer`     |
+| 0.4 | Suita de sync real `src/__tests__/integration/` (proiect Jest separat, `npm run test:sync`): cont, salvare/încărcare plan, conflict CAS | `tdd-guide`             |
+| 0.5 | Completez suita: notițe, mementouri, consimțăminte, deconectare, ștergerea contului                                                     | `tdd-guide`             |
+| 0.6 | ✅ Teste E2E în browser (`npm run test:e2e`, port 8099), cu gardă automată contra serverului real                                       | `frontend-developer`    |
+| 0.7 | ✅ Poarta de tester pe aplicația de azi: `docs/testing/BASELINE_REPORT.md`. Partea de sync real se adaugă după 0.2–0.5                  | reviewerii + Playwright |
 
 ---
 
@@ -87,17 +87,18 @@ Ramura: `feat/health-texts`. Obiectivele de sănătate nu se schimbă încă în
 
 Ramura: `feat/cravings-constraints`
 
-| #   | Pas                                                                                                                                                     | Unealtă              |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| D.1 | Constantele `CONSTRAINT_CRAVINGS` și `FLAVOUR_CRAVINGS` + test că fiecare poftă e în exact o grupă                                                      | `tdd-guide`          |
-| D.2 | Test: cu „Rapid”, toate mesele au ≤ 25 min când există destule rețete (pică azi)                                                                        | `tdd-guide`          |
-| D.3 | Filtrul de condiții în `eligibility.ts` / `slotPicker.ts`; trece D.2                                                                                    | `typescript-pro`     |
-| D.4 | Test + cod: când nu sunt destule rețete, relaxare controlată și notă în plan („2 mese de 30 min”)                                                       | `tdd-guide`          |
-| D.5 | Afișarea notei pe tablă (componenta de notificări existentă)                                                                                            | `frontend-developer` |
-| D.6 | Redefinirea strictă a „Mâncare caldă & nutritivă” în `moodTags.ts` (cald, gătit, cu legume, fără prăjit) + test de acoperire (țintă 20–35% din catalog) | `tdd-guide`          |
-| D.7 | Același număr de pofte peste tot: onboarding și filtrele rapide folosesc aceleași limite                                                                | `react-specialist`   |
-| D.8 | Raport: câte rețete are fiecare poftă înainte și după                                                                                                   | –                    |
-| D.9 | **Poarta de tester**                                                                                                                                    |                      |
+| #    | Pas                                                                                                                                                     | Unealtă              |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| D.1  | Constantele `CONSTRAINT_CRAVINGS` și `FLAVOUR_CRAVINGS` + test că fiecare poftă e în exact o grupă                                                      | `tdd-guide`          |
+| D.2  | Test: cu „Rapid”, toate mesele au ≤ 25 min când există destule rețete (pică azi)                                                                        | `tdd-guide`          |
+| D.3  | Filtrul de condiții în `eligibility.ts` / `slotPicker.ts`; trece D.2                                                                                    | `typescript-pro`     |
+| D.4  | Test + cod: când nu sunt destule rețete, relaxare controlată și notă în plan („2 mese de 30 min”)                                                       | `tdd-guide`          |
+| D.5  | Afișarea notei pe tablă (componenta de notificări existentă)                                                                                            | `frontend-developer` |
+| D.6  | Redefinirea strictă a „Mâncare caldă & nutritivă” în `moodTags.ts` (cald, gătit, cu legume, fără prăjit) + test de acoperire (țintă 20–35% din catalog) | `tdd-guide`          |
+| D.7  | Același număr de pofte peste tot: onboarding și filtrele rapide folosesc aceleași limite                                                                | `react-specialist`   |
+| D.7b | Fără repetiții: nu două preparate pe aceeași bază în zile la rând, iar „Regenerează” aduce alte mese (P1, P2 din raportul de reper)                     | `tdd-guide`          |
+| D.8  | Raport: câte rețete are fiecare poftă înainte și după                                                                                                   | –                    |
+| D.9  | **Poarta de tester**                                                                                                                                    |                      |
 
 ---
 
