@@ -5,7 +5,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   peopleCount: 2,
   cookingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
   budgetRon: 150,
-  moodTags: ['speedy', 'family_fav'],
+  // Empty on purpose: preselected cravings diluted the user's own picks.
+  moodTags: [],
   dietType: 'omnivore',
   dietTypes: ['omnivore'],
   appliances: ['hob', 'oven', 'air_fryer'],
