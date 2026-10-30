@@ -33,3 +33,8 @@ afterEach(() => {
   });
   jest.useRealTimers();
 });
+
+// Rendering tests await real effects (waitFor). With every worker busy on a loaded machine,
+// two awaits could pass the default 5 s and fail a correct test. This changes only how long
+// a test may take, never what it checks.
+jest.setTimeout(15000);

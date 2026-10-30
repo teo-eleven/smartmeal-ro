@@ -23,7 +23,7 @@ describe('bifele de la cont nou', () => {
 
   test('au un link spre politica de confidențialitate care o deschide', () => {
     mockEnv.privacyPolicyUrl = 'https://smartmeal.ro/privacy';
-    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     render(<SignUpConsent consent={NONE} onChange={jest.fn()} isDark={false} />);
 
     fireEvent.press(screen.getByLabelText('Citește politica de confidențialitate'));

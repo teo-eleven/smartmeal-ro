@@ -13,9 +13,8 @@
  *
  * Regenerate with: scripts/generateBackdrops.ts
  */
-import { ImageSourcePropType } from 'react-native';
-
-export const ARCHETYPE_BACKDROPS: Record<string, ImageSourcePropType> = {
+/** require() of a bundled image gives the asset's module id, a number. */
+export const ARCHETYPE_BACKDROPS: Record<string, number> = {
   soup: require('./soup.jpg'),
   stew: require('./stew.jpg'),
   pasta: require('./pasta.jpg'),

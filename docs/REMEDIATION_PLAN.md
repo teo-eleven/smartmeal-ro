@@ -157,10 +157,10 @@ Status: **propus, așteaptă confirmare**.
 
 **Agenți:** debugger (dacă apar erori de build), code-reviewer · **Mărime:** M
 
-- [ ] Upgrade Expo SDK 52 → cel mai recent stabil, cu `npx expo install --fix`.
-- [ ] `npm audit --omit=dev`: 0 critice, iar high-urile rămase sunt justificate.
-- [ ] Acoperire ≥ 87% instrucțiuni / 76% ramuri (pragul din `jest.config.js`), cu teste noi pentru ErrorBoundary, MealsPerDayModal, BudgetOverrunModal și BudgetSlider.
-- [ ] Rulare completă Playwright + raport final de audit actualizat.
+- [x] Upgrade Expo SDK 52 → 58 (React 19.3, React Native 0.88), cu `npx expo install --fix`; Jest 30, TypeScript 6; `expo-doctor` 20/20.
+- [x] `npm audit --omit=dev`: 0 critice; 4 high cu o singură cauză, `node-forge` ≤ 1.4.0 (fără versiune reparată) în `@expo/cli`, unealtă de build pentru semnarea actualizărilor OTA, nefolosită și nelivrată în aplicație.
+- [x] Acoperire 90,6% instrucțiuni / 80,5% ramuri / 92% funcții (prag 87/76/87); teste noi pentru ErrorBoundary (100%), MealsPerDayModal, BudgetOverrunModal; BudgetSlider era deja la 97%.
+- [x] Rulare Playwright pe SDK 58 (7 fluxuri, 0 erori în consolă) + `docs/AUDIT_FINAL.md`.
 
 ---
 

@@ -86,7 +86,7 @@ describe('întrebarea despre Face ID', () => {
     fireEvent.press(screen.getByLabelText('Nu acum'));
 
     await waitFor(() => expect(screen.queryByText(/data viitoare/)).toBeNull());
-  }, 10000);
+  });
 
   test('butonul Înapoi de pe Android o închide ca „Nu acum”', async () => {
     render(<BiometricOptInPrompt isDark={false} />);

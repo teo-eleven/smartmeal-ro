@@ -105,7 +105,7 @@ describe('confirmarea cu Face ID sau amprenta', () => {
   test.each(['not_enrolled', 'passcode_not_set', 'not_available'])(
     'biometria scoasă din setări (%s) trimite la parolă',
     async (code) => {
-      mocked.authenticateAsync.mockResolvedValue({ success: false, error: code });
+      mocked.authenticateAsync.mockResolvedValue({ success: false, error: code as never });
 
       expect((await authenticateWithBiometrics()).error).toMatch(/nu mai e configurată/);
     }
