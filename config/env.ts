@@ -72,10 +72,45 @@ function parseHttpsUrl(
   return trimmed.replace(/\/+$/, '');
 }
 
+const LOCAL_DEV_HOSTS = new Set(['127.0.0.1', 'localhost']);
+
+/**
+ * The local test database (`npm run db:start`) only speaks plain http on this machine. It is
+ * allowed for that one case: a development build, never a release bundle (NODE_ENV is always
+ * 'production' there), and only for the loopback host. Production builds are also refused
+ * any http URL by config/assertProductionEnv.js.
+ */
+function parseSupabaseUrl(value: string | undefined, appEnv: AppConfig['appEnv']): string | null {
+  const trimmed = value?.trim();
+  const isDevBuild = appEnv === 'development' && process.env.NODE_ENV !== 'production';
+  if (trimmed && isDevBuild && /^http:\/\//i.test(trimmed)) {
+    const local = plainLoopbackOrigin(trimmed);
+    if (local) return local;
+  }
+  return parseHttpsUrl(value);
+}
+
+/**
+ * The URL's origin when it is nothing but a loopback host and port. Credentials, a path or a
+ * '@' / '\' anywhere are refused: HTTP clients disagree on where the host is in such URLs, so
+ * this parser's "127.0.0.1" could be another one's remote server.
+ */
+function plainLoopbackOrigin(raw: string): string | null {
+  if (/[@\\]/.test(raw)) return null;
+  try {
+    const url = new URL(raw);
+    const isBare = url.pathname === '/' && !url.search && !url.hash;
+    return LOCAL_DEV_HOSTS.has(url.hostname) && isBare ? url.origin : null;
+  } catch {
+    // Not a URL at all: the https check refuses it with the usual warning.
+    return null;
+  }
+}
+
 function loadConfig(): AppConfig {
   const port = parsePort(process.env.EXPO_PUBLIC_PORT, 8081);
   const appEnv = parseAppEnv(process.env.EXPO_PUBLIC_APP_ENV);
-  const supabaseUrl = parseHttpsUrl(process.env.EXPO_PUBLIC_SUPABASE_URL);
+  const supabaseUrl = parseSupabaseUrl(process.env.EXPO_PUBLIC_SUPABASE_URL, appEnv);
   const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() || null;
 
   return Object.freeze({

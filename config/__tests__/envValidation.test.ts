@@ -72,6 +72,59 @@ describe('environment validation', () => {
     expect(loadConfig().isCloudSyncConfigured).toBe(true);
   });
 
+  describe('the local test database (npm run db:start) over plain http', () => {
+    const LOCAL_URL = 'http://127.0.0.1:54321';
+
+    test('is accepted in development', () => {
+      delete process.env.EXPO_PUBLIC_APP_ENV;
+      process.env.EXPO_PUBLIC_SUPABASE_URL = LOCAL_URL;
+      expect(loadConfig().supabaseUrl).toBe(LOCAL_URL);
+    });
+
+    test('is accepted as localhost too', () => {
+      process.env.EXPO_PUBLIC_APP_ENV = 'development';
+      process.env.EXPO_PUBLIC_SUPABASE_URL = 'http://localhost:54321/';
+      expect(loadConfig().supabaseUrl).toBe('http://localhost:54321');
+    });
+
+    test('is refused in staging and production', () => {
+      (['staging', 'production'] as const).forEach((value) => {
+        jest.resetModules();
+        process.env.EXPO_PUBLIC_APP_ENV = value;
+        process.env.EXPO_PUBLIC_SUPABASE_URL = LOCAL_URL;
+        expect(loadConfig().supabaseUrl).toBeNull();
+      });
+    });
+
+    test('is refused in a release bundle, whatever the app env says', () => {
+      process.env.EXPO_PUBLIC_APP_ENV = 'development';
+      process.env.EXPO_PUBLIC_SUPABASE_URL = LOCAL_URL;
+      const nodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        expect(loadConfig().supabaseUrl).toBeNull();
+      } finally {
+        process.env.NODE_ENV = nodeEnv;
+      }
+    });
+
+    test('plain http to any other host is still refused in development', () => {
+      process.env.EXPO_PUBLIC_APP_ENV = 'development';
+      [
+        'http://x.supabase.co',
+        'http://127.0.0.1.evil.ro',
+        'http://192.168.1.5:54321',
+        // Credentials in the URL: another HTTP client could read the host differently.
+        'http://evil.ro@127.0.0.1:54321',
+        'http://127.0.0.1\\@evil.ro',
+      ].forEach((url) => {
+        jest.resetModules();
+        process.env.EXPO_PUBLIC_SUPABASE_URL = url;
+        expect(loadConfig().supabaseUrl).toBeNull();
+      });
+    });
+  });
+
   /** Apple requires the privacy policy to be reachable from inside the app (5.1.1(i)). */
   test('adresa politicii de confidențialitate e citită doar dacă e https', () => {
     delete process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL;
