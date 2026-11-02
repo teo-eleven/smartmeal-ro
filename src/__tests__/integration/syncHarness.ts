@@ -5,6 +5,13 @@ import { generateMealPlan } from '../../engine/plannerEngine';
 import type { MealPlan, SignUpConsent, UserPreferences } from '../../types';
 
 type CloudSyncService = typeof import('../../services/supabase').cloudSyncService;
+type RecipeNotesCloud = typeof import('../../services/recipeNotesCloud').recipeNotesCloud;
+
+/** The services one phone uses, sharing that phone's client and session. */
+export interface DeviceKit {
+  sync: CloudSyncService;
+  notes: RecipeNotesCloud;
+}
 
 export const FULL_CONSENT: SignUpConsent = { isAtLeast16: true, healthDataConsent: true };
 export const TEST_PASSWORD = 'Sync-test-parola-1!';
@@ -48,13 +55,20 @@ export function uniqueEmail(label: string): string {
  * One phone running the app: its own copy of the service, Supabase client and session vault
  * (expo-secure-store is mocked per module registry). Two devices never share a session.
  */
-export function newDevice(): CloudSyncService {
-  let service: CloudSyncService | undefined;
+export function newDeviceKit(): DeviceKit {
+  let kit: DeviceKit | undefined;
   jest.isolateModules(() => {
-    service = require('../../services/supabase').cloudSyncService;
+    kit = {
+      sync: require('../../services/supabase').cloudSyncService,
+      notes: require('../../services/recipeNotesCloud').recipeNotesCloud,
+    };
   });
-  if (!service) throw new Error('Serviciul de sync nu s-a încărcat');
-  return service;
+  if (!kit) throw new Error('Serviciile dispozitivului nu s-au încărcat');
+  return kit;
+}
+
+export function newDevice(): CloudSyncService {
+  return newDeviceKit().sync;
 }
 
 /** Signs up through the app's own code, the way the sign-up screen does. */
