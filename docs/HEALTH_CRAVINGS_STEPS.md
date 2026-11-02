@@ -5,18 +5,18 @@ pași mici, unul câte unul, bifați pe măsură ce se termină.
 
 ## Deciziile tale (2026-10-30)
 
-| Întrebare                   | Decizie                                                                                                                                                                     |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Numele obiectivelor         | **Nume noi + boala ca informație** în descriere („Criterii folosite în ghidurile pentru…. Nu înlocuiește medicul.”)                                                         |
-| Validare externă            | **Dietetician autorizat + avocat.** Obiectivele se fac cât mai riguros, cu surse, ca să treacă de amândoi fără corecturi jenante                                            |
-| Cont Apple                  | **Persoană fizică.** Pe iOS, obiectivele de sănătate sunt ascunse până există firmă                                                                                         |
-| „Mâncare caldă & nutritivă” | **Redefinită strict**                                                                                                                                                       |
-| Obiective noi               | **Fier, Puțină sare, Ovăz și orz (colesterol), Sarcină (filtru de siguranță)**, plus ce am mai propus: **Calciu și vitamina D**, **B12 pentru vegani** (mesaj de informare) |
-| Post                        | **Complet + parțial (miercuri și vineri) + dezlegare la pește**                                                                                                             |
-| Rețete noi                  | **70+**                                                                                                                                                                     |
-| Testare                     | **Completă la finalul fiecărei etape** (poarta de tester de mai jos)                                                                                                        |
-| Sync real                   | **Supabase local pe Mac** (Docker + Supabase CLI)                                                                                                                           |
-| Temă vizuală (2026-11-02)   | **„Midnight Forest & Smoked Walnut”**: verde pădure, nuc afumat, crem și bronz, după imaginea trimisă (Etapa T)                                                             |
+| Întrebare                   | Decizie                                                                                                                                                                                                                                               |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Numele obiectivelor         | **Nume noi + boala ca informație** în descriere („Criterii folosite în ghidurile pentru…. Nu înlocuiește medicul.”)                                                                                                                                   |
+| Validare externă            | **Dietetician autorizat + avocat.** Obiectivele se fac cât mai riguros, cu surse, ca să treacă de amândoi fără corecturi jenante                                                                                                                      |
+| Cont Apple                  | **Persoană fizică.** Pe iOS, obiectivele de sănătate sunt ascunse până există firmă                                                                                                                                                                   |
+| „Mâncare caldă & nutritivă” | **Redefinită strict**                                                                                                                                                                                                                                 |
+| Obiective noi               | **Fier, Puțină sare, Ovăz și orz (colesterol), Sarcină (filtru de siguranță)**, plus ce am mai propus: **Calciu și vitamina D**, **B12 pentru vegani** (mesaj de informare)                                                                           |
+| Post                        | **Complet + parțial (miercuri și vineri) + dezlegare la pește**                                                                                                                                                                                       |
+| Rețete noi                  | **70+**                                                                                                                                                                                                                                               |
+| Testare                     | **Completă la finalul fiecărei etape** (poarta de tester de mai jos)                                                                                                                                                                                  |
+| Sync real                   | **Supabase local pe Mac** (Docker + Supabase CLI)                                                                                                                                                                                                     |
+| Temă vizuală (2026-11-02)   | **„Midnight Forest & Smoked Walnut”**: verde pădure, nuc afumat, crem și bronz, după imaginea trimisă (Etapa T). **Fundal: verde pădure întunecat**; aplicația rămâne în mod întunecat (varianta crem există în temă, verificată, dar nu se afișează) |
 
 Amânate, cu motiv: low-FODMAP (datele Monash sunt proprietare), gută (nu există date deschise despre purine). Nu le oferim deloc: diabet gestațional, boală de rinichi, warfarină, IMAO, tulburări de alimentație.
 
