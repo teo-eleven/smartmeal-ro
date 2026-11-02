@@ -16,6 +16,7 @@ pași mici, unul câte unul, bifați pe măsură ce se termină.
 | Rețete noi                  | **70+**                                                                                                                                                                     |
 | Testare                     | **Completă la finalul fiecărei etape** (poarta de tester de mai jos)                                                                                                        |
 | Sync real                   | **Supabase local pe Mac** (Docker + Supabase CLI)                                                                                                                           |
+| Temă vizuală (2026-11-02)   | **„Midnight Forest & Smoked Walnut”**: verde pădure, nuc afumat, crem și bronz, după imaginea trimisă (Etapa T)                                                             |
 
 Amânate, cu motiv: low-FODMAP (datele Monash sunt proprietare), gută (nu există date deschise despre purine). Nu le oferim deloc: diabet gestațional, boală de rinichi, warfarină, IMAO, tulburări de alimentație.
 
@@ -60,6 +61,39 @@ Ramura: `chore/test-harness`
 | 0.5 | Completez suita: notițe, mementouri, consimțăminte, deconectare, ștergerea contului                                                                                                           | `tdd-guide`             |
 | 0.6 | ✅ Teste E2E în browser (`npm run test:e2e`, port 8099), cu gardă automată contra serverului real                                                                                             | `frontend-developer`    |
 | 0.7 | ✅ Poarta de tester pe aplicația de azi: `docs/testing/BASELINE_REPORT.md`. Partea de sync real se adaugă după 0.2–0.5                                                                        | reviewerii + Playwright |
+
+---
+
+## Etapa T · Tema „Midnight Forest & Smoked Walnut”
+
+Ramura: `feat/forest-walnut-theme`. Paleta extrasă din imaginea trimisă (eșantioane măsurate pe pixeli):
+
+| Rol                                 | Nuanță             | Cod de pornire                               |
+| ----------------------------------- | ------------------ | -------------------------------------------- |
+| Fundal deschis                      | crem               | `#DDD1C1` (carduri mai deschise, ~`#F3ECE1`) |
+| Fundal întunecat, titluri pe crem   | verde pădure adânc | `#1E2114`                                    |
+| Suprafețe verzi                     | verde pădure mediu | `#474C3D`                                    |
+| Accent principal (butoane)          | nuc afumat         | `#845B43` → `#64402C` → `#583925`            |
+| Linii fine, insigne, text pe închis | bronz / șampanie   | `#B08868`                                    |
+
+Codurile exacte se ajustează în T.1 doar cât e nevoie pentru contrastul cerut de accesibilitate (WCAG AA).
+
+| #    | Pas                                                                                                                                             | Unealtă              |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| T.1  | Paleta ca jetoane în `src/styles/theme.ts` (deschis și întunecat) + test de contrast: text normal ≥ 4,5:1, text mare ≥ 3:1                      | `tdd-guide`          |
+| T.2  | Tema nouă aplicată prin `getAppTheme`; capturi înainte/după, deschis și întunecat                                                               | `frontend-developer` |
+| T.3  | Butonul principal: gradient nuc → bronz în locul chihlimbarului actual (azi scris direct în `OnboardingWizard`)                                 | `react-specialist`   |
+| T.4  | Culorile scrise direct în cod, lotul 1: onboarding                                                                                              | `refactor-cleaner`   |
+| T.5  | Lotul 2: tabla de mese și cardurile                                                                                                             | `refactor-cleaner`   |
+| T.6  | Lotul 3: detaliul rețetei și ferestrele (cămară, magazine, macro, planuri)                                                                      | `refactor-cleaner`   |
+| T.7  | Lotul 4: restul ecranelor; un test care interzice culori noi scrise direct în `src/`                                                            | `tdd-guide`          |
+| T.8  | Fontul serif pentru titluri, ca în imagine (alegi din variante; doar fonturi cu licență liberă OFL); textul obișnuit rămâne lizibil, fără serif | `frontend-developer` |
+| T.9  | Motivul „margine de bronz”: linie fină bronz pe carduri și pe fereastra rețetei, discret                                                        | `react-specialist`   |
+| T.10 | Iconița, ecranul de pornire și culoarea barei de sistem (`app.json`)                                                                            | `frontend-developer` |
+| T.11 | Verificarea contrastului pe ecranele reale (axe în Playwright)                                                                                  | `frontend-developer` |
+| T.12 | **Poarta de tester** + capturile înainte/după, ca să aprobi tema                                                                                |                      |
+
+Culorile pentru erori, succes și alergeni rămân ușor de recunoscut (roșu/verde), doar armonizate cu paleta. Siguranța e mai importantă decât estetica.
 
 ---
 
@@ -205,4 +239,4 @@ Ramura: `feat/new-health-goals`. Ascunse pe iOS, ca restul (decizia ta).
 
 ## Ordinea
 
-**0 → A → D → B → C → E → F**, cu G pornit cât mai devreme (dieteticianul are nevoie de fișa din C.12).
+**0 → T → A → D → B → C → E → F**, cu G pornit cât mai devreme (dieteticianul are nevoie de fișa din C.12).
