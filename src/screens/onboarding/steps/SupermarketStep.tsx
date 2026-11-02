@@ -39,7 +39,9 @@ export function SupermarketStep({
               ]}
             >
               <View style={[styles.marketBadge, { backgroundColor: market.brandColor }]}>
-                <Text style={styles.marketBadgeText}>{market.name[0]}</Text>
+                <Text style={[styles.marketBadgeText, { color: theme.onBrand }]}>
+                  {market.name[0]}
+                </Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.supermarketName, { color: theme.text }]}>{market.name}</Text>
@@ -153,7 +155,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   supermarketRadioCheck: {
-    color: '#ffffff',
     fontSize: 12,
     fontWeight: '900',
   },
@@ -165,7 +166,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   marketBadgeText: {
-    color: '#ffffff',
     fontSize: 20,
     fontWeight: '900',
   },

@@ -28,6 +28,8 @@ export const FOREST_WALNUT_PALETTE = {
   sageLight: '#3F6B33',
   emberDark: '#E08A5C',
   emberLight: '#A84A1E',
+  coralDark: '#F09A86',
+  brickLight: '#9A2F24',
   white: '#FFFFFF',
   shadowInk: '#0B0D07',
 } as const;
@@ -73,6 +75,16 @@ export const APPLE_IOS_THEME = {
     successText: P.sageDark,
     warningBg: withAlpha(P.emberDark, 0.18),
     warningText: P.emberDark,
+    /** Safety, not decoration: allergens, alcohol, diets that do not fit. Stays recognisably red. */
+    danger: P.coralDark,
+    dangerBg: withAlpha(P.coralDark, 0.14),
+    onDanger: P.forestNight,
+    /** A filled "done" badge and the text on it. */
+    success: P.sageDark,
+    onSuccess: P.forestNight,
+    shadowColor: P.shadowInk,
+    /** Text on a supermarket's own brand colour (Lidl blue, Kaufland red...). */
+    onBrand: P.white,
     shadow: `0 12px 36px ${withAlpha(P.shadowInk, 0.65)}, 0 0 20px ${withAlpha(P.bronze, 0.08)}`,
   },
   light: {
@@ -105,6 +117,13 @@ export const APPLE_IOS_THEME = {
     successText: P.sageLight,
     warningBg: withAlpha(P.emberLight, 0.14),
     warningText: P.emberLight,
+    danger: P.brickLight,
+    dangerBg: withAlpha(P.brickLight, 0.12),
+    onDanger: P.creamLight,
+    success: P.sageLight,
+    onSuccess: P.creamLight,
+    shadowColor: P.shadowInk,
+    onBrand: P.white,
     shadow: `0 8px 24px ${withAlpha(P.walnutDark, 0.1)}, inset 0 1px 0 ${withAlpha(P.white, 0.7)}`,
   },
 };

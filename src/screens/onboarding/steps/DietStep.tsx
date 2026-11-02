@@ -179,11 +179,11 @@ export function DietStep({
                       style={[
                         styles.incompatibleBadge,
                         {
-                          backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2',
+                          backgroundColor: theme.dangerBg,
                         },
                       ]}
                     >
-                      <Text style={{ fontSize: 10, color: '#ef4444', fontWeight: '800' }}>
+                      <Text style={{ fontSize: 10, color: theme.danger, fontWeight: '800' }}>
                         Incompatibil cu {activeBaseDiet === 'vegan' ? 'Vegan' : activeBaseDiet}
                       </Text>
                     </View>
@@ -217,7 +217,7 @@ export function DietStep({
         })}
       </View>
 
-      <View style={styles.allergenBlock}>
+      <View style={[styles.allergenBlock, { borderTopColor: theme.border }]}>
         <Text style={[sharedStyles.questionTitle, { color: theme.text, fontSize: 17 }]}>
           Ai alergii alimentare?
         </Text>
@@ -320,7 +320,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(128,128,128,0.35)',
   },
   dietListDesktop: {
     flexDirection: 'row',

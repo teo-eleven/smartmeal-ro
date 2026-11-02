@@ -8,7 +8,6 @@ import { OnboardingStepProps } from './stepProps';
 /** Step 7: retail snacks & beverages */
 export function ExtrasStep({
   extrasCost,
-  isDark,
   isLargeScreen,
   preferences,
   setIncludeAlcohol,
@@ -327,12 +326,8 @@ export function ExtrasStep({
         style={[
           styles.alcoholToggleBox,
           {
-            backgroundColor: preferences.includeAlcohol
-              ? isDark
-                ? 'rgba(239, 68, 68, 0.15)'
-                : '#fef2f2'
-              : theme.accentBg,
-            borderColor: preferences.includeAlcohol ? '#ef4444' : theme.border,
+            backgroundColor: preferences.includeAlcohol ? theme.dangerBg : theme.accentBg,
+            borderColor: preferences.includeAlcohol ? theme.danger : theme.border,
           },
         ]}
       >
@@ -341,7 +336,7 @@ export function ExtrasStep({
           <Text
             style={[
               styles.retailBannerTitle,
-              { color: preferences.includeAlcohol ? '#ef4444' : theme.text },
+              { color: preferences.includeAlcohol ? theme.danger : theme.text },
             ]}
           >
             Activează secțiunea de băuturi alcoolice (18+)
@@ -354,13 +349,13 @@ export function ExtrasStep({
           style={[
             styles.retailCheckbox,
             {
-              backgroundColor: preferences.includeAlcohol ? '#ef4444' : 'transparent',
-              borderColor: preferences.includeAlcohol ? '#ef4444' : theme.border,
+              backgroundColor: preferences.includeAlcohol ? theme.danger : 'transparent',
+              borderColor: preferences.includeAlcohol ? theme.danger : theme.border,
             },
           ]}
         >
           {preferences.includeAlcohol && (
-            <Text style={[styles.retailCheckmark, { color: '#ffffff' }]}>✓</Text>
+            <Text style={[styles.retailCheckmark, { color: theme.onDanger }]}>✓</Text>
           )}
         </View>
       </TouchableOpacity>
@@ -551,7 +546,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   retailCheckmark: {
-    color: '#000000',
     fontSize: 11,
     fontWeight: '800',
   },

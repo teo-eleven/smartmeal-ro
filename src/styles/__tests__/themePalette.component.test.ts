@@ -18,6 +18,14 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
+/** A translucent rgba() laid over an opaque surface, as the eye sees it. */
+function over(rgba: string, surface: string): string {
+  const [r, g, b, a] = (rgba.match(/[\d.]+/g) ?? []).map(Number);
+  const base = [1, 3, 5].map((at) => parseInt(surface.slice(at, at + 2), 16));
+  const mixed = [r, g, b].map((c, i) => Math.round(c * a + base[i] * (1 - a)));
+  return `#${mixed.map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+}
+
 const BODY_TEXT = 4.5;
 const LARGE_TEXT_OR_ICON = 3;
 const HEX = /^#[0-9A-F]{6}$/;
@@ -70,6 +78,16 @@ describe.each([
 
   test('the bright accent reads as text on a card', () => {
     expect(contrast(t.accentHighlight, t.card)).toBeGreaterThanOrEqual(BODY_TEXT);
+  });
+
+  test('a warning in red reads on a card and on its own red tint', () => {
+    expect(contrast(t.danger, t.card)).toBeGreaterThanOrEqual(BODY_TEXT);
+    expect(contrast(t.danger, over(t.dangerBg, t.card))).toBeGreaterThanOrEqual(BODY_TEXT);
+    expect(contrast(t.onDanger, t.danger)).toBeGreaterThanOrEqual(BODY_TEXT);
+  });
+
+  test('a filled success badge keeps its label readable', () => {
+    expect(contrast(t.onSuccess, t.success)).toBeGreaterThanOrEqual(BODY_TEXT);
   });
 
   test('success and warning messages on a card', () => {

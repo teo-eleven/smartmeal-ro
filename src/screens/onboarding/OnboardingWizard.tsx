@@ -384,10 +384,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               style={styles.continueButton}
             >
               <Text
-                style={[
-                  styles.continueButtonText,
-                  { color: isDark ? '#131914' : '#ffffff', fontWeight: '800' },
-                ]}
+                style={[styles.continueButtonText, { color: theme.primaryText, fontWeight: '800' }]}
               >
                 {currentStep === totalSteps ? '✨ Generează Meniul Săptămânal' : 'Continuă →'}
               </Text>
@@ -471,7 +468,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   stepNodeActive: {
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -576,14 +572,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 3,
   },
   continueButtonText: {
-    color: '#ffffff',
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '800',

@@ -36,13 +36,13 @@ export function BudgetStep({
           <Text style={[styles.pipelineTitle, { color: theme.text }]}>
             🔗 Lanț Decizional Sincronizat (Etapele 1 ➔ 8)
           </Text>
-          <View style={[styles.pipelineStatusBadge, { backgroundColor: '#30d158' }]}>
-            <Text style={styles.pipelineStatusText}>✓ INTEGRAT</Text>
+          <View style={[styles.pipelineStatusBadge, { backgroundColor: theme.success }]}>
+            <Text style={[styles.pipelineStatusText, { color: theme.onSuccess }]}>✓ INTEGRAT</Text>
           </View>
         </View>
 
         <View style={styles.pipelineStepsList}>
-          <View style={styles.pipelineStepItem}>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
             <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>1</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.dietTypes
@@ -52,7 +52,7 @@ export function BudgetStep({
           </View>
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
-          <View style={styles.pipelineStepItem}>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
             <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>2</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.moodTags.length} pofte
@@ -60,7 +60,7 @@ export function BudgetStep({
           </View>
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
-          <View style={styles.pipelineStepItem}>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
             <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>3</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.peopleCount} {preferences.peopleCount === 1 ? 'pers.' : 'pers.'}
@@ -68,7 +68,7 @@ export function BudgetStep({
           </View>
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
-          <View style={styles.pipelineStepItem}>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
             <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>4</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.cookingDays.length} zile ({preferences.mealSlots.length} mese/zi)
@@ -76,7 +76,7 @@ export function BudgetStep({
           </View>
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
-          <View style={styles.pipelineStepItem}>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
             <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>5</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.appliances.length} aparate
@@ -84,7 +84,7 @@ export function BudgetStep({
           </View>
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
-          <View style={styles.pipelineStepItem}>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
             <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>6</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId)?.name || 'Kaufland'}
@@ -92,7 +92,7 @@ export function BudgetStep({
           </View>
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
-          <View style={styles.pipelineStepItem}>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
             <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>7</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {(preferences.selectedSnackIds?.length || 0) +
@@ -143,7 +143,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   pipelineStatusText: {
-    color: '#000000',
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 0.5,
@@ -161,7 +160,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 6,
-    backgroundColor: 'rgba(128,128,128,0.12)',
   },
   pipelineStepNumber: {
     fontSize: 9,
