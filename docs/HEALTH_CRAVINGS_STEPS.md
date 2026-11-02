@@ -27,6 +27,10 @@ Amânate, cu motiv: low-FODMAP (datele Monash sunt proprietare), gută (nu exist
 - **Teste întâi** pentru logică (`tdd-guide`): testul care pică, apoi codul.
 - Uneltele din starter kit apar la fiecare pas, în coloana „Unealtă”.
 - Cost: fiecare pas e mic, dar planul are ~75 de pași. Etapa E (70+ rețete) e cea mai mare. La începutul fiecărei etape îți spun cât estimez.
+- **Riscuri anticipate și prevenire:** fiecare etapă are o secțiune cu ce s-ar putea strica peste 6–12 luni (date deja salvate, conexiune slabă, apăsări duble, schimbări de dependințe) și ce am pus în cod ca să nu se întâmple.
+- **Întrebări cu răspuns scurt:** fiecare întrebare are variante numerotate (1A, 1B…), cu cea recomandată marcată; poți răspunde „1A, 2B” sau „ACCEPT RECOMANDĂRILE”.
+- **Când pică ceva:** raport scurt de cauză: de ce s-a întâmplat, ce garanție adăugăm ca să nu se repete, ce altceva ar putea fi afectat, apoi testele reluate.
+- **Doar rezultate reale:** raportez numai teste rulate cu adevărat, cu cifrele lor. Niciun rezultat „simulat”.
 
 ## Poarta de tester (la finalul fiecărei etape)
 
@@ -42,9 +46,10 @@ Intru în rolul de tester și verific **etapa nouă + tot ce exista înainte**. 
 3. **Aplicația pornită în browser** (Playwright), pe fluxurile reale:
    - onboarding complet, generare, schimbare de masă, lista de cumpărături, detaliul rețetei, setări;
    - capturi de ecran la 390 px lățime (telefon), ca să prind textele care ies din card.
-4. **Review de cod:** `code-reviewer` + `typescript-reviewer`. `security-reviewer` intră când etapa atinge date de sănătate, onboarding, sync sau cont.
-5. **Raport de tester în română:** ce a trecut, ce a picat (cu dovada), ce am reparat. Problemele se repară cu `debugger` înainte de închidere.
-6. **Documentație:** `doc-updater` actualizează planul și README-ul. Bifez pașii aici.
+4. **Teste adversariale, unde etapa le atinge:** date corupte sau vechi, valori la limită, apăsări duble, conexiune pierdută, încercări de ocolire a regulilor (alt cont, adrese sau texte trucate).
+5. **Review de cod:** `code-reviewer` + `typescript-reviewer`. `security-reviewer` intră când etapa atinge date de sănătate, onboarding, sync sau cont.
+6. **Raport de tester în română:** ce a trecut, ce a picat (cu dovada), ce am reparat. Problemele se repară cu `debugger` înainte de închidere.
+7. **Documentație:** `doc-updater` actualizează planul și README-ul. Bifez pașii aici.
 
 ---
 
@@ -52,15 +57,16 @@ Intru în rolul de tester și verific **etapa nouă + tot ce exista înainte**. 
 
 Ramura: `chore/test-harness`
 
-| #   | Pas                                                                                                                                                                                                                                                                                               | Unealtă                 |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| 0.1 | ✅ Docker Desktop (instalat de Claude, pornit) și Supabase CLI (dependență npm, fără Homebrew)                                                                                                                                                                                                    | –                       |
-| 0.2 | ✅ Supabase local (`npm run db:start` / `db:stop` / `db:reset` / `db:status`): migrările 0001–0010 aplicate pe Postgres 17, RLS activ pe toate cele 7 tabele, accesul anonim refuzat                                                                                                              | `database-migrations`   |
-| 0.3 | ✅ `.env.test` cu cheile **locale** (ignorat de git, cheia de administrator fără `EXPO_PUBLIC_`); `http` permis doar spre 127.0.0.1/localhost, doar în dezvoltare, fără credențiale în adresă                                                                                                     | `security-reviewer`     |
-| 0.4 | ✅ `npm run test:sync` pe baza locală: cont nou cu consimțământ, plan salvat pe telefon și deschis pe laptop, izolare între conturi și față de vizitatori, conflict între două dispozitive (0009); metodele serviciului nu mai depind de `this`                                                   | `tdd-guide`             |
-| 0.5 | ✅ Notițe pe două dispozitive (scriere, editare, ștergere, limita de 2000 de caractere), mementouri (inclusiv dezabonarea prin email care nu se pierde), deconectare doar pe dispozitivul curent, ștergerea contului prin funcția de server (parolă greșită = nimic șters; corectă = tot dispare) | `tdd-guide`             |
-| 0.6 | ✅ Teste E2E în browser (`npm run test:e2e`, port 8099), cu gardă automată contra serverului real                                                                                                                                                                                                 | `frontend-developer`    |
-| 0.7 | ✅ Poarta de tester pe aplicația de azi: `docs/testing/BASELINE_REPORT.md`. Partea de sync real se adaugă după 0.2–0.5                                                                                                                                                                            | reviewerii + Playwright |
+| #   | Pas                                                                                                                                                                                                                                                                                               | Unealtă                            |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| 0.1 | ✅ Docker Desktop (instalat de Claude, pornit) și Supabase CLI (dependență npm, fără Homebrew)                                                                                                                                                                                                    | –                                  |
+| 0.2 | ✅ Supabase local (`npm run db:start` / `db:stop` / `db:reset` / `db:status`): migrările 0001–0010 aplicate pe Postgres 17, RLS activ pe toate cele 7 tabele, accesul anonim refuzat                                                                                                              | `database-migrations`              |
+| 0.3 | ✅ `.env.test` cu cheile **locale** (ignorat de git, cheia de administrator fără `EXPO_PUBLIC_`); `http` permis doar spre 127.0.0.1/localhost, doar în dezvoltare, fără credențiale în adresă                                                                                                     | `security-reviewer`                |
+| 0.4 | ✅ `npm run test:sync` pe baza locală: cont nou cu consimțământ, plan salvat pe telefon și deschis pe laptop, izolare între conturi și față de vizitatori, conflict între două dispozitive (0009); metodele serviciului nu mai depind de `this`                                                   | `tdd-guide`                        |
+| 0.5 | ✅ Notițe pe două dispozitive (scriere, editare, ștergere, limita de 2000 de caractere), mementouri (inclusiv dezabonarea prin email care nu se pierde), deconectare doar pe dispozitivul curent, ștergerea contului prin funcția de server (parolă greșită = nimic șters; corectă = tot dispare) | `tdd-guide`                        |
+| 0.6 | ✅ Teste E2E în browser (`npm run test:e2e`, port 8099), cu gardă automată contra serverului real                                                                                                                                                                                                 | `frontend-developer`               |
+| 0.7 | ✅ Poarta de tester pe aplicația de azi: `docs/testing/BASELINE_REPORT.md`. Partea de sync real se adaugă după 0.2–0.5                                                                                                                                                                            | reviewerii + Playwright            |
+| 0.8 | CI pe GitHub (Actions): la fiecare push rulează tipurile, lint-ul, testele SQL, Jest și E2E; sync-ul real rămâne local (cere Docker)                                                                                                                                                              | `doc-updater`, `security-reviewer` |
 
 ---
 
@@ -92,6 +98,13 @@ Codurile exacte se ajustează în T.1 doar cât e nevoie pentru contrastul cerut
 | T.10 | Iconița, ecranul de pornire și culoarea barei de sistem (`app.json`)                                                                                     | `frontend-developer` |
 | T.11 | Verificarea contrastului pe ecranele reale (axe în Playwright)                                                                                           | `frontend-developer` |
 | T.12 | **Poarta de tester** + capturile înainte/după, ca să aprobi tema                                                                                         |                      |
+
+**Riscuri anticipate și prevenire (Etapa T):**
+
+- Culori noi scrise direct în ecrane, peste un an → testul din T.7 refuză orice cod de culoare nou în `src/`.
+- O nuanță schimbată mai târziu care face un text greu de citit → testele de contrast din T.1 pică imediat.
+- Web și telefon arată diferit (CSS-ul web are prioritate) → stilurile web sunt derivate din aceeași paletă (T.2).
+- Fontul serif nu se încarcă (rețea slabă, primul start) → textul cade pe fontul sistemului, nu dispare (T.8).
 
 Culorile pentru erori, succes și alergeni rămân ușor de recunoscut (roșu/verde), doar armonizate cu paleta. Siguranța e mai importantă decât estetica.
 
