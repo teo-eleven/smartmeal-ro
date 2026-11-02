@@ -78,20 +78,20 @@ Ramura: `feat/forest-walnut-theme`. Paleta extrasă din imaginea trimisă (eșan
 
 Codurile exacte se ajustează în T.1 doar cât e nevoie pentru contrastul cerut de accesibilitate (WCAG AA).
 
-| #    | Pas                                                                                                                                             | Unealtă              |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| T.1  | Paleta ca jetoane în `src/styles/theme.ts` (deschis și întunecat) + test de contrast: text normal ≥ 4,5:1, text mare ≥ 3:1                      | `tdd-guide`          |
-| T.2  | Tema nouă aplicată prin `getAppTheme`; capturi înainte/după, deschis și întunecat                                                               | `frontend-developer` |
-| T.3  | Butonul principal: gradient nuc → bronz în locul chihlimbarului actual (azi scris direct în `OnboardingWizard`)                                 | `react-specialist`   |
-| T.4  | Culorile scrise direct în cod, lotul 1: onboarding                                                                                              | `refactor-cleaner`   |
-| T.5  | Lotul 2: tabla de mese și cardurile                                                                                                             | `refactor-cleaner`   |
-| T.6  | Lotul 3: detaliul rețetei și ferestrele (cămară, magazine, macro, planuri)                                                                      | `refactor-cleaner`   |
-| T.7  | Lotul 4: restul ecranelor; un test care interzice culori noi scrise direct în `src/`                                                            | `tdd-guide`          |
-| T.8  | Fontul serif pentru titluri, ca în imagine (alegi din variante; doar fonturi cu licență liberă OFL); textul obișnuit rămâne lizibil, fără serif | `frontend-developer` |
-| T.9  | Motivul „margine de bronz”: linie fină bronz pe carduri și pe fereastra rețetei, discret                                                        | `react-specialist`   |
-| T.10 | Iconița, ecranul de pornire și culoarea barei de sistem (`app.json`)                                                                            | `frontend-developer` |
-| T.11 | Verificarea contrastului pe ecranele reale (axe în Playwright)                                                                                  | `frontend-developer` |
-| T.12 | **Poarta de tester** + capturile înainte/după, ca să aprobi tema                                                                                |                      |
+| #    | Pas                                                                                                                                                      | Unealtă              |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| T.1  | ✅ Paleta `FOREST_WALNUT_PALETTE` în `src/styles/theme.ts` + 19 teste: rolul fiecărei nuanțe și contrastul WCAG AA (text 11–14:1, minimul cerut e 4,5:1) | `tdd-guide`          |
+| T.2  | ✅ Tema aplicată prin `getAppTheme` și prin stilurile web (sticlă, pastile, butoane), toate derivate din paletă; capturi înainte/după                    | `frontend-developer` |
+| T.3  | Butonul principal: gradient nuc → bronz în locul chihlimbarului actual (azi scris direct în `OnboardingWizard`)                                          | `react-specialist`   |
+| T.4  | Culorile scrise direct în cod, lotul 1: onboarding                                                                                                       | `refactor-cleaner`   |
+| T.5  | Lotul 2: tabla de mese și cardurile                                                                                                                      | `refactor-cleaner`   |
+| T.6  | Lotul 3: detaliul rețetei și ferestrele (cămară, magazine, macro, planuri)                                                                               | `refactor-cleaner`   |
+| T.7  | Lotul 4: restul ecranelor; un test care interzice culori noi scrise direct în `src/`                                                                     | `tdd-guide`          |
+| T.8  | Fontul serif pentru titluri, ca în imagine (alegi din variante; doar fonturi cu licență liberă OFL); textul obișnuit rămâne lizibil, fără serif          | `frontend-developer` |
+| T.9  | Motivul „margine de bronz”: linie fină bronz pe carduri și pe fereastra rețetei, discret                                                                 | `react-specialist`   |
+| T.10 | Iconița, ecranul de pornire și culoarea barei de sistem (`app.json`)                                                                                     | `frontend-developer` |
+| T.11 | Verificarea contrastului pe ecranele reale (axe în Playwright)                                                                                           | `frontend-developer` |
+| T.12 | **Poarta de tester** + capturile înainte/după, ca să aprobi tema                                                                                         |                      |
 
 Culorile pentru erori, succes și alergeni rămân ușor de recunoscut (roșu/verde), doar armonizate cu paleta. Siguranța e mai importantă decât estetica.
 
