@@ -1,6 +1,8 @@
 const COMPONENT_TESTS = '**/?(*.)component.test.(ts|tsx)';
 /** Copies of the repo that Claude Code agents work in; their tests are not this checkout's. */
 const AGENT_WORKTREES = '/\\.claude/';
+/** Tests against the local Supabase (`npm run db:start`), run only by `npm run test:sync`. */
+const SYNC_TESTS = '/src/__tests__/integration/';
 
 /**
  * One transform for both projects, so both instrument every file identically.
@@ -55,6 +57,7 @@ module.exports = {
         '\\.component\\.test\\.(ts|tsx)$',
         '/supabase/',
         '/e2e/',
+        SYNC_TESTS,
         AGENT_WORKTREES,
       ],
       // Babel, the same transformer the components project uses. Both projects load the
@@ -78,5 +81,22 @@ module.exports = {
         'node_modules/(?!(?:jest-)?react-native|@react-native|@testing-library|expo(nent)?|@expo(nent)?/.*|expo-.*)',
       ],
     },
+    ...(process.env.RUN_SYNC_TESTS ? [syncProject()] : []),
   ],
 };
+
+/**
+ * Real sign-ups, saves and conflicts against the local test database. Left out of a plain
+ * `jest` run, which must pass with no database; `npm run test:sync` turns it on.
+ */
+function syncProject() {
+  return {
+    displayName: 'sync',
+    testEnvironment: 'node',
+    setupFiles: ['<rootDir>/jest.setup.js', '<rootDir>/src/__tests__/integration/loadTestEnv.js'],
+    moduleNameMapper: sharedModuleNameMapper,
+    transform: sharedTransform,
+    testMatch: ['<rootDir>/src/__tests__/integration/**/*.sync.test.ts'],
+    testPathIgnorePatterns: ['/node_modules/', AGENT_WORKTREES],
+  };
+}
