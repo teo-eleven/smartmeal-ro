@@ -5,16 +5,16 @@ Starea aplicației **înainte** de Etapele A–F. Orice problemă de aici exista
 
 ## 1. Verificări automate
 
-| Verificare                          | Rezultat                                                                                                                                      |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tipuri (`npm run typecheck`)        | ✅ 0 erori                                                                                                                                    |
-| Lint (`npm run lint`)               | ✅ 0 erori · ⚠️ 9 avertismente vechi (variabile nefolosite în `QuickFiltersModal`, `SnacksAndDrinksModal`, `WeeklyMacroModal`, `recipeNotes`) |
-| Migrări SQL (`npm run test:sql`)    | ✅ toate trec (RLS pe notițe, ștergere în cascadă a contului)                                                                                 |
-| Teste logică + componente           | ✅ 1652 trec · 1 sărit                                                                                                                        |
-| Acoperire (ambele proiecte)         | ✅ instrucțiuni 90,7% · ramuri 80,6% · funcții 92,3% · linii 92,5% (pragurile: 87 / 76 / 87 / 88)                                             |
-| E2E în browser (`npm run test:e2e`) | ✅ 4/4: onboarding cu 0 pofte, rețetă, schimbare de masă, listă de cumpărături                                                                |
-| Garda E2E                           | ✅ dovedită: un test care cheamă Supabase real sau aruncă o eroare în pagină **pică**                                                         |
-| Sync real (Supabase local)          | ⏳ urmează în pașii 0.2–0.5 (Docker instalat și pornit)                                                                                       |
+| Verificare                                      | Rezultat                                                                                                                                                   |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tipuri (`npm run typecheck`)                    | ✅ 0 erori                                                                                                                                                 |
+| Lint (`npm run lint`)                           | ✅ 0 erori · ⚠️ 9 avertismente vechi (variabile nefolosite în `QuickFiltersModal`, `SnacksAndDrinksModal`, `WeeklyMacroModal`, `recipeNotes`)              |
+| Migrări SQL (`npm run test:sql`)                | ✅ toate trec (RLS pe notițe, ștergere în cascadă a contului)                                                                                              |
+| Teste logică + componente                       | ✅ 1652 trec · 1 sărit                                                                                                                                     |
+| Acoperire (ambele proiecte)                     | ✅ instrucțiuni 90,7% · ramuri 80,6% · funcții 92,3% · linii 92,5% (pragurile: 87 / 76 / 87 / 88)                                                          |
+| E2E în browser (`npm run test:e2e`)             | ✅ 4/4: onboarding cu 0 pofte, rețetă, schimbare de masă, listă de cumpărături                                                                             |
+| Garda E2E                                       | ✅ dovedită: un test care cheamă Supabase real sau aruncă o eroare în pagină **pică**                                                                      |
+| Sync real (Supabase local, `npm run test:sync`) | ✅ 12/12: cont nou, plan pe două dispozitive, izolare, conflicte (0009), notițe (0010), mementouri, deconectare, ștergerea contului prin funcția de server |
 
 ## 2. Turul manual (390 px, fără cont)
 
@@ -52,4 +52,4 @@ Rămase deschise (MEDIUM/LOW, existau dinainte):
 
 ## 5. Concluzie
 
-Aplicația de azi e stabilă: totul trece, nicio scurgere spre serverul real. Problemele P1–P4 sunt vechi și au loc în plan. Pașii 0.2–0.5 (sync real) urmează acum.
+Aplicația de azi e stabilă: totul trece, nicio scurgere spre serverul real. Problemele P1–P4 sunt vechi și au loc în plan. Pașii 0.2–0.5 (sync real) sunt făcuți: Etapa 0 e închisă (poarta finală: 1659 teste Jest, 12 sync, 4 E2E, acoperire 90,8%).
