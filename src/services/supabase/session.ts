@@ -32,7 +32,8 @@ export const sessionMethods = {
     if (localAuthSimulation.isActive()) {
       return localAuthSimulation.currentEmail();
     }
-    const user = await this.getCurrentUser();
+    // By name, not `this`: the method may be handed on as a callback (an onPress).
+    const user = await sessionMethods.getCurrentUser();
     return user?.email ?? null;
   },
 
