@@ -54,6 +54,10 @@ export const APPLE_IOS_THEME = {
     textSubtle: P.champagneSubtle,
     primary: P.bronzeLight,
     primaryText: P.forestNight,
+    /** Buttons, progress bars and step dots: a two-stop gradient of the accent. */
+    primaryGradient: [P.bronzeGlow, P.bronzeLight] as [string, string],
+    /** The brighter accent: the "Premium" tier, the active card, the dessert slot. */
+    accentHighlight: P.bronzeGlow,
     primaryLight: withAlpha(P.bronzeLight, 0.16),
     primaryGlow: withAlpha(P.bronzeLight, 0.28),
     border: withAlpha(P.champagne, 0.1),
@@ -84,6 +88,8 @@ export const APPLE_IOS_THEME = {
     textSubtle: P.inkSubtle,
     primary: P.walnut,
     primaryText: P.creamLight,
+    primaryGradient: [P.walnutLight, P.walnut] as [string, string],
+    accentHighlight: P.walnutLight,
     primaryLight: withAlpha(P.walnut, 0.12),
     primaryGlow: withAlpha(P.walnut, 0.2),
     border: withAlpha(P.forestNight, 0.1),

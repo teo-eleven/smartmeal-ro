@@ -90,7 +90,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const appTheme = getAppTheme(isDark);
   const theme: RecipeDetailTheme = {
     ...appTheme,
-    stepDoneBg: isDark ? 'rgba(230, 167, 86, 0.15)' : '#f0fdf4',
+    stepDoneBg: isDark ? appTheme.primaryLight : '#f0fdf4',
     badgeBg: isDark ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9',
     accentCard: isDark ? '#243027' : '#f8fafc',
   };

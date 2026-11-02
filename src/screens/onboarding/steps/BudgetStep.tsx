@@ -43,7 +43,7 @@ export function BudgetStep({
 
         <View style={styles.pipelineStepsList}>
           <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>1</Text>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>1</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.dietTypes
                 ?.map((d) => DIET_OPTIONS_CATALOG.find((o) => o.id === d)?.label || d)
@@ -53,7 +53,7 @@ export function BudgetStep({
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
           <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>2</Text>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>2</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.moodTags.length} pofte
             </Text>
@@ -61,7 +61,7 @@ export function BudgetStep({
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
           <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>3</Text>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>3</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.peopleCount} {preferences.peopleCount === 1 ? 'pers.' : 'pers.'}
             </Text>
@@ -69,7 +69,7 @@ export function BudgetStep({
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
           <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>4</Text>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>4</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.cookingDays.length} zile ({preferences.mealSlots.length} mese/zi)
             </Text>
@@ -77,7 +77,7 @@ export function BudgetStep({
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
           <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>5</Text>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>5</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.appliances.length} aparate
             </Text>
@@ -85,7 +85,7 @@ export function BudgetStep({
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
           <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>6</Text>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>6</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId)?.name || 'Kaufland'}
             </Text>
@@ -93,7 +93,7 @@ export function BudgetStep({
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
           <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>7</Text>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>7</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {(preferences.selectedSnackIds?.length || 0) +
                 (preferences.selectedDrinkIds?.length || 0)}{' '}
@@ -166,7 +166,6 @@ const styles = StyleSheet.create({
   pipelineStepNumber: {
     fontSize: 9,
     fontWeight: '900',
-    color: '#F3C06D',
   },
   pipelineStepText: {
     fontSize: 10,

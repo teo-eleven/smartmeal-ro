@@ -190,7 +190,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                       >
                         {(isCompleted || isCurrent) && (
                           <LinearGradient
-                            colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
+                            colors={theme.primaryGradient}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                             style={StyleSheet.absoluteFill}
@@ -219,7 +219,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                           {
                             borderColor: theme.primary,
                             backgroundColor: theme.primary,
-                            shadowColor: '#E6A756',
+                            shadowColor: theme.primary,
                           },
                         ],
                         isCompleted && [
@@ -306,7 +306,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
           {/* Progress Bar */}
           <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
             <LinearGradient
-              colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
+              colors={theme.primaryGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.progressBar, { width: `${progressPercent}%` }]}
@@ -378,7 +378,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
             style={[styles.footerContinueWrap, { flex: 1, maxWidth: isLargeScreen ? 460 : '100%' }]}
           >
             <LinearGradient
-              colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
+              colors={theme.primaryGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.continueButton}

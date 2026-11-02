@@ -14,7 +14,6 @@ const TIER_NAMES: Record<FoodTier, string> = {
 
 interface MealsPerDayToolbarProps {
   theme: AppTheme;
-  isDark: boolean;
   isDesktop: boolean;
   contentMaxWidth: number;
   baseMealsCount: number;
@@ -28,7 +27,6 @@ interface MealsPerDayToolbarProps {
 /** The 1, 2 or 3 meals a day switcher, and the ingredient tier next to it. */
 export const MealsPerDayToolbar: React.FC<MealsPerDayToolbarProps> = ({
   theme,
-  isDark,
   isDesktop,
   contentMaxWidth,
   baseMealsCount,
@@ -45,7 +43,7 @@ export const MealsPerDayToolbar: React.FC<MealsPerDayToolbarProps> = ({
       case 'medium':
         return theme.primary;
       case 'premium':
-        return isDark ? '#F3C06D' : '#C88232';
+        return theme.accentHighlight;
       default:
         return theme.primary;
     }
@@ -173,17 +171,13 @@ export const MealsPerDayToolbar: React.FC<MealsPerDayToolbarProps> = ({
                             ? theme.surfaceSecondary
                             : tier === 'medium'
                               ? theme.primaryLight
-                              : isDark
-                                ? 'rgba(243, 192, 109, 0.22)'
-                                : 'rgba(200, 130, 50, 0.16)',
+                              : theme.primaryGlow,
                         borderColor:
                           tier === 'basic'
                             ? theme.borderStrong
                             : tier === 'medium'
                               ? theme.primary
-                              : isDark
-                                ? '#F3C06D'
-                                : '#C88232',
+                              : theme.accentHighlight,
                       },
                     ],
                   ]}
@@ -198,9 +192,7 @@ export const MealsPerDayToolbar: React.FC<MealsPerDayToolbarProps> = ({
                             ? theme.text
                             : tier === 'medium'
                               ? theme.primary
-                              : isDark
-                                ? '#F3C06D'
-                                : '#C88232'
+                              : theme.accentHighlight
                           : theme.textMuted,
                         fontWeight: isActive ? '800' : '600',
                       },

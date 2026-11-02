@@ -59,6 +59,19 @@ describe.each([
     expect(contrast(t.primaryText, t.primary)).toBeGreaterThanOrEqual(BODY_TEXT);
   });
 
+  test('the primary gradient is two palette tones, and its label reads on both ends', () => {
+    const tones: string[] = Object.values(P);
+    expect(t.primaryGradient).toHaveLength(2);
+    t.primaryGradient.forEach((stop) => {
+      expect(tones).toContain(stop);
+      expect(contrast(t.primaryText, stop)).toBeGreaterThanOrEqual(BODY_TEXT);
+    });
+  });
+
+  test('the bright accent reads as text on a card', () => {
+    expect(contrast(t.accentHighlight, t.card)).toBeGreaterThanOrEqual(BODY_TEXT);
+  });
+
   test('success and warning messages on a card', () => {
     expect(contrast(t.successText, t.card)).toBeGreaterThanOrEqual(BODY_TEXT);
     expect(contrast(t.warningText, t.card)).toBeGreaterThanOrEqual(BODY_TEXT);

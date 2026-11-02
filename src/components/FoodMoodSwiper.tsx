@@ -323,9 +323,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                         borderColor: isSelected
                           ? '#30d158'
                           : isActive
-                          ? isDark
-                            ? '#F3C06D'
-                            : '#D98E3A'
+                          ? theme.accentHighlight
                           : theme.border,
                         borderWidth: isSelected ? 2 : isActive ? 1.5 : 1,
                       },

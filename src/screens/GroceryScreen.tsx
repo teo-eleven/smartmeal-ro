@@ -238,7 +238,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
 
               <View style={[styles.progressTrack, { backgroundColor: theme.trackBg }]}>
                 <LinearGradient
-                  colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
+                  colors={theme.primaryGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={[styles.progressBar, { width: `${progressPercent}%` }]}

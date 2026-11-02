@@ -45,18 +45,12 @@ export const PlanHeader: React.FC<PlanHeaderProps> = ({
         <View style={styles.marketBadgeGroup}>
           <View style={[styles.marketDot, { backgroundColor: market.brandColor }]} />
           <Text style={[styles.marketName, { color: theme.text }]}>{market.name}</Text>
-          <View
-            {...glass('pill')}
-            style={[styles.pill, { backgroundColor: theme.btnBg }]}
-          >
+          <View {...glass('pill')} style={[styles.pill, { backgroundColor: theme.btnBg }]}>
             <Text style={[styles.pillText, { color: theme.textMuted }]}>
               👥 {plan.peopleCount} {plan.peopleCount === 1 ? 'persoană' : 'persoane'}
             </Text>
           </View>
-          <View
-            {...glass('pill')}
-            style={[styles.pill, { backgroundColor: theme.btnBg }]}
-          >
+          <View {...glass('pill')} style={[styles.pill, { backgroundColor: theme.btnBg }]}>
             <Text style={[styles.pillText, { color: theme.textMuted }]}>
               📅 {plan.days.length} {plan.days.length === 1 ? 'zi' : 'zile'}
             </Text>
@@ -122,13 +116,7 @@ export const PlanHeader: React.FC<PlanHeaderProps> = ({
 
         <View style={[styles.progressBarTrack, { backgroundColor: theme.trackBg }]}>
           <LinearGradient
-            colors={
-              isOverBudget
-                ? ['#f59e0b', '#ef4444']
-                : isDark
-                  ? ['#F3C06D', '#E6A756']
-                  : ['#D98E3A', '#C88232']
-            }
+            colors={isOverBudget ? ['#f59e0b', '#ef4444'] : theme.primaryGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={[styles.progressBarFill, { width: `${percentageUsed}%` }]}

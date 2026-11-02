@@ -55,7 +55,7 @@ export const BudgetOverrunModal: React.FC<BudgetOverrunModalProps> = ({
             style={[
               styles.iconWrapper,
               {
-                backgroundColor: isDark ? 'rgba(230, 167, 86, 0.18)' : '#fef3c7',
+                backgroundColor: isDark ? theme.primaryLight : '#fef3c7',
                 borderColor: theme.primary,
               },
             ]}

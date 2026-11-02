@@ -74,8 +74,8 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   const appTheme = getAppTheme(isDark);
   const theme = {
     ...appTheme,
-    aiBg: isDark ? 'rgba(230, 167, 86, 0.12)' : '#fef9c3',
-    aiBorder: isDark ? 'rgba(230, 167, 86, 0.35)' : '#fde047',
+    aiBg: isDark ? appTheme.primaryLight : '#fef9c3',
+    aiBorder: isDark ? appTheme.borderStrong : '#fde047',
     aiText: appTheme.text,
   };
 
