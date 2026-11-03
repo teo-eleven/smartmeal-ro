@@ -1,0 +1,77 @@
+# Every push and pull request: types, lint, SQL migrations, Jest with coverage, the app in a
+# real browser, and real sync against a local Supabase started on the runner. No secrets are
+# used: the browser tests run without Supabase keys and the sync tests only see the runner's
+# own throwaway database.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  checks:
+    name: Types, lint, SQL and Jest
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:sql
+      - name: Jest (logic and components) with coverage thresholds
+        run: npx jest --coverage --maxWorkers=2
+
+  e2e:
+    name: App in a browser (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Keep screenshots and traces of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: e2e/.results
+          retention-days: 7
+
+  sync:
+    name: Real sync against a local Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Start the local database (migrations 0001 onwards) and its edge functions
+        run: npm run db:start
+      - run: npm run db:env
+      - run: npm run test:sync
+      - name: Stop the database
+        if: always()
+        run: npm run db:stop

@@ -21,7 +21,8 @@
     "db:stop": "PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH supabase stop",
     "db:reset": "PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH supabase db reset",
     "db:status": "PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH supabase status",
-    "test:sync": "RUN_SYNC_TESTS=1 jest --selectProjects sync --runInBand --testTimeout=30000 --coverage=false"
+    "test:sync": "RUN_SYNC_TESTS=1 jest --selectProjects sync --runInBand --testTimeout=30000 --coverage=false",
+    "db:env": "PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH node scripts/writeTestEnv.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~58.0.15",
