@@ -86,6 +86,17 @@ describe.each([
     expect(contrast(t.onDanger, t.danger)).toBeGreaterThanOrEqual(BODY_TEXT);
   });
 
+  test.each(['kcal', 'protein', 'carbs', 'fat'] as const)(
+    'the %s figure reads on a card',
+    (key) => {
+      expect(contrast(t.macro[key], t.card)).toBeGreaterThanOrEqual(BODY_TEXT);
+    }
+  );
+
+  test('the over-budget bar ends in the warning red', () => {
+    expect(t.dangerGradient[1]).toBe(t.danger);
+  });
+
   test('a filled success badge keeps its label readable', () => {
     expect(contrast(t.onSuccess, t.success)).toBeGreaterThanOrEqual(BODY_TEXT);
   });

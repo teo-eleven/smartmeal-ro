@@ -4,13 +4,13 @@ import { getAppTheme } from '../../styles/theme';
 export function getSlotColor(slot?: MealSlot, isDark: boolean = true): string {
   switch (slot) {
     case 'breakfast':
-      return '#f59e0b';
+      return getAppTheme(isDark).warningText;
     case 'lunch':
-      return isDark ? '#88B27A' : '#4E7A40';
+      return getAppTheme(isDark).successText;
     case 'dinner':
       return getAppTheme(isDark).primary;
     case 'snack':
-      return '#ff9f0a';
+      return getAppTheme(isDark).warningText;
     case 'dessert':
       return getAppTheme(isDark).accentHighlight;
     default:

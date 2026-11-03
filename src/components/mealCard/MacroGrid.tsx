@@ -17,26 +17,26 @@ export const MacroGrid: React.FC<MacroGridProps> = ({ recipe, theme }) => (
       </Text>
       <Text style={[styles.macroLbl, { color: theme.textMuted }]}>kcal/p</Text>
     </View>
-    <View style={styles.macroDivider} />
+    <View style={[styles.macroDivider, { backgroundColor: theme.trackBg }]} />
 
     <View style={styles.macroCol}>
-      <Text style={[styles.macroVal, { color: '#38bdf8' }]}>
+      <Text style={[styles.macroVal, { color: theme.macro.protein }]}>
         {recipe.nutritionPerServing.proteinGrams}g
       </Text>
       <Text style={[styles.macroLbl, { color: theme.textMuted }]}>proteină/p</Text>
     </View>
-    <View style={styles.macroDivider} />
+    <View style={[styles.macroDivider, { backgroundColor: theme.trackBg }]} />
 
     <View style={styles.macroCol}>
-      <Text style={[styles.macroVal, { color: '#fbbf24' }]}>
+      <Text style={[styles.macroVal, { color: theme.macro.carbs }]}>
         {recipe.nutritionPerServing.carbsGrams}g
       </Text>
       <Text style={[styles.macroLbl, { color: theme.textMuted }]}>carbo/p</Text>
     </View>
-    <View style={styles.macroDivider} />
+    <View style={[styles.macroDivider, { backgroundColor: theme.trackBg }]} />
 
     <View style={styles.macroCol}>
-      <Text style={[styles.macroVal, { color: '#f87171' }]}>
+      <Text style={[styles.macroVal, { color: theme.macro.fat }]}>
         {recipe.nutritionPerServing.fatGrams}g
       </Text>
       <Text style={[styles.macroLbl, { color: theme.textMuted }]}>grăsimi/p</Text>

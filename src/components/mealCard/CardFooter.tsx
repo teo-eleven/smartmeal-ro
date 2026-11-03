@@ -9,7 +9,6 @@ interface CardFooterProps {
   servings: number;
   isDessert: boolean;
   theme: AppTheme;
-  isDark: boolean;
   onPressRecipe: () => void;
   onSwapMeal: () => void;
   onToggleEatOut?: () => void;
@@ -23,7 +22,6 @@ export const CardFooter: React.FC<CardFooterProps> = ({
   servings,
   isDessert,
   theme,
-  isDark,
   onPressRecipe,
   onSwapMeal,
   onToggleEatOut,
@@ -98,13 +96,13 @@ export const CardFooter: React.FC<CardFooterProps> = ({
             style={[
               styles.leftoverBtn,
               {
-                borderColor: isDark ? 'rgba(52, 211, 153, 0.45)' : '#a7f3d0',
-                backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5',
+                borderColor: theme.successBorder,
+                backgroundColor: theme.successBg,
               },
             ]}
             activeOpacity={0.75}
           >
-            <Text style={[styles.leftoverBtnText, { color: isDark ? '#34d399' : '#059669' }]}>
+            <Text style={[styles.leftoverBtnText, { color: theme.successText }]}>
               ♻️ Reîncălzit din ziua de dinainte · gătesc din nou
             </Text>
           </TouchableOpacity>

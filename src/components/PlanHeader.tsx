@@ -88,7 +88,7 @@ export const PlanHeader: React.FC<PlanHeaderProps> = ({
           <Text style={[styles.subLabel, { color: theme.textMuted }]}>la casa de marcat</Text>
         </View>
 
-        <View style={styles.dividerVertical} />
+        <View style={[styles.dividerVertical, { backgroundColor: theme.trackBg }]} />
 
         <View style={styles.financeItem}>
           <Text style={[styles.label, { color: theme.textMuted }]}>BUGET SĂPTĂMÂNAL</Text>
@@ -96,7 +96,7 @@ export const PlanHeader: React.FC<PlanHeaderProps> = ({
             <Text style={[styles.mainAmount, { color: theme.text }]}>{plan.totalBudgetRon}</Text>
             <Text style={[styles.currencyLabel, { color: theme.textMuted }]}>LEI</Text>
           </View>
-          <Text style={[styles.subLabel, { color: savings >= 0 ? theme.text : '#ef4444' }]}>
+          <Text style={[styles.subLabel, { color: savings >= 0 ? theme.text : theme.danger }]}>
             {savings >= 0 ? `Economisești ~${savings} lei` : `Depășire de ${Math.abs(savings)} lei`}
           </Text>
         </View>
@@ -109,14 +109,16 @@ export const PlanHeader: React.FC<PlanHeaderProps> = ({
             Utilizare buget:{' '}
             <Text style={{ fontWeight: '800', color: theme.text }}>{percentageUsed}%</Text>
           </Text>
-          <Text style={[styles.progressStatus, { color: isOverBudget ? '#ef4444' : theme.text }]}>
+          <Text
+            style={[styles.progressStatus, { color: isOverBudget ? theme.danger : theme.text }]}
+          >
             {isOverBudget ? 'Peste buget' : 'În buget ✓'}
           </Text>
         </View>
 
         <View style={[styles.progressBarTrack, { backgroundColor: theme.trackBg }]}>
           <LinearGradient
-            colors={isOverBudget ? ['#f59e0b', '#ef4444'] : theme.primaryGradient}
+            colors={isOverBudget ? theme.dangerGradient : theme.primaryGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={[styles.progressBarFill, { width: `${percentageUsed}%` }]}
@@ -221,7 +223,6 @@ const styles = StyleSheet.create({
   dividerVertical: {
     width: 1,
     height: 48,
-    backgroundColor: 'rgba(148, 163, 184, 0.2)',
     marginHorizontal: 16,
   },
   label: {

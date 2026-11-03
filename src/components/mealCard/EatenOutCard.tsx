@@ -11,7 +11,6 @@ interface EatenOutCardProps {
   dayOfWeek: DayOfWeek;
   slotLabel?: string;
   theme: AppTheme;
-  isDark: boolean;
   onPressRecipe: () => void;
   onToggleEatOut?: () => void;
 }
@@ -21,7 +20,6 @@ export const EatenOutCard: React.FC<EatenOutCardProps> = ({
   dayOfWeek,
   slotLabel: effectiveSlotLabel,
   theme,
-  isDark,
   onPressRecipe,
   onToggleEatOut,
 }) => {
@@ -32,8 +30,8 @@ export const EatenOutCard: React.FC<EatenOutCardProps> = ({
         styles.card,
         styles.eatenOutCard,
         {
-          backgroundColor: isDark ? 'rgba(24, 24, 27, 0.75)' : 'rgba(249, 250, 251, 0.9)',
-          borderColor: isDark ? 'rgba(234, 179, 8, 0.35)' : '#fef08a',
+          backgroundColor: theme.cardGlass,
+          borderColor: theme.warningBorder,
           borderStyle: 'dashed',
         },
       ]}
@@ -43,8 +41,8 @@ export const EatenOutCard: React.FC<EatenOutCardProps> = ({
           style={[
             styles.eatenOutDayBadge,
             {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: theme.trackBg,
+              borderColor: theme.border,
             },
           ]}
         >
@@ -57,26 +55,19 @@ export const EatenOutCard: React.FC<EatenOutCardProps> = ({
           style={[
             styles.pillBadge,
             {
-              backgroundColor: isDark ? 'rgba(234, 179, 8, 0.2)' : '#fef9c3',
-              borderColor: isDark ? '#ca8a04' : '#eab308',
+              backgroundColor: theme.warningBg,
+              borderColor: theme.warningBorder,
             },
           ]}
         >
-          <Text
-            style={[styles.pillText, { color: isDark ? '#facc15' : '#854d0e', fontWeight: '800' }]}
-          >
+          <Text style={[styles.pillText, { color: theme.warningText, fontWeight: '800' }]}>
             🍽️ MÂNCAT ÎN ORAȘ
           </Text>
         </View>
       </View>
 
       <View style={styles.eatenOutBody}>
-        <View
-          style={[
-            styles.eatenOutIconCircle,
-            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)' },
-          ]}
-        >
+        <View style={[styles.eatenOutIconCircle, { backgroundColor: theme.accentBg }]}>
           <Text style={styles.eatenOutIconText}>🍽️</Text>
         </View>
         <Text style={[styles.eatenOutTitle, { color: theme.text }]}>Mâncat în oraș</Text>

@@ -85,6 +85,16 @@ export const APPLE_IOS_THEME = {
     shadowColor: P.shadowInk,
     /** Text on a supermarket's own brand colour (Lidl blue, Kaufland red...). */
     onBrand: P.white,
+    successBorder: withAlpha(P.sageDark, 0.4),
+    warningBorder: withAlpha(P.emberDark, 0.4),
+    /** Over budget: from a warning to a stop. */
+    dangerGradient: [P.emberDark, P.coralDark] as [string, string],
+    /** Calories, protein, carbs and fat: one tone each, wherever macros are shown. */
+    macro: { kcal: P.emberDark, protein: P.sageDark, carbs: P.bronzeGlow, fat: P.coralDark },
+    /** Text and hairlines drawn on top of a recipe photo, which stay light on any photo. */
+    onPhoto: P.white,
+    onPhotoBorder: withAlpha(P.white, 0.15),
+    photoScrim: withAlpha(P.shadowInk, 0.3),
     shadow: `0 12px 36px ${withAlpha(P.shadowInk, 0.65)}, 0 0 20px ${withAlpha(P.bronze, 0.08)}`,
   },
   light: {
@@ -124,6 +134,13 @@ export const APPLE_IOS_THEME = {
     onSuccess: P.creamLight,
     shadowColor: P.shadowInk,
     onBrand: P.white,
+    successBorder: withAlpha(P.sageLight, 0.4),
+    warningBorder: withAlpha(P.emberLight, 0.4),
+    dangerGradient: [P.emberLight, P.brickLight] as [string, string],
+    macro: { kcal: P.emberLight, protein: P.sageLight, carbs: P.walnut, fat: P.brickLight },
+    onPhoto: P.white,
+    onPhotoBorder: withAlpha(P.white, 0.15),
+    photoScrim: withAlpha(P.shadowInk, 0.15),
     shadow: `0 8px 24px ${withAlpha(P.walnutDark, 0.1)}, inset 0 1px 0 ${withAlpha(P.white, 0.7)}`,
   },
 };
