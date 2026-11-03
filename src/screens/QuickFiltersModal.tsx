@@ -145,7 +145,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
+      <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
         <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
@@ -479,7 +479,6 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -491,7 +490,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1.5,
     overflow: 'hidden',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
     shadowRadius: 24,
@@ -682,14 +680,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
     elevation: 3,
   },
   applyBtnText: {
-    color: '#ffffff',
     fontSize: 15,
     fontWeight: '800',
   },

@@ -52,10 +52,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
   const totalCount = selectedSnacks.length + selectedDrinks.length;
 
   const appTheme = getAppTheme(isDark);
-  const theme = {
-    ...appTheme,
-    overlay: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.45)',
-  };
+  const theme = appTheme;
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -334,12 +331,8 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
               style={[
                 styles.alcoholBanner,
                 {
-                  backgroundColor: preferences.includeAlcohol
-                    ? isDark
-                      ? 'rgba(239, 68, 68, 0.16)'
-                      : '#fef2f2'
-                    : theme.accentBg,
-                  borderColor: preferences.includeAlcohol ? '#ef4444' : theme.border,
+                  backgroundColor: preferences.includeAlcohol ? theme.dangerBg : theme.accentBg,
+                  borderColor: preferences.includeAlcohol ? theme.danger : theme.border,
                 },
               ]}
             >
@@ -348,7 +341,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                 <Text
                   style={[
                     styles.badgeTitle,
-                    { color: preferences.includeAlcohol ? '#ef4444' : theme.text },
+                    { color: preferences.includeAlcohol ? theme.danger : theme.text },
                   ]}
                 >
                   Băuturi alcoolice permise (18+)
@@ -363,12 +356,14 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                 style={[
                   styles.checkbox,
                   {
-                    backgroundColor: preferences.includeAlcohol ? '#ef4444' : 'transparent',
-                    borderColor: preferences.includeAlcohol ? '#ef4444' : theme.border,
+                    backgroundColor: preferences.includeAlcohol ? theme.danger : 'transparent',
+                    borderColor: preferences.includeAlcohol ? theme.danger : theme.border,
                   },
                 ]}
               >
-                {preferences.includeAlcohol && <Text style={styles.checkIcon}>✓</Text>}
+                {preferences.includeAlcohol && (
+                  <Text style={[styles.checkIcon, { color: theme.onDanger }]}>✓</Text>
+                )}
               </View>
             </TouchableOpacity>
 
@@ -468,7 +463,6 @@ const styles = StyleSheet.create({
     maxWidth: 640,
     borderRadius: 24,
     maxHeight: '88%',
-    shadowColor: '#000000',
     shadowOpacity: 0.35,
     shadowOffset: { width: 0, height: 16 },
     shadowRadius: 32,
@@ -588,7 +582,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkIcon: {
-    color: '#ffffff',
     fontSize: 11,
     fontWeight: '800',
   },
@@ -610,7 +603,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   doneBtnText: {
-    color: '#ffffff',
     fontSize: 14,
     fontWeight: '800',
   },

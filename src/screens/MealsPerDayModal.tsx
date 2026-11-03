@@ -168,7 +168,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
+      <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
         <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* Header */}
           <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
@@ -403,7 +403,6 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -415,7 +414,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1.5,
     overflow: 'hidden',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
     shadowRadius: 24,

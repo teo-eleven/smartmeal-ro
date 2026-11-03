@@ -75,7 +75,7 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
+      <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
         <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* Top Header */}
           <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
@@ -105,7 +105,7 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
               style={[
                 styles.calorieCard,
                 {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
+                  backgroundColor: theme.trackBg,
                   borderColor: theme.border,
                 },
               ]}
@@ -129,9 +129,9 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
 
               {/* Multi-segmented Macro Line */}
               <View style={styles.segmentedMacroTrack}>
-                <View style={[styles.macroSegment, { width: `${proteinPct}%`, backgroundColor: '#3b82f6' }]} />
-                <View style={[styles.macroSegment, { width: `${carbsPct}%`, backgroundColor: '#eab308' }]} />
-                <View style={[styles.macroSegment, { width: `${fatPct}%`, backgroundColor: '#f59e0b' }]} />
+                <View style={[styles.macroSegment, { width: `${proteinPct}%`, backgroundColor: theme.macro.protein }]} />
+                <View style={[styles.macroSegment, { width: `${carbsPct}%`, backgroundColor: theme.macro.carbs }]} />
+                <View style={[styles.macroSegment, { width: `${fatPct}%`, backgroundColor: theme.macro.fat }]} />
               </View>
 
               {/* Macro Cards Grid */}
@@ -139,10 +139,10 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
                 {/* Protein */}
                 <View style={[styles.macroItem, { backgroundColor: theme.btnBg, borderColor: theme.border }]}>
                   <View style={styles.macroItemHeader}>
-                    <View style={[styles.macroDot, { backgroundColor: '#3b82f6' }]} />
+                    <View style={[styles.macroDot, { backgroundColor: theme.macro.protein }]} />
                     <Text style={[styles.macroName, { color: theme.text }]}>Proteine</Text>
                   </View>
-                  <Text style={[styles.macroAmount, { color: '#3b82f6' }]}>{avgDailyProtein}g</Text>
+                  <Text style={[styles.macroAmount, { color: theme.macro.protein }]}>{avgDailyProtein}g</Text>
                   <Text style={[styles.macroPercent, { color: theme.textMuted }]}>
                     {proteinPct}% din calorii
                   </Text>
@@ -151,10 +151,10 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
                 {/* Carbs */}
                 <View style={[styles.macroItem, { backgroundColor: theme.btnBg, borderColor: theme.border }]}>
                   <View style={styles.macroItemHeader}>
-                    <View style={[styles.macroDot, { backgroundColor: '#eab308' }]} />
+                    <View style={[styles.macroDot, { backgroundColor: theme.macro.carbs }]} />
                     <Text style={[styles.macroName, { color: theme.text }]}>Carbohidrați</Text>
                   </View>
-                  <Text style={[styles.macroAmount, { color: '#eab308' }]}>{avgDailyCarbs}g</Text>
+                  <Text style={[styles.macroAmount, { color: theme.macro.carbs }]}>{avgDailyCarbs}g</Text>
                   <Text style={[styles.macroPercent, { color: theme.textMuted }]}>
                     {carbsPct}% din calorii
                   </Text>
@@ -163,10 +163,10 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
                 {/* Fats */}
                 <View style={[styles.macroItem, { backgroundColor: theme.btnBg, borderColor: theme.border }]}>
                   <View style={styles.macroItemHeader}>
-                    <View style={[styles.macroDot, { backgroundColor: '#f59e0b' }]} />
+                    <View style={[styles.macroDot, { backgroundColor: theme.macro.fat }]} />
                     <Text style={[styles.macroName, { color: theme.text }]}>Grăsimi</Text>
                   </View>
-                  <Text style={[styles.macroAmount, { color: '#f59e0b' }]}>{avgDailyFat}g</Text>
+                  <Text style={[styles.macroAmount, { color: theme.macro.fat }]}>{avgDailyFat}g</Text>
                   <Text style={[styles.macroPercent, { color: theme.textMuted }]}>
                     {fatPct}% din calorii
                   </Text>
@@ -204,7 +204,6 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -216,7 +215,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1.5,
     overflow: 'hidden',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
     shadowRadius: 24,
@@ -374,14 +372,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
     elevation: 3,
   },
   doneBtnText: {
-    color: '#ffffff',
     fontSize: 15,
     fontWeight: '900',
   },

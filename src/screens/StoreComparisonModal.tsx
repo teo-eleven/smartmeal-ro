@@ -102,8 +102,8 @@ export const StoreComparisonModal: React.FC<StoreComparisonModalProps> = ({
                     <Text style={[styles.storeName, { color: theme.text }]}>{quote.name}</Text>
 
                     {quote.isCheapest && (
-                      <View style={[styles.badge, { backgroundColor: '#16a34a' }]}>
-                        <Text style={styles.badgeText}>CEL MAI IEFTIN</Text>
+                      <View style={[styles.badge, { backgroundColor: theme.success }]}>
+                        <Text style={[styles.badgeText, { color: theme.onSuccess }]}>CEL MAI IEFTIN</Text>
                       </View>
                     )}
                     {quote.isCurrent && (
@@ -123,7 +123,7 @@ export const StoreComparisonModal: React.FC<StoreComparisonModalProps> = ({
                         styles.barFill,
                         {
                           width: `${Math.min(100, Math.max(4, fillPercent))}%`,
-                          backgroundColor: quote.isCheapest ? '#16a34a' : quote.brandColor,
+                          backgroundColor: quote.isCheapest ? theme.success : quote.brandColor,
                         },
                       ]}
                     />
@@ -153,7 +153,7 @@ export const StoreComparisonModal: React.FC<StoreComparisonModalProps> = ({
                   </View>
 
                   {quote.unavailableRecipeTitles.length > 0 && (
-                    <Text style={[styles.warning, { color: '#f59e0b' }]}>
+                    <Text style={[styles.warning, { color: theme.warningText }]}>
                       ⚠️ {quote.unavailableRecipeTitles.length}{' '}
                       {quote.unavailableRecipeTitles.length === 1 ? 'rețetă' : 'rețete'} vor fi
                       înlocuite aici: {quote.unavailableRecipeTitles.slice(0, 2).join(', ')}
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   dot: { width: 10, height: 10, borderRadius: 5 },
   storeName: { fontSize: 14, fontWeight: '800', flexShrink: 1 },
   badge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 },
-  badgeText: { fontSize: 8, fontWeight: '900', color: '#ffffff', letterSpacing: 0.4 },
+  badgeText: { fontSize: 8, fontWeight: '900', letterSpacing: 0.4 },
   price: { marginLeft: 'auto', fontSize: 15, fontWeight: '900' },
   barTrack: { height: 6, borderRadius: 3, marginTop: 10, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 3 },

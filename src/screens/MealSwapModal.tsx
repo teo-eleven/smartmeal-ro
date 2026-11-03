@@ -74,8 +74,8 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   const appTheme = getAppTheme(isDark);
   const theme = {
     ...appTheme,
-    aiBg: isDark ? appTheme.primaryLight : '#fef9c3',
-    aiBorder: isDark ? appTheme.borderStrong : '#fde047',
+    aiBg: appTheme.primaryLight,
+    aiBorder: appTheme.borderStrong,
     aiText: appTheme.text,
   };
 
@@ -104,7 +104,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
+      <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
         <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: theme.border }]}>
@@ -212,7 +212,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                       </Text>
                       {getStoreSignatureBadge(candidate, preferences.supermarketId) && (
                         <View style={[styles.storeBadge, { backgroundColor: getStoreBadgeBg(candidate.storeSignature) }]}>
-                          <Text style={styles.storeBadgeText}>{candidate.storeBadgeLabel}</Text>
+                          <Text style={[styles.storeBadgeText, { color: theme.onBrand }]}>{candidate.storeBadgeLabel}</Text>
                         </View>
                       )}
                     </View>
@@ -234,7 +234,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                       <Text
                         style={[
                           styles.costText,
-                          { color: fitsBudget ? theme.textMuted : '#f97316' },
+                          { color: fitsBudget ? theme.textMuted : theme.warningText },
                         ]}
                         accessibilityLabel={`Costul săptămânii: ${formatCostDelta(costDeltaRon)}${fitsBudget ? '' : ', peste buget'}`}
                       >
@@ -266,7 +266,6 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -278,7 +277,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1.5,
     overflow: 'hidden',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
     shadowRadius: 24,
@@ -364,7 +362,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   aiTriggerBtnText: {
-    color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
   },
@@ -432,7 +429,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selectBtnText: {
-    color: '#ffffff',
     fontSize: 13,
     fontWeight: '800',
   },
@@ -450,7 +446,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   storeBadgeText: {
-    color: '#ffffff',
     fontSize: 11,
     fontWeight: '700',
   },

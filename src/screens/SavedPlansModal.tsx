@@ -125,7 +125,7 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
 
                     {isPendingDelete ? (
                       <View style={styles.actions}>
-                        <Text style={[styles.confirmText, { color: '#ef4444' }]}>
+                        <Text style={[styles.confirmText, { color: theme.danger }]}>
                           Ștergi definitiv?
                         </Text>
                         <TouchableOpacity
@@ -146,11 +146,13 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
                           }}
                           style={[
                             styles.smallBtn,
-                            { backgroundColor: '#ef4444', borderColor: '#ef4444' },
+                            { backgroundColor: theme.danger, borderColor: theme.danger },
                           ]}
                           activeOpacity={0.8}
                         >
-                          <Text style={[styles.smallBtnText, { color: '#ffffff' }]}>Șterge</Text>
+                          <Text style={[styles.smallBtnText, { color: theme.onDanger }]}>
+                            Șterge
+                          </Text>
                         </TouchableOpacity>
                       </View>
                     ) : (

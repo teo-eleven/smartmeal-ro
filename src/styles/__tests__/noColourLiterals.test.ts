@@ -16,6 +16,16 @@ const THEMED_PATHS = [
   'components/PreGenerationSummaryCard.tsx',
   'screens/recipeDetail',
   'screens/RecipeDetailModal.tsx',
+  'screens/BudgetOverrunModal.tsx',
+  'screens/MealPrepModal.tsx',
+  'screens/MealSwapModal.tsx',
+  'screens/MealsPerDayModal.tsx',
+  'screens/PantryInventoryModal.tsx',
+  'screens/QuickFiltersModal.tsx',
+  'screens/SavedPlansModal.tsx',
+  'screens/SnacksAndDrinksModal.tsx',
+  'screens/StoreComparisonModal.tsx',
+  'screens/WeeklyMacroModal.tsx',
 ];
 const SRC = path.join(__dirname, '..', '..');
 const COLOUR_LITERAL = /['"`](#[0-9a-f]{3,8}|rgba?\([^'"`]*\))['"`]/gi;
