@@ -17,9 +17,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
     padding: 2,
-    backgroundColor: 'rgba(128,128,128,0.1)',
   },
   segmentBtn: {
     paddingVertical: 6,
@@ -91,7 +89,6 @@ export const styles = StyleSheet.create({
       } as unknown as ViewStyle,
       default: {
         elevation: 6,
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.28,
         shadowRadius: 10,
@@ -206,7 +203,6 @@ export const styles = StyleSheet.create({
     height: 44,
     paddingTop: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(128,128,128,0.2)',
     justifyContent: 'flex-start',
   },
   sampleDishesLabel: {
@@ -260,29 +256,20 @@ export const styles = StyleSheet.create({
     gap: 6,
     borderWidth: 1.5,
   },
-  nopeBtn: {
-    backgroundColor: 'rgba(255, 69, 58, 0.12)',
-    borderColor: 'rgba(255, 69, 58, 0.5)',
-  },
+  nopeBtn: {},
   actionIconNope: {
-    color: '#ff453a',
     fontSize: 16,
     fontWeight: '900',
   },
   actionLabelNope: {
-    color: '#ff453a',
     fontSize: 13,
     fontWeight: '800',
   },
-  likeBtn: {
-    backgroundColor: 'rgba(48, 209, 88, 0.15)',
-    borderColor: 'rgba(48, 209, 88, 0.6)',
-  },
+  likeBtn: {},
   actionIconLike: {
     fontSize: 15,
   },
   actionLabelLike: {
-    color: '#30d158',
     fontSize: 13,
     fontWeight: '800',
   },
@@ -408,6 +395,5 @@ export const styles = StyleSheet.create({
   activeMoodPillRemove: {
     fontSize: 11,
     fontWeight: '900',
-    color: '#ff453a',
   },
 });

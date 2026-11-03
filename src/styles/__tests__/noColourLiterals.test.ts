@@ -26,6 +26,17 @@ const THEMED_PATHS = [
   'screens/SnacksAndDrinksModal.tsx',
   'screens/StoreComparisonModal.tsx',
   'screens/WeeklyMacroModal.tsx',
+  'components/GroceryAisleSection.tsx',
+  'components/GroceryItemRow.tsx',
+  'screens/GroceryScreen.tsx',
+  'components/PantryStapleToggle.tsx',
+  'components/foodMood',
+  'components/FoodMoodSwiper.tsx',
+  'components/AllergenSelector.tsx',
+  'components/ApplianceSelector.tsx',
+  'components/BudgetSlider.tsx',
+  'components/MacroBar.tsx',
+  'components/EligibilityMeter.tsx',
 ];
 const SRC = path.join(__dirname, '..', '..');
 const COLOUR_LITERAL = /['"`](#[0-9a-f]{3,8}|rgba?\([^'"`]*\))['"`]/gi;

@@ -20,7 +20,7 @@ export const PantryStapleToggle: React.FC<PantryStapleToggleProps> = ({
     textMuted: appTheme.textMuted,
     border: appTheme.border,
     primary: appTheme.primary,
-    activeBg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
+    activeBg: appTheme.trackBg,
   };
 
   return (
@@ -56,7 +56,7 @@ export const PantryStapleToggle: React.FC<PantryStapleToggleProps> = ({
         style={[
           styles.switchTrack,
           {
-            backgroundColor: excludeStaples ? theme.primary : (isDark ? '#3a3a3c' : '#e5e5ea'),
+            backgroundColor: excludeStaples ? theme.primary : appTheme.surfaceSecondary,
           },
         ]}
       >
@@ -64,7 +64,7 @@ export const PantryStapleToggle: React.FC<PantryStapleToggleProps> = ({
           style={[
             styles.switchThumb,
             excludeStaples ? styles.switchThumbActive : styles.switchThumbInactive,
-            { backgroundColor: excludeStaples ? (isDark ? '#000000' : '#ffffff') : '#ffffff' },
+            { backgroundColor: excludeStaples ? appTheme.primaryText : appTheme.textMuted },
           ]}
         />
       </View>
@@ -115,7 +115,6 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#ffffff',
   },
   switchThumbActive: {
     alignSelf: 'flex-end',

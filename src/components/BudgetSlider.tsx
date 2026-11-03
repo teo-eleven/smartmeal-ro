@@ -77,8 +77,8 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
     surfaceSecondary: appTheme.surfaceSecondary,
     cardBg: appTheme.card,
     border: appTheme.border,
-    warningBg: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7',
-    warningText: isDark ? '#fbbf24' : '#b45309',
+    warningBg: appTheme.warningBg,
+    warningText: appTheme.warningText,
   };
 
   return (

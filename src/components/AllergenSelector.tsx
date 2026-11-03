@@ -34,15 +34,15 @@ export const AllergenSelector: React.FC<AllergenSelectorProps> = ({
               style={[
                 styles.chip,
                 {
-                  backgroundColor: isAvoided ? '#ef4444' : theme.btnBg,
-                  borderColor: isAvoided ? '#ef4444' : theme.border,
+                  backgroundColor: isAvoided ? theme.danger : theme.btnBg,
+                  borderColor: isAvoided ? theme.danger : theme.border,
                 },
               ]}
             >
               <Text style={styles.icon}>{allergen.icon}</Text>
               <View style={styles.labelGroup}>
                 <Text
-                  style={[styles.label, { color: isAvoided ? '#ffffff' : theme.text }]}
+                  style={[styles.label, { color: isAvoided ? theme.onDanger : theme.text }]}
                   numberOfLines={1}
                 >
                   {allergen.label}
@@ -50,14 +50,14 @@ export const AllergenSelector: React.FC<AllergenSelectorProps> = ({
                 <Text
                   style={[
                     styles.description,
-                    { color: isAvoided ? 'rgba(255,255,255,0.85)' : theme.textMuted },
+                    { color: isAvoided ? theme.onDanger : theme.textMuted },
                   ]}
                   numberOfLines={1}
                 >
                   {allergen.description}
                 </Text>
               </View>
-              {isAvoided && <Text style={styles.cross}>✕</Text>}
+              {isAvoided && <Text style={[styles.cross, { color: theme.onDanger }]}>✕</Text>}
             </TouchableOpacity>
           );
         })}
@@ -119,7 +119,6 @@ const styles = StyleSheet.create({
   cross: {
     fontSize: 12,
     fontWeight: '900',
-    color: '#ffffff',
   },
   warning: {
     fontSize: 11,

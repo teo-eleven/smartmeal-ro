@@ -30,6 +30,10 @@ export const FOREST_WALNUT_PALETTE = {
   emberLight: '#A84A1E',
   coralDark: '#F09A86',
   brickLight: '#9A2F24',
+  frostDark: '#8FB8C9',
+  frostLight: '#3E6D80',
+  plumDark: '#C39BB5',
+  plumLight: '#7A4E6B',
   white: '#FFFFFF',
   shadowInk: '#0B0D07',
 } as const;
@@ -103,6 +107,16 @@ export const APPLE_IOS_THEME = {
     /** Behind a window that opens over the screen. */
     overlay: withAlpha(P.shadowInk, 0.75),
     dangerBorder: withAlpha(P.coralDark, 0.4),
+    /** One muted tone per kind of thing (supermarket aisles), so groups stay apart. */
+    category: {
+      sage: P.sageDark,
+      coral: P.coralDark,
+      gold: P.bronzeGlow,
+      plum: P.plumDark,
+      ember: P.emberDark,
+      bronze: P.bronzeLight,
+      frost: P.frostDark,
+    },
     shadow: `0 12px 36px ${withAlpha(P.shadowInk, 0.65)}, 0 0 20px ${withAlpha(P.bronze, 0.08)}`,
   },
   light: {
@@ -154,6 +168,15 @@ export const APPLE_IOS_THEME = {
     photoPillLight: withAlpha(P.white, 0.18),
     overlay: withAlpha(P.shadowInk, 0.6),
     dangerBorder: withAlpha(P.brickLight, 0.4),
+    category: {
+      sage: P.sageLight,
+      coral: P.brickLight,
+      gold: P.walnut,
+      plum: P.plumLight,
+      ember: P.emberLight,
+      bronze: P.walnutLight,
+      frost: P.frostLight,
+    },
     shadow: `0 8px 24px ${withAlpha(P.walnutDark, 0.1)}, inset 0 1px 0 ${withAlpha(P.white, 0.7)}`,
   },
 };
@@ -166,6 +189,9 @@ export function getAppTheme(isDark: boolean = true) {
 }
 
 export type AppTheme = ReturnType<typeof getAppTheme>;
+
+/** A name in `theme.category`, for things that are told apart by colour. */
+export type CategoryTone = keyof AppTheme['category'];
 
 /** The glass, glow and gradient values the web CSS and the glass helpers share. */
 function glassTokens(isDark: boolean) {

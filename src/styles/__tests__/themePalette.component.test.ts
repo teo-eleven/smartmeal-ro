@@ -100,6 +100,12 @@ describe.each([
     );
   });
 
+  test('every category tone stands out from a card (WCAG 1.4.11, graphics)', () => {
+    Object.values(t.category).forEach((tone) => {
+      expect(contrast(tone, t.card)).toBeGreaterThanOrEqual(LARGE_TEXT_OR_ICON);
+    });
+  });
+
   test('the over-budget bar ends in the warning red', () => {
     expect(t.dangerGradient[1]).toBe(t.danger);
   });

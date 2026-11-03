@@ -39,7 +39,7 @@ export const MoodCardBody: React.FC<MoodCardBodyProps> = ({
             style={[
               styles.vibePill,
               {
-                backgroundColor: isDark ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.92)',
+                backgroundColor: theme.cardGlass,
                 borderColor: theme.border,
               },
             ]}
@@ -54,20 +54,24 @@ export const MoodCardBody: React.FC<MoodCardBodyProps> = ({
               styles.recipeCountPill,
               {
                 backgroundColor: isSelected
-                  ? '#30d158'
+                  ? theme.success
                   : count > 0
-                    ? isDark
-                      ? 'rgba(48,209,88,0.2)'
-                      : 'rgba(48,209,88,0.15)'
-                    : 'rgba(255,69,58,0.2)',
-                borderColor: isSelected ? '#30d158' : count > 0 ? '#30d158' : '#ff453a',
+                    ? theme.successBg
+                    : theme.dangerBg,
+                borderColor: isSelected || count > 0 ? theme.successText : theme.danger,
               },
             ]}
           >
             <Text
               style={[
                 styles.recipeCountText,
-                { color: isSelected ? '#000000' : count > 0 ? '#30d158' : '#ff453a' },
+                {
+                  color: isSelected
+                    ? theme.onSuccess
+                    : count > 0
+                      ? theme.successText
+                      : theme.danger,
+                },
               ]}
             >
               {isSelected
@@ -120,7 +124,7 @@ export const MoodCardBody: React.FC<MoodCardBodyProps> = ({
         </View>
 
         {/* Sample Dishes Row (Fixed Height) */}
-        <View style={styles.sampleDishesBox}>
+        <View style={[styles.sampleDishesBox, { borderTopColor: theme.border }]}>
           <Text style={[styles.sampleDishesLabel, { color: theme.textMuted }]} numberOfLines={1}>
             Exemple în catalogul SmartMeal:
           </Text>
