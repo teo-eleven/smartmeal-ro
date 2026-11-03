@@ -123,7 +123,8 @@ export const StoreComparisonModal: React.FC<StoreComparisonModalProps> = ({
                         styles.barFill,
                         {
                           width: `${Math.min(100, Math.max(4, fillPercent))}%`,
-                          backgroundColor: quote.isCheapest ? theme.success : quote.brandColor,
+                          // Palette, not brand: a red brand bar read as a warning. The dot keeps the brand.
+                          backgroundColor: quote.isCheapest ? theme.success : theme.primary,
                         },
                       ]}
                     />
