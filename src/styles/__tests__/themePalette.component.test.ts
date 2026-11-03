@@ -93,6 +93,13 @@ describe.each([
     }
   );
 
+  test('text on a dark photo pill reads even over a white photo', () => {
+    const WORST_CASE_PHOTO = '#FFFFFF';
+    expect(contrast(t.onPhoto, over(t.photoPill, WORST_CASE_PHOTO))).toBeGreaterThanOrEqual(
+      BODY_TEXT
+    );
+  });
+
   test('the over-budget bar ends in the warning red', () => {
     expect(t.dangerGradient[1]).toBe(t.danger);
   });

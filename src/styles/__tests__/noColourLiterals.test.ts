@@ -14,6 +14,8 @@ const THEMED_PATHS = [
   'components/MealCard.tsx',
   'components/PlanHeader.tsx',
   'components/PreGenerationSummaryCard.tsx',
+  'screens/recipeDetail',
+  'screens/RecipeDetailModal.tsx',
 ];
 const SRC = path.join(__dirname, '..', '..');
 const COLOUR_LITERAL = /['"`](#[0-9a-f]{3,8}|rgba?\([^'"`]*\))['"`]/gi;

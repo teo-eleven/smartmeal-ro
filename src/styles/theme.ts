@@ -95,6 +95,14 @@ export const APPLE_IOS_THEME = {
     onPhoto: P.white,
     onPhotoBorder: withAlpha(P.white, 0.15),
     photoScrim: withAlpha(P.shadowInk, 0.3),
+    /** The big photo at the top of a recipe fades into this, so its title stays readable. */
+    heroScrim: withAlpha(P.forestNight, 0.95),
+    /** Dark glass and light glass pills laid on a photo, under `onPhoto` text. */
+    photoPill: withAlpha(P.shadowInk, 0.7),
+    photoPillLight: withAlpha(P.white, 0.18),
+    /** Behind a window that opens over the screen. */
+    overlay: withAlpha(P.shadowInk, 0.75),
+    dangerBorder: withAlpha(P.coralDark, 0.4),
     shadow: `0 12px 36px ${withAlpha(P.shadowInk, 0.65)}, 0 0 20px ${withAlpha(P.bronze, 0.08)}`,
   },
   light: {
@@ -141,6 +149,11 @@ export const APPLE_IOS_THEME = {
     onPhoto: P.white,
     onPhotoBorder: withAlpha(P.white, 0.15),
     photoScrim: withAlpha(P.shadowInk, 0.15),
+    heroScrim: withAlpha(P.shadowInk, 0.65),
+    photoPill: withAlpha(P.shadowInk, 0.7),
+    photoPillLight: withAlpha(P.white, 0.18),
+    overlay: withAlpha(P.shadowInk, 0.6),
+    dangerBorder: withAlpha(P.brickLight, 0.4),
     shadow: `0 8px 24px ${withAlpha(P.walnutDark, 0.1)}, inset 0 1px 0 ${withAlpha(P.white, 0.7)}`,
   },
 };

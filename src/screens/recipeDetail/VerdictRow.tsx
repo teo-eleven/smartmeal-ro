@@ -29,13 +29,15 @@ export const VerdictRow: React.FC<VerdictRowProps> = ({
       style={[
         styles.verdictBtn,
         {
-          borderColor: isFavourite ? '#16a34a' : theme.border,
-          backgroundColor: isFavourite ? 'rgba(22,163,74,0.12)' : theme.btnBg,
+          borderColor: isFavourite ? theme.successText : theme.border,
+          backgroundColor: isFavourite ? theme.successBg : theme.btnBg,
         },
       ]}
       activeOpacity={0.8}
     >
-      <Text style={[styles.verdictText, { color: isFavourite ? '#16a34a' : theme.textMuted }]}>
+      <Text
+        style={[styles.verdictText, { color: isFavourite ? theme.successText : theme.textMuted }]}
+      >
         {isFavourite ? 'Preferat ✓' : '👍 Îmi place'}
       </Text>
     </TouchableOpacity>
@@ -47,13 +49,13 @@ export const VerdictRow: React.FC<VerdictRowProps> = ({
       style={[
         styles.verdictBtn,
         {
-          borderColor: isDisliked ? '#ef4444' : theme.border,
-          backgroundColor: isDisliked ? 'rgba(239,68,68,0.12)' : theme.btnBg,
+          borderColor: isDisliked ? theme.danger : theme.border,
+          backgroundColor: isDisliked ? theme.dangerBg : theme.btnBg,
         },
       ]}
       activeOpacity={0.8}
     >
-      <Text style={[styles.verdictText, { color: isDisliked ? '#ef4444' : theme.textMuted }]}>
+      <Text style={[styles.verdictText, { color: isDisliked ? theme.danger : theme.textMuted }]}>
         {isDisliked ? '↩︎ Adu-o înapoi' : '👎 Nu mai propune'}
       </Text>
     </TouchableOpacity>

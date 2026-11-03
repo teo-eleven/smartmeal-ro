@@ -7,7 +7,6 @@ import { styles } from './styles';
 interface RecipeTopBarProps {
   recipe: Recipe;
   theme: RecipeDetailTheme;
-  isDark: boolean;
   totalTime: number;
   formattedCostPerServing: string;
   targetDay?: DayOfWeek | null;
@@ -20,7 +19,6 @@ interface RecipeTopBarProps {
 export const RecipeTopBar: React.FC<RecipeTopBarProps> = ({
   recipe,
   theme,
-  isDark,
   totalTime,
   formattedCostPerServing,
   targetDay,
@@ -70,21 +68,14 @@ export const RecipeTopBar: React.FC<RecipeTopBarProps> = ({
         style={[
           styles.swapHeaderBtn,
           {
-            backgroundColor: isEatenOut
-              ? isDark
-                ? 'rgba(234, 179, 8, 0.2)'
-                : '#fef9c3'
-              : theme.btnBg,
-            borderColor: isEatenOut ? (isDark ? '#ca8a04' : '#eab308') : theme.border,
+            backgroundColor: isEatenOut ? theme.warningBg : theme.btnBg,
+            borderColor: isEatenOut ? theme.warningBorder : theme.border,
           },
         ]}
         activeOpacity={0.7}
       >
         <Text
-          style={[
-            styles.swapHeaderText,
-            { color: isEatenOut ? (isDark ? '#facc15' : '#854d0e') : theme.text },
-          ]}
+          style={[styles.swapHeaderText, { color: isEatenOut ? theme.warningText : theme.text }]}
         >
           {isEatenOut ? '↺ Acasă' : '🍽️ În oraș'}
         </Text>
