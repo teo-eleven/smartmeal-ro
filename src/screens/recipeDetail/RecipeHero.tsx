@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Recipe, SupermarketId } from '../../types';
 import { RecipeVisual } from '../../components/RecipeVisual';
 import { PhotoCreditLine } from '../../components/PhotoCreditLine';
-import { getStoreBadgeBg, getStoreSignatureBadge } from '../../utils/storeBadge';
+import { getStoreSignatureBadge } from '../../utils/storeBadge';
 import { RecipeDetailTheme } from './types';
 import { styles } from './styles';
 
@@ -64,9 +64,7 @@ export const RecipeHero: React.FC<RecipeHeroProps> = ({
           </View>
         )}
         {getStoreSignatureBadge(recipe, supermarketId) && (
-          <View
-            style={[styles.heroPill, { backgroundColor: getStoreBadgeBg(recipe.storeSignature) }]}
-          >
+          <View style={[styles.heroPill, { backgroundColor: theme.storeBadge }]}>
             <Text style={[styles.heroPillText, { color: theme.onPhoto }]}>
               {recipe.storeBadgeLabel}
             </Text>

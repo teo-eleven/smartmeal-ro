@@ -100,6 +100,14 @@ describe.each([
     );
   });
 
+  test('the store badge text reads on a white photo and on a card', () => {
+    const WORST_CASE_PHOTO = '#FFFFFF';
+    expect(contrast(t.onPhoto, over(t.storeBadge, WORST_CASE_PHOTO))).toBeGreaterThanOrEqual(
+      BODY_TEXT
+    );
+    expect(contrast(t.onPhoto, over(t.storeBadge, t.card))).toBeGreaterThanOrEqual(BODY_TEXT);
+  });
+
   test('every category tone stands out from a card (WCAG 1.4.11, graphics)', () => {
     Object.values(t.category).forEach((tone) => {
       expect(contrast(tone, t.card)).toBeGreaterThanOrEqual(LARGE_TEXT_OR_ICON);

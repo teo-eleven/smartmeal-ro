@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import { Recipe, SupermarketId } from '../../types';
 import { AppTheme } from '../../styles/theme';
 import { getHealthGoalMeta } from '../../data/healthTags';
-import { getStoreBadgeBg, getStoreSignatureBadge } from '../../utils/storeBadge';
+import { getStoreSignatureBadge } from '../../utils/storeBadge';
 import { MOOD_LABELS, getTierBadgeStyle, getTierLabel } from './cardLabels';
 import { styles } from './styles';
 
@@ -51,12 +51,12 @@ export const CardChips: React.FC<CardChipsProps> = ({ recipe, supermarketId, the
           style={[
             styles.pillBadge,
             {
-              backgroundColor: getStoreBadgeBg(recipe.storeSignature),
+              backgroundColor: theme.storeBadge,
               borderColor: theme.onPhotoBorder,
             },
           ]}
         >
-          <Text style={[styles.pillText, { color: theme.onBrand }]}>{recipe.storeBadgeLabel}</Text>
+          <Text style={[styles.pillText, { color: theme.onPhoto }]}>{recipe.storeBadgeLabel}</Text>
         </View>
       )}
       <View style={[styles.pillBadge, { backgroundColor: theme.btnBg, borderColor: theme.border }]}>

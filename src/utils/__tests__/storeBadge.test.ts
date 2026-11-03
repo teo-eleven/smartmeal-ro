@@ -1,20 +1,10 @@
-import { getStoreBadgeBg, getStoreSignatureBadge } from '../storeBadge';
-import { SUPERMARKETS } from '../../data/supermarkets';
-import { SupermarketId } from '../../types';
-
-describe('culoarea badge-ului de magazin', () => {
-  const fallback = getStoreBadgeBg(undefined);
-
-  test.each(Object.keys(SUPERMARKETS) as SupermarketId[])('%s are o culoare proprie', (store) => {
-    expect(getStoreBadgeBg(store)).not.toBe(fallback);
-  });
-});
+import { getStoreSignatureBadge } from '../storeBadge';
 
 describe('badge-ul „Favorit <magazin>”', () => {
   const lidlSignature = { storeBadgeLabel: '🛒 Favorit Lidl', storeSignature: 'lidl' as const };
 
   test('apare când rețeta e semnătura magazinului ales', () => {
-    expect(getStoreSignatureBadge(lidlSignature, 'lidl')?.label).toBe('🛒 Favorit Lidl');
+    expect(getStoreSignatureBadge(lidlSignature, 'lidl')).toEqual({ label: '🛒 Favorit Lidl' });
   });
 
   test('nu apare pe planul altui magazin', () => {

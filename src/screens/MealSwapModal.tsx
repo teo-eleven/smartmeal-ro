@@ -14,7 +14,7 @@ import { getAppTheme } from '../styles/theme';
 import { DAY_LABELS_RO } from '../constants/days';
 import { formatCostDelta, rankSwapCandidates } from '../utils/swapCandidates';
 import { useAppStore } from '../store/useAppStore';
-import { getStoreBadgeBg, getStoreSignatureBadge } from '../utils/storeBadge';
+import { getStoreSignatureBadge } from '../utils/storeBadge';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface MealSwapModalProps {
@@ -211,8 +211,8 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                         {candidate.title}
                       </Text>
                       {getStoreSignatureBadge(candidate, preferences.supermarketId) && (
-                        <View style={[styles.storeBadge, { backgroundColor: getStoreBadgeBg(candidate.storeSignature) }]}>
-                          <Text style={[styles.storeBadgeText, { color: theme.onBrand }]}>{candidate.storeBadgeLabel}</Text>
+                        <View style={[styles.storeBadge, { backgroundColor: theme.storeBadge }]}>
+                          <Text style={[styles.storeBadgeText, { color: theme.onPhoto }]}>{candidate.storeBadgeLabel}</Text>
                         </View>
                       )}
                     </View>

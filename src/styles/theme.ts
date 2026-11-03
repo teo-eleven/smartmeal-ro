@@ -104,6 +104,8 @@ export const APPLE_IOS_THEME = {
     /** Dark glass and light glass pills laid on a photo, under `onPhoto` text. */
     photoPill: withAlpha(P.shadowInk, 0.7),
     photoPillLight: withAlpha(P.white, 0.18),
+    /** "Favorit Lidl" and the like: one walnut badge, the store's brand stays on its dot. */
+    storeBadge: withAlpha(P.walnut, 0.92),
     /** Behind a window that opens over the screen. */
     overlay: withAlpha(P.shadowInk, 0.75),
     dangerBorder: withAlpha(P.coralDark, 0.4),
@@ -166,6 +168,7 @@ export const APPLE_IOS_THEME = {
     heroScrim: withAlpha(P.shadowInk, 0.65),
     photoPill: withAlpha(P.shadowInk, 0.7),
     photoPillLight: withAlpha(P.white, 0.18),
+    storeBadge: withAlpha(P.walnut, 0.92),
     overlay: withAlpha(P.shadowInk, 0.6),
     dangerBorder: withAlpha(P.brickLight, 0.4),
     category: {
