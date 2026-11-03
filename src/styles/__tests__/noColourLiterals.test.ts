@@ -37,6 +37,23 @@ const THEMED_PATHS = [
   'components/BudgetSlider.tsx',
   'components/MacroBar.tsx',
   'components/EligibilityMeter.tsx',
+  'screens/auth',
+  'screens/AuthModal.tsx',
+  'screens/LoginScreen.tsx',
+  'screens/ReauthScreen.tsx',
+  'screens/PaywallScreen.tsx',
+  'components/InformativeNoticeModal.tsx',
+  'components/AppLoadingScreen.tsx',
+  'components/ErrorBoundary.tsx',
+  'components/AccountPanel.tsx',
+  'components/ConfirmDialog.tsx',
+  'components/LoadingToast.tsx',
+  'components/DevicesSection.tsx',
+  'components/UndoBanner.tsx',
+  'components/DataExportButton.tsx',
+  'components/BiometricOptInPrompt.tsx',
+  'components/AccountIdentity.tsx',
+  'styles/sheet.ts',
 ];
 const SRC = path.join(__dirname, '..', '..');
 const COLOUR_LITERAL = /['"`](#[0-9a-f]{3,8}|rgba?\([^'"`]*\))['"`]/gi;

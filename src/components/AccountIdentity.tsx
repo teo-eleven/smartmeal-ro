@@ -107,7 +107,7 @@ export function AccountIdentity({ email, isDark }: { email: string; isDark: bool
           </TouchableOpacity>
         </View>
       )}
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && <Text style={[styles.error, { color: theme.danger }]}>{error}</Text>}
 
       {isBiometricAvailable && (
         <TouchableOpacity
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   link: { fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
-  error: { color: '#ef4444', fontSize: 12, fontWeight: '600' },
+  error: { fontSize: 12, fontWeight: '600' },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',

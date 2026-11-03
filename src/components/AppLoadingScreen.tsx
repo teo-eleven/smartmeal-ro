@@ -126,8 +126,8 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
       style={[
         styles.card,
         {
-          backgroundColor: isDark ? '#18181b' : '#ffffff',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+          backgroundColor: theme.card,
+          borderColor: theme.border,
         },
       ]}
     >
@@ -136,12 +136,12 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
         style={[
           styles.iconSquircle,
           {
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+            borderColor: theme.border,
           },
         ]}
       >
         <LinearGradient
-          colors={isDark ? ['#27272a', '#18181b'] : ['#f4f4f5', '#e4e4e7']}
+          colors={[theme.surfaceSecondary, theme.card]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.iconGradient}
@@ -157,8 +157,8 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
           style={[
             styles.countryBadge,
             {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.1)',
+              backgroundColor: theme.trackBg,
+              borderColor: theme.border,
             },
           ]}
         >
@@ -172,7 +172,7 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
       {/* Fixed Height Subtitle Container (Zero vertical layout shift) */}
       <View style={styles.subContainer}>
         <Animated.View style={{ opacity: tipFadeAnim, width: '100%', alignItems: 'center' }}>
-          <Text numberOfLines={2} style={[styles.subtitle, { color: isDark ? '#a1a1aa' : '#71717a' }]}>
+          <Text numberOfLines={2} style={[styles.subtitle, { color: theme.textMuted }]}>
             {displaySubtitle}
           </Text>
         </Animated.View>
@@ -183,7 +183,7 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
         style={[
           styles.progressTrack,
           {
-            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+            backgroundColor: theme.trackBg,
           },
         ]}
       >
@@ -207,7 +207,7 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
                 style={[
                   styles.stepItemBadge,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                    backgroundColor: theme.trackBg,
                     borderColor: theme.border,
                   },
                 ]}
@@ -246,7 +246,7 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
         style={[
           styles.overlayContainer,
           {
-            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.82)' : 'rgba(255, 255, 255, 0.88)',
+            backgroundColor: theme.overlay,
             opacity: overlayFadeAnim,
           },
         ]}
@@ -299,7 +299,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.25,
     shadowRadius: 32,

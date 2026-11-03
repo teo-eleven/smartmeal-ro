@@ -206,7 +206,7 @@ export const UndoBanner: React.FC<UndoBannerProps> = ({
         </TouchableOpacity>
 
         {/* Subtle timer progress bar at bottom of the banner */}
-        <View style={styles.progressBarTrack}>
+        <View style={[styles.progressBarTrack, { backgroundColor: theme.trackBg }]}>
           <Animated.View
             style={[
               styles.progressBarFill,
@@ -260,7 +260,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: 'rgba(128,128,128,0.15)',
   },
   progressBarFill: {
     height: '100%',

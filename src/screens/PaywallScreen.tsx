@@ -131,7 +131,7 @@ export const PaywallScreen: React.FC<PaywallScreenProps> = ({ isDark, onBackToQu
         )}
 
         {error && (
-          <Text testID="paywall-error" style={styles.error}>
+          <Text testID="paywall-error" style={[styles.error, { color: theme.danger }]}>
             {error}
           </Text>
         )}
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     minHeight: 54,
   },
   buyText: { fontSize: 16, fontWeight: '900' },
-  error: { color: '#ef4444', fontSize: 13, fontWeight: '600', marginTop: 12, textAlign: 'center' },
+  error: { fontSize: 13, fontWeight: '600', marginTop: 12, textAlign: 'center' },
   fineprint: { fontSize: 11, lineHeight: 16, marginTop: 18 },
   restore: { alignSelf: 'center', paddingVertical: 12, marginTop: 8 },
   restoreText: { fontSize: 14, fontWeight: '700', textDecorationLine: 'underline' },

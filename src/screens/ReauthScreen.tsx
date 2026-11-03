@@ -85,7 +85,11 @@ export function ReauthScreen({ isDark }: { isDark: boolean }) {
         </Text>
 
         <View style={styles.formArea}>
-          <AuthMessages errorMessage={form.errorMessage} successMessage={form.successMessage} />
+          <AuthMessages
+            errorMessage={form.errorMessage}
+            successMessage={form.successMessage}
+            isDark={isDark}
+          />
 
           {biometricEnabled && !isCodeMode && (
             <TouchableOpacity

@@ -53,7 +53,7 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={sheetStyles.backdrop}>
+      <View style={[sheetStyles.backdrop, { backgroundColor: theme.overlay }]}>
         <View
           {...glass('modal')}
           style={[sheetStyles.sheet, { backgroundColor: theme.card, borderColor: theme.border }]}

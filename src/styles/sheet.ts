@@ -7,7 +7,6 @@ import { StyleSheet } from 'react-native';
 export const sheetStyles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -22,7 +21,6 @@ export const sheetStyles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 24,
     overflow: 'hidden',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
     shadowRadius: 24,

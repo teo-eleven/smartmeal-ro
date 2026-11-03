@@ -25,8 +25,8 @@ export function getAuthTheme(isDark: boolean): AuthTheme {
     border: appTheme.border,
     primary: appTheme.primary,
     primaryText: appTheme.primaryText,
-    inputBg: isDark ? '#1c1c1e' : '#f2f2f7',
-    overlayBg: isDark ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.45)',
+    inputBg: appTheme.inputBg,
+    overlayBg: appTheme.overlay,
   };
 }
 
@@ -36,24 +36,20 @@ export const authStyles = StyleSheet.create({
   resetBackBtn: { paddingVertical: 12, alignItems: 'center' },
   resetBackText: { fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
   errorBox: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
     padding: 10,
     borderRadius: 8,
     marginBottom: 14,
   },
   errorText: {
-    color: '#ef4444',
     fontSize: 13,
     fontWeight: '600',
   },
   successBox: {
-    backgroundColor: 'rgba(48, 209, 88, 0.15)',
     padding: 10,
     borderRadius: 8,
     marginBottom: 14,
   },
   successText: {
-    color: '#30d158',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -72,9 +68,7 @@ export const authStyles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
-  tabItemActive: {
-    borderBottomColor: '#ffffff',
-  },
+  tabItemActive: {},
   tabText: {
     fontSize: 14,
     fontWeight: '700',
@@ -101,7 +95,6 @@ export const authStyles = StyleSheet.create({
     marginTop: 6,
   },
   primaryBtnText: {
-    color: '#ffffff',
     fontSize: 15,
     fontWeight: '700',
   },

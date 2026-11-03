@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SystemNotice, useAppStore } from '../store/useAppStore';
 import { glass } from '../styles/glass';
+import { getAppTheme } from '../styles/theme';
 import { USE_NATIVE_DRIVER } from '../styles/motion';
 
 interface InformativeNoticeModalProps {
@@ -15,6 +16,7 @@ export const InformativeNoticeModal: React.FC<InformativeNoticeModalProps> = ({
   onDismiss,
   isDark,
 }) => {
+  const theme = getAppTheme(isDark);
   // Shown over another Modal it would be dropped on iOS; it stays queued until they close.
   const isWindowOpen = useAppStore((state) => state.openWindowCount > 0);
   const notice = isWindowOpen ? null : queuedNotice;
@@ -57,18 +59,18 @@ export const InformativeNoticeModal: React.FC<InformativeNoticeModalProps> = ({
   const getNoticeBadge = () => {
     switch (notice.type) {
       case 'warning':
-        return { icon: '⚠️', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' };
+        return { icon: '⚠️', color: theme.warningText, bg: theme.warningBg };
       case 'error':
-        return { icon: '🚫', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' };
+        return { icon: '🚫', color: theme.danger, bg: theme.dangerBg };
       case 'success':
         return {
           icon: '✨',
-          color: isDark ? '#ffffff' : '#000000',
-          bg: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+          color: theme.successText,
+          bg: theme.successBg,
         };
       case 'info':
       default:
-        return { icon: '💡', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)' };
+        return { icon: '💡', color: theme.category.frost, bg: theme.trackBg };
     }
   };
 
@@ -76,7 +78,7 @@ export const InformativeNoticeModal: React.FC<InformativeNoticeModalProps> = ({
 
   return (
     <Modal visible={!!notice} transparent animationType="none" onRequestClose={onDismiss}>
-      <View style={styles.backdrop}>
+      <View style={[styles.backdrop, { backgroundColor: theme.overlay }]}>
         {/* Behind the card, not around it: wrapped around it, a screen reader read the whole
             notice as one pressable element and "Am înțeles" was out of reach. */}
         <Pressable
@@ -91,20 +93,15 @@ export const InformativeNoticeModal: React.FC<InformativeNoticeModalProps> = ({
           style={[
             styles.card,
             {
-              backgroundColor: isDark ? 'rgba(28, 28, 30, 0.96)' : 'rgba(255, 255, 255, 0.96)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.1)',
+              backgroundColor: theme.glassBg,
+              borderColor: theme.border,
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
             },
           ]}
         >
           {/* Apple Grabber Pill */}
-          <View
-            style={[
-              styles.grabber,
-              { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' },
-            ]}
-          />
+          <View style={[styles.grabber, { backgroundColor: theme.trackBg }]} />
 
           <View style={styles.headerRow}>
             <View
@@ -113,18 +110,14 @@ export const InformativeNoticeModal: React.FC<InformativeNoticeModalProps> = ({
               <Text style={styles.iconText}>{badge.icon}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.title, { color: isDark ? '#ffffff' : '#000000' }]}>
-                {notice.title}
-              </Text>
+              <Text style={[styles.title, { color: theme.text }]}>{notice.title}</Text>
               <Text style={[styles.typeSubtitle, { color: badge.color }]}>
                 SmartMeal RO Notificare
               </Text>
             </View>
           </View>
 
-          <Text style={[styles.message, { color: isDark ? '#8e8e93' : '#3a3a3c' }]}>
-            {notice.message}
-          </Text>
+          <Text style={[styles.message, { color: theme.textMuted }]}>{notice.message}</Text>
 
           <TouchableOpacity
             accessibilityRole="button"
@@ -134,15 +127,13 @@ export const InformativeNoticeModal: React.FC<InformativeNoticeModalProps> = ({
             style={[
               styles.dismissBtn,
               {
-                backgroundColor: isDark ? '#ffffff' : '#000000',
-                borderColor: isDark ? '#ffffff' : '#000000',
+                backgroundColor: theme.primary,
+                borderColor: theme.primary,
               },
             ]}
             activeOpacity={0.8}
           >
-            <Text style={[styles.dismissBtnText, { color: isDark ? '#000000' : '#ffffff' }]}>
-              Am înțeles
-            </Text>
+            <Text style={[styles.dismissBtnText, { color: theme.primaryText }]}>Am înțeles</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -153,7 +144,6 @@ export const InformativeNoticeModal: React.FC<InformativeNoticeModalProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -164,7 +154,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1.5,
     padding: 24,
-    shadowColor: '#000',
     shadowOpacity: 0.35,
     shadowOffset: { width: 0, height: 16 },
     shadowRadius: 32,
@@ -220,7 +209,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dismissBtnText: {
-    color: '#000000',
     fontSize: 14,
     fontWeight: '800',
   },

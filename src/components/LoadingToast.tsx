@@ -96,7 +96,7 @@ export const LoadingToast: React.FC<LoadingToastProps> = ({
         style={[
           styles.pill,
           {
-            backgroundColor: isDark ? 'rgba(24, 24, 27, 0.94)' : 'rgba(255, 255, 255, 0.95)',
+            backgroundColor: theme.glassBg,
             borderColor: theme.border,
           },
         ]}
@@ -124,7 +124,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 22,
     borderWidth: 1.5,
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
     shadowRadius: 12,

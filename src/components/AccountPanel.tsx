@@ -122,7 +122,7 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
           disabled={isBusy}
           style={[styles.smallBtn, { borderColor: theme.border }]}
         >
-          <Text style={[styles.smallBtnText, { color: '#ef4444' }]}>Deconectare</Text>
+          <Text style={[styles.smallBtnText, { color: theme.danger }]}>Deconectare</Text>
         </TouchableOpacity>
       </View>
       {confirmingSignOut && (
@@ -151,9 +151,9 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
                 onSignOut();
               }}
               disabled={isBusy}
-              style={[styles.syncBtn, styles.syncBtnOutline, { borderColor: '#ef4444' }]}
+              style={[styles.syncBtn, styles.syncBtnOutline, { borderColor: theme.danger }]}
             >
-              <Text style={[styles.syncBtnText, { color: '#ef4444' }]}>Deconectează oricum</Text>
+              <Text style={[styles.syncBtnText, { color: theme.danger }]}>Deconectează oricum</Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity
@@ -295,9 +295,9 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
               accessibilityLabel="Confirmă ștergerea definitivă a contului"
               onPress={() => void confirmDelete()}
               disabled={isBusy}
-              style={[styles.syncBtn, { backgroundColor: '#ef4444' }]}
+              style={[styles.syncBtn, { backgroundColor: theme.danger }]}
             >
-              <Text style={[styles.syncBtnText, { color: '#ffffff' }]}>Șterge definitiv</Text>
+              <Text style={[styles.syncBtnText, { color: theme.onDanger }]}>Șterge definitiv</Text>
             </TouchableOpacity>
           </View>
         </View>

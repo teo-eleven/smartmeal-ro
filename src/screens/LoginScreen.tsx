@@ -55,7 +55,11 @@ export function LoginScreen({ isDark, onSignedIn, onContinueAsGuest }: LoginScre
         </Text>
 
         <View style={styles.formArea}>
-          <AuthMessages errorMessage={form.errorMessage} successMessage={form.successMessage} />
+          <AuthMessages
+            errorMessage={form.errorMessage}
+            successMessage={form.successMessage}
+            isDark={isDark}
+          />
           {form.resetStep !== 'off' ? (
             <ResetPasswordFlow form={form} theme={theme} />
           ) : isCodeMode && form.mode === 'signin' ? (

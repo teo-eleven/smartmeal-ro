@@ -32,7 +32,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <View style={styles.backdrop}>
+      <View style={[styles.backdrop, { backgroundColor: theme.overlay }]}>
         {/* The backdrop sits behind the card rather than around it. Wrapped around it, a
             screen reader read the whole dialog as one pressable element and the buttons
             inside were out of reach. */}
@@ -68,8 +68,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               style={[
                 styles.button,
                 {
-                  backgroundColor: isDestructive ? '#ef4444' : theme.primary,
-                  borderColor: isDestructive ? '#ef4444' : theme.primary,
+                  backgroundColor: isDestructive ? theme.danger : theme.primary,
+                  borderColor: isDestructive ? theme.danger : theme.primary,
                 },
               ]}
               activeOpacity={0.8}
@@ -77,7 +77,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               <Text
                 style={[
                   styles.buttonText,
-                  { color: isDestructive ? '#ffffff' : theme.primaryText },
+                  { color: isDestructive ? theme.onDanger : theme.primaryText },
                 ]}
               >
                 {confirmLabel}
@@ -93,7 +93,6 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,

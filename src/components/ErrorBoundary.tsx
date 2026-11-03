@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getAppTheme } from '../styles/theme';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -39,9 +40,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     if (!this.state.hasError) return this.props.children;
 
     const { isDark } = this.props;
-    const bg = isDark ? '#000000' : '#ffffff';
-    const fg = isDark ? '#ffffff' : '#111111';
-    const muted = isDark ? '#a1a1aa' : '#52525b';
+    const theme = getAppTheme(isDark);
+    const bg = theme.background;
+    const fg = theme.text;
+    const muted = theme.textMuted;
 
     return (
       <View style={[styles.container, { backgroundColor: bg }]}>
@@ -54,10 +56,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           accessibilityRole="button"
           accessibilityLabel="Încearcă din nou"
           onPress={this.handleRetry}
-          style={styles.button}
+          style={[styles.button, { backgroundColor: theme.primary }]}
           activeOpacity={0.85}
         >
-          <Text style={styles.buttonText}>Încearcă din nou</Text>
+          <Text style={[styles.buttonText, { color: theme.primaryText }]}>Încearcă din nou</Text>
         </TouchableOpacity>
       </View>
     );
@@ -69,10 +71,9 @@ const styles = StyleSheet.create({
   title: { fontSize: 19, fontWeight: '900', marginBottom: 10, textAlign: 'center' },
   message: { fontSize: 14, fontWeight: '500', lineHeight: 21, textAlign: 'center', marginBottom: 24 },
   button: {
-    backgroundColor: '#16a34a',
     paddingHorizontal: 26,
     paddingVertical: 13,
     borderRadius: 12,
   },
-  buttonText: { color: '#ffffff', fontSize: 14, fontWeight: '800' },
+  buttonText: { fontSize: 14, fontWeight: '800' },
 });

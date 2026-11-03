@@ -53,7 +53,7 @@ export function BiometricOptInPrompt({ isDark, isSuppressed = false }: Biometric
   return (
     // Android's back button answers like "Nu acum"; without it the prompt could not be left.
     <Modal visible transparent animationType="fade" onRequestClose={() => void answer(false)}>
-      <View style={styles.backdrop}>
+      <View style={[styles.backdrop, { backgroundColor: theme.overlay }]}>
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <Text style={styles.mark}>🔐</Text>
           <Text style={[styles.title, { color: theme.text }]}>
@@ -94,7 +94,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   card: { width: '100%', maxWidth: 380, borderRadius: 20, borderWidth: 1, padding: 24 },
   mark: { fontSize: 36, textAlign: 'center', marginBottom: 8 },

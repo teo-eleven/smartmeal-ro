@@ -78,7 +78,7 @@ export const DataExportButton: React.FC<DataExportButtonProps> = ({ isDark }) =>
           <Text style={[styles.text, { color: theme.text }]}>⬇ Descarcă datele mele (JSON)</Text>
         )}
       </TouchableOpacity>
-      {error && <Text style={[styles.error, { color: '#ef4444' }]}>{error}</Text>}
+      {error && <Text style={[styles.error, { color: theme.danger }]}>{error}</Text>}
     </View>
   );
 };
