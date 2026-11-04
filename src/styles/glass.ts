@@ -3,7 +3,7 @@
  * `glass('crad')` fails to compile instead of silently rendering an unstyled element.
  */
 export type GlassVariant =
-  'root' | 'card' | 'modal' | 'dock' | 'pill' | 'pill-active' | 'btn-primary';
+  'root' | 'card' | 'card-rim' | 'modal' | 'dock' | 'pill' | 'pill-active' | 'btn-primary';
 
 /**
  * Spread onto any view to tag it for the glass stylesheet:

@@ -55,7 +55,7 @@ export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> =
       : [preferences.dietType];
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <View style={[styles.container, { backgroundColor: theme.card, borderColor: theme.cardRim }]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.headerIconBox, { backgroundColor: theme.primaryLight }]}>

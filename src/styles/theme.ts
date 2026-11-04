@@ -68,6 +68,8 @@ export const APPLE_IOS_THEME = {
     primaryGlow: withAlpha(P.bronzeLight, 0.28),
     border: withAlpha(P.champagne, 0.1),
     borderStrong: withAlpha(P.bronze, 0.45),
+    /** A discreet bronze edge, kept for the few cards that matter (meal, recipe, summary). */
+    cardRim: withAlpha(P.bronze, 0.3),
     borderSubtle: withAlpha(P.champagne, 0.06),
     accentBg: withAlpha(P.champagne, 0.05),
     btnBg: P.walnutDark,
@@ -140,6 +142,7 @@ export const APPLE_IOS_THEME = {
     primaryGlow: withAlpha(P.walnut, 0.2),
     border: withAlpha(P.forestNight, 0.1),
     borderStrong: withAlpha(P.bronze, 0.55),
+    cardRim: withAlpha(P.bronze, 0.4),
     borderSubtle: withAlpha(P.forestNight, 0.05),
     accentBg: withAlpha(P.forestNight, 0.04),
     btnBg: P.creamDeep,
@@ -350,7 +353,8 @@ export function injectEmeraldGlassStyles(isDark: boolean = true): void {
       background-color: transparent !important;
     }
 
-    [data-glass="card"] {
+    [data-glass="card"],
+    [data-glass="card-rim"] {
       background: ${glass.card} !important;
       backdrop-filter: blur(28px) saturate(190%) !important;
       -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
@@ -358,6 +362,10 @@ export function injectEmeraldGlassStyles(isDark: boolean = true): void {
       box-shadow: ${glass.cardShadow} !important;
       border-radius: 22px !important;
       position: relative;
+    }
+
+    [data-glass="card-rim"] {
+      border-color: ${theme.cardRim} !important;
     }
 
     [data-glass="dock"] {

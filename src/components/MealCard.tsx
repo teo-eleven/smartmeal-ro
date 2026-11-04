@@ -79,12 +79,12 @@ const MealCardView: React.FC<MealCardProps> = ({
           double" and "Schimbă" were out of reach, and on the web it was invalid HTML. The
           picture now opens the recipe, as does "Vezi Rețeta" below. */}
       <View
-        {...glass('card')}
+        {...glass('card-rim')}
         style={[
           styles.card,
           {
             backgroundColor: theme.card,
-            borderColor: isDessert ? theme.borderStrong : theme.border,
+            borderColor: isDessert ? theme.borderStrong : theme.cardRim,
             shadowColor: theme.shadowColor,
             flex: 1,
             height: '100%',

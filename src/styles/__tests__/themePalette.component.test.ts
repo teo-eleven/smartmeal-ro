@@ -108,6 +108,12 @@ describe.each([
     expect(contrast(t.onPhoto, over(t.storeBadge, t.card))).toBeGreaterThanOrEqual(BODY_TEXT);
   });
 
+  test('the bronze rim of key cards shows more than a hairline, less than a strong border', () => {
+    const edge = (line: string) => contrast(over(line, t.card), t.card);
+    expect(edge(t.cardRim)).toBeGreaterThan(edge(t.border));
+    expect(edge(t.cardRim)).toBeLessThan(edge(t.borderStrong));
+  });
+
   test('every category tone stands out from a card (WCAG 1.4.11, graphics)', () => {
     Object.values(t.category).forEach((tone) => {
       expect(contrast(tone, t.card)).toBeGreaterThanOrEqual(LARGE_TEXT_OR_ICON);

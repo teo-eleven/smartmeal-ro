@@ -123,6 +123,25 @@ describe('injectEmeraldGlassStyles', () => {
     expect(created[0].textContent).toContain('glass');
   });
 
+  test.each([true, false])('gives key cards their bronze rim on the web (dark: %s)', (isDark) => {
+    const sheet: StubElement = {};
+    installStubDocument({
+      getElementById: () => sheet,
+      createElement: () => ({}),
+      head: { appendChild: () => undefined },
+    });
+
+    injectEmeraldGlassStyles(isDark);
+
+    // The rim card shares the glass card's rule, then its own sets the edge colour.
+    const rimRules = [
+      ...(sheet.textContent ?? '').matchAll(/\[data-glass="card-rim"\]\s*\{([^}]*)\}/g),
+    ]
+      .map((rule) => rule[1])
+      .join('\n');
+    expect(rimRules).toContain(`border-color: ${getAppTheme(isDark).cardRim} !important`);
+  });
+
   test('reuses the existing stylesheet instead of stacking duplicates', () => {
     // Arrange
     const existing: StubElement = { textContent: 'old' };
