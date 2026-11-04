@@ -88,6 +88,7 @@ export const InformativeNoticeModal: React.FC<InformativeNoticeModalProps> = ({
           style={StyleSheet.absoluteFill}
         />
         <Animated.View
+          role="dialog"
           accessibilityViewIsModal
           {...glass('modal')}
           style={[

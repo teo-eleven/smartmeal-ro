@@ -37,3 +37,14 @@ test('every photo says what it is, or accessibilityLabel="" when it only decorat
     .map(({ file }) => file.name);
   expect(photosWithoutAlt).toEqual([]);
 });
+
+// On the web accessibilityViewIsModal becomes aria-modal, which is only valid on a dialog;
+// without the role a screen reader is told "modal" about nothing it can name.
+test('every view marked modal is announced as a dialog', () => {
+  const modalsWithoutRole = FILES.flatMap((file) =>
+    [...file.source.matchAll(/<(?:Animated\.)?View\b([^>]*accessibilityViewIsModal[^>]*)>/g)]
+      .filter((tag) => !/\brole="(dialog|alertdialog)"/.test(tag[1]))
+      .map(() => file.name)
+  );
+  expect(modalsWithoutRole).toEqual([]);
+});

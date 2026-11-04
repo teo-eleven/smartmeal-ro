@@ -13,10 +13,19 @@ const SETTLE_TIMEOUT_MS = 4000;
 
 /**
  * Screens fade their content in, and axe measures a half-faded text as a grey one. Waits
- * until every inline style holds still between two samples; a looping animation (a loading
- * bar) never does, so the wait gives up after SETTLE_TIMEOUT_MS and scans anyway.
+ * for the CSS animations to end (a Modal only becomes a "dialog" once its own has) and then
+ * until every inline style holds still between two samples. Looping animations (a loading
+ * bar) never end, so they are skipped, and the wait gives up after SETTLE_TIMEOUT_MS.
  */
 async function waitForStillScreen(page: Page): Promise<void> {
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+        .map((animation) => animation.finished.catch(() => undefined))
+    )
+  );
   const styles = () =>
     page.evaluate(() =>
       [...document.querySelectorAll('[style]')].map((el) => el.getAttribute('style')).join('|')
@@ -31,15 +40,6 @@ async function waitForStillScreen(page: Page): Promise<void> {
   }
 }
 
-/**
- * react-native-web 0.21 marks every Modal aria-modal but gives only the active one the dialog
- * role, so a Modal left mounted behind another trips aria-allowed-attr. That is the library's
- * markup, not ours; only that one finding is set aside, and the Modal's content is still checked.
- */
-function isInactiveLibraryModal(ruleId: string, html: string): boolean {
-  return ruleId === 'aria-allowed-attr' && /^<div aria-modal="true"(?![^>]*\brole=)/.test(html);
-}
-
 /** Every WCAG 2.1 A and AA rule axe checks in the real page: contrast, names, states. */
 async function accessibilityFailures(page: Page): Promise<string[]> {
   await waitForStillScreen(page);
@@ -47,12 +47,10 @@ async function accessibilityFailures(page: Page): Promise<string[]> {
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze();
   return results.violations.flatMap((violation) =>
-    violation.nodes
-      .filter((node) => !isInactiveLibraryModal(violation.id, node.html))
-      .map(
-        // The element's own HTML names it better than react-native-web's generated classes.
-        (node) => `${violation.id} ${node.html.slice(0, 200)}: ${node.failureSummary ?? ''}`
-      )
+    violation.nodes.map(
+      // The element's own HTML names it better than react-native-web's generated classes.
+      (node) => `${violation.id} ${node.html.slice(0, 200)}: ${node.failureSummary ?? ''}`
+    )
   );
 }
 

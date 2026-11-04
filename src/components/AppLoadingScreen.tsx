@@ -243,6 +243,8 @@ export const AppLoadingScreen: React.FC<AppLoadingScreenProps> = ({
     return (
       <Animated.View
         accessibilityLabel={accessibilityLabel || title}
+        role="dialog"
+        aria-busy
         accessibilityViewIsModal={true}
         style={[
           styles.overlayContainer,

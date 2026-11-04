@@ -44,6 +44,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           style={StyleSheet.absoluteFill}
         />
         <View
+          role="alertdialog"
           accessibilityViewIsModal
           style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
         >
