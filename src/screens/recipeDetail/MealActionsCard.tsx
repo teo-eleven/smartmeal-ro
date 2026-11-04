@@ -52,7 +52,7 @@ export const MealActionsCard: React.FC<MealActionsCardProps> = ({
       {targetDay && (
         <TouchableOpacity
           accessibilityRole="checkbox"
-          accessibilityState={{ checked: isEatenOut }}
+          aria-checked={isEatenOut}
           accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănâncă în oraș'}
           onPress={onToggleEatOut}
           style={[

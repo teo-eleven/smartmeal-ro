@@ -112,7 +112,8 @@ export function AccountIdentity({ email, isDark }: { email: string; isDark: bool
       {isBiometricAvailable && (
         <TouchableOpacity
           accessibilityRole="switch"
-          accessibilityState={{ checked: biometricEnabled, disabled: isSwitching }}
+          aria-checked={biometricEnabled}
+          aria-disabled={isSwitching}
           accessibilityLabel={`Deblochează cu ${biometricLabel}`}
           onPress={() => void toggleBiometric()}
           disabled={isSwitching}

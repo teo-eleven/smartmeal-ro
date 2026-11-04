@@ -43,7 +43,7 @@ export const IngredientsCard: React.FC<IngredientsCardProps> = ({
         return (
           <TouchableOpacity
             accessibilityRole="checkbox"
-            accessibilityState={{ checked: isChecked }}
+            aria-checked={isChecked}
             key={ing.ingredientId}
             onPress={() => onToggleIngredient(ing.ingredientId)}
             activeOpacity={0.7}

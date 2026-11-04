@@ -55,7 +55,7 @@ describe('MealBoardScreen', () => {
 
   test('opening the comparison shows the chains', () => {
     render(<MealBoardScreen isDark={false} />);
-    fireEvent.press(screen.getByLabelText(/Compară prețul coșului/i));
+    fireEvent.press(screen.getByRole('button', { name: /Compară Magazine/ }));
     expect(screen.getByText(/Același coș, alt magazin/i)).toBeTruthy();
   });
 
@@ -155,12 +155,16 @@ describe('cititorul de ecran pe tabla de mese', () => {
     expect(segment.parent?.parent?.props.accessibilityState).toEqual({ selected: true });
   });
 
-  test('scurtăturile au etichete fără emoji', () => {
+  test('scurtăturile se numesc după textul lor, iar emoji-urile nu se citesc', () => {
     render(<MealBoardScreen isDark={false} />);
 
-    expect(screen.getByLabelText('Ce am în Cămară')).toBeTruthy();
-    expect(screen.getByLabelText('Ghid Meal Prep')).toBeTruthy();
-    expect(screen.getByLabelText('Macro Săptămână')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Ce am în Cămară/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Ghid Meal Prep/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Macro Săptămână/ })).toBeTruthy();
+    ['🏠', '🍱', '📊'].forEach((icon) => {
+      expect(screen.getByText(icon, { includeHiddenElements: true })).toBeTruthy();
+      expect(screen.queryByText(icon)).toBeNull();
+    });
   });
 });
 

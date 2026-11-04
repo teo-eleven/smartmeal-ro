@@ -20,12 +20,12 @@ describe('OnboardingWizard', () => {
 
   test('offers a quick start that skips the questionnaire', () => {
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
-    expect(screen.getByLabelText(/Pornire rapidă/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Sari peste întrebări/ })).toBeTruthy();
   });
 
   test('quick start produces a plan without answering anything', () => {
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
-    fireEvent.press(screen.getByLabelText(/Pornire rapidă/i));
+    fireEvent.press(screen.getByRole('button', { name: /Sari peste întrebări/ }));
     expect(useAppStore.getState().currentPlan).not.toBeNull();
   });
 
@@ -209,7 +209,7 @@ describe('OnboardingWizard, pasul de buget (pasul 8)', () => {
   test('afișează sliderul de buget și permite setarea bugetului', () => {
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
     expect(screen.getByText(/Care este bugetul tău/i)).toBeTruthy();
-    expect(screen.getByLabelText(/Folosește bugetul sugerat/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Buget sugerat:/ })).toBeTruthy();
   });
 });
 

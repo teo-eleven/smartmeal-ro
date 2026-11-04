@@ -50,6 +50,7 @@ export const MoodCardMedia: React.FC<MoodCardMediaProps> = ({ archetype, isDark 
           onError={() => setFailedUrl(photoUrl)}
           style={StyleSheet.absoluteFill}
           accessible={false}
+          accessibilityLabel=""
           accessibilityIgnoresInvertColors
         />
       ) : (
@@ -58,6 +59,8 @@ export const MoodCardMedia: React.FC<MoodCardMediaProps> = ({ archetype, isDark 
           source={backdrop}
           contentFit="cover"
           style={StyleSheet.absoluteFill}
+          accessible={false}
+          accessibilityLabel=""
         />
       )}
       <LinearGradient

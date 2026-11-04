@@ -25,6 +25,7 @@ import { SupermarketStep } from './steps/SupermarketStep';
 import { ExtrasStep } from './steps/ExtrasStep';
 import { BudgetStep } from './steps/BudgetStep';
 import { titleFont } from '../../styles/typography';
+import { pressedState } from '../../utils/pressedState';
 
 interface OnboardingWizardProps {
   isDark: boolean;
@@ -123,7 +124,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 {onOpenAccount && (
                   <TouchableOpacity
                     accessibilityRole="button"
-                    accessibilityLabel="Contul meu"
+                    accessibilityLabel="Cont"
                     onPress={onOpenAccount}
                     style={[
                       styles.accountBtn,
@@ -202,10 +203,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
 
                     <TouchableOpacity
                       accessibilityRole="button"
-                      accessibilityState={{
-                        selected: isCurrent,
-                        disabled: stepItem.step > maxVisitedStep,
-                      }}
+                      {...pressedState(isCurrent)}
+                      aria-disabled={stepItem.step > maxVisitedStep}
                       onPress={() => {
                         if (stepItem.step <= maxVisitedStep) {
                           goToStep(stepItem.step);
@@ -290,7 +289,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               {onOpenAccount && (
                 <TouchableOpacity
                   accessibilityRole="button"
-                  accessibilityLabel="Contul meu"
+                  accessibilityLabel="Cont"
                   onPress={onOpenAccount}
                   style={[
                     styles.accountBtn,

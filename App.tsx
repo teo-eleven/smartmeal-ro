@@ -413,7 +413,7 @@ function AppShell() {
           <View style={styles.topBarActions}>
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityLabel="Contul meu"
+              accessibilityLabel="Cont"
               onPress={() => setAuthModalVisible(true)}
               {...glass('pill')}
               style={[

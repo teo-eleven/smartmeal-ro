@@ -27,7 +27,7 @@ export const AllergenSelector: React.FC<AllergenSelectorProps> = ({
             <TouchableOpacity
               key={allergen.id}
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: isAvoided }}
+              aria-checked={isAvoided}
               accessibilityLabel={`Evită ${allergen.label}. ${allergen.description}`}
               onPress={() => onToggleAllergen(allergen.id)}
               activeOpacity={0.7}

@@ -42,7 +42,6 @@ export function DietStep({
     <View style={sharedStyles.stepSection}>
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel="Pornire rapidă: generează un plan cu setări implicite"
         onPress={() => {
           quickStart();
           if (useAppStore.getState().currentPlan) {
@@ -57,7 +56,9 @@ export function DietStep({
         ]}
         activeOpacity={0.8}
       >
-        <Text style={styles.quickStartIcon}>⚡</Text>
+        <Text style={styles.quickStartIcon} aria-hidden>
+          ⚡
+        </Text>
         <View style={{ flex: 1 }}>
           <Text style={[styles.quickStartTitle, { color: theme.text }]}>Sari peste întrebări</Text>
           <Text style={[styles.quickStartSubtitle, { color: theme.textMuted }]}>
@@ -92,7 +93,7 @@ export function DietStep({
           return (
             <TouchableOpacity
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: isSelected }}
+              aria-checked={isSelected}
               accessibilityLabel={`${diet.label}, ${diet.desc}`}
               key={diet.id}
               onPress={() => toggleDietType(diet.id)}
@@ -155,7 +156,7 @@ export function DietStep({
           return (
             <TouchableOpacity
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: isSelected }}
+              aria-checked={isSelected}
               accessibilityLabel={`${diet.label}, ${diet.desc}`}
               key={diet.id}
               onPress={() => toggleDietType(diet.id)}
@@ -249,7 +250,7 @@ export function DietStep({
             return (
               <TouchableOpacity
                 accessibilityRole="checkbox"
-                accessibilityState={{ checked: isSelected }}
+                aria-checked={isSelected}
                 key={goal.id}
                 onPress={() => toggleHealthGoalTag(goal.id)}
                 activeOpacity={0.75}

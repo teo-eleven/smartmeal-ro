@@ -26,7 +26,7 @@ export const PantryStapleToggle: React.FC<PantryStapleToggleProps> = ({
   return (
     <TouchableOpacity
       accessibilityRole="switch"
-      accessibilityState={{ checked: excludeStaples }}
+      aria-checked={excludeStaples}
       accessibilityLabel="Exclude ingredientele de bază din cămară"
       activeOpacity={0.8}
       onPress={() => onToggle(!excludeStaples)}

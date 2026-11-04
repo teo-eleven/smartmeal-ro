@@ -4,6 +4,7 @@ import { SUPERMARKET_LIST } from '../../../data/supermarkets';
 import { SupermarketId } from '../../../types';
 import { sharedStyles } from '../onboardingStyles';
 import { OnboardingStepProps } from './stepProps';
+import { pressedState } from '../../../utils/pressedState';
 
 /** Step 6: supermarket */
 export function SupermarketStep({
@@ -25,7 +26,7 @@ export function SupermarketStep({
           return (
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
+              {...pressedState(isSelected)}
               key={market.id}
               onPress={() => setSupermarket(market.id as SupermarketId)}
               activeOpacity={0.7}

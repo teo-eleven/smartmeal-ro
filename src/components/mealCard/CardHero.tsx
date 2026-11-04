@@ -7,6 +7,7 @@ import { AppTheme } from '../../styles/theme';
 import { DAY_LABELS_RO } from '../../constants/days';
 import { getSlotColor } from './cardLabels';
 import { styles } from './styles';
+import { getRecipeHighlights } from '../../utils/recipeVisual';
 
 interface CardHeroProps {
   day: MealPlanDay;
@@ -49,7 +50,8 @@ export const CardHero: React.FC<CardHeroProps> = ({
   <View style={[styles.imageContainer, { backgroundColor: theme.card }]}>
     <TouchableOpacity
       accessibilityRole="button"
-      accessibilityLabel={`${recipe.title}. Vezi rețeta.`}
+      // The visible title and ingredients first, so voice control matches (WCAG 2.5.3).
+      accessibilityLabel={`${recipe.title}. ${getRecipeHighlights(recipe, 3).join(', ')}. Vezi rețeta.`}
       activeOpacity={0.92}
       onPress={onPressRecipe}
       onPressIn={handlePressIn}

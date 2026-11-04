@@ -45,7 +45,7 @@ export const GroceryItemRow: React.FC<GroceryItemRowProps> = ({
     <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '100%' }}>
       <TouchableOpacity
         accessibilityRole="checkbox"
-        accessibilityState={{ checked: item.isPurchased }}
+        aria-checked={item.isPurchased}
         accessibilityLabel={`${item.name}, ${item.packsToBuy} ${item.packsToBuy === 1 ? 'pachet' : 'pachete'}, ${item.estimatedPriceRon} lei`}
         accessibilityHint="Bifează produsul ca fiind cumpărat"
         activeOpacity={0.8}

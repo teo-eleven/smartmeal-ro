@@ -5,6 +5,7 @@ import { DayOfWeek } from '../../../types';
 import { COOKING_DAY_PRESETS, MEAL_MOMENT_OPTIONS, FOOD_TIER_OPTIONS } from '../onboardingOptions';
 import { sharedStyles } from '../onboardingStyles';
 import { OnboardingStepProps } from './stepProps';
+import { pressedState } from '../../../utils/pressedState';
 
 /** Step 4: cooking days & meals & food tier */
 export function ScheduleStep({
@@ -45,7 +46,7 @@ export function ScheduleStep({
           return (
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
+              {...pressedState(isSelected)}
               key={preset.id}
               onPress={() => setCookingDays(preset.days)}
               activeOpacity={0.7}
@@ -107,7 +108,7 @@ export function ScheduleStep({
           return (
             <TouchableOpacity
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: isSelected }}
+              aria-checked={isSelected}
               key={day}
               onPress={() => toggleCookingDay(day)}
               style={[
@@ -158,7 +159,7 @@ export function ScheduleStep({
           return (
             <TouchableOpacity
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: isSelected }}
+              aria-checked={isSelected}
               key={option.slot}
               onPress={() => {
                 if (isSelected) {
@@ -257,7 +258,7 @@ export function ScheduleStep({
           return (
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
+              {...pressedState(isSelected)}
               key={tierOpt.id}
               onPress={() => setFoodTier(tierOpt.id)}
               activeOpacity={0.7}

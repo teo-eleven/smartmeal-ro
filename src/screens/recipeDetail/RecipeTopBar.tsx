@@ -62,7 +62,7 @@ export const RecipeTopBar: React.FC<RecipeTopBarProps> = ({
     {targetDay && (
       <TouchableOpacity
         accessibilityRole="checkbox"
-        accessibilityState={{ checked: isEatenOut }}
+        aria-checked={isEatenOut}
         accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănânc în oraș'}
         onPress={onToggleEatOut}
         style={[

@@ -4,6 +4,7 @@ import { FoodTier } from '../../types';
 import { glass } from '../../styles/glass';
 import { AppTheme } from '../../styles/theme';
 import { styles } from './styles';
+import { pressedState } from '../../utils/pressedState';
 
 /** Spoken names for the tier segment; the visible labels start with a medal emoji. */
 const TIER_NAMES: Record<FoodTier, string> = {
@@ -90,7 +91,7 @@ export const MealsPerDayToolbar: React.FC<MealsPerDayToolbarProps> = ({
             {([1, 2, 3] as const).map((cnt) => (
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityState={{ selected: baseMealsCount === cnt }}
+                {...pressedState(baseMealsCount === cnt)}
                 key={cnt}
                 onPress={() => {
                   if (cnt === 3) {
@@ -154,7 +155,7 @@ export const MealsPerDayToolbar: React.FC<MealsPerDayToolbarProps> = ({
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel={`Nivel ingrediente ${TIER_NAMES[tier]}`}
-                  accessibilityState={{ selected: isActive }}
+                  {...pressedState(isActive)}
                   key={tier}
                   onPress={() => {
                     if (foodTier === tier) return;

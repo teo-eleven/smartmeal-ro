@@ -67,7 +67,7 @@ export const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
         return (
           <TouchableOpacity
             accessibilityRole="checkbox"
-            accessibilityState={{ checked: isSelected }}
+            aria-checked={isSelected}
             accessibilityLabel={app.name}
             key={app.id}
             onPress={() => onToggleAppliance(app.id)}

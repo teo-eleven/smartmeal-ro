@@ -130,7 +130,6 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
       {/* Single Suggested Budget Card based on prior selections */}
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel={`Folosește bugetul sugerat de ${minFloor} lei`}
         onPress={() => onChangeBudget(minFloor)}
         activeOpacity={0.8}
         style={[
@@ -142,7 +141,9 @@ export const BudgetSlider: React.FC<BudgetSliderProps> = ({
         ]}
       >
         <View style={styles.suggestedLeft}>
-          <Text style={styles.suggestedIcon}>💡</Text>
+          <Text style={styles.suggestedIcon} aria-hidden>
+            💡
+          </Text>
           <View style={styles.suggestedInfo}>
             <Text style={[styles.suggestedTitle, { color: theme.text }]}>
               Buget sugerat:{' '}

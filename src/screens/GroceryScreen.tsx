@@ -312,7 +312,6 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
         {surplusCount > 0 && (
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Pune surplusul în cămară"
             onPress={carryOverSurplus}
             style={[styles.surplusBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
             activeOpacity={0.8}
@@ -359,7 +358,6 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
       {/* Retail Snacks & Drinks Supermarket Bar */}
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel="Ronțăieli și Băuturi de Magazin"
         onPress={() => setShowSnacksModal(true)}
         style={[
           styles.retailSnacksBanner,
@@ -371,7 +369,9 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
         ]}
         activeOpacity={0.8}
       >
-        <Text style={styles.retailSnacksIcon}>🍿</Text>
+        <Text style={styles.retailSnacksIcon} aria-hidden>
+          🍿
+        </Text>
         <View style={{ flex: 1 }}>
           <Text style={[styles.retailSnacksTitle, { color: theme.warningText }]}>
             Ronțăieli & Băuturi de Magazin

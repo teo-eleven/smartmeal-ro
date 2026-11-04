@@ -80,6 +80,7 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
           onError={() => setFailedUrl(photo.url)}
           style={StyleSheet.absoluteFill}
           accessible={false}
+          accessibilityLabel=""
           accessibilityIgnoresInvertColors
         />
       ) : backdrop ? (
@@ -88,6 +89,7 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
           contentFit="cover"
           style={StyleSheet.absoluteFill}
           accessible={false}
+          accessibilityLabel=""
           accessibilityIgnoresInvertColors
         />
       ) : (

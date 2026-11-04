@@ -352,7 +352,7 @@ describe('contul din configurator', () => {
     render(<App />);
     expect(screen.getByText(/Pasul 1 din 8/)).toBeTruthy();
 
-    fireEvent.press(screen.getByLabelText('Contul meu'));
+    fireEvent.press(screen.getByLabelText('Cont'));
 
     expect(screen.getByText('Sincronizare Cloud & Cont')).toBeTruthy();
   });

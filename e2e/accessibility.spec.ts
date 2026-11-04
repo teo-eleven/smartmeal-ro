@@ -31,19 +31,35 @@ async function waitForStillScreen(page: Page): Promise<void> {
   }
 }
 
-/** Every text and its background, as axe measures them in the real page (WCAG 1.4.3). */
-async function contrastFailures(page: Page): Promise<string[]> {
+/**
+ * react-native-web 0.21 marks every Modal aria-modal but gives only the active one the dialog
+ * role, so a Modal left mounted behind another trips aria-allowed-attr. That is the library's
+ * markup, not ours; only that one finding is set aside, and the Modal's content is still checked.
+ */
+function isInactiveLibraryModal(ruleId: string, html: string): boolean {
+  return ruleId === 'aria-allowed-attr' && /^<div aria-modal="true"(?![^>]*\brole=)/.test(html);
+}
+
+/** Every WCAG 2.1 A and AA rule axe checks in the real page: contrast, names, states. */
+async function accessibilityFailures(page: Page): Promise<string[]> {
   await waitForStillScreen(page);
-  const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
   return results.violations.flatMap((violation) =>
-    violation.nodes.map((node) => `${node.target.join(' ')}: ${node.any[0]?.message ?? ''}`)
+    violation.nodes
+      .filter((node) => !isInactiveLibraryModal(violation.id, node.html))
+      .map(
+        // The element's own HTML names it better than react-native-web's generated classes.
+        (node) => `${violation.id} ${node.html.slice(0, 200)}: ${node.failureSummary ?? ''}`
+      )
   );
 }
 
-test('every text reads against its background, screen by screen', async ({ page }) => {
+test('every screen passes axe: contrast, names and states (WCAG 2.1 AA)', async ({ page }) => {
   const failures: Record<string, string[]> = {};
   const scan = async (screen: string) => {
-    failures[screen] = await contrastFailures(page);
+    failures[screen] = await accessibilityFailures(page);
   };
 
   await page.goto('/');

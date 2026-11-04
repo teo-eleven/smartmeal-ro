@@ -14,6 +14,7 @@ import { styles } from './foodMood/styles';
 import { getAppTheme } from '../styles/theme';
 import { RECIPES } from '../data/recipes';
 import { isRecipeMatchingDiets } from '../utils/dietCompatibility';
+import { pressedState } from '../utils/pressedState';
 
 
 export interface FoodMoodSwiperProps {
@@ -173,7 +174,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
         <View style={[styles.modeSegment, { borderColor: theme.border, backgroundColor: theme.trackBg }]}>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityState={{ selected: viewMode === 'swipe' }}
+            {...pressedState(viewMode === 'swipe')}
             accessibilityLabel="Mod Swipe Carduri"
             onPress={() => setViewMode('swipe')}
             style={[
@@ -199,7 +200,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityState={{ selected: viewMode === 'grid' }}
+            {...pressedState(viewMode === 'grid')}
             accessibilityLabel="Vizualizare Grilă"
             onPress={() => setViewMode('grid')}
             style={[
@@ -474,7 +475,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
               return (
                 <TouchableOpacity
                   accessibilityRole="checkbox"
-                  accessibilityState={{ checked: isSelected }}
+                  aria-checked={isSelected}
                   accessibilityLabel={`${mood.label}, ${mood.desc}`}
                   key={mood.id}
                   onPress={() => onToggleMood(mood.id)}

@@ -13,6 +13,7 @@ import { Appliance, DayOfWeek, HealthGoalTag, MoodTag, UserPreferences } from '.
 import { HEALTH_GOALS_CATALOG } from '../data/healthTags';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { pressedState } from '../utils/pressedState';
 
 interface QuickFiltersModalProps {
   visible: boolean;
@@ -181,7 +182,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                   return (
                     <TouchableOpacity
                       accessibilityRole="checkbox"
-                      accessibilityState={{ checked: isActive }}
+                      aria-checked={isActive}
                       key={day}
                       onPress={() => toggleDay(day)}
                       style={[
@@ -278,7 +279,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                 {[100, 150, 200, 250, 350].map((amount) => (
                   <TouchableOpacity
                     accessibilityRole="button"
-                    accessibilityState={{ selected: Number(budgetInputText) === amount }}
+                    {...pressedState(Number(budgetInputText) === amount)}
                     key={amount}
                     onPress={() => {
                       setBudgetRon(amount);
@@ -322,7 +323,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                   return (
                     <TouchableOpacity
                       accessibilityRole="checkbox"
-                      accessibilityState={{ checked: isActive }}
+                      aria-checked={isActive}
                       key={mood.id}
                       onPress={() => toggleMood(mood.id)}
                       style={[
@@ -365,7 +366,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                   return (
                     <TouchableOpacity
                       accessibilityRole="checkbox"
-                      accessibilityState={{ checked: isActive }}
+                      aria-checked={isActive}
                       key={app.id}
                       onPress={() => toggleAppliance(app.id)}
                       style={[
@@ -410,7 +411,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                   return (
                     <TouchableOpacity
                       accessibilityRole="checkbox"
-                      accessibilityState={{ checked: isActive }}
+                      aria-checked={isActive}
                       key={goal.id}
                       onPress={() => toggleHealthGoal(goal.id)}
                       style={[

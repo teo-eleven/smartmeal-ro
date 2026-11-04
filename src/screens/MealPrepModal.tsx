@@ -212,7 +212,7 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
                       return (
                         <TouchableOpacity
                           accessibilityRole="checkbox"
-                          accessibilityState={{ checked: isDone }}
+                          aria-checked={isDone}
                           key={task.id}
                           onPress={() => toggleTask(task.id)}
                           activeOpacity={0.75}

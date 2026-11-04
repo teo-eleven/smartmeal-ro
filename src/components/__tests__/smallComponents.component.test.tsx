@@ -46,13 +46,13 @@ describe('BudgetSlider', () => {
   test('renders the budget controls', () => {
     const view = render(<BudgetSlider {...props} />);
     expect(view.toJSON()).toBeTruthy();
-    expect(screen.getByLabelText(/Folosește bugetul sugerat/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Buget sugerat:/ })).toBeTruthy();
   });
 
   test('suggesting a budget reports a number', () => {
     const onChangeBudget = jest.fn();
     render(<BudgetSlider {...props} onChangeBudget={onChangeBudget} />);
-    fireEvent.press(screen.getByLabelText(/Folosește bugetul sugerat/i));
+    fireEvent.press(screen.getByRole('button', { name: /Buget sugerat:/ }));
     expect(onChangeBudget).toHaveBeenCalledWith(expect.any(Number));
   });
 });

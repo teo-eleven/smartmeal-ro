@@ -20,6 +20,56 @@ interface QuickActionsBarProps {
   onOpenMacros: () => void;
 }
 
+interface QuickActionProps {
+  theme: AppTheme;
+  icon: string;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  /** The pantry tool once something is in the pantry. */
+  isHighlighted?: boolean;
+}
+
+/**
+ * One tool button, named by its visible title and subtitle so a voice-control user can say
+ * what they see (WCAG 2.5.3). A hand-written label cannot match on the web, where the title
+ * and subtitle reach axe joined without a space. The emoji is hidden from screen readers.
+ */
+const QuickAction: React.FC<QuickActionProps> = ({
+  theme,
+  icon,
+  title,
+  subtitle,
+  onPress,
+  isHighlighted = false,
+}) => (
+  <TouchableOpacity
+    accessibilityRole="button"
+    onPress={onPress}
+    {...glass('pill')}
+    style={[
+      styles.quickActionBtn,
+      {
+        backgroundColor: isHighlighted ? theme.surfaceTertiary : theme.btnBg,
+        borderColor: isHighlighted ? theme.borderStrong : theme.border,
+      },
+    ]}
+    activeOpacity={0.8}
+  >
+    <Text style={styles.quickActionIcon} aria-hidden>
+      {icon}
+    </Text>
+    <View style={{ flex: 1 }}>
+      <Text style={[styles.quickActionTitle, { color: theme.text }]}>{title}</Text>
+      <Text
+        style={[styles.quickActionSub, { color: isHighlighted ? theme.text : theme.textMuted }]}
+      >
+        {subtitle}
+      </Text>
+    </View>
+  </TouchableOpacity>
+);
+
 /** Pantry matcher, meal prep, weekly macros and the other one-tap tools above the feed. */
 export const QuickActionsBar: React.FC<QuickActionsBarProps> = ({
   theme,
@@ -33,145 +83,75 @@ export const QuickActionsBar: React.FC<QuickActionsBarProps> = ({
   onOpenPantry,
   onOpenMealPrep,
   onOpenMacros,
-}) => (
-  <View
-    {...glass('card')}
-    style={[
-      styles.quickActionsBar,
-      { backgroundColor: theme.card, borderColor: theme.border, maxWidth: contentMaxWidth },
-    ]}
-  >
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityLabel="Reîncarcă și regenerează meniul săptămânal"
-      onPress={() => {
-        void triggerReload(
-          {
-            title: 'Regenerăm meniul săptămânal...',
-            subtitle: 'Selectăm variante culinare noi adaptate preferințelor tale...',
-            icon: '🔄',
-            steps: [
-              'Verificăm ingredientele la preț de magazin',
-              'Asigurăm varietatea meselor fără repetiții',
-              'Actualizăm lista de cumpărături pe 7 raioane',
-            ],
-          },
-          () => {
-            reshufflePlan();
-          }
-        );
-      }}
-      {...glass('pill')}
-      style={[styles.quickActionBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
-      activeOpacity={0.8}
-    >
-      <Text style={styles.quickActionIcon}>🔄</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.quickActionTitle, { color: theme.text }]}>Regenerează Meniul</Text>
-        <Text style={[styles.quickActionSub, { color: theme.textMuted }]}>
-          Variante noi pe săptămână
-        </Text>
-      </View>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityLabel="Planurile mele salvate"
-      onPress={() => onOpenSavedPlans()}
-      {...glass('pill')}
-      style={[styles.quickActionBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
-      activeOpacity={0.8}
-    >
-      <Text style={styles.quickActionIcon}>⭐</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.quickActionTitle, { color: theme.text }]}>Planurile Mele</Text>
-        <Text style={[styles.quickActionSub, { color: theme.textMuted }]}>
-          {savedPlanCount > 0 ? `${savedPlanCount} salvate` : 'Salvează săptămâna curentă'}
-        </Text>
-      </View>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityLabel="Compară prețul coșului între supermarketuri"
-      onPress={() => onOpenStoreComparison()}
-      {...glass('pill')}
-      style={[styles.quickActionBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
-      activeOpacity={0.8}
-    >
-      <Text style={styles.quickActionIcon}>🏷️</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.quickActionTitle, { color: theme.text }]}>Compară Magazine</Text>
-        <Text style={[styles.quickActionSub, { color: theme.textMuted }]}>
-          Același coș la toate cele 8 lanțuri
-        </Text>
-      </View>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityLabel="Ce am în Cămară"
-      onPress={() => onOpenPantry()}
-      {...glass('pill')}
+}) => {
+  const pantryCount = preferences.pantryInventory?.length || 0;
+  return (
+    <View
+      {...glass('card')}
       style={[
-        styles.quickActionBtn,
-        {
-          backgroundColor:
-            (preferences.pantryInventory?.length || 0) > 0 ? theme.surfaceTertiary : theme.btnBg,
-          borderColor:
-            (preferences.pantryInventory?.length || 0) > 0 ? theme.borderStrong : theme.border,
-        },
+        styles.quickActionsBar,
+        { backgroundColor: theme.card, borderColor: theme.border, maxWidth: contentMaxWidth },
       ]}
-      activeOpacity={0.8}
     >
-      <Text style={styles.quickActionIcon}>🏠</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.quickActionTitle, { color: theme.text }]}>Ce am în Cămară</Text>
-        <Text
-          style={[
-            styles.quickActionSub,
+      <QuickAction
+        theme={theme}
+        icon="🔄"
+        title="Regenerează Meniul"
+        subtitle="Variante noi pe săptămână"
+        onPress={() => {
+          void triggerReload(
             {
-              color: (preferences.pantryInventory?.length || 0) > 0 ? theme.text : theme.textMuted,
+              title: 'Regenerăm meniul săptămânal...',
+              subtitle: 'Selectăm variante culinare noi adaptate preferințelor tale...',
+              icon: '🔄',
+              steps: [
+                'Verificăm ingredientele la preț de magazin',
+                'Asigurăm varietatea meselor fără repetiții',
+                'Actualizăm lista de cumpărături pe 7 raioane',
+              ],
             },
-          ]}
-        >
-          {(preferences.pantryInventory?.length || 0) > 0
-            ? `${preferences.pantryInventory?.length} deduse din coș ✓`
-            : 'Bifează stocul de acasă'}
-        </Text>
-      </View>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityLabel="Ghid Meal Prep"
-      onPress={() => onOpenMealPrep()}
-      {...glass('pill')}
-      style={[styles.quickActionBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
-      activeOpacity={0.8}
-    >
-      <Text style={styles.quickActionIcon}>🍱</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.quickActionTitle, { color: theme.text }]}>Ghid Meal Prep</Text>
-        <Text style={[styles.quickActionSub, { color: theme.textMuted }]}>
-          Batch cooking (90 min)
-        </Text>
-      </View>
-    </TouchableOpacity>
-
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityLabel="Macro Săptămână"
-      onPress={() => onOpenMacros()}
-      {...glass('pill')}
-      style={[styles.quickActionBtn, { backgroundColor: theme.btnBg, borderColor: theme.border }]}
-      activeOpacity={0.8}
-    >
-      <Text style={styles.quickActionIcon}>📊</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.quickActionTitle, { color: theme.text }]}>Macro Săptămână</Text>
-        <Text style={[styles.quickActionSub, { color: theme.textMuted }]}>Calorii & nutrienți</Text>
-      </View>
-    </TouchableOpacity>
-  </View>
-);
+            () => {
+              reshufflePlan();
+            }
+          );
+        }}
+      />
+      <QuickAction
+        theme={theme}
+        icon="⭐"
+        title="Planurile Mele"
+        subtitle={savedPlanCount > 0 ? `${savedPlanCount} salvate` : 'Salvează săptămâna curentă'}
+        onPress={() => onOpenSavedPlans()}
+      />
+      <QuickAction
+        theme={theme}
+        icon="🏷️"
+        title="Compară Magazine"
+        subtitle="Același coș la toate cele 8 lanțuri"
+        onPress={() => onOpenStoreComparison()}
+      />
+      <QuickAction
+        theme={theme}
+        icon="🏠"
+        title="Ce am în Cămară"
+        subtitle={pantryCount > 0 ? `${pantryCount} deduse din coș ✓` : 'Bifează stocul de acasă'}
+        onPress={() => onOpenPantry()}
+        isHighlighted={pantryCount > 0}
+      />
+      <QuickAction
+        theme={theme}
+        icon="🍱"
+        title="Ghid Meal Prep"
+        subtitle="Batch cooking (90 min)"
+        onPress={() => onOpenMealPrep()}
+      />
+      <QuickAction
+        theme={theme}
+        icon="📊"
+        title="Macro Săptămână"
+        subtitle="Calorii & nutrienți"
+        onPress={() => onOpenMacros()}
+      />
+    </View>
+  );
+};

@@ -44,13 +44,13 @@ describe('gătitul dublu de pe tablă', () => {
     render(<MealBoardScreen isDark={false} />);
 
     // Three cooking days, so two of them have a next day to reheat on.
-    expect(screen.getAllByLabelText('Gătesc porție dublă și reîncălzesc mâine')).toHaveLength(2);
+    expect(screen.getAllByLabelText('Gătesc dublu · mâine doar reîncălzesc')).toHaveLength(2);
   });
 
   test('apăsarea marchează ziua următoare ca reîncălzită', () => {
     render(<MealBoardScreen isDark={false} />);
 
-    fireEvent.press(screen.getAllByLabelText('Gătesc porție dublă și reîncălzesc mâine')[0]);
+    fireEvent.press(screen.getAllByLabelText('Gătesc dublu · mâine doar reîncălzesc')[0]);
 
     const tuesday = useAppStore.getState().currentPlan!.days[1];
     expect(tuesday.meals[0].isLeftover).toBe(true);
@@ -58,7 +58,7 @@ describe('gătitul dublu de pe tablă', () => {
 
   test('ziua reîncălzită oferă întoarcerea', () => {
     render(<MealBoardScreen isDark={false} />);
-    fireEvent.press(screen.getAllByLabelText('Gătesc porție dublă și reîncălzesc mâine')[0]);
+    fireEvent.press(screen.getAllByLabelText('Gătesc dublu · mâine doar reîncălzesc')[0]);
 
     expect(screen.getByLabelText('Gătesc din nou în ziua asta')).toBeTruthy();
   });

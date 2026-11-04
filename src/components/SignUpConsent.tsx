@@ -44,7 +44,7 @@ export const SignUpConsent: React.FC<SignUpConsentProps> = ({ consent, onChange,
           <TouchableOpacity
             key={row.key}
             accessibilityRole="checkbox"
-            accessibilityState={{ checked: isChecked }}
+            aria-checked={isChecked}
             accessibilityLabel={row.label}
             onPress={() => onChange({ ...consent, [row.key]: !isChecked })}
             activeOpacity={0.7}

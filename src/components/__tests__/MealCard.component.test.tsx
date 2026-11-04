@@ -6,6 +6,12 @@ import { MealPlanDay, PlannedMeal } from '../../types';
 
 const recipe = RECIPES[0];
 
+/** The picture's spoken name: the dish, its main ingredients, then "Vezi rețeta." */
+function openRecipeLabel(title: string): RegExp {
+  const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${escaped}\\. .+\\. Vezi rețeta\\.$`);
+}
+
 function buildMeal(overrides: Partial<PlannedMeal> = {}): PlannedMeal {
   return {
     id: 'monday-dinner',
@@ -265,7 +271,7 @@ describe('MealCard, butoane imbricate', () => {
   test('atingerea imaginii deschide în continuare rețeta', () => {
     const onPressRecipe = render_();
 
-    fireEvent.press(screen.getByLabelText(`${recipe.title}. Vezi rețeta.`));
+    fireEvent.press(screen.getByLabelText(openRecipeLabel(recipe.title)));
 
     expect(onPressRecipe).toHaveBeenCalled();
   });
@@ -295,7 +301,7 @@ describe('ștergerea desertului', () => {
   test('✕ nu e în interiorul butonului care deschide rețeta', () => {
     showDessert();
 
-    const openRecipe = screen.getByLabelText(`${recipe.title}. Vezi rețeta.`);
+    const openRecipe = screen.getByLabelText(openRecipeLabel(recipe.title));
 
     expect(
       openRecipe.findAll(
@@ -317,7 +323,7 @@ describe('ștergerea desertului', () => {
   test('imaginea deschide în continuare rețeta', () => {
     const { onPressRecipe } = showDessert();
 
-    fireEvent.press(screen.getByLabelText(`${recipe.title}. Vezi rețeta.`));
+    fireEvent.press(screen.getByLabelText(openRecipeLabel(recipe.title)));
 
     expect(onPressRecipe).toHaveBeenCalledTimes(1);
   });

@@ -187,7 +187,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
 
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityState={{ disabled: currentPantry.length === 0 }}
+                aria-disabled={currentPantry.length === 0}
                 disabled={currentPantry.length === 0}
                 onPress={() => setIsConfirmingClear(true)}
                 style={[
@@ -238,7 +238,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
                 return (
                   <TouchableOpacity
                     accessibilityRole="checkbox"
-                    accessibilityState={{ checked: isSelected }}
+                    aria-checked={isSelected}
                     key={item.id}
                     onPress={() => togglePantryItem(item.id)}
                     activeOpacity={0.75}

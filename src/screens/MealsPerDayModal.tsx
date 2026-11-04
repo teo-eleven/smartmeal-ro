@@ -16,6 +16,7 @@ import { DAY_LABELS_RO } from '../constants/days';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { useShallow } from 'zustand/react/shallow';
 import { titleFont } from '../styles/typography';
+import { pressedState } from '../utils/pressedState';
 
 interface MealsPerDayModalProps {
   visible: boolean;
@@ -208,7 +209,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                     <TouchableOpacity
                       key={cnt}
                       accessibilityRole="button"
-                      accessibilityState={{ selected: isActive }}
+                      {...pressedState(isActive)}
                       onPress={() => handleSwitchCount(cnt)}
                       style={[
                         styles.segmentBtn,
@@ -350,7 +351,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                           <TouchableOpacity
                             key={slot}
                             accessibilityRole="checkbox"
-                            accessibilityState={{ checked: isSelected }}
+                            aria-checked={isSelected}
                             onPress={() => handleToggleSlotForDay(day.dayOfWeek, slot)}
                             style={[
                               styles.slotPill,

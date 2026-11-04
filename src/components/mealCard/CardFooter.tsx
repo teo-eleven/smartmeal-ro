@@ -110,7 +110,7 @@ export const CardFooter: React.FC<CardFooterProps> = ({
       : onCookDouble && (
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Gătesc porție dublă și reîncălzesc mâine"
+            accessibilityLabel="Gătesc dublu · mâine doar reîncălzesc"
             onPress={onCookDouble}
             style={[
               styles.leftoverBtn,
