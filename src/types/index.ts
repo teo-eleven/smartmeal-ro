@@ -94,11 +94,11 @@ export interface RecipeNutrition {
 }
 
 export type HealthGoalTag =
-  | 'anti_inflammatory' // Antiinflamator
-  | 'pcos_friendly' // Potrivit pentru SOP (Sindrom Ovar Polichistic)
-  | 'diabetic_friendly' // Potrivit pentru Diabet (indice glicemic mic)
+  | 'anti_inflammatory' // Stil mediteranean
+  | 'pcos_friendly' // Echilibrat
+  | 'diabetic_friendly' // Atent la zaharuri
   | 'high_fiber' // Bogat în fibre
-  | 'heart_healthy' // Bun pentru inimă
+  | 'heart_healthy' // Grăsimi bune, puțină sare
   | 'pork_free'; // Fără carne de porc (Halal)
 
 export interface Recipe {

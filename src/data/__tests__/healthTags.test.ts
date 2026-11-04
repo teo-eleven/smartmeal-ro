@@ -22,15 +22,14 @@ describe('Health Goals Catalog & Tags', () => {
       expect(goal.shortBadgeRo).toBeTruthy();
       expect(goal.icon).toBeTruthy();
       expect(goal.descriptionRo).toBeTruthy();
-      expect(goal.benefitRo).toBeTruthy();
     });
   });
 
   it('retrieves health goal metadata by ID', () => {
     const meta = getHealthGoalMeta('anti_inflammatory');
     expect(meta).toBeDefined();
-    expect(meta?.labelRo).toBe('Antiinflamator');
-    expect(meta?.icon).toBe('🩺');
+    expect(meta?.labelRo).toBe('Stil mediteranean');
+    expect(meta?.icon).toBe('🫒');
   });
 
   it('identifies recipes containing pork and differentiates pork-free recipes', () => {

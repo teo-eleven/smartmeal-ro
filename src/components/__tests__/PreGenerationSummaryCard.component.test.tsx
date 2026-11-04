@@ -25,8 +25,8 @@ describe('PreGenerationSummaryCard Component', () => {
     expect(screen.getByText(/2 persoane • 12 porții totale/)).toBeTruthy();
     expect(screen.getByText(/300 lei max/)).toBeTruthy();
     expect(screen.getByText('Omnivor')).toBeTruthy();
-    expect(screen.getByText(/Antiinflamator/)).toBeTruthy();
-    expect(screen.getByText(/SOP/)).toBeTruthy();
+    expect(screen.getByText(/Mediteranean/)).toBeTruthy();
+    expect(screen.getByText(/Echilibrat/)).toBeTruthy();
   });
 
   it('adapts calorie and protein targets according to preferences', () => {

@@ -3,53 +3,53 @@ import { INGREDIENTS } from './ingredients';
 
 export interface HealthGoalMeta {
   id: HealthGoalTag;
+  /**
+   * What is on the plate, never what it does to the body: no "prevents", "reduces" or disease
+   * names here (EU Regulation 1924/2006; src/data/__tests__/healthClaims.test.ts). The keys
+   * stay as they were, so goals already saved keep working.
+   */
   labelRo: string;
   shortBadgeRo: string;
   icon: string;
   descriptionRo: string;
-  benefitRo: string;
 }
 
 export const HEALTH_GOALS_CATALOG: HealthGoalMeta[] = [
   {
     id: 'anti_inflammatory',
-    labelRo: 'Antiinflamator',
-    shortBadgeRo: 'Antiinflamator',
-    icon: '🩺',
-    descriptionRo: 'Fără zahăr rafinat, bogat în omega-3, antioxidanți și ulei de măsline.',
-    benefitRo: 'Reduce inflamația cronică, susține imunitatea și articulațiile.',
+    labelRo: 'Stil mediteranean',
+    shortBadgeRo: 'Mediteranean',
+    icon: '🫒',
+    descriptionRo: 'Pește, legume, leguminoase, nuci și ulei de măsline; fără zahăr rafinat.',
   },
   {
     id: 'pcos_friendly',
-    labelRo: 'SOP (Ovare Polichistice)',
-    shortBadgeRo: 'SOP / Hormonal',
-    icon: '🌸',
-    descriptionRo: 'Indice glicemic scăzut, proteine de calitate și echilibru hormonal.',
-    benefitRo: 'Stabilizează insulina și previne fluctuațiile glicemice.',
+    labelRo: 'Echilibrat',
+    shortBadgeRo: 'Echilibrat',
+    icon: '⚖️',
+    descriptionRo:
+      'Proteine la fiecare masă, carbohidrați din cereale integrale și grăsimi din pește, nuci, avocado.',
   },
   {
     id: 'diabetic_friendly',
-    labelRo: 'Diabet & Glicemie Stabilă',
-    shortBadgeRo: 'IG Mic / Diabet',
-    icon: '🩸',
-    descriptionRo: 'Carbohidrați complecși, indice glicemic mic, eliberare treptată.',
-    benefitRo: 'Previne vârfurile de zahăr în sânge și oferă energie constantă.',
+    labelRo: 'Atent la zaharuri',
+    shortBadgeRo: 'Puține zaharuri',
+    icon: '🥣',
+    descriptionRo: 'Fără zahăr adăugat, carbohidrați din cereale integrale și leguminoase.',
   },
   {
     id: 'high_fiber',
-    labelRo: 'Bogat în Fibre',
+    labelRo: 'Bogat în fibre',
     shortBadgeRo: 'Bogat în fibre',
     icon: '🌾',
-    descriptionRo: 'Legume proaspete, leguminoase, cereale integrale și semințe.',
-    benefitRo: 'Digestie sănătoasă, microbiom echilibrat și sațietate crescută.',
+    descriptionRo: 'Legume, leguminoase, cereale integrale și semințe la fiecare masă.',
   },
   {
     id: 'heart_healthy',
-    labelRo: 'Sănătos pentru Inimă',
-    shortBadgeRo: 'Cardio-Protector',
-    icon: '🫀',
-    descriptionRo: 'Sărac în grăsimi saturate și sodiu, bogat în grăsimi monosaturate.',
-    benefitRo: 'Protecție cardiovasculară și susținerea tensiunii arteriale optime.',
+    labelRo: 'Grăsimi bune, puțină sare',
+    shortBadgeRo: 'Puțină sare',
+    icon: '🐟',
+    descriptionRo: 'Pește, ulei de măsline și nuci în locul grăsimilor saturate; sare puțină.',
   },
   {
     id: 'pork_free',
@@ -57,7 +57,6 @@ export const HEALTH_GOALS_CATALOG: HealthGoalMeta[] = [
     shortBadgeRo: 'Fără porc',
     icon: '🥩',
     descriptionRo: 'Exclude complet carnea de porc, mezelurile și untura din meniu.',
-    benefitRo: 'Rețete exclusive cu pui, curcan, vită, pește sau 100% vegetale.',
   },
 ];
 

@@ -78,19 +78,19 @@ describe('TESTARE EXHAUSTIVĂ: Toate butoanele și scenariile din aplicație', (
       expect(useAppStore.getState().preferences.dietTypes).toContain('keto');
 
       // Obiective de Sănătate
-      fireEvent.press(screen.getByText('Antiinflamator'));
+      fireEvent.press(screen.getByText('Stil mediteranean'));
       expect(useAppStore.getState().preferences.healthGoalTags).toContain('anti_inflammatory');
 
-      fireEvent.press(screen.getByText('SOP (Ovare Polichistice)'));
+      fireEvent.press(screen.getByText('Echilibrat'));
       expect(useAppStore.getState().preferences.healthGoalTags).toContain('pcos_friendly');
 
-      fireEvent.press(screen.getByText('Diabet & Glicemie Stabilă'));
+      fireEvent.press(screen.getByText('Atent la zaharuri'));
       expect(useAppStore.getState().preferences.healthGoalTags).toContain('diabetic_friendly');
 
-      fireEvent.press(screen.getByText('Bogat în Fibre'));
+      fireEvent.press(screen.getByText('Bogat în fibre'));
       expect(useAppStore.getState().preferences.healthGoalTags).toContain('high_fiber');
 
-      fireEvent.press(screen.getByText('Sănătos pentru Inimă'));
+      fireEvent.press(screen.getByText('Grăsimi bune, puțină sare'));
       expect(useAppStore.getState().preferences.healthGoalTags).toContain('heart_healthy');
 
       fireEvent.press(screen.getByText('Fără carne de porc (Halal)'));

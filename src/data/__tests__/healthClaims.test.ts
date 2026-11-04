@@ -16,7 +16,7 @@ describe('health goals describe food, not treatment', () => {
   test.each(HEALTH_GOALS_CATALOG.map((goal) => [goal.id, goal] as const))(
     '%s makes no medical promise',
     (_id, goal) => {
-      const texts = [goal.labelRo, goal.shortBadgeRo, goal.descriptionRo, goal.benefitRo];
+      const texts = [goal.labelRo, goal.shortBadgeRo, goal.descriptionRo];
       expect(texts.filter((text) => MEDICAL_CLAIM.test(text))).toEqual([]);
     }
   );
