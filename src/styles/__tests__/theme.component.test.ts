@@ -5,6 +5,7 @@ import {
   getEmeraldGlassDock,
   getEmeraldGlassPill,
   injectEmeraldGlassStyles,
+  withAlpha,
 } from '../theme';
 
 describe('theme tokens', () => {
@@ -180,4 +181,38 @@ describe('injectEmeraldGlassStyles', () => {
     expect(createdCount).toBe(0);
     expect(existing.textContent).not.toBe('old');
   });
+});
+
+describe('glass surfaces on the web', () => {
+  const originalPlatform = Platform.OS;
+  beforeEach(() => Object.defineProperty(Platform, 'OS', { value: 'web', configurable: true }));
+  afterEach(() =>
+    Object.defineProperty(Platform, 'OS', { value: originalPlatform, configurable: true })
+  );
+
+  test.each([true, false])(
+    'the card and the dock blur what is behind them (dark: %s)',
+    (isDark) => {
+      const card = getEmeraldGlassCard(isDark) as Record<string, unknown>;
+      const dock = getEmeraldGlassDock(isDark) as Record<string, unknown>;
+
+      expect(card.backdropFilter).toMatch(/blur/);
+      expect(dock.backdropFilter).toMatch(/blur/);
+      // Translucent on the web, so the blur has something to show through.
+      expect(card.backgroundColor).toMatch(/^rgba\(/);
+    }
+  );
+});
+
+describe('withAlpha', () => {
+  test('turns a palette tone into rgba at the given opacity', () => {
+    expect(withAlpha('#B08868', 0.3)).toBe('rgba(176, 136, 104, 0.3)');
+  });
+
+  test.each(['#abc', '#B08868FF', 'B08868', 'bronze'])(
+    'refuses %s instead of drawing rgba(NaN)',
+    (hex) => {
+      expect(() => withAlpha(hex, 0.5)).toThrow(/#RRGGBB/);
+    }
+  );
 });

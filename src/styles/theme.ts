@@ -42,6 +42,8 @@ const P = FOREST_WALNUT_PALETTE;
 
 /** A palette tone at the given opacity, as rgba(), for glass, glows and hairlines. */
 export function withAlpha(hex: string, alpha: number): string {
+  // A short or 8-digit code would quietly become rgba(NaN, ...), an invisible colour.
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) throw new Error(`withAlpha expects #RRGGBB, got ${hex}`);
   const [r, g, b] = [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
@@ -90,6 +92,8 @@ export const APPLE_IOS_THEME = {
     success: P.sageDark,
     onSuccess: P.forestNight,
     shadowColor: P.shadowInk,
+    /** The web shadow under a lifted card (the active craving card). */
+    liftShadow: `0 10px 24px ${withAlpha(P.shadowInk, 0.28)}`,
     /** Text on a supermarket's own brand colour (Lidl blue, Kaufland red...). */
     onBrand: P.white,
     successBorder: withAlpha(P.sageDark, 0.4),
@@ -162,6 +166,7 @@ export const APPLE_IOS_THEME = {
     success: P.sageLight,
     onSuccess: P.creamLight,
     shadowColor: P.shadowInk,
+    liftShadow: `0 10px 24px ${withAlpha(P.shadowInk, 0.28)}`,
     onBrand: P.white,
     successBorder: withAlpha(P.sageLight, 0.4),
     warningBorder: withAlpha(P.emberLight, 0.4),

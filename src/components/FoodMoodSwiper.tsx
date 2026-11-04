@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
+  ViewStyle,
 } from 'react-native';
 import { DietType, MoodTag } from '../types';
 import { MOOD_OPTIONS_CATALOG, MoodOptionInfo } from '../utils/moodCatalog';
@@ -318,7 +319,11 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                     activeOpacity={0.88}
                     style={[
                       styles.carouselCardInner,
-                      isActive && [styles.activeCardShadow, { shadowColor: theme.shadowColor }],
+                      isActive && [
+                        styles.activeCardShadow,
+                        { shadowColor: theme.shadowColor },
+                        Platform.OS === 'web' && ({ boxShadow: theme.liftShadow } as unknown as ViewStyle),
+                      ],
                       {
                         backgroundColor: theme.card,
                         borderColor: isSelected

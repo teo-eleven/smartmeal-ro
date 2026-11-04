@@ -14,7 +14,8 @@ function sourceFiles(dir: string): string[] {
     return /\.tsx$/.test(entry.name) ? [full] : [];
   });
 }
-const FILES = sourceFiles(SRC).map((file) => ({
+// App.tsx sits beside src, and holds the top bar's view switch.
+const FILES = [...sourceFiles(SRC), path.join(SRC, '..', 'App.tsx')].map((file) => ({
   name: path.relative(SRC, file),
   source: fs.readFileSync(file, 'utf8'),
 }));

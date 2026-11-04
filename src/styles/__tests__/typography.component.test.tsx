@@ -1,9 +1,9 @@
 import React from 'react';
 import { Text } from 'react-native';
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 import { useFonts } from 'expo-font';
 import { titleFont } from '../typography';
-import { TITLE_FONT_FILES, useTitleFont } from '../useTitleFont';
+import { TITLE_FONT_FILES, TITLE_FONT_TIMEOUT_MS, useTitleFont } from '../useTitleFont';
 
 jest.mock('expo-font', () => ({ useFonts: jest.fn() }));
 const mockUseFonts = useFonts as jest.MockedFunction<typeof useFonts>;
@@ -35,6 +35,20 @@ describe('încărcarea fontului', () => {
     mockUseFonts.mockReturnValue([true, null]);
     render(<Probe />);
     expect(screen.getByText('gata')).toBeTruthy();
+  });
+
+  test('un font care se blochează la încărcare nu ține aplicația pe loc', () => {
+    jest.useFakeTimers();
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockUseFonts.mockReturnValue([false, null]);
+    render(<Probe />);
+    expect(screen.getByText('se încarcă')).toBeTruthy();
+
+    act(() => jest.advanceTimersByTime(TITLE_FONT_TIMEOUT_MS));
+
+    expect(screen.getByText('gata')).toBeTruthy();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('[SmartMeal]'));
+    jest.useRealTimers();
   });
 
   test('un font care nu se încarcă nu blochează aplicația și e raportat', () => {

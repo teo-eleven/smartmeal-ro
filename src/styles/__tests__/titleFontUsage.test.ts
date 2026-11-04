@@ -37,9 +37,15 @@ function styleBlock(source: string, style: string): string | undefined {
 }
 
 test.each(TITLE_STYLES)('%s › %s is set in the title font', (file, style) => {
-  const block = styleBlock(fs.readFileSync(path.join(SRC, file), 'utf8'), style);
+  // Comments out, so a "...titleFont" or "fontWeight" in a comment proves nothing.
+  const source = fs
+    .readFileSync(path.join(SRC, file), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '');
+  const block = styleBlock(source, style);
   expect(block).toBeDefined();
-  expect(block).toContain('...titleFont');
+  // A spread at the start of the block or after a comma, on its own line or inline.
+  expect(block).toMatch(/(?:^|[{,])\s*\.\.\.titleFont\s*(?:,|$)/m);
   // A heavier fontWeight next to the Bold file makes Android fall back to the system font.
   expect(block).not.toMatch(/fontWeight/);
 });

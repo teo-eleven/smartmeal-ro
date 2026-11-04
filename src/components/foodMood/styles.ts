@@ -84,7 +84,6 @@ export const styles = StyleSheet.create({
   activeCardShadow: {
     ...Platform.select({
       web: {
-        boxShadow: '0 10px 24px rgba(0,0,0,0.28)',
         userSelect: 'none',
       } as unknown as ViewStyle,
       default: {

@@ -15,10 +15,11 @@ const SETTLE_TIMEOUT_MS = 4000;
  * Screens fade their content in, and axe measures a half-faded text as a grey one. Waits
  * for the CSS animations to end (a Modal only becomes a "dialog" once its own has) and then
  * until every inline style holds still between two samples. Looping animations (a loading
- * bar) never end, so they are skipped, and the wait gives up after SETTLE_TIMEOUT_MS.
+ * bar) never end, so they are skipped. Each wait gives up after SETTLE_TIMEOUT_MS and
+ * leaves a warning on the test, so a scan of a moving screen is never silent.
  */
-async function waitForStillScreen(page: Page): Promise<void> {
-  await page.evaluate(() =>
+async function waitForStillScreen(page: Page, screen: string): Promise<void> {
+  const animationsEnded = page.evaluate(() =>
     Promise.all(
       document
         .getAnimations()
@@ -26,23 +27,33 @@ async function waitForStillScreen(page: Page): Promise<void> {
         .map((animation) => animation.finished.catch(() => undefined))
     )
   );
+  const isTimeUp = await Promise.race([
+    // A page closed mid-wait rejects the evaluate; that is not a test failure here.
+    animationsEnded.then(() => false).catch(() => true),
+    page.waitForTimeout(SETTLE_TIMEOUT_MS).then(() => true),
+  ]);
   const styles = () =>
     page.evaluate(() =>
       [...document.querySelectorAll('[style]')].map((el) => el.getAttribute('style')).join('|')
     );
   const deadline = Date.now() + SETTLE_TIMEOUT_MS;
   let before = await styles();
-  while (Date.now() < deadline) {
+  while (!isTimeUp && Date.now() < deadline) {
     await page.waitForTimeout(SETTLE_SAMPLE_MS);
     const after = await styles();
     if (after === before) return;
     before = after;
   }
+  // Scanning a screen still in motion can misread a fading colour: say so in the report.
+  test.info().annotations.push({
+    type: 'warning',
+    description: `${screen}: still moving after ${SETTLE_TIMEOUT_MS} ms, scanned anyway`,
+  });
 }
 
 /** Every WCAG 2.1 A and AA rule axe checks in the real page: contrast, names, states. */
-async function accessibilityFailures(page: Page): Promise<string[]> {
-  await waitForStillScreen(page);
+async function accessibilityFailures(page: Page, screen: string): Promise<string[]> {
+  await waitForStillScreen(page, screen);
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze();
@@ -57,7 +68,7 @@ async function accessibilityFailures(page: Page): Promise<string[]> {
 test('every screen passes axe: contrast, names and states (WCAG 2.1 AA)', async ({ page }) => {
   const failures: Record<string, string[]> = {};
   const scan = async (screen: string) => {
-    failures[screen] = await accessibilityFailures(page);
+    failures[screen] = await accessibilityFailures(page, screen);
   };
 
   await page.goto('/');

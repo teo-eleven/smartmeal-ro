@@ -2,7 +2,7 @@
 // assets/source/mark.svg, with the Chromium Playwright already installs: `npm run icons`.
 //
 // Usage: node scripts/renderIcons.mjs [out-dir]   (default: assets)
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -38,6 +38,7 @@ function page({ size, background, scale }) {
       viewBox="0 0 1024 1024">${fill}${mark}</svg></body></html>`;
 }
 
+mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch();
 try {
   for (const asset of ASSETS) {

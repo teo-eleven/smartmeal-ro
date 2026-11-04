@@ -39,6 +39,7 @@ import { LoadingToast } from './src/components/LoadingToast';
 import { useShallow } from 'zustand/react/shallow';
 import { titleFont } from './src/styles/typography';
 import { useTitleFont } from './src/styles/useTitleFont';
+import { pressedState } from './src/utils/pressedState';
 
 function AppShell() {
   const [authModalVisible, setAuthModalVisible] = useState(false);
@@ -356,7 +357,7 @@ function AppShell() {
             >
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityState={{ selected: activeView === 'meals' }}
+                {...pressedState(activeView === 'meals')}
                 onPress={() => setActiveView('meals')}
                 activeOpacity={0.8}
                 {...glass(activeView === 'meals' ? 'pill-active' : 'pill')}
@@ -383,7 +384,7 @@ function AppShell() {
 
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityState={{ selected: activeView === 'grocery' }}
+                {...pressedState(activeView === 'grocery')}
                 onPress={() => setActiveView('grocery')}
                 activeOpacity={0.8}
                 {...glass(activeView === 'grocery' ? 'pill-active' : 'pill')}
@@ -454,7 +455,7 @@ function AppShell() {
             >
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityState={{ selected: activeView === 'meals' }}
+                {...pressedState(activeView === 'meals')}
                 onPress={() => setActiveView('meals')}
                 activeOpacity={0.8}
                 {...glass(activeView === 'meals' ? 'pill-active' : 'pill')}
@@ -481,7 +482,7 @@ function AppShell() {
 
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityState={{ selected: activeView === 'grocery' }}
+                {...pressedState(activeView === 'grocery')}
                 onPress={() => setActiveView('grocery')}
                 activeOpacity={0.8}
                 {...glass(activeView === 'grocery' ? 'pill-active' : 'pill')}

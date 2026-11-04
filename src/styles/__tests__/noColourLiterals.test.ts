@@ -15,7 +15,11 @@ const OWN_COLOURS_ALLOWED = [
   'components/RecipeVisual.tsx',
 ];
 const SRC = path.join(__dirname, '..', '..');
-const COLOUR_LITERAL = /['"`](#[0-9a-f]{3,8}|rgba?\([^'"`]*\))['"`]/gi;
+// A colour anywhere inside a string, so one inside a shadow or a border ('0 2px 8px #000')
+// is caught too, not only a string that is nothing but the colour.
+const COLOUR_LITERAL = /['"`][^'"`\n]*?(#[0-9a-f]{3,8}\b|(?:rgba?|hsla?)\([^'"`)]*\))/gi;
+// App.tsx sits beside src, and draws the top bar.
+const APP_ROOT = path.join(SRC, '..', 'App.tsx');
 
 function sourceFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -26,7 +30,7 @@ function sourceFiles(dir: string): string[] {
 }
 
 test('no file outside the allowed list draws a colour of its own', () => {
-  const offenders = sourceFiles(SRC)
+  const offenders = [...sourceFiles(SRC), APP_ROOT]
     .filter((file) => !OWN_COLOURS_ALLOWED.includes(path.relative(SRC, file)))
     .flatMap((file) =>
       fs
