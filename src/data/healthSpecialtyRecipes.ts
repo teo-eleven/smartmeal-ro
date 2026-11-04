@@ -5,7 +5,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'somon_cuptor_dovlecei_turmeric',
     title: 'File de somon la cuptor cu dovlecei și turmeric',
     description:
-      'Somon bogat în omega-3 rumenit fin la cuptor, asezonat cu turmeric antiinflamator, dovlecei fragezi și lămâie.',
+      'Somon bogat în omega-3 rumenit fin la cuptor, asezonat cu turmeric, dovlecei fragezi și lămâie.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 18,
     dietType: 'pescatarian',
@@ -35,7 +35,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'supa_crema_conopida_turmeric_cocos',
     title: 'Supă cremă de conopidă cu turmeric și lapte de cocos',
     description:
-      'Supă cremă catifelată, puternic antiinflamatoare, infuzată cu turmeric auriu, lapte de cocos și semințe crocante de dovleac.',
+      'Supă cremă catifelată de conopidă, cu turmeric auriu, lapte de cocos și semințe crocante de dovleac.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 20,
     dietType: 'vegan',
@@ -122,7 +122,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'bowl_curcan_quinoa_avocado',
     title: 'Bol echilibrat cu piept de curcan, quinoa și avocado',
     description:
-      'Preparat hormonal optim (SOP/PCOS) cu proteine slabe din curcan, carbohidrați lenți din quinoa și grăsimi sănătoase din avocado.',
+      'Bol cu piept de curcan, quinoa, avocado și castraveți, stropit cu lămâie și ulei de măsline.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 18,
     dietType: 'omnivore',
@@ -151,7 +151,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'budinca_chia_migdale_scortisoara',
     title: 'Budincă de chia cu lapte de migdale și scorțișoară',
     description:
-      'Desert sau mic dejun stabilizator de insulină, bogat în fibre solubile, omega-3 și scorțișoară ce reduce glicemia.',
+      'Budincă de chia cu lapte de migdale, scorțișoară și nuci, bogată în fibre, fără zahăr adăugat.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 0,
     dietType: 'vegan',
@@ -177,7 +177,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'tocanita_linte_ciuperci_naut_pcos',
     title: 'Tocăniță de linte și ciuperci cu năut și cimbru',
     description:
-      'Mâncare sățioasă cu eliberare treptată de glucoză, ideală pentru rezistența la insulină și sănătatea hormonală.',
+      'Tocăniță sățioasă de linte, năut și ciuperci în sos de roșii cu cimbru, plină de proteine vegetale.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 25,
     dietType: 'vegan',
@@ -294,7 +294,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'omleta_ciuperci_telemea',
     title: 'Omletă pufoasă cu ciuperci champignon și telemea',
     description:
-      'Mic dejun proteic fără carbohidrați, care oferă sațietate prelungită și menține glicemia perfect stabilă.',
+      'Mic dejun proteic cu ouă, ciuperci, spanac și telemea, fără pâine.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 10,
     dietType: 'vegetarian',
@@ -410,7 +410,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'pastrav_gratar_marar_lamaie',
     title: 'Păstrăv rumenit la tigaie cu mujdei lejer și lămâie',
     description:
-      'Păstrăv proaspăt românesc cu carne fragedă și grăsimi cardio-protectoare, servit cu sos lejer de lămâie și usturoi.',
+      'Păstrăv proaspăt românesc la grătar, cu carne fragedă, mărar și sos lejer de lămâie și usturoi.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 15,
     dietType: 'pescatarian',
