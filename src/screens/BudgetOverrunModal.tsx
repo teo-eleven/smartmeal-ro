@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { titleFont } from '../styles/typography';
 
 interface BudgetOverrunModalProps {
   visible: boolean;
@@ -168,7 +169,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: '900',
+    ...titleFont,
     textAlign: 'center',
     letterSpacing: -0.4,
     marginBottom: 10,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getAppTheme } from '../styles/theme';
+import { titleFont } from '../styles/typography';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -68,7 +69,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  title: { fontSize: 19, fontWeight: '900', marginBottom: 10, textAlign: 'center' },
+  title: { fontSize: 19, ...titleFont, marginBottom: 10, textAlign: 'center' },
   message: { fontSize: 14, fontWeight: '500', lineHeight: 21, textAlign: 'center', marginBottom: 24 },
   button: {
     paddingHorizontal: 26,

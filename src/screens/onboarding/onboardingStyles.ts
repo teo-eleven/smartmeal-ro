@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { titleFont } from '../../styles/typography';
 
 /** Styles used by more than one step, or by a step and the wizard's frame. */
 export const sharedStyles = StyleSheet.create({
@@ -7,7 +8,7 @@ export const sharedStyles = StyleSheet.create({
   },
   questionTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    ...titleFont,
     marginBottom: 2,
     lineHeight: 22,
   },

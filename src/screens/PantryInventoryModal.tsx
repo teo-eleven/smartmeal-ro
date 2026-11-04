@@ -12,6 +12,7 @@ import { INGREDIENTS } from '../data/ingredients';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { useShallow } from 'zustand/react/shallow';
+import { titleFont } from '../styles/typography';
 
 interface PantryInventoryModalProps {
   visible: boolean;
@@ -336,7 +337,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '900',
+    ...titleFont,
     letterSpacing: -0.4,
   },
   subtitle: {

@@ -24,6 +24,7 @@ import { AppliancesStep } from './steps/AppliancesStep';
 import { SupermarketStep } from './steps/SupermarketStep';
 import { ExtrasStep } from './steps/ExtrasStep';
 import { BudgetStep } from './steps/BudgetStep';
+import { titleFont } from '../../styles/typography';
 
 interface OnboardingWizardProps {
   isDark: boolean;
@@ -497,7 +498,7 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 18,
-    fontWeight: '900',
+    ...titleFont,
     letterSpacing: -0.5,
   },
   backButton: {

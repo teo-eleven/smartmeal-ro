@@ -37,6 +37,8 @@ import { cloudSyncService } from './src/services/supabase';
 import { AppLoadingScreen } from './src/components/AppLoadingScreen';
 import { LoadingToast } from './src/components/LoadingToast';
 import { useShallow } from 'zustand/react/shallow';
+import { titleFont } from './src/styles/typography';
+import { useTitleFont } from './src/styles/useTitleFont';
 
 function AppShell() {
   const [authModalVisible, setAuthModalVisible] = useState(false);
@@ -665,7 +667,7 @@ const styles = StyleSheet.create({
   },
   brandTitle: {
     fontSize: 20,
-    fontWeight: '900',
+    ...titleFont,
     letterSpacing: -0.5,
   },
   brandBadge: {
@@ -745,6 +747,9 @@ const styles = StyleSheet.create({
  */
 export default function App() {
   const colorScheme = useColorScheme();
+  // A few frames at most: the font ships inside the app and loads from disk.
+  const isTitleFontReady = useTitleFont();
+  if (!isTitleFontReady) return null;
   return (
     <ErrorBoundary isDark={colorScheme === 'dark'}>
       <AppShell />

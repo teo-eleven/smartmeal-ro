@@ -19,6 +19,7 @@ import { AuthMessages } from './auth/AuthMessages';
 import { getAuthTheme } from './auth/authStyles';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { useShallow } from 'zustand/react/shallow';
+import { titleFont } from '../styles/typography';
 
 interface AuthModalProps {
   visible: boolean;
@@ -227,7 +228,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: '800',
+    ...titleFont,
     letterSpacing: -0.3,
   },
   subtitle: {

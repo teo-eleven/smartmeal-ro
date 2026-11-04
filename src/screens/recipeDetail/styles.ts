@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { titleFont } from '../../styles/typography';
 
 export const styles = StyleSheet.create({
   modalOverlay: {
@@ -163,7 +164,7 @@ export const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: '900',
+    ...titleFont,
     letterSpacing: -0.4,
     marginBottom: 6,
     lineHeight: 28,

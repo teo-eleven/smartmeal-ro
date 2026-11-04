@@ -15,6 +15,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { DAY_LABELS_RO } from '../constants/days';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { useShallow } from 'zustand/react/shallow';
+import { titleFont } from '../styles/typography';
 
 interface MealsPerDayModalProps {
   visible: boolean;
@@ -436,7 +437,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '900',
+    ...titleFont,
     letterSpacing: -0.3,
   },
   headerSubtitle: {

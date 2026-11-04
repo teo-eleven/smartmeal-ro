@@ -14,6 +14,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { useShallow } from 'zustand/react/shallow';
+import { titleFont } from '../styles/typography';
 
 interface SnacksAndDrinksModalProps {
   visible: boolean;
@@ -478,7 +479,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    ...titleFont,
   },
   modalSubtitle: {
     fontSize: 13,

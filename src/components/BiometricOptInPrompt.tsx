@@ -4,6 +4,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useAuthSessionStore } from '../store/authSessionStore';
 import { REAUTH_INTERVAL_DAYS } from '../services/reauth';
 import { getAppTheme } from '../styles/theme';
+import { titleFont } from '../styles/typography';
 
 interface BiometricOptInPromptProps {
   isDark: boolean;
@@ -97,7 +98,7 @@ const styles = StyleSheet.create({
   },
   card: { width: '100%', maxWidth: 380, borderRadius: 20, borderWidth: 1, padding: 24 },
   mark: { fontSize: 36, textAlign: 'center', marginBottom: 8 },
-  title: { fontSize: 18, fontWeight: '900', textAlign: 'center' },
+  title: { fontSize: 18, ...titleFont, textAlign: 'center' },
   body: { fontSize: 13, fontWeight: '500', textAlign: 'center', lineHeight: 19, marginTop: 8 },
   primaryBtn: {
     height: 46,

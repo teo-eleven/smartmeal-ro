@@ -16,7 +16,7 @@ const sharedTransform = {
 };
 
 const sharedModuleNameMapper = {
-  '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.js',
+  '\\.(jpg|jpeg|png|gif|webp|svg|ttf|otf)$': '<rootDir>/__mocks__/fileMock.js',
 };
 
 /**

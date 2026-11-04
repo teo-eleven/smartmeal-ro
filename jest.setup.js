@@ -31,6 +31,10 @@ jest.mock('expo-notifications', () => ({
   cancelScheduledNotificationAsync: async () => undefined,
 }));
 
+// expo-font loads fonts through native code that does not exist under Jest. Fonts count as
+// loaded; typography.component.test.tsx supplies its own mock to cover loading and failure.
+jest.mock('expo-font', () => ({ useFonts: () => [true, null] }));
+
 // Face ID and fingerprint are native code. Each test sets the answers it needs; by default the
 // device has a sensor with a fingerprint enrolled and every check succeeds.
 jest.mock('expo-local-authentication', () => ({

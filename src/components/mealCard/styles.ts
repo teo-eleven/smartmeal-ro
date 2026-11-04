@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { titleFont } from '../../styles/typography';
 
 export const styles = StyleSheet.create({
   leftoverBtn: {
@@ -303,7 +304,7 @@ export const styles = StyleSheet.create({
   },
   eatenOutTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    ...titleFont,
     marginBottom: 6,
     textAlign: 'center',
   },

@@ -13,6 +13,7 @@ import { subscriptionService } from '../services/subscription';
 import { SubscriptionOffer } from '../services/subscriptionParse';
 import { useSubscriptionStore } from '../store/subscriptionStore';
 import { getAppTheme } from '../styles/theme';
+import { titleFont } from '../styles/typography';
 
 interface PaywallScreenProps {
   isDark: boolean;
@@ -168,7 +169,7 @@ const styles = StyleSheet.create({
   content: { padding: 24, maxWidth: 560, width: '100%', alignSelf: 'center' },
   back: { alignSelf: 'flex-start', paddingVertical: 6, marginBottom: 12 },
   backText: { fontSize: 13, fontWeight: '600' },
-  title: { fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
+  title: { fontSize: 28, ...titleFont, letterSpacing: -0.5 },
   subtitle: { fontSize: 15, marginTop: 6, marginBottom: 18 },
   card: { borderWidth: 1, borderRadius: 18, padding: 18, gap: 10, marginBottom: 22 },
   benefit: { fontSize: 14, lineHeight: 20, fontWeight: '600' },

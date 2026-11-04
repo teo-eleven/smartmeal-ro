@@ -13,6 +13,7 @@ import {
 import { getAppTheme } from '../styles/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { USE_NATIVE_DRIVER } from '../styles/motion';
+import { titleFont } from '../styles/typography';
 
 export interface AppLoadingScreenProps {
   isDark: boolean;
@@ -331,7 +332,7 @@ const styles = StyleSheet.create({
   },
   brandName: {
     fontSize: 20,
-    fontWeight: '800',
+    ...titleFont,
     letterSpacing: -0.5,
   },
   countryBadge: {

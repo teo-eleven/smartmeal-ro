@@ -19,6 +19,7 @@ import { useEmailCodeSignIn } from './auth/useEmailCodeSignIn';
 import { EmailCodeForm } from './auth/EmailCodeForm';
 import { AuthMessages } from './auth/AuthMessages';
 import { authStyles, getAuthTheme } from './auth/authStyles';
+import { titleFont } from '../styles/typography';
 
 /**
  * The monthly lock (services/reauth.ts): the session is still valid, but it has been thirty
@@ -204,7 +205,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   mark: { fontSize: 40, textAlign: 'center', marginBottom: 8 },
-  title: { fontSize: 24, fontWeight: '900', textAlign: 'center', letterSpacing: -0.5 },
+  title: { fontSize: 24, ...titleFont, textAlign: 'center', letterSpacing: -0.5 },
   email: { fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 6 },
   subtitle: { fontSize: 13, fontWeight: '500', textAlign: 'center', lineHeight: 19, marginTop: 10 },
   formArea: { marginTop: 24, gap: 12 },

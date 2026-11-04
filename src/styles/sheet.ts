@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { titleFont } from './typography';
 
 /**
  * The bottom-sheet frame shared by the full-height modals (store comparison, saved plans).
@@ -33,7 +34,7 @@ export const sheetStyles = StyleSheet.create({
   },
   title: {
     fontSize: 19,
-    fontWeight: '900',
+    ...titleFont,
     letterSpacing: -0.4,
   },
   subtitle: {

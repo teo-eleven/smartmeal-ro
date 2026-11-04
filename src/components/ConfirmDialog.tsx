@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { titleFont } from '../styles/typography';
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '900',
+    ...titleFont,
     letterSpacing: -0.3,
     marginBottom: 8,
   },

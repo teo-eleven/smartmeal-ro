@@ -11,6 +11,7 @@ import {
   getTotalMinutes,
 } from '../utils/recipeVisual';
 import { getRecipePhoto } from '../utils/recipePhotography';
+import { titleFont } from '../styles/typography';
 
 interface RecipeVisualProps {
   recipe: Recipe;
@@ -157,7 +158,7 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     color: '#ffffff',
     fontSize: 18,
-    fontWeight: '800',
+    ...titleFont,
     textAlign: 'center',
     lineHeight: 23,
     letterSpacing: -0.3,
