@@ -58,7 +58,8 @@ export const APPLE_IOS_THEME = {
     text: P.champagne,
     textMuted: P.champagneMuted,
     textSubtle: P.champagneSubtle,
-    primary: P.bronzeLight,
+    /** The brightest bronze: lighter ones failed on bronze-tinted chips (axe, T.11). */
+    primary: P.bronzeGlow,
     primaryText: P.forestNight,
     /** Buttons, progress bars and step dots: a two-stop gradient of the accent. */
     primaryGradient: [P.bronzeGlow, P.bronzeLight] as [string, string],
@@ -138,7 +139,8 @@ export const APPLE_IOS_THEME = {
     primaryText: P.creamLight,
     primaryGradient: [P.walnutLight, P.walnut] as [string, string],
     accentHighlight: P.walnutLight,
-    primaryLight: withAlpha(P.walnut, 0.12),
+    // 0.12 left walnut text at 4.44 on a secondary surface.
+    primaryLight: withAlpha(P.walnut, 0.1),
     primaryGlow: withAlpha(P.walnut, 0.2),
     border: withAlpha(P.forestNight, 0.1),
     borderStrong: withAlpha(P.bronze, 0.55),
@@ -351,6 +353,14 @@ export function injectEmeraldGlassStyles(isDark: boolean = true): void {
     #root > div,
     [data-glass="root"] {
       background-color: transparent !important;
+    }
+
+    /* Keyboard focus in the accent instead of the browser's blue; never removed. */
+    input:focus,
+    textarea:focus,
+    [tabindex]:focus-visible {
+      outline: 2px solid ${theme.primary} !important;
+      outline-offset: 2px;
     }
 
     [data-glass="card"],

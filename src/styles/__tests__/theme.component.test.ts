@@ -142,6 +142,24 @@ describe('injectEmeraldGlassStyles', () => {
     expect(rimRules).toContain(`border-color: ${getAppTheme(isDark).cardRim} !important`);
   });
 
+  test.each([true, false])(
+    'draws the keyboard focus ring in the accent, not the browser blue (dark: %s)',
+    (isDark) => {
+      const sheet: StubElement = {};
+      installStubDocument({
+        getElementById: () => sheet,
+        createElement: () => ({}),
+        head: { appendChild: () => undefined },
+      });
+
+      injectEmeraldGlassStyles(isDark);
+
+      expect(sheet.textContent).toContain(
+        `outline: 2px solid ${getAppTheme(isDark).primary} !important`
+      );
+    }
+  );
+
   test('reuses the existing stylesheet instead of stacking duplicates', () => {
     // Arrange
     const existing: StubElement = { textContent: 'old' };

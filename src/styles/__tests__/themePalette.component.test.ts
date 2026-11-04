@@ -42,7 +42,7 @@ describe('the palette', () => {
 
   test('buttons are walnut on cream and bronze on the forest', () => {
     expect(getAppTheme(false).primary).toBe(P.walnut);
-    expect(getAppTheme(true).primary).toBe(P.bronzeLight);
+    expect(getAppTheme(true).primary).toBe(P.bronzeGlow);
   });
 });
 
@@ -98,6 +98,19 @@ describe.each([
     expect(contrast(t.onPhoto, over(t.photoPill, WORST_CASE_PHOTO))).toBeGreaterThanOrEqual(
       BODY_TEXT
     );
+  });
+
+  test.each([
+    ['a card', () => t.card],
+    ['a tinted row on a card', () => over(t.accentBg, t.card)],
+    ['a secondary surface', () => t.surfaceSecondary],
+  ])('bronze text on a bronze chip reads on %s (axe, T.11)', (_where, surface) => {
+    expect(contrast(t.primary, over(t.primaryLight, surface()))).toBeGreaterThanOrEqual(BODY_TEXT);
+  });
+
+  test('the focus ring stands out from the background and a card (WCAG 2.4.11)', () => {
+    expect(contrast(t.primary, t.background)).toBeGreaterThanOrEqual(LARGE_TEXT_OR_ICON);
+    expect(contrast(t.primary, t.card)).toBeGreaterThanOrEqual(LARGE_TEXT_OR_ICON);
   });
 
   test('the store badge text reads on a white photo and on a card', () => {
