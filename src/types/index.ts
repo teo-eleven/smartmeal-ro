@@ -354,3 +354,6 @@ export interface WeeklyMacroSummaryData {
   balanceScore: number; // 0-100
   balanceRating: string;
 }
+
+/** Why a plan was set aside, so the Undo banner can say so. */
+export type DiscardReason = 'reset' | 'restore' | 'cloud' | 'rebuild';

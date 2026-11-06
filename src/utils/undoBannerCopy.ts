@@ -1,4 +1,4 @@
-import { DiscardReason } from '../store/appState';
+import { DiscardReason } from '../types';
 
 export interface UndoBannerCopy {
   message: string;

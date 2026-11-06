@@ -15,6 +15,8 @@ import { DAY_LABELS_RO } from '../constants/days';
 import { formatCostDelta, rankSwapCandidates } from '../utils/swapCandidates';
 import { useAppStore } from '../store/useAppStore';
 import { getStoreSignatureBadge } from '../utils/storeBadge';
+import { useHealthSafetyStore } from '../store/healthSafetyStore';
+import { effectivePreferences } from '../utils/healthSafety';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 
 interface MealSwapModalProps {
@@ -39,6 +41,8 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   isDark,
 }) => {
   useBlockingWindow(visible && Boolean(dayOfWeek));
+  // Subscribed so the list is rebuilt if the answer changes while the modal is open.
+  const safetyAnswer = useHealthSafetyStore((s) => s.answer);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<SmartSwapResult | null>(null);
 
@@ -64,7 +68,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
   const slotTitle = targetMeal?.slotLabelRo || (isDessertSlot ? 'Desert de Casă' : '');
   const { currentRecipe, candidates: ranked } = rankSwapCandidates(
     currentPlan,
-    preferences,
+    effectivePreferences(preferences, safetyAnswer),
     dayOfWeek,
     slot ?? undefined
   );

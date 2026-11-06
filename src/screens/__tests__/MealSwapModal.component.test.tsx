@@ -1,7 +1,10 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { MealSwapModal } from '../MealSwapModal';
 import { useAppStore } from '../../store/useAppStore';
+import { useHealthSafetyStore } from '../../store/healthSafetyStore';
+import { effectivePreferences } from '../../utils/healthSafety';
+import { rankSwapCandidates } from '../../utils/swapCandidates';
 import { aiProxyService } from '../../services/aiProxy';
 import { DayOfWeek, UserPreferences } from '../../types';
 
@@ -123,5 +126,39 @@ describe('un răspuns AI întârziat nu ajunge pe altă zi', () => {
     fireEvent.press(screen.getByText(/Întreabă AI/));
 
     await waitFor(() => expect(useAppStore.getState().activeNotice?.type).toBe('warning'));
+  });
+});
+
+describe('MealSwapModal follows the health safety answer (A.7f-3)', () => {
+  test('the list is rebuilt when the answer changes while the modal is open', () => {
+    const goals = ['heart_healthy', 'diabetic_friendly', 'high_fiber'] as const;
+    const prefsWithGoals = { ...PREFS, healthGoalTags: [...goals] };
+    useHealthSafetyStore.setState({ answer: 'no', isLoaded: true });
+    const plan = planFixture();
+    const titlesFor = (answer: 'yes' | 'no') =>
+      rankSwapCandidates(plan, effectivePreferences(prefsWithGoals, answer), 'monday', 'dinner')
+        .candidates.map((c) => c.recipe.title);
+    // A goal narrows the list, so a "yes" (goals blocked) brings back dishes the goals hid.
+    const hiddenByGoals = titlesFor('yes').find((title) => !titlesFor('no').includes(title));
+    expect(hiddenByGoals).toBeDefined();
+
+    render(
+      <MealSwapModal
+        visible
+        dayOfWeek="monday"
+        slot="dinner"
+        currentPlan={plan}
+        preferences={prefsWithGoals}
+        onClose={jest.fn()}
+        onSelectReplacement={jest.fn()}
+        isDark={false}
+      />
+    );
+    expect(screen.queryByText(hiddenByGoals as string)).toBeNull();
+
+    act(() => useHealthSafetyStore.setState({ answer: 'yes' }));
+
+    expect(screen.getAllByText(hiddenByGoals as string).length).toBeGreaterThan(0);
+    act(() => useHealthSafetyStore.setState({ answer: null }));
   });
 });
