@@ -270,4 +270,67 @@ describe('the safety question in the filters (A.7c)', () => {
 
     expect(onApplyFilters.mock.calls[0][0].healthGoalTags).toEqual(['pork_free']);
   });
+  test('with the answer "Nu", a health goal ticks directly, with no question', () => {
+    useHealthSafetyStore.setState({ answer: 'no', isLoaded: true });
+    const { onApplyFilters } = setup();
+
+    fireEvent.press(screen.getByText('Bogat în fibre'));
+    apply();
+
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+    expect(onApplyFilters.mock.calls[0][0].healthGoalTags).toEqual(['high_fiber']);
+  });
+
+  test('closing the question ticks nothing and saves no answer', () => {
+    const { onApplyFilters } = setup();
+
+    fireEvent.press(screen.getByText('Bogat în fibre'));
+    fireEvent.press(screen.getByLabelText('Închide întrebarea', { includeHiddenElements: true }));
+    apply();
+
+    expect(useHealthSafetyStore.getState().answer).toBeNull();
+    expect(onApplyFilters.mock.calls[0][0].healthGoalTags).toEqual([]);
+  });
+
+  test('a goal ticked before "Da" can be unticked, while the others stay blocked', () => {
+    useHealthSafetyStore.setState({ answer: 'yes', isLoaded: true });
+    const { onApplyFilters } = setup({ healthGoalTags: ['heart_healthy'] });
+
+    expect(screen.getByRole('checkbox', { name: /Puțină sare/, disabled: false })).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: /Bogat în fibre/, disabled: true })).toBeTruthy();
+    fireEvent.press(screen.getByText('Puțină sare'));
+    apply();
+
+    expect(onApplyFilters.mock.calls[0][0].healthGoalTags).toEqual([]);
+  });
+
+  test('closing the filters while the question is open dismisses it for good', () => {
+    const view = render(
+      <QuickFiltersModal
+        visible
+        onClose={jest.fn()}
+        preferences={PREFS}
+        onApplyFilters={jest.fn()}
+        onResetOnboarding={jest.fn()}
+        isDark={false}
+      />
+    );
+    fireEvent.press(screen.getByText('Bogat în fibre'));
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+
+    const props = (visible: boolean) => (
+      <QuickFiltersModal
+        visible={visible}
+        onClose={jest.fn()}
+        preferences={PREFS}
+        onApplyFilters={jest.fn()}
+        onResetOnboarding={jest.fn()}
+        isDark={false}
+      />
+    );
+    view.rerender(props(false));
+    view.rerender(props(true));
+
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+  });
 });

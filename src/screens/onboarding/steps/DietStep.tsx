@@ -261,20 +261,20 @@ export function DietStep({
         <View style={[styles.dietList, isLargeScreen && styles.dietListDesktop]}>
           {HEALTH_GOALS_CATALOG.map((goal) => {
             const isSelected = (preferences.healthGoalTags || []).includes(goal.id);
-            const isBlocked = healthGoals.isBlocked(goal.id);
+            const isDisabled = healthGoals.isDisabled(goal.id);
             return (
               <TouchableOpacity
                 accessibilityRole="checkbox"
                 aria-checked={isSelected}
-                aria-disabled={isBlocked}
-                disabled={isBlocked}
+                aria-disabled={isDisabled}
+                disabled={isDisabled}
                 key={goal.id}
                 onPress={() => healthGoals.pressGoal(goal.id)}
                 activeOpacity={0.75}
                 style={[
                   styles.dietCard,
                   isLargeScreen && styles.dietCardDesktop,
-                  isBlocked && styles.blockedGoal,
+                  isDisabled && styles.blockedGoal,
                   {
                     backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
                     borderColor: isSelected ? theme.primary : theme.border,
@@ -409,9 +409,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 14,
   },
-  /** The condition a goal suits: information, set apart from what is on the plate. */
   /** A health goal after a "yes" to the safety question: visible, but not choosable. */
   blockedGoal: { opacity: 0.45 },
+  /** The condition a goal suits: information, set apart from what is on the plate. */
   conditionInfo: {
     marginTop: 4,
     fontStyle: 'italic',

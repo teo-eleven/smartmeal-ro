@@ -358,6 +358,17 @@ describe('OnboardingWizard, întrebarea de siguranță (A.7b)', () => {
     expect(screen.getByRole('checkbox', { name: /Bogat în fibre/, disabled: true })).toBeTruthy();
   });
 
+  test('a goal ticked before "Da" can still be unticked in onboarding', () => {
+    useAppStore.getState().setHealthGoalTags(['high_fiber']);
+    useHealthSafetyStore.setState({ answer: 'yes', isLoaded: true });
+    useAppStore.setState((s) => ({
+      preferences: { ...s.preferences, healthGoalTags: ['high_fiber'] },
+    }));
+    renderWizard();
+
+    expect(screen.getByRole('checkbox', { name: /Bogat în fibre/, disabled: false })).toBeTruthy();
+  });
+
   test('closing the question without answering ticks nothing and saves nothing', () => {
     renderWizard();
 

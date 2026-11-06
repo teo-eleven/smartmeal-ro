@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { isHealthGoal } from '../data/healthTags';
 import { useHealthSafetyStore } from '../store/healthSafetyStore';
 import { useAppStore } from '../store/useAppStore';
 import { HealthGoalTag } from '../types';
@@ -13,11 +14,19 @@ interface HealthGoalToggleOptions {
   selectedGoals: readonly HealthGoalTag[];
   toggleGoal: (goal: HealthGoalTag) => void;
   replaceGoals: (goals: HealthGoalTag[]) => void;
+  /**
+   * Whether the window hosting the goals is on screen. The filters stay mounted while hidden;
+   * closing them dismisses a question that was still open.
+   */
+  isOpen?: boolean;
 }
 
 export interface HealthGoalToggle {
   answer: HealthSafetyAnswer;
+  /** The answer rules this goal out (for styling, even when it is still ticked). */
   isBlocked: (goal: HealthGoalTag) => boolean;
+  /** The goal cannot be ticked now: blocked by the answer, or the answer is not read yet. */
+  isDisabled: (goal: HealthGoalTag) => boolean;
   pressGoal: (goal: HealthGoalTag) => void;
   isAsking: boolean;
   answerQuestion: (answer: 'yes' | 'no') => void;
@@ -39,29 +48,38 @@ function dropBlockedFromSavedPreferences(): void {
 /**
  * Ticking a health goal through the safety question (A.7). Shared by onboarding and the
  * filters, which keep the chosen goals in different places, hence the callbacks.
+ *
+ * Handlers read the answer from the store and the goals from a ref when they run, not from the
+ * render that created them: a press handed on from an older render must not act on old facts.
  */
-export function useHealthGoalToggle({
-  selectedGoals,
-  toggleGoal,
-  replaceGoals,
-}: HealthGoalToggleOptions): HealthGoalToggle {
+export function useHealthGoalToggle(options: HealthGoalToggleOptions): HealthGoalToggle {
+  const { isOpen = true } = options;
   const answer = useHealthSafetyStore((s) => s.answer);
   const isLoaded = useHealthSafetyStore((s) => s.isLoaded);
   const [pendingGoal, setPendingGoal] = useState<HealthGoalTag | null>(null);
+  const latest = useRef({ ...options, pendingGoal });
+  latest.current = { ...options, pendingGoal };
 
   useEffect(() => {
     if (!isLoaded) void useHealthSafetyStore.getState().load();
   }, [isLoaded]);
 
+  useEffect(() => {
+    if (!isOpen) setPendingGoal(null);
+  }, [isOpen]);
+
   const pressGoal = (goal: HealthGoalTag) => {
+    const { selectedGoals, toggleGoal } = latest.current;
     // Unticking never asks: taking a goal away is always safe.
     if (selectedGoals.includes(goal)) {
       toggleGoal(goal);
       return;
     }
-    // Until the stored answer is read, nothing is decided either way.
-    if (!isLoaded || isGoalBlocked(goal, answer)) return;
-    if (needsSafetyQuestion(goal, answer)) {
+    const live = useHealthSafetyStore.getState();
+    // Until the stored answer is read, nothing is decided either way (the control is disabled).
+    if (isHealthGoal(goal) && !live.isLoaded) return;
+    if (isGoalBlocked(goal, live.answer)) return;
+    if (needsSafetyQuestion(goal, live.answer)) {
       setPendingGoal(goal);
       return;
     }
@@ -69,7 +87,7 @@ export function useHealthGoalToggle({
   };
 
   const answerQuestion = (given: 'yes' | 'no') => {
-    const goal = pendingGoal;
+    const { selectedGoals, toggleGoal, replaceGoals, pendingGoal: goal } = latest.current;
     setPendingGoal(null);
     void useHealthSafetyStore.getState().setAnswer(given);
     if (given === 'yes') {
@@ -77,16 +95,21 @@ export function useHealthGoalToggle({
       dropBlockedFromSavedPreferences();
       return;
     }
-    if (goal) toggleGoal(goal);
+    if (goal && !selectedGoals.includes(goal)) toggleGoal(goal);
   };
+
+  const isSelected = (goal: HealthGoalTag) => options.selectedGoals.includes(goal);
 
   return {
     answer,
     isBlocked: (goal) => isGoalBlocked(goal, answer),
+    // A ticked goal can always be unticked, whatever the answer says.
+    isDisabled: (goal) =>
+      !isSelected(goal) && isHealthGoal(goal) && (!isLoaded || isGoalBlocked(goal, answer)),
     pressGoal,
     isAsking: pendingGoal !== null,
     answerQuestion,
     dismissQuestion: () => setPendingGoal(null),
-    changeAnswer: () => void useHealthSafetyStore.getState().reset(),
+    changeAnswer: () => useHealthSafetyStore.getState().reset(),
   };
 }

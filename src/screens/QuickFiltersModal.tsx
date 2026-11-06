@@ -111,6 +111,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
     selectedGoals: healthGoalTags,
     toggleGoal: toggleHealthGoal,
     replaceGoals: setHealthGoalTags,
+    isOpen: visible,
   });
 
   if (!visible) return null;
@@ -427,18 +428,18 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
               <View style={styles.moodGrid}>
                 {HEALTH_GOALS_CATALOG.map((goal) => {
                   const isActive = healthGoalTags.includes(goal.id);
-                  const isBlocked = healthGoals.isBlocked(goal.id);
+                  const isDisabled = healthGoals.isDisabled(goal.id);
                   return (
                     <TouchableOpacity
                       accessibilityRole="checkbox"
                       aria-checked={isActive}
-                      aria-disabled={isBlocked}
-                      disabled={isBlocked}
+                      aria-disabled={isDisabled}
+                      disabled={isDisabled}
                       key={goal.id}
                       onPress={() => healthGoals.pressGoal(goal.id)}
                       style={[
                         styles.moodChip,
-                        isBlocked && styles.blockedChip,
+                        isDisabled && styles.blockedChip,
                         {
                           backgroundColor: isActive ? theme.primaryLight : theme.btnBg,
                           borderColor: isActive ? theme.primary : theme.border,
@@ -468,12 +469,6 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                 <HealthDisclaimer isDark={isDark} />
                 <HealthGoalsAbout isDark={isDark} />
               </View>
-              <HealthSafetyPrompt
-                visible={healthGoals.isAsking}
-                onAnswer={healthGoals.answerQuestion}
-                onDismiss={healthGoals.dismissQuestion}
-                isDark={isDark}
-              />
             </View>
 
             {/* Actions Bottom Bar */}
@@ -507,6 +502,13 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
         </ScrollView>
         </View>
       </View>
+      {/* A sibling of the card, not inside the ScrollView: the question is not part of the list. */}
+      <HealthSafetyPrompt
+        visible={healthGoals.isAsking}
+        onAnswer={healthGoals.answerQuestion}
+        onDismiss={healthGoals.dismissQuestion}
+        isDark={isDark}
+      />
     </Modal>
   );
 };

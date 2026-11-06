@@ -66,6 +66,59 @@ describe('healthSafetyStore (A.7a)', () => {
   });
 });
 
+describe('healthSafetyStore: a slow read never overwrites a newer write (A.7e-5b)', () => {
+  /** A disk read that stays pending until the test lets it finish. */
+  function slowRead() {
+    let finish: (value: string | null) => void = () => undefined;
+    jest.spyOn(AsyncStorage, 'getItem').mockImplementationOnce(
+      () => new Promise<string | null>((resolve) => (finish = resolve))
+    );
+    return (value: string | null) => finish(value);
+  }
+
+  test('setAnswer between two concurrent loads wins', async () => {
+    const finishRead = slowRead();
+    const first = store().load();
+    await store().setAnswer('yes');
+    const second = store().load();
+    finishRead(null);
+    await Promise.all([first, second]);
+
+    expect(store().answer).toBe('yes');
+    expect(store().isLoaded).toBe(true);
+  });
+
+  test('concurrent loads share one read of the disk', async () => {
+    const read = jest.spyOn(AsyncStorage, 'getItem');
+    read.mockClear();
+
+    await Promise.all([store().load(), store().load(), store().load()]);
+
+    expect(read).toHaveBeenCalledTimes(1);
+  });
+
+  test('reset during a load stays reset, even if the read saw the old "yes"', async () => {
+    await AsyncStorage.setItem(HEALTH_SAFETY_STORAGE_KEY, 'yes');
+    const finishRead = slowRead();
+    const loading = store().load();
+    await store().reset();
+    finishRead('yes');
+    await loading;
+
+    expect(store().answer).toBeNull();
+    expect(store().isLoaded).toBe(true);
+  });
+
+  test('a load after the first one finished reads the disk again', async () => {
+    await store().load();
+    await AsyncStorage.setItem(HEALTH_SAFETY_STORAGE_KEY, 'no');
+
+    await store().load();
+
+    expect(store().answer).toBe('no');
+  });
+});
+
 test('"Reia configuratorul" (resetOnboarding) forgets the safety answer too (A.7c)', async () => {
   await store().setAnswer('yes');
 
