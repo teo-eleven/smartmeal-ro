@@ -78,6 +78,17 @@ const HEALTH_GOALS_MAP = new Map<HealthGoalTag, HealthGoalMeta>(
   HEALTH_GOALS_CATALOG.map((g) => [g.id, g])
 );
 
+/**
+ * Pork-free is a religious or personal choice, not a health one: never asked about, never
+ * blocked by the safety answer. The single place that says so.
+ */
+export const PORK_FREE_TAG: HealthGoalTag = 'pork_free';
+
+/** True for every goal except pork-free. */
+export function isHealthGoal(tag: HealthGoalTag): boolean {
+  return tag !== PORK_FREE_TAG;
+}
+
 export function getHealthGoalMeta(id: HealthGoalTag): HealthGoalMeta | undefined {
   return HEALTH_GOALS_MAP.get(id);
 }
@@ -104,9 +115,9 @@ export function getRecipeHealthTags(
   // Derived, never trusted from the data: a hand-written 'pork_free' on a recipe with pork
   // must not survive, and a recipe without pork is pork-free whether or not anyone said so.
   if (recipeContainsPork(recipe)) {
-    tags.delete('pork_free');
+    tags.delete(PORK_FREE_TAG);
   } else {
-    tags.add('pork_free');
+    tags.add(PORK_FREE_TAG);
   }
 
   return Array.from(tags);

@@ -1,5 +1,7 @@
 import {
   HEALTH_GOALS_CATALOG,
+  PORK_FREE_TAG,
+  isHealthGoal,
   getHealthGoalMeta,
   getRecipeHealthTags,
   recipeContainsPork,
@@ -58,5 +60,14 @@ describe('Health Goals Catalog & Tags', () => {
     expect(hummus?.healthTags).toContain('high_fiber');
     expect(hummus?.healthTags).toContain('anti_inflammatory');
     expect(hummus?.healthTags).toContain('pork_free');
+  });
+});
+
+describe('isHealthGoal (A.7e-1)', () => {
+  test('is false only for pork-free, true for every other goal', () => {
+    expect(isHealthGoal(PORK_FREE_TAG)).toBe(false);
+    const others = HEALTH_GOALS_CATALOG.map((g) => g.id).filter((id) => id !== PORK_FREE_TAG);
+    expect(others).toHaveLength(5);
+    expect(others.every(isHealthGoal)).toBe(true);
   });
 });

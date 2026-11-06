@@ -1,3 +1,4 @@
+import { isHealthGoal } from '../data/healthTags';
 import { HealthGoalTag } from '../types';
 
 /**
@@ -6,9 +7,6 @@ import { HealthGoalTag } from '../types';
  * for which condition is a medical call no dietitian has reviewed yet (stage G).
  */
 export type HealthSafetyAnswer = 'yes' | 'no' | null;
-
-/** Pork-free is a religious or personal choice, not a health one: never asked, never blocked. */
-const NOT_A_HEALTH_GOAL: HealthGoalTag = 'pork_free';
 
 export const HEALTH_SAFETY_QUESTION_RO =
   'Înainte de obiectivele de sănătate: ești însărcinată sau alăptezi, ai boală de rinichi, iei ' +
@@ -19,8 +17,6 @@ export const HEALTH_SAFETY_BLOCKED_RO =
   'Pentru situația ta, obiectivele de sănătate nu sunt potrivite fără sfatul medicului. ' +
   'Discută orice schimbare de alimentație cu medicul sau cu un dietetician autorizat. ' +
   'Restul aplicației funcționează normal.';
-
-const isHealthGoal = (goal: HealthGoalTag): boolean => goal !== NOT_A_HEALTH_GOAL;
 
 export function needsSafetyQuestion(goal: HealthGoalTag, answer: HealthSafetyAnswer): boolean {
   return isHealthGoal(goal) && answer === null;

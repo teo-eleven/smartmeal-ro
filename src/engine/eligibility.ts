@@ -1,4 +1,4 @@
-import { recipeContainsPork } from '../data/healthTags';
+import { PORK_FREE_TAG, isHealthGoal, recipeContainsPork } from '../data/healthTags';
 import { RECIPES } from '../data/recipes';
 import { Appliance, DietType, MealSlot, Recipe, SupermarketId, UserPreferences } from '../types';
 import { isRecipeSafeForAllergies } from '../utils/allergenFilter';
@@ -69,8 +69,8 @@ export function getEligibleRecipes(preferences: UserPreferences): Recipe[] {
       : [preferences.dietType];
 
   const rejected = new Set(preferences.dislikedRecipeIds ?? []);
-  const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
-  const activeHealthGoals = (preferences.healthGoalTags || []).filter((g) => g !== 'pork_free');
+  const requirePorkFree = preferences.healthGoalTags?.includes(PORK_FREE_TAG);
+  const activeHealthGoals = (preferences.healthGoalTags || []).filter(isHealthGoal);
 
   return RECIPES.filter(
     (recipe) =>
@@ -96,7 +96,7 @@ export function getEligibleDessertRecipes(preferences: UserPreferences): Recipe[
       ? preferences.dietTypes
       : [preferences.dietType];
   const rejected = new Set(preferences.dislikedRecipeIds ?? []);
-  const requirePorkFree = preferences.healthGoalTags?.includes('pork_free');
+  const requirePorkFree = preferences.healthGoalTags?.includes(PORK_FREE_TAG);
 
   // Primary: strictly matching store, appliances, diet, allergens, not disliked, pork_free, and suitable for dessert slot
   let desserts = RECIPES.filter(

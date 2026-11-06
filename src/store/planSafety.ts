@@ -1,5 +1,5 @@
 import { ALLERGEN_CATALOG } from '../data/allergens';
-import { recipeContainsPork } from '../data/healthTags';
+import { PORK_FREE_TAG, recipeContainsPork } from '../data/healthTags';
 import { resolveRecipeId } from '../data/recipeIdAliases';
 import { RECIPES_MAP } from '../data/recipes';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
@@ -243,7 +243,7 @@ export function describeUnsafeRecipe(recipe: Recipe, preferences: UserPreference
 
   // The other admission paths (generation, alternatives, desserts) all enforce this one; a
   // direct replacement did not, so a pork dish could be put on a "Fără porc" board by hand.
-  if ((preferences.healthGoalTags ?? []).includes('pork_free') && recipeContainsPork(recipe)) {
+  if ((preferences.healthGoalTags ?? []).includes(PORK_FREE_TAG) && recipeContainsPork(recipe)) {
     return `„${recipe.title}" conține carne de porc, iar tu ai ales „Fără porc”.`;
   }
 

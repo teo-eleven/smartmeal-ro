@@ -1,4 +1,5 @@
 import { DietType, MealPlan, MealPlanDay, MealSlot, PlannedMeal, Recipe, UserPreferences } from '../types';
+import { PORK_FREE_TAG, isHealthGoal } from '../data/healthTags';
 import { calculateRecipePortionCost } from './budgetCalculator';
 import { aggregateGroceryList } from './groceryAggregator';
 
@@ -164,8 +165,8 @@ export function generateMealPlan(
     scoredRecipes: scoreRecipesForPlan(eligibleRecipes, preferences, effectiveTier),
     activeDiets,
     rejectedIds: new Set(preferences.dislikedRecipeIds ?? []),
-    requirePorkFree: preferences.healthGoalTags?.includes('pork_free'),
-    activeHealthGoals: (preferences.healthGoalTags || []).filter((g) => g !== 'pork_free'),
+    requirePorkFree: preferences.healthGoalTags?.includes(PORK_FREE_TAG),
+    activeHealthGoals: (preferences.healthGoalTags || []).filter(isHealthGoal),
     effectiveTier,
     options,
   });

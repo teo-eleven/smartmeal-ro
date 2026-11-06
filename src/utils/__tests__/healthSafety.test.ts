@@ -4,10 +4,10 @@ import {
   needsSafetyQuestion,
   withoutBlockedGoals,
 } from '../healthSafety';
-import { HEALTH_GOALS_CATALOG } from '../../data/healthTags';
+import { HEALTH_GOALS_CATALOG, isHealthGoal } from '../../data/healthTags';
 import { HealthGoalTag } from '../../types';
 
-const MEDICAL_GOALS = HEALTH_GOALS_CATALOG.map((g) => g.id).filter((id) => id !== 'pork_free');
+const MEDICAL_GOALS = HEALTH_GOALS_CATALOG.map((g) => g.id).filter(isHealthGoal);
 
 describe('health safety question (A.7a)', () => {
   test('asks before the first health goal, and only while unanswered', () => {

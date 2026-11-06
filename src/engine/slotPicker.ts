@@ -128,7 +128,7 @@ export function createSlotPicker(ctx: SlotPickerContext) {
           candidates = scoreFallbackRecipes(ignoringSlot);
         } else {
           // 3. Reached when the catalog has no health-tagged dish under this diet/appliance constraint.
-          // Relax health goals (except pork_free, which is strict dietary/religious).
+          // Relax health goals (except pork-free, which is strict dietary/religious).
           const cookableAndEdible = RECIPES.filter(
             (r) =>
               !rejectedIds.has(r.id) &&

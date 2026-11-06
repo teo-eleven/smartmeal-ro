@@ -1,4 +1,4 @@
-import { HEALTH_GOALS_CATALOG } from '../healthTags';
+import { HEALTH_GOALS_CATALOG, PORK_FREE_TAG, isHealthGoal } from '../healthTags';
 import { RECIPES } from '../recipes';
 
 /**
@@ -42,7 +42,7 @@ test('no recipe title or description promises a medical effect or targets a dise
 
 describe('each goal says which condition it is relevant to, on its own line (A.3)', () => {
   const NOT_A_DOCTOR = 'Nu înlocuiește medicul.';
-  const medicalGoals = HEALTH_GOALS_CATALOG.filter((goal) => goal.id !== 'pork_free');
+  const medicalGoals = HEALTH_GOALS_CATALOG.filter((goal) => isHealthGoal(goal.id));
 
   test.each(medicalGoals.map((goal) => [goal.id, goal] as const))(
     '%s names the condition and sends the user to a doctor, promising nothing',
@@ -54,7 +54,7 @@ describe('each goal says which condition it is relevant to, on its own line (A.3
   );
 
   test('the pork-free filter is a religious and personal choice, not a condition', () => {
-    expect(HEALTH_GOALS_CATALOG.find((goal) => goal.id === 'pork_free')?.conditionInfoRo).toBe(
+    expect(HEALTH_GOALS_CATALOG.find((goal) => goal.id === PORK_FREE_TAG)?.conditionInfoRo).toBe(
       undefined
     );
   });

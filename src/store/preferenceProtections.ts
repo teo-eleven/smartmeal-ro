@@ -1,3 +1,4 @@
+import { PORK_FREE_TAG } from '../data/healthTags';
 import { DietType, HealthGoalTag, UserPreferences } from '../types';
 import { areDietsCompatible, isBaseDiet } from '../utils/dietCompatibility';
 
@@ -81,8 +82,8 @@ export function mergeProtections(
   base: UserPreferences,
   other: UserPreferences
 ): Pick<UserPreferences, 'avoidedAllergens' | 'dislikedRecipeIds' | 'healthGoalTags'> {
-  const porkFree: HealthGoalTag[] = asList(other.healthGoalTags).includes('pork_free')
-    ? ['pork_free']
+  const porkFree: HealthGoalTag[] = asList(other.healthGoalTags).includes(PORK_FREE_TAG)
+    ? [PORK_FREE_TAG]
     : [];
 
   return {

@@ -2,7 +2,7 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { Recipe, SupermarketId } from '../../types';
 import { AppTheme } from '../../styles/theme';
-import { getHealthGoalMeta } from '../../data/healthTags';
+import { getHealthGoalMeta, isHealthGoal } from '../../data/healthTags';
 import { getStoreSignatureBadge } from '../../utils/storeBadge';
 import { MOOD_LABELS, getTierBadgeStyle, getTierLabel } from './cardLabels';
 import { styles } from './styles';
@@ -63,7 +63,7 @@ export const CardChips: React.FC<CardChipsProps> = ({ recipe, supermarketId, the
         <Text style={[styles.pillText, { color: theme.text }]}>{primaryMood}</Text>
       </View>
       {(() => {
-        const metaTag = recipe.healthTags?.find((t) => t !== 'pork_free');
+        const metaTag = recipe.healthTags?.find(isHealthGoal);
         if (!metaTag) return null;
         const meta = getHealthGoalMeta(metaTag);
         if (!meta) return null;
