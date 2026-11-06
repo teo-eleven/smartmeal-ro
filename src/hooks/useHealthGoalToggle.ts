@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useHealthSafetyStore } from '../store/healthSafetyStore';
+import { useAppStore } from '../store/useAppStore';
 import { HealthGoalTag } from '../types';
 import {
   HealthSafetyAnswer,
@@ -22,6 +23,17 @@ export interface HealthGoalToggle {
   answerQuestion: (answer: 'yes' | 'no') => void;
   dismissQuestion: () => void;
   changeAnswer: () => void;
+}
+
+/**
+ * The filters keep their own copy until "Aplică"; the saved preferences must lose the health
+ * goals at once, or closing the filters would leave them active after a "yes".
+ */
+function dropBlockedFromSavedPreferences(): void {
+  const { preferences, setHealthGoalTags } = useAppStore.getState();
+  const saved = preferences.healthGoalTags || [];
+  const kept = withoutBlockedGoals(saved, 'yes');
+  if (kept.length !== saved.length) setHealthGoalTags(kept);
 }
 
 /**
@@ -62,6 +74,7 @@ export function useHealthGoalToggle({
     void useHealthSafetyStore.getState().setAnswer(given);
     if (given === 'yes') {
       replaceGoals(withoutBlockedGoals(selectedGoals, 'yes'));
+      dropBlockedFromSavedPreferences();
       return;
     }
     if (goal) toggleGoal(goal);

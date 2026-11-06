@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HEALTH_SAFETY_STORAGE_KEY, useHealthSafetyStore } from '../healthSafetyStore';
+import { useAppStore } from '../useAppStore';
 
 const store = () => useHealthSafetyStore.getState();
 
@@ -63,4 +64,14 @@ describe('healthSafetyStore (A.7a)', () => {
     expect(store().answer).toBeNull();
     expect(await AsyncStorage.getItem(HEALTH_SAFETY_STORAGE_KEY)).toBeNull();
   });
+});
+
+test('"Reia configuratorul" (resetOnboarding) forgets the safety answer too (A.7c)', async () => {
+  await store().setAnswer('yes');
+
+  useAppStore.getState().resetOnboarding();
+  await Promise.resolve();
+
+  expect(store().answer).toBeNull();
+  expect(await AsyncStorage.getItem(HEALTH_SAFETY_STORAGE_KEY)).toBeNull();
 });
