@@ -128,3 +128,30 @@ test('"Reia configuratorul" (resetOnboarding) forgets the safety answer too (A.7
   expect(store().answer).toBeNull();
   expect(await AsyncStorage.getItem(HEALTH_SAFETY_STORAGE_KEY)).toBeNull();
 });
+
+describe('healthSafetyStore: a failed delete is not inherited by the next account (A.7f-4)', () => {
+  test.each(['yes', 'no'] as const)(
+    'removeItem rejects after "%s": after a restart the answer is null',
+    async (given) => {
+      await store().setAnswer(given);
+      jest.spyOn(AsyncStorage, 'removeItem').mockRejectedValueOnce(new Error('disk'));
+
+      await store().reset();
+      useHealthSafetyStore.setState({ answer: null, isLoaded: false });
+      await store().load();
+
+      expect(store().answer).toBeNull();
+      expect(store().isLoaded).toBe(true);
+    }
+  );
+
+  test('when the delete and the marker both fail the session still starts unanswered', async () => {
+    await store().setAnswer('no');
+    jest.spyOn(AsyncStorage, 'removeItem').mockRejectedValueOnce(new Error('disk'));
+    jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('disk'));
+
+    await expect(store().reset()).resolves.toBeUndefined();
+
+    expect(store().answer).toBeNull();
+  });
+});

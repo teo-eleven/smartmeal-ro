@@ -29,6 +29,13 @@ const WARN_READ_FAILED_RO = 'Răspunsul la întrebarea de siguranță nu a putut
 const WARN_SAVE_FAILED_RO = 'Răspunsul la întrebarea de siguranță nu a putut fi salvat.';
 const WARN_DELETE_FAILED_RO = 'Răspunsul la întrebarea de siguranță nu a putut fi șters.';
 
+/**
+ * Written when the answer could not be deleted (account change on a failing disk). Anything
+ * that is not a plain yes/no reads back as "no answer", so this overwrites the old answer
+ * without needing the delete to work, and the next account is asked again.
+ */
+const UNANSWERED_MARKER = 'unanswered';
+
 /** Anything but a plain yes/no read back from storage counts as no answer: ask again. */
 function parseAnswer(raw: string | null): HealthSafetyAnswer {
   return raw === 'yes' || raw === 'no' ? raw : null;
@@ -48,6 +55,14 @@ async function readStoredAnswer(): Promise<HealthSafetyAnswer> {
   } catch (e) {
     warnSafely(WARN_READ_FAILED_RO, e);
     return null;
+  }
+}
+
+async function overwriteWithMarker(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(HEALTH_SAFETY_STORAGE_KEY, UNANSWERED_MARKER);
+  } catch (e) {
+    warnSafely(WARN_DELETE_FAILED_RO, e);
   }
 }
 
@@ -89,6 +104,7 @@ export const useHealthSafetyStore = create<HealthSafetyState>((set) => ({
       await AsyncStorage.removeItem(HEALTH_SAFETY_STORAGE_KEY);
     } catch (e) {
       warnSafely(WARN_DELETE_FAILED_RO, e);
+      await overwriteWithMarker();
     }
   },
 }));
