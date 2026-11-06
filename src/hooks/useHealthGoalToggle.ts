@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { isHealthGoal } from '../data/healthTags';
 import { useHealthSafetyStore } from '../store/healthSafetyStore';
 import { useAppStore } from '../store/useAppStore';
@@ -58,7 +58,11 @@ export function useHealthGoalToggle(options: HealthGoalToggleOptions): HealthGoa
   const isLoaded = useHealthSafetyStore((s) => s.isLoaded);
   const [pendingGoal, setPendingGoal] = useState<HealthGoalTag | null>(null);
   const latest = useRef({ ...options, pendingGoal });
-  latest.current = { ...options, pendingGoal };
+  // Written once the render is committed, not during it: a render React throws away must not
+  // change what a press acts on. A layout effect runs before the screen can be touched.
+  useLayoutEffect(() => {
+    latest.current = { ...options, pendingGoal };
+  });
 
   useEffect(() => {
     if (!isLoaded) void useHealthSafetyStore.getState().load();
