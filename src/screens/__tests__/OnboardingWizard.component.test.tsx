@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { OnboardingWizard } from '../onboarding/OnboardingWizard';
 import { useAppStore } from '../../store/useAppStore';
 import { getRetailProductsByCategory } from '../../data/retailProducts';
+import { HEALTH_DISCLAIMER_SHORT_RO } from '../../data/healthDisclaimer';
 
 function reset() {
   useAppStore.getState().resetOnboarding();
@@ -21,6 +22,12 @@ describe('OnboardingWizard', () => {
       screen.getByText(/Relevant dacă ai diabet sau prediabet\. Nu înlocuiește medicul\.$/)
     ).toBeTruthy();
     expect(screen.queryByText(/medicale/)).toBeNull();
+  });
+
+  test('the health goals carry the short "not medical advice" disclaimer (A.5)', () => {
+    render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
+
+    expect(screen.getByText(HEALTH_DISCLAIMER_SHORT_RO)).toBeTruthy();
   });
 
   test('opens on the diet step', () => {

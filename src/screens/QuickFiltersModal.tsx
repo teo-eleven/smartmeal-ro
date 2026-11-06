@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Appliance, DayOfWeek, HealthGoalTag, MoodTag, UserPreferences } from '../types';
 import { HEALTH_GOALS_CATALOG } from '../data/healthTags';
+import { HealthDisclaimer } from '../components/HealthDisclaimer';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { pressedState } from '../utils/pressedState';
@@ -440,6 +441,10 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                   );
                 })}
               </View>
+
+              <View style={styles.disclaimerSpacing}>
+                <HealthDisclaimer isDark={isDark} />
+              </View>
             </View>
 
             {/* Actions Bottom Bar */}
@@ -631,6 +636,7 @@ const styles = StyleSheet.create({
   presetBtnText: {
     fontSize: 12,
   },
+  disclaimerSpacing: { marginTop: 12 },
   moodGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

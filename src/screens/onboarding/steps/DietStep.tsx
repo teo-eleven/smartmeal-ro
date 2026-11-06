@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AllergenSelector } from '../../../components/AllergenSelector';
 import { EligibilityMeter } from '../../../components/EligibilityMeter';
+import { HealthDisclaimer } from '../../../components/HealthDisclaimer';
 import { HEALTH_GOALS_CATALOG } from '../../../data/healthTags';
 import { useAppStore } from '../../../store/useAppStore';
 import { glass } from '../../../styles/glass';
@@ -301,6 +302,8 @@ export function DietStep({
             );
           })}
         </View>
+
+        <HealthDisclaimer isDark={isDark} />
       </View>
 
       <EligibilityMeter preferences={preferences} isDark={isDark} />

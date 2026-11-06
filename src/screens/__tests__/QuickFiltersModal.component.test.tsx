@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { QuickFiltersModal } from '../QuickFiltersModal';
 import { DayOfWeek, UserPreferences } from '../../types';
+import { HEALTH_DISCLAIMER_SHORT_RO } from '../../data/healthDisclaimer';
 
 const WEEK: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
 
@@ -199,4 +200,10 @@ describe('QuickFiltersModal, zilele și persoanele', () => {
 
     expect(onApplyFilters.mock.calls[0][0].peopleCount).toBe(8);
   });
+});
+
+test('the health goals section carries the short "not medical advice" disclaimer (A.5)', () => {
+  setup();
+
+  expect(screen.getByText(HEALTH_DISCLAIMER_SHORT_RO)).toBeTruthy();
 });
