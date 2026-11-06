@@ -1,6 +1,6 @@
 import { calculateMinimumViableBudget } from '../engine/budgetCalculator';
 import { aggregateGroceryList } from '../engine/groceryAggregator';
-import { checkPlanFeasibility, generateMealPlan } from '../engine/plannerEngine';
+import { checkPlanFeasibility, generateMealPlan } from './guardedEngine';
 import { storageService } from '../services/storage';
 import { useHealthSafetyStore } from './healthSafetyStore';
 import { MealPlan, SavedPlan, UserPreferences } from '../types';

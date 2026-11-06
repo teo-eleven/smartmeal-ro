@@ -1,5 +1,5 @@
 import { DayOfWeek, MealPlan, MealSlot, Recipe, UserPreferences } from '../types';
-import { getEligibleDessertRecipes, getEligibleRecipes } from '../engine/plannerEngine';
+import { getEligibleDessertRecipes, getEligibleRecipes } from '../store/guardedEngine';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 
 export interface RankedCandidate {

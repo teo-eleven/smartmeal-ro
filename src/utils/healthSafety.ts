@@ -33,3 +33,17 @@ export function withoutBlockedGoals(
 ): HealthGoalTag[] {
   return goals.filter((goal) => !isGoalBlocked(goal, answer));
 }
+
+/**
+ * The preferences the planner may see. Health goals only apply after an explicit "no": with
+ * "yes" they are blocked, and with no answer (not asked yet, or not read yet) nothing is
+ * assumed. Pork-free always applies. Returns the same object when nothing has to change.
+ */
+export function effectivePreferences<T extends { healthGoalTags?: HealthGoalTag[] }>(
+  preferences: T,
+  answer: HealthSafetyAnswer
+): T {
+  const goals = preferences.healthGoalTags;
+  if (answer === 'no' || !goals || !goals.some(isHealthGoal)) return preferences;
+  return { ...preferences, healthGoalTags: goals.filter((goal) => !isHealthGoal(goal)) };
+}

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store/useAppStore';
 import { useBlockingWindow } from '../../hooks/useBlockingWindow';
-import { getEligibleRecipes, getEligibleDessertRecipes } from '../../engine/plannerEngine';
+import { getEligibleRecipes, getEligibleDessertRecipes } from '../../store/guardedEngine';
 import { DayOfWeek, MealSlot, Recipe } from '../../types';
 
 interface UseRecipeDetailArgs {

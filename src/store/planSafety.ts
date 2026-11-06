@@ -3,12 +3,8 @@ import { PORK_FREE_TAG, recipeContainsPork } from '../data/healthTags';
 import { resolveRecipeId } from '../data/recipeIdAliases';
 import { RECIPES_MAP } from '../data/recipes';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
-import {
-  getEligibleDessertRecipes,
-  getEligibleRecipes,
-  hasRequiredAppliances,
-  isSupermarketCompatible,
-} from '../engine/plannerEngine';
+import { hasRequiredAppliances, isSupermarketCompatible } from '../engine/plannerEngine';
+import { getEligibleDessertRecipes, getEligibleRecipes } from './guardedEngine';
 import { Allergen, MealPlanDay, PlannedMeal, Recipe, UserPreferences } from '../types';
 import { getRecipeAllergens } from '../utils/allergenFilter';
 import { isRecipeMatchingDiets } from '../utils/dietCompatibility';

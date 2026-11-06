@@ -1,4 +1,5 @@
 import {
+  effectivePreferences,
   HEALTH_SAFETY_QUESTION_RO,
   isGoalBlocked,
   needsSafetyQuestion,
@@ -50,5 +51,36 @@ describe('health safety question (A.7a)', () => {
     ]) {
       expect(HEALTH_SAFETY_QUESTION_RO).toContain(situation);
     }
+  });
+});
+
+describe('effectivePreferences: health goals apply only after a "no" (A.7e-2)', () => {
+  const prefs = {
+    peopleCount: 2,
+    healthGoalTags: ['heart_healthy', 'pork_free', 'high_fiber'] as HealthGoalTag[],
+  };
+
+  test('with no answer yet, goals are not applied but pork-free is', () => {
+    expect(effectivePreferences(prefs, null).healthGoalTags).toEqual(['pork_free']);
+  });
+
+  test('with "yes", goals are not applied but pork-free is', () => {
+    expect(effectivePreferences(prefs, 'yes').healthGoalTags).toEqual(['pork_free']);
+  });
+
+  test('with "no", everything applies and the same object comes back', () => {
+    expect(effectivePreferences(prefs, 'no')).toBe(prefs);
+  });
+
+  test('never mutates the input and keeps the other fields', () => {
+    const result = effectivePreferences(prefs, null);
+    expect(prefs.healthGoalTags).toEqual(['heart_healthy', 'pork_free', 'high_fiber']);
+    expect(result.peopleCount).toBe(2);
+    expect(result).not.toBe(prefs);
+  });
+
+  test('preferences without goals are returned as they are', () => {
+    const bare = { peopleCount: 1, healthGoalTags: [] as HealthGoalTag[] };
+    expect(effectivePreferences(bare, null)).toBe(bare);
   });
 });
