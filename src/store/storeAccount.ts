@@ -4,6 +4,7 @@ import { DEFAULT_REMINDERS } from '../types';
 import { StoreApi } from 'zustand';
 import { AppState } from './appState';
 import { DEFAULT_PREFERENCES } from './defaults';
+import { useHealthSafetyStore } from './healthSafetyStore';
 
 type SetState = StoreApi<AppState>['setState'];
 type GetState = () => AppState;
@@ -30,6 +31,8 @@ export function createAccountActions(set: SetState, get: GetState) {
     clearLocalAccountData: () => {
       cancelNoteUploads();
       void storageService.clearAccountData();
+      // The safety answer is about this person and lives under its own key (A.7e-4).
+      void useHealthSafetyStore.getState().reset();
       set({
         preferences: { ...DEFAULT_PREFERENCES },
         currentPlan: null,
