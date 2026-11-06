@@ -60,7 +60,7 @@ obiectivului tău, nu în alt scop.
 
 - **Fără cont**, rămân doar pe telefonul tău.
 - **Cu cont**, se sincronizează în cloud, împreună cu preferințele tale, pe baza aceluiași
-  consimțământ. Căsuța bifată la crearea contului acoperă „alergiile și dieta mea”.
+  consimțământ. Căsuța bifată la crearea contului acoperă „alergiile, dieta și obiectivele mele de sănătate”.
 
 **Întrebarea de siguranță.** Înainte de primul obiectiv de sănătate, aplicația te întreabă o
 dată, cu da sau nu, dacă ești însărcinată sau alăptezi, ai boală de rinichi, iei insulină,

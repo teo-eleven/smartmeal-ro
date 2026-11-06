@@ -118,7 +118,7 @@ describe('ecranul de login de la prima pornire', () => {
     fireEvent.changeText(screen.getByPlaceholderText('••••••••'), 'Muntele7Verde');
     fireEvent.press(screen.getByLabelText('Am cel puțin 16 ani'));
     fireEvent.press(
-      screen.getByLabelText('Sunt de acord ca alergiile și dieta mea să fie păstrate în cont')
+      screen.getByLabelText('Sunt de acord ca alergiile, dieta și obiectivele mele de sănătate să fie păstrate în cont')
     );
     fireEvent.press(screen.getByText('Înregistrare'));
 
