@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
+import { useIsExistingGoalsSafetyDue } from '../hooks/useIsExistingGoalsSafetyDue';
 import { useAuthSessionStore } from '../store/authSessionStore';
 import { REAUTH_INTERVAL_DAYS } from '../services/reauth';
 import { getAppTheme } from '../styles/theme';
@@ -31,9 +32,18 @@ export function BiometricOptInPrompt({ isDark, isSuppressed = false }: Biometric
   const isStoreWindowOpen = useAppStore((s) =>
     Boolean(s.activeNotice || s.confirmRequest || s.openWindowCount > 0)
   );
+  // The safety question goes first (A.7f-1); this offer waits until it is answered or closed.
+  const isSafetyQuestionDue = useIsExistingGoalsSafetyDue();
   const [isSaving, setIsSaving] = useState(false);
 
-  if (!email || !isSignedIn || !shouldOfferBiometric || isSuppressed || isStoreWindowOpen) {
+  if (
+    !email ||
+    !isSignedIn ||
+    !shouldOfferBiometric ||
+    isSuppressed ||
+    isStoreWindowOpen ||
+    isSafetyQuestionDue
+  ) {
     return null;
   }
 

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { useHealthSafetyStore } from '../store/healthSafetyStore';
-import { isHealthGoal } from '../data/healthTags';
+import { useIsExistingGoalsSafetyDue } from '../hooks/useIsExistingGoalsSafetyDue';
 import { withoutBlockedGoals } from '../utils/healthSafety';
 import { HealthSafetyPrompt } from './HealthSafetyPrompt';
 
@@ -21,14 +21,25 @@ export const ExistingGoalsSafetyPrompt: React.FC<ExistingGoalsSafetyPromptProps>
   isDark,
   isSuppressed = false,
 }) => {
-  const [isDismissed, setIsDismissed] = useState(false);
-  const answer = useHealthSafetyStore((s) => s.answer);
-  const isLoaded = useHealthSafetyStore((s) => s.isLoaded);
-  const hasHealthGoal = useAppStore((s) => (s.preferences.healthGoalTags ?? []).some(isHealthGoal));
-  const isOtherWindowOpen = useAppStore((s) => Boolean(s.activeNotice || s.confirmRequest));
+  const isDue = useIsExistingGoalsSafetyDue();
+  const wasVisible = useRef(false);
+  // The question registers its own window while it is up; only windows beyond that one count,
+  // or it would hide itself the moment it appeared.
+  const isOtherWindowOpen = useAppStore((s) => {
+    const ownWindows = wasVisible.current ? 1 : 0;
+    return Boolean(s.activeNotice || s.confirmRequest || s.openWindowCount > ownWindows);
+  });
+  const isVisible = isDue && !isSuppressed && !isOtherWindowOpen;
 
-  const mustAsk = isLoaded && answer === null && hasHealthGoal;
-  const isVisible = mustAsk && !isDismissed && !isSuppressed && !isOtherWindowOpen;
+  useEffect(() => {
+    wasVisible.current = isVisible;
+  }, [isVisible]);
+
+  // "Closed" lasts for this mount only, so the next launch asks again.
+  useEffect(
+    () => () => useHealthSafetyStore.getState().setReminderDismissed(false),
+    []
+  );
 
   const handleAnswer = (given: 'yes' | 'no') => {
     // The answer first, in memory: the goal strip below reads it.
@@ -44,7 +55,7 @@ export const ExistingGoalsSafetyPrompt: React.FC<ExistingGoalsSafetyPromptProps>
     <HealthSafetyPrompt
       visible={isVisible}
       onAnswer={(given) => void handleAnswer(given)}
-      onDismiss={() => setIsDismissed(true)}
+      onDismiss={() => useHealthSafetyStore.getState().setReminderDismissed(true)}
       isDark={isDark}
     />
   );

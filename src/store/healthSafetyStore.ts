@@ -14,6 +14,12 @@ interface HealthSafetyState {
   answer: HealthSafetyAnswer;
   /** The stored answer has been read (or failed to read); until then nothing is decided. */
   isLoaded: boolean;
+  /**
+   * The existing-goals question was closed without an answer. Memory only: it silences the
+   * question until the next launch, and tells the Face ID offer it may go ahead.
+   */
+  isReminderDismissed: boolean;
+  setReminderDismissed: (isDismissed: boolean) => void;
   load: () => Promise<void>;
   setAnswer: (answer: 'yes' | 'no') => Promise<void>;
   reset: () => Promise<void>;
@@ -48,6 +54,8 @@ async function readStoredAnswer(): Promise<HealthSafetyAnswer> {
 export const useHealthSafetyStore = create<HealthSafetyState>((set) => ({
   answer: null,
   isLoaded: false,
+  isReminderDismissed: false,
+  setReminderDismissed: (isReminderDismissed) => set({ isReminderDismissed }),
 
   load: () => {
     if (inFlightLoad) return inFlightLoad;
