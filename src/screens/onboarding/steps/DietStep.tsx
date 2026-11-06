@@ -237,11 +237,10 @@ export function DietStep({
       {/* HEALTH & WELLNESS GOALS */}
       <View style={styles.healthGoalsBlock}>
         <Text style={[sharedStyles.questionTitle, { color: theme.text, fontSize: 17 }]}>
-          🩺 Obiective de sănătate & stil de viață
+          🥗 Obiective de sănătate & stil de viață
         </Text>
         <Text style={[sharedStyles.questionSubtitle, { color: theme.textMuted }]}>
-          Opțional: filtre speciale nutriționale și medicale populare în România. Meniul recomandat
-          va prioritiza aceste criterii.
+          Opțional: cum vrei să arate farfuria. Meniul pune pe primul loc rețetele potrivite.
         </Text>
 
         <View style={[styles.dietList, isLargeScreen && styles.dietListDesktop]}>
@@ -269,6 +268,13 @@ export function DietStep({
                   <Text style={[styles.dietDesc, { color: theme.textMuted }]}>
                     {goal.descriptionRo}
                   </Text>
+                  {goal.conditionInfoRo && (
+                    <Text
+                      style={[styles.dietDesc, styles.conditionInfo, { color: theme.textMuted }]}
+                    >
+                      ⓘ {goal.conditionInfoRo}
+                    </Text>
+                  )}
                 </View>
                 <View
                   style={[
@@ -375,6 +381,11 @@ const styles = StyleSheet.create({
   dietDesc: {
     fontSize: 11,
     lineHeight: 14,
+  },
+  /** The condition a goal suits: information, set apart from what is on the plate. */
+  conditionInfo: {
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   healthGoalsBlock: {
     marginTop: 24,

@@ -13,6 +13,16 @@ function reset() {
 describe('OnboardingWizard', () => {
   beforeEach(reset);
 
+  test('a health goal shows the condition it suits as information, with the doctor caveat', () => {
+    render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
+
+    expect(screen.getByText('Atent la zaharuri')).toBeTruthy();
+    expect(
+      screen.getByText(/Relevant dacă ai diabet sau prediabet\. Nu înlocuiește medicul\.$/)
+    ).toBeTruthy();
+    expect(screen.queryByText(/medicale/)).toBeNull();
+  });
+
   test('opens on the diet step', () => {
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
     expect(screen.getByText(/Ai preferințe dietetice\?/i)).toBeTruthy();
@@ -125,7 +135,10 @@ describe('OnboardingWizard pe ecran lat', () => {
   beforeEach(() => {
     reset();
     jest.spyOn(Dimensions, 'get').mockReturnValue({
-      width: 1440, height: 900, scale: 2, fontScale: 1,
+      width: 1440,
+      height: 900,
+      scale: 2,
+      fontScale: 1,
     });
   });
 

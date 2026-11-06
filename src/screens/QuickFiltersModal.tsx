@@ -399,7 +399,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
             {/* Section 6: Obiective de Sănătate & Stil de Viață */}
             <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={styles.sectionHeaderRow}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>🩺 Obiective de Sănătate & Nutriție</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>🥗 Obiective de Sănătate & Nutriție</Text>
                 <Text style={[styles.sectionSubtitle, { color: theme.textMuted }]}>
                   {healthGoalTags.length} active
                 </Text>

@@ -12,6 +12,11 @@ export interface HealthGoalMeta {
   shortBadgeRo: string;
   icon: string;
   descriptionRo: string;
+  /**
+   * The condition the goal suits, as information only, and that it does not replace a doctor.
+   * Absent for choices that are not about health (pork-free).
+   */
+  conditionInfoRo?: string;
 }
 
 export const HEALTH_GOALS_CATALOG: HealthGoalMeta[] = [
@@ -21,6 +26,8 @@ export const HEALTH_GOALS_CATALOG: HealthGoalMeta[] = [
     shortBadgeRo: 'Mediteranean',
     icon: '🫒',
     descriptionRo: 'Pește, legume, leguminoase, nuci și ulei de măsline; fără zahăr rafinat.',
+    conditionInfoRo:
+      'Relevant dacă ai o afecțiune inflamatorie, de exemplu artrită. Nu înlocuiește medicul.',
   },
   {
     id: 'pcos_friendly',
@@ -29,6 +36,8 @@ export const HEALTH_GOALS_CATALOG: HealthGoalMeta[] = [
     icon: '⚖️',
     descriptionRo:
       'Proteine la fiecare masă, carbohidrați din cereale integrale și grăsimi din pește, nuci, avocado.',
+    conditionInfoRo:
+      'Relevant dacă ai sindromul ovarelor polichistice (SOP). Nu înlocuiește medicul.',
   },
   {
     id: 'diabetic_friendly',
@@ -36,6 +45,7 @@ export const HEALTH_GOALS_CATALOG: HealthGoalMeta[] = [
     shortBadgeRo: 'Puține zaharuri',
     icon: '🥣',
     descriptionRo: 'Fără zahăr adăugat, carbohidrați din cereale integrale și leguminoase.',
+    conditionInfoRo: 'Relevant dacă ai diabet sau prediabet. Nu înlocuiește medicul.',
   },
   {
     id: 'high_fiber',
@@ -43,6 +53,8 @@ export const HEALTH_GOALS_CATALOG: HealthGoalMeta[] = [
     shortBadgeRo: 'Bogat în fibre',
     icon: '🌾',
     descriptionRo: 'Legume, leguminoase, cereale integrale și semințe la fiecare masă.',
+    conditionInfoRo:
+      'Relevant dacă medicul ți-a recomandat mai multe fibre. Nu înlocuiește medicul.',
   },
   {
     id: 'heart_healthy',
@@ -50,6 +62,8 @@ export const HEALTH_GOALS_CATALOG: HealthGoalMeta[] = [
     shortBadgeRo: 'Puțină sare',
     icon: '🐟',
     descriptionRo: 'Pește, ulei de măsline și nuci în locul grăsimilor saturate; sare puțină.',
+    conditionInfoRo:
+      'Relevant dacă ai tensiunea mare sau colesterolul mărit. Nu înlocuiește medicul.',
   },
   {
     id: 'pork_free',
