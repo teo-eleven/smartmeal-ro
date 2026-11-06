@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { QuickFiltersModal } from '../QuickFiltersModal';
 import { DayOfWeek, UserPreferences } from '../../types';
-import { HEALTH_DISCLAIMER_SHORT_RO } from '../../data/healthDisclaimer';
+import { HEALTH_DISCLAIMER_LONG_RO, HEALTH_DISCLAIMER_SHORT_RO } from '../../data/healthDisclaimer';
 
 const WEEK: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
 
@@ -206,4 +206,12 @@ test('the health goals section carries the short "not medical advice" disclaimer
   setup();
 
   expect(screen.getByText(HEALTH_DISCLAIMER_SHORT_RO)).toBeTruthy();
+});
+
+test('the filters open the long disclaimer from "Despre obiectivele de sănătate" (A.6)', () => {
+  setup();
+
+  fireEvent.press(screen.getByRole('button', { name: 'Despre obiectivele de sănătate' }));
+
+  expect(screen.getByText(HEALTH_DISCLAIMER_LONG_RO)).toBeTruthy();
 });

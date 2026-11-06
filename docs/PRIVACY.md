@@ -53,6 +53,14 @@ comercial.
   versiunea acestei politici pe care ai acceptat-o.
 - Îți retragi acordul ștergând contul, din același ecran, oricând.
 
+### Obiectivele de sănătate nu sunt sfat medical
+
+Obiectivele din aplicație (de exemplu „Atent la zaharuri”, „Grăsimi bune, puțină sare”) descriu
+ce este în farfurie, nu efectul asupra unei afecțiuni. În aplicație, textul de mai jos se
+deschide din Filtre → „Despre obiectivele de sănătate”.
+
+> SmartMeal oferă planificare de mese și informații nutriționale pentru un stil de viață sănătos. Criteriile fiecărui obiectiv se bazează pe surse publice (de exemplu avizele EFSA și regulamentele UE privind mențiunile nutriționale și de sănătate). Valorile nutriționale sunt estimate pe baza ingredientelor și pot varia. Aplicația nu înlocuiește consultul medical și nu stabilește tratamente. Nu modifica medicația sau dieta prescrisă fără acordul medicului. Contează o alimentație variată și echilibrată și un stil de viață sănătos. În caz de urgență sună la 112.
+
 ## Ce NU colectăm
 
 Locație. Contacte. Cameră sau microfon. Identificatori de publicitate. Istoric de navigare.

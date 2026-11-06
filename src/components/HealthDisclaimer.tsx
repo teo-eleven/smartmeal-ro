@@ -7,7 +7,7 @@ export type HealthDisclaimerVariant = 'short' | 'long';
 
 interface HealthDisclaimerProps {
   isDark: boolean;
-  /** Short under goals and on a recipe; long in Settings. Defaults to short. */
+  /** Short under goals and on a recipe; long behind "Despre obiectivele de sănătate". Default: short. */
   variant?: HealthDisclaimerVariant;
 }
 

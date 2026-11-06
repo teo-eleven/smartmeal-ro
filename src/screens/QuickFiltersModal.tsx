@@ -12,6 +12,7 @@ import {
 import { Appliance, DayOfWeek, HealthGoalTag, MoodTag, UserPreferences } from '../types';
 import { HEALTH_GOALS_CATALOG } from '../data/healthTags';
 import { HealthDisclaimer } from '../components/HealthDisclaimer';
+import { HealthGoalsAbout } from '../components/HealthGoalsAbout';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { pressedState } from '../utils/pressedState';
@@ -444,6 +445,7 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
 
               <View style={styles.disclaimerSpacing}>
                 <HealthDisclaimer isDark={isDark} />
+                <HealthGoalsAbout isDark={isDark} />
               </View>
             </View>
 

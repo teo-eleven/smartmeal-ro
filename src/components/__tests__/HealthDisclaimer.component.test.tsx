@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 import { HealthDisclaimer } from '../HealthDisclaimer';
@@ -42,4 +44,10 @@ describe('disclaimer texts', () => {
     expect(HEALTH_DISCLAIMER_LONG_RO).toMatch(/Nu modifica medicația/);
     expect(HEALTH_DISCLAIMER_LONG_RO).toMatch(/112/);
   });
+});
+
+test('docs/PRIVACY.md carries the same long text as the app, word for word (A.6)', () => {
+  const privacy = readFileSync(join(__dirname, '../../../docs/PRIVACY.md'), 'utf8');
+
+  expect(privacy).toContain(`> ${HEALTH_DISCLAIMER_LONG_RO}`);
 });

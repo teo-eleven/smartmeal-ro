@@ -1,7 +1,8 @@
 /**
  * Health disclaimer texts, from docs/research/LEGAL_CLAIMS.md §6.4.
  *
- * Short: under the goals and on the recipe detail. Long: Settings and docs/PRIVACY.md.
+ * Short: under the goals and on the recipe detail. Long: Filters → "Despre obiectivele de
+ * sănătate" (there is no Settings screen) and docs/PRIVACY.md, kept word for word by a test.
  * The long text leaves out "reviewed by a licensed dietitian" until that review has
  * happened (stage G); add it back then, with the dietitian's name and CDR number.
  */
