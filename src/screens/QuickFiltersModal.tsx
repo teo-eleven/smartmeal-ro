@@ -15,6 +15,8 @@ import { HealthDisclaimer } from '../components/HealthDisclaimer';
 import { HealthGoalsAbout } from '../components/HealthGoalsAbout';
 import { HealthSafetyBlockedNotice } from '../components/HealthSafetyBlockedNotice';
 import { HealthSafetyPrompt } from '../components/HealthSafetyPrompt';
+import { useHealthSafetyStore } from '../store/healthSafetyStore';
+import { withoutBlockedGoals } from '../utils/healthSafety';
 import { useHealthGoalToggle } from '../hooks/useHealthGoalToggle';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
@@ -151,7 +153,8 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
       budgetRon: finalBudget,
       moodTags,
       appliances,
-      healthGoalTags,
+      // Read at press time: the answer may have changed since the goals were ticked.
+      healthGoalTags: withoutBlockedGoals(healthGoalTags, useHealthSafetyStore.getState().answer),
     });
     onClose();
   };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { act, render, screen, fireEvent } from '@testing-library/react-native';
 import { QuickFiltersModal } from '../QuickFiltersModal';
 import { DayOfWeek, UserPreferences } from '../../types';
 import { HEALTH_DISCLAIMER_LONG_RO, HEALTH_DISCLAIMER_SHORT_RO } from '../../data/healthDisclaimer';
@@ -261,5 +261,13 @@ describe('the safety question in the filters (A.7c)', () => {
 
     expect(useHealthSafetyStore.getState().answer).toBeNull();
     expect(screen.getByRole('checkbox', { name: /Bogat în fibre/, disabled: false })).toBeTruthy();
+  });
+  test('"Aplică" never hands over a blocked goal, even one ticked before the answer was "Da"', () => {
+    const { onApplyFilters } = setup({ healthGoalTags: ['heart_healthy', 'pork_free'] });
+    act(() => useHealthSafetyStore.setState({ answer: 'yes', isLoaded: true }));
+
+    apply();
+
+    expect(onApplyFilters.mock.calls[0][0].healthGoalTags).toEqual(['pork_free']);
   });
 });
