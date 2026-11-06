@@ -3,7 +3,10 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AllergenSelector } from '../../../components/AllergenSelector';
 import { EligibilityMeter } from '../../../components/EligibilityMeter';
 import { HealthDisclaimer } from '../../../components/HealthDisclaimer';
+import { HealthSafetyBlockedNotice } from '../../../components/HealthSafetyBlockedNotice';
+import { HealthSafetyPrompt } from '../../../components/HealthSafetyPrompt';
 import { HEALTH_GOALS_CATALOG } from '../../../data/healthTags';
+import { useHealthGoalToggle } from '../../../hooks/useHealthGoalToggle';
 import { useAppStore } from '../../../store/useAppStore';
 import { glass } from '../../../styles/glass';
 import { DietType } from '../../../types';
@@ -35,6 +38,13 @@ export function DietStep({
       : [preferences.dietType];
   const activeBaseDiet: DietType =
     selectedDiets.find(isBaseDiet) || preferences.dietType || 'omnivore';
+
+  const setHealthGoalTags = useAppStore((s) => s.setHealthGoalTags);
+  const healthGoals = useHealthGoalToggle({
+    selectedGoals: preferences.healthGoalTags || [],
+    toggleGoal: toggleHealthGoalTag,
+    replaceGoals: setHealthGoalTags,
+  });
 
   const baseDietOptions = DIET_OPTIONS_CATALOG.filter((d) => isBaseDiet(d.id));
   const modifierDietOptions = DIET_OPTIONS_CATALOG.filter((d) => isModifierDiet(d.id));
@@ -244,19 +254,27 @@ export function DietStep({
           Opțional: cum vrei să arate farfuria. Meniul pune pe primul loc rețetele potrivite.
         </Text>
 
+        {healthGoals.answer === 'yes' && (
+          <HealthSafetyBlockedNotice isDark={isDark} onChangeAnswer={healthGoals.changeAnswer} />
+        )}
+
         <View style={[styles.dietList, isLargeScreen && styles.dietListDesktop]}>
           {HEALTH_GOALS_CATALOG.map((goal) => {
             const isSelected = (preferences.healthGoalTags || []).includes(goal.id);
+            const isBlocked = healthGoals.isBlocked(goal.id);
             return (
               <TouchableOpacity
                 accessibilityRole="checkbox"
                 aria-checked={isSelected}
+                aria-disabled={isBlocked}
+                disabled={isBlocked}
                 key={goal.id}
-                onPress={() => toggleHealthGoalTag(goal.id)}
+                onPress={() => healthGoals.pressGoal(goal.id)}
                 activeOpacity={0.75}
                 style={[
                   styles.dietCard,
                   isLargeScreen && styles.dietCardDesktop,
+                  isBlocked && styles.blockedGoal,
                   {
                     backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
                     borderColor: isSelected ? theme.primary : theme.border,
@@ -304,6 +322,12 @@ export function DietStep({
         </View>
 
         <HealthDisclaimer isDark={isDark} />
+        <HealthSafetyPrompt
+          visible={healthGoals.isAsking}
+          onAnswer={healthGoals.answerQuestion}
+          onDismiss={healthGoals.dismissQuestion}
+          isDark={isDark}
+        />
       </View>
 
       <EligibilityMeter preferences={preferences} isDark={isDark} />
@@ -386,6 +410,8 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   /** The condition a goal suits: information, set apart from what is on the plate. */
+  /** A health goal after a "yes" to the safety question: visible, but not choosable. */
+  blockedGoal: { opacity: 0.45 },
   conditionInfo: {
     marginTop: 4,
     fontStyle: 'italic',

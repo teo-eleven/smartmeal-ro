@@ -11,6 +11,7 @@ import { WeeklyMacroModal } from '../WeeklyMacroModal';
 import { QuickFiltersModal } from '../QuickFiltersModal';
 import { AuthModal } from '../AuthModal';
 import { useAppStore } from '../../store/useAppStore';
+import { useHealthSafetyStore } from '../../store/healthSafetyStore';
 import { RECIPES } from '../../data/recipes';
 import { DayOfWeek, MealSlot, UserPreferences } from '../../types';
 
@@ -48,6 +49,7 @@ function seedReadyPlan() {
 function resetAll() {
   useAppStore.getState().resetOnboarding();
   useAppStore.getState().dismissUndo();
+  useHealthSafetyStore.setState({ answer: null, isLoaded: true });
 }
 
 describe('TESTARE EXHAUSTIVĂ: Toate butoanele și scenariile din aplicație', () => {
@@ -78,7 +80,9 @@ describe('TESTARE EXHAUSTIVĂ: Toate butoanele și scenariile din aplicație', (
       expect(useAppStore.getState().preferences.dietTypes).toContain('keto');
 
       // Obiective de Sănătate
+      // The first health goal asks the safety question (A.7); "Nu" lets it through.
       fireEvent.press(screen.getByText('Stil mediteranean'));
+      fireEvent.press(screen.getByRole('button', { name: 'Nu, niciuna' }));
       expect(useAppStore.getState().preferences.healthGoalTags).toContain('anti_inflammatory');
 
       fireEvent.press(screen.getByText('Echilibrat'));
@@ -283,7 +287,9 @@ describe('TESTARE EXHAUSTIVĂ: Toate butoanele și scenariile din aplicație', (
 
       const initialServings = useAppStore.getState().currentPlan!.days[0].meals[0].servings;
       fireEvent.press(addBtns[0]);
-      expect(useAppStore.getState().currentPlan!.days[0].meals[0].servings).toBe(initialServings + 1);
+      expect(useAppStore.getState().currentPlan!.days[0].meals[0].servings).toBe(
+        initialServings + 1
+      );
 
       fireEvent.press(minusBtns[0]);
       expect(useAppStore.getState().currentPlan!.days[0].meals[0].servings).toBe(initialServings);
@@ -427,12 +433,16 @@ describe('TESTARE EXHAUSTIVĂ: Toate butoanele și scenariile din aplicație', (
 
       // Bifează tot
       fireEvent.press(screen.getByText('✓ Bifează tot'));
-      const purchasedAfterCheckAll = useAppStore.getState().groceryItems.filter((i) => i.isPurchased).length;
+      const purchasedAfterCheckAll = useAppStore
+        .getState()
+        .groceryItems.filter((i) => i.isPurchased).length;
       expect(purchasedAfterCheckAll).toBe(useAppStore.getState().groceryItems.length);
 
       // Deselectează
       fireEvent.press(screen.getByText('Deselectează'));
-      const purchasedAfterUncheck = useAppStore.getState().groceryItems.filter((i) => i.isPurchased).length;
+      const purchasedAfterUncheck = useAppStore
+        .getState()
+        .groceryItems.filter((i) => i.isPurchased).length;
       expect(purchasedAfterUncheck).toBe(0);
     });
 
