@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal } from 'react-native';
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ExistingGoalsSafetyPrompt } from '../ExistingGoalsSafetyPrompt';
 import { BiometricOptInPrompt } from '../BiometricOptInPrompt';
@@ -184,5 +184,55 @@ describe('other windows and the question, in any order (A.7g-2)', () => {
     useAppStore.getState().windowClosed('zzz');
 
     expect(useAppStore.getState().openWindowIds).toEqual(['a']);
+  });
+});
+
+describe('closed without an answer lasts the whole launch (A.7g-3)', () => {
+  const dismiss = async () => {
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Închide întrebarea', { includeHiddenElements: true }));
+    });
+  };
+
+  test('after closing, leaving and coming back to the screen does not ask again', async () => {
+    const first = render(<ExistingGoalsSafetyPrompt isDark={false} />);
+    await dismiss();
+
+    first.unmount();
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+    expect(useHealthSafetyStore.getState().isReminderDismissed).toBe(true);
+  });
+
+  test('a real relaunch (fresh store state) asks again', async () => {
+    const first = render(<ExistingGoalsSafetyPrompt isDark={false} />);
+    await dismiss();
+    first.unmount();
+
+    // A new launch starts from the store's initial state; nothing was persisted.
+    useHealthSafetyStore.setState({ isReminderDismissed: false, isLoaded: true, answer: null });
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+  });
+
+  test('closing writes nothing to storage', async () => {
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+
+    await dismiss();
+
+    expect(await AsyncStorage.getAllKeys()).toEqual([]);
+  });
+
+  test('a reset of the answer does not bring the question back in the same launch', async () => {
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+    await dismiss();
+
+    await act(async () => {
+      await useHealthSafetyStore.getState().reset();
+    });
+
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
   });
 });

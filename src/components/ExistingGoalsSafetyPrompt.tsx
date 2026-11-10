@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect } from 'react';
+import React, { useLayoutEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { useHealthSafetyStore } from '../store/healthSafetyStore';
 import { useIsExistingGoalsSafetyDue } from '../hooks/useIsExistingGoalsSafetyDue';
@@ -17,7 +17,9 @@ interface ExistingGoalsSafetyPromptProps {
  * The safety question for people who chose health goals before it existed (A.7e-3). Goals
  * stay inactive until it is answered (A.7e-2), so this asks once the app has started:
  * "Da" blocks and clears the goals, "Nu" lets them apply from the next plan on. Closing saves
- * nothing and only silences it until the next launch, which is why the flag is local state.
+ * nothing and only silences it until the next launch: the flag lives in memory in the safety
+ * store (never persisted), so it survives this component being unmounted and mounted again
+ * when the app switches between dashboard, onboarding and paywall, and a relaunch starts clean.
  */
 export const ExistingGoalsSafetyPrompt: React.FC<ExistingGoalsSafetyPromptProps> = ({
   isDark,
@@ -40,12 +42,6 @@ export const ExistingGoalsSafetyPrompt: React.FC<ExistingGoalsSafetyPromptProps>
     setSafetyPromptMounted(true);
     return () => setSafetyPromptMounted(false);
   }, []);
-
-  // "Closed" lasts for this mount only, so the next launch asks again.
-  useEffect(
-    () => () => useHealthSafetyStore.getState().setReminderDismissed(false),
-    []
-  );
 
   const handleAnswer = (given: 'yes' | 'no') => {
     // The answer first, in memory: the goal strip below reads it.

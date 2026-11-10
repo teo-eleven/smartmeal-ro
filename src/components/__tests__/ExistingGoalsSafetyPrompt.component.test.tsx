@@ -19,6 +19,7 @@ const goals = () => useAppStore.getState().preferences.healthGoalTags;
 beforeEach(async () => {
   await AsyncStorage.clear();
   setAnswer(null);
+  useHealthSafetyStore.setState({ isReminderDismissed: false });
   useAppStore.setState({ currentPlan: null, activeNotice: null, confirmRequest: null });
   setGoals(['heart_healthy', 'pork_free']);
 });
@@ -101,6 +102,8 @@ describe('ExistingGoalsSafetyPrompt (A.7e-3)', () => {
     expect(goals()).toEqual(['heart_healthy', 'pork_free']);
 
     first.unmount();
+    // A new launch starts from the store's initial state (nothing was persisted).
+    useHealthSafetyStore.setState({ isReminderDismissed: false });
     render(<ExistingGoalsSafetyPrompt isDark={false} />);
     expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
   });
