@@ -1,9 +1,11 @@
-import React, { useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { useHealthSafetyStore } from '../store/healthSafetyStore';
 import { useIsExistingGoalsSafetyDue } from '../hooks/useIsExistingGoalsSafetyDue';
 import { withoutBlockedGoals } from '../utils/healthSafety';
 import { HealthSafetyPrompt } from './HealthSafetyPrompt';
+
+const SAFETY_WINDOW_ID = 'existing-goals-safety-question';
 
 interface ExistingGoalsSafetyPromptProps {
   isDark: boolean;
@@ -22,18 +24,14 @@ export const ExistingGoalsSafetyPrompt: React.FC<ExistingGoalsSafetyPromptProps>
   isSuppressed = false,
 }) => {
   const isDue = useIsExistingGoalsSafetyDue();
-  const wasVisible = useRef(false);
-  // The question registers its own window while it is up; only windows beyond that one count,
-  // or it would hide itself the moment it appeared.
+  // The question registers its own window (by id) while it is up; only windows other than that
+  // one count, or it would hide itself the moment it appeared. Count and ids change in one
+  // store update, so the answer does not depend on which effect ran first.
   const isOtherWindowOpen = useAppStore((s) => {
-    const ownWindows = wasVisible.current ? 1 : 0;
+    const ownWindows = s.openWindowIds.filter((id) => id === SAFETY_WINDOW_ID).length;
     return Boolean(s.activeNotice || s.confirmRequest || s.openWindowCount > ownWindows);
   });
   const isVisible = isDue && !isSuppressed && !isOtherWindowOpen;
-
-  useEffect(() => {
-    wasVisible.current = isVisible;
-  }, [isVisible]);
 
   // Tells the Face ID offer the question is on this screen. A layout effect, so the offer
   // already knows before the first frame is drawn.
@@ -65,6 +63,7 @@ export const ExistingGoalsSafetyPrompt: React.FC<ExistingGoalsSafetyPromptProps>
       onAnswer={(given) => void handleAnswer(given)}
       onDismiss={() => useHealthSafetyStore.getState().setReminderDismissed(true)}
       isDark={isDark}
+      windowId={SAFETY_WINDOW_ID}
     />
   );
 };

@@ -191,9 +191,23 @@ export const useAppStore = create<AppState>((rawSet, get) => {
     },
 
     openWindowCount: 0,
-    windowOpened: () => set((state) => ({ openWindowCount: state.openWindowCount + 1 })),
-    windowClosed: () =>
-      set((state) => ({ openWindowCount: Math.max(0, state.openWindowCount - 1) })),
+    openWindowIds: [],
+    windowOpened: (id) =>
+      set((state) => ({
+        openWindowCount: state.openWindowCount + 1,
+        openWindowIds: id === undefined ? state.openWindowIds : [...state.openWindowIds, id],
+      })),
+    windowClosed: (id) =>
+      set((state) => {
+        const index = id === undefined ? -1 : state.openWindowIds.indexOf(id);
+        // An id that was never registered must not change the count either.
+        if (id !== undefined && index === -1) return {};
+        return {
+          openWindowCount: Math.max(0, state.openWindowCount - 1),
+          openWindowIds:
+            index === -1 ? state.openWindowIds : state.openWindowIds.filter((_, i) => i !== index),
+        };
+      }),
 
     setActiveView: (view) => set(() => ({ activeView: view })),
     ...createSessionActions(set, get),

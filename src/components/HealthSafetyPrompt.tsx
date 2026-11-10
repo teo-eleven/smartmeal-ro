@@ -11,6 +11,8 @@ interface HealthSafetyPromptProps {
   /** Closed without an answer: nothing is ticked and nothing is saved. */
   onDismiss: () => void;
   isDark: boolean;
+  /** Registered with the window registry under this id, so its owner can tell its own window. */
+  windowId?: string;
 }
 
 const STAYS_ON_PHONE_RO = 'Răspunsul rămâne doar pe acest telefon.';
@@ -42,8 +44,9 @@ export const HealthSafetyPrompt: React.FC<HealthSafetyPromptProps> = ({
   onAnswer,
   onDismiss,
   isDark,
+  windowId,
 }) => {
-  useBlockingWindow(visible);
+  useBlockingWindow(visible, windowId);
   const theme = getAppTheme(isDark);
 
   return (

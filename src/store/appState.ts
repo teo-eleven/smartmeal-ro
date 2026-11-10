@@ -115,8 +115,10 @@ export interface AppState {
   clearNotice: () => void;
   /** Modals on screen; notices wait for zero, because iOS shows one Modal at a time. */
   openWindowCount: number;
-  windowOpened: () => void;
-  windowClosed: () => void;
+  /** Ids of the windows that named themselves, so one can ask about "windows other than mine". */
+  openWindowIds: string[];
+  windowOpened: (id?: string) => void;
+  windowClosed: (id?: string) => void;
 
   // Domain State
   preferences: UserPreferences;
