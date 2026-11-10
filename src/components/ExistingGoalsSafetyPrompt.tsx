@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { useHealthSafetyStore } from '../store/healthSafetyStore';
 import { useIsExistingGoalsSafetyDue } from '../hooks/useIsExistingGoalsSafetyDue';
@@ -34,6 +34,14 @@ export const ExistingGoalsSafetyPrompt: React.FC<ExistingGoalsSafetyPromptProps>
   useEffect(() => {
     wasVisible.current = isVisible;
   }, [isVisible]);
+
+  // Tells the Face ID offer the question is on this screen. A layout effect, so the offer
+  // already knows before the first frame is drawn.
+  useLayoutEffect(() => {
+    const { setSafetyPromptMounted } = useHealthSafetyStore.getState();
+    setSafetyPromptMounted(true);
+    return () => setSafetyPromptMounted(false);
+  }, []);
 
   // "Closed" lasts for this mount only, so the next launch asks again.
   useEffect(

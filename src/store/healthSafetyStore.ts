@@ -20,6 +20,13 @@ interface HealthSafetyState {
    */
   isReminderDismissed: boolean;
   setReminderDismissed: (isDismissed: boolean) => void;
+  /**
+   * The existing-goals question is mounted on the screen now. Memory only. The Face ID offer
+   * waits for the question only while it can actually be answered here: some App branches
+   * (paywall, onboarding) render the offer without the question.
+   */
+  isSafetyPromptMounted: boolean;
+  setSafetyPromptMounted: (isMounted: boolean) => void;
   load: () => Promise<void>;
   setAnswer: (answer: 'yes' | 'no') => Promise<void>;
   reset: () => Promise<void>;
@@ -71,6 +78,8 @@ export const useHealthSafetyStore = create<HealthSafetyState>((set) => ({
   isLoaded: false,
   isReminderDismissed: false,
   setReminderDismissed: (isReminderDismissed) => set({ isReminderDismissed }),
+  isSafetyPromptMounted: false,
+  setSafetyPromptMounted: (isSafetyPromptMounted) => set({ isSafetyPromptMounted }),
 
   load: () => {
     if (inFlightLoad) return inFlightLoad;
