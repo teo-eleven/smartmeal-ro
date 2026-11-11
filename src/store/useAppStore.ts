@@ -202,6 +202,8 @@ export const useAppStore = create<AppState>((rawSet, get) => {
         const index = id === undefined ? -1 : state.openWindowIds.indexOf(id);
         // An id that was never registered must not change the count either.
         if (id !== undefined && index === -1) return {};
+        // Nor may a close with no id take the place of a window that has one.
+        if (id === undefined && state.openWindowCount <= state.openWindowIds.length) return {};
         return {
           openWindowCount: Math.max(0, state.openWindowCount - 1),
           openWindowIds:
