@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
-import { useIsSafetyQuestionBlockingOffer } from '../hooks/useIsExistingGoalsSafetyDue';
+import { useIsExistingGoalsSafetyDue } from '../hooks/useIsExistingGoalsSafetyDue';
 import { useAuthSessionStore } from '../store/authSessionStore';
 import { REAUTH_INTERVAL_DAYS } from '../services/reauth';
 import { getAppTheme } from '../styles/theme';
@@ -15,6 +15,11 @@ interface BiometricOptInPromptProps {
    * Notices and confirmations are read from the store here, so no caller can forget them.
    */
   isSuppressed?: boolean;
+  /**
+   * The safety question is rendered next to this offer (the main shell only), so the offer
+   * waits for it. A static prop, not a store flag: it is right on the very first commit.
+   */
+  waitsForSafetyQuestion?: boolean;
 }
 
 /**
@@ -24,7 +29,11 @@ interface BiometricOptInPromptProps {
  *
  * Not behind the monthly lock: the offer waits until the person has been verified.
  */
-export function BiometricOptInPrompt({ isDark, isSuppressed = false }: BiometricOptInPromptProps) {
+export function BiometricOptInPrompt({
+  isDark,
+  isSuppressed = false,
+  waitsForSafetyQuestion = false,
+}: BiometricOptInPromptProps) {
   const theme = getAppTheme(isDark);
   const email = useAppStore((s) => s.userEmail);
   const isSignedIn = useAppStore((s) => s.authStatus === 'signedIn');
@@ -34,7 +43,7 @@ export function BiometricOptInPrompt({ isDark, isSuppressed = false }: Biometric
   );
   // The safety question goes first (A.7f-1); this offer waits until it is answered or closed,
   // but only where the question is on screen.
-  const isSafetyQuestionDue = useIsSafetyQuestionBlockingOffer();
+  const isSafetyQuestionDue = useIsExistingGoalsSafetyDue();
   const [isSaving, setIsSaving] = useState(false);
 
   if (
@@ -43,7 +52,7 @@ export function BiometricOptInPrompt({ isDark, isSuppressed = false }: Biometric
     !shouldOfferBiometric ||
     isSuppressed ||
     isStoreWindowOpen ||
-    isSafetyQuestionDue
+    (waitsForSafetyQuestion && isSafetyQuestionDue)
   ) {
     return null;
   }

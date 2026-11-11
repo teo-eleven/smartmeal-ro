@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from 'react';
+import React from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { useHealthSafetyStore } from '../store/healthSafetyStore';
 import { useIsExistingGoalsSafetyDue } from '../hooks/useIsExistingGoalsSafetyDue';
@@ -34,14 +34,6 @@ export const ExistingGoalsSafetyPrompt: React.FC<ExistingGoalsSafetyPromptProps>
     return Boolean(s.activeNotice || s.confirmRequest || s.openWindowCount > ownWindows);
   });
   const isVisible = isDue && !isSuppressed && !isOtherWindowOpen;
-
-  // Tells the Face ID offer the question is on this screen. A layout effect, so the offer
-  // already knows before the first frame is drawn.
-  useLayoutEffect(() => {
-    const { setSafetyPromptMounted } = useHealthSafetyStore.getState();
-    setSafetyPromptMounted(true);
-    return () => setSafetyPromptMounted(false);
-  }, []);
 
   const handleAnswer = (given: 'yes' | 'no') => {
     // The answer first, in memory: the goal strip below reads it.

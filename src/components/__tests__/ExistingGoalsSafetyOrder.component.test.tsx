@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal } from 'react-native';
+import { Modal, Text, View } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ExistingGoalsSafetyPrompt } from '../ExistingGoalsSafetyPrompt';
@@ -18,7 +18,6 @@ beforeEach(async () => {
     answer: null,
     isLoaded: true,
     isReminderDismissed: false,
-    isSafetyPromptMounted: false,
   });
   useAppStore.setState((s) => ({
     activeNotice: null,
@@ -51,7 +50,7 @@ describe('Face ID offer waits only for a question that is on this screen (A.7g-1
   test('on the main shell the question still goes first', () => {
     render(
       <>
-        <BiometricOptInPrompt isDark={false} />
+        <BiometricOptInPrompt isDark={false} waitsForSafetyQuestion />
         <ExistingGoalsSafetyPrompt isDark={false} />
       </>
     );
@@ -63,7 +62,7 @@ describe('Face ID offer waits only for a question that is on this screen (A.7g-1
   test('the offer comes through once the safety prompt leaves the screen', () => {
     const tree = (hasSafety: boolean) => (
       <>
-        <BiometricOptInPrompt isDark={false} />
+        <BiometricOptInPrompt isDark={false} waitsForSafetyQuestion={hasSafety} />
         {hasSafety ? <ExistingGoalsSafetyPrompt isDark={false} /> : null}
       </>
     );
@@ -72,14 +71,47 @@ describe('Face ID offer waits only for a question that is on this screen (A.7g-1
 
     view.rerender(tree(false));
 
-    expect(useHealthSafetyStore.getState().isSafetyPromptMounted).toBe(false);
     expect(screen.getByText(FACE_ID_TEXT)).toBeTruthy();
   });
 
   test('the safety prompt shows on its first render of the shell', () => {
     render(<ExistingGoalsSafetyPrompt isDark={false} />);
 
-    expect(useHealthSafetyStore.getState().isSafetyPromptMounted).toBe(true);
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+  });
+});
+
+describe('the main shell never shows both windows in one commit (A.7h-1)', () => {
+  test('moving to the shell with the question due: the Face ID offer is never visible', () => {
+    const faceIdSeen: boolean[] = [];
+    let isRecording = false;
+    const onRender = () => {
+      // The host output as committed, read in the middle of the commit.
+      if (isRecording) faceIdSeen.push(JSON.stringify(screen.toJSON()).includes(FACE_ID_TEXT));
+    };
+    // A stable root View, so `screen` keeps pointing at a mounted node across branches.
+    const tree = (isShell: boolean) => (
+      <View>
+        <React.Profiler id="shell" onRender={onRender}>
+          {isShell ? (
+            <>
+              <BiometricOptInPrompt isDark={false} waitsForSafetyQuestion />
+              <ExistingGoalsSafetyPrompt isDark={false} />
+            </>
+          ) : (
+            <Text>paywall</Text>
+          )}
+        </React.Profiler>
+      </View>
+    );
+    // Start on a branch with neither window, so `screen` exists for every later commit.
+    const view = render(tree(false));
+    isRecording = true;
+
+    view.rerender(tree(true));
+
+    expect(faceIdSeen.length).toBeGreaterThan(0);
+    expect(faceIdSeen.some(Boolean)).toBe(false);
     expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
   });
 });

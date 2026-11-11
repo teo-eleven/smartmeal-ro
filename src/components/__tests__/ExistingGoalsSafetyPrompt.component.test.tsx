@@ -199,7 +199,7 @@ describe('no stacked windows (A.7f-1)', () => {
   test('the safety question goes first: the Face ID offer waits, then appears after the answer', async () => {
     render(
       <>
-        <Biometric isDark={false} />
+        <Biometric isDark={false} waitsForSafetyQuestion />
         <ExistingGoalsSafetyPrompt isDark={false} />
       </>
     );
@@ -218,7 +218,7 @@ describe('no stacked windows (A.7f-1)', () => {
   test('closing the safety question without an answer lets the Face ID offer through', async () => {
     render(
       <>
-        <Biometric isDark={false} />
+        <Biometric isDark={false} waitsForSafetyQuestion />
         <ExistingGoalsSafetyPrompt isDark={false} />
       </>
     );

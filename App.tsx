@@ -541,7 +541,7 @@ function AppShell() {
 
       {/* Global Informative Notice Pop-up */}
       <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
-      <BiometricOptInPrompt isDark={isDark} />
+      <BiometricOptInPrompt isDark={isDark} waitsForSafetyQuestion />
       <ExistingGoalsSafetyPrompt isDark={isDark} isSuppressed={authModalVisible} />
 
       <UndoBanner
