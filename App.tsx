@@ -21,6 +21,7 @@ import { AuthModal } from './src/screens/AuthModal';
 import { AuthGate, isGateShowing } from './src/screens/AuthGate';
 import { BiometricOptInPrompt } from './src/components/BiometricOptInPrompt';
 import { ExistingGoalsSafetyPrompt } from './src/components/ExistingGoalsSafetyPrompt';
+import { IosGoalsNotice } from './src/components/IosGoalsNotice';
 import { InformativeNoticeModal } from './src/components/InformativeNoticeModal';
 import { ConfirmDialog } from './src/components/ConfirmDialog';
 import { SUPERMARKETS } from './src/data/supermarkets';
@@ -543,6 +544,7 @@ function AppShell() {
       <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
       <BiometricOptInPrompt isDark={isDark} waitsForSafetyQuestion />
       <ExistingGoalsSafetyPrompt isDark={isDark} isSuppressed={authModalVisible} />
+      <IosGoalsNotice isDark={isDark} isSuppressed={authModalVisible} />
 
       <UndoBanner
         visible={Boolean(lastDiscardedPlan)}
