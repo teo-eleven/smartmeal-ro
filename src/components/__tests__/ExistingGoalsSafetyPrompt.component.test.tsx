@@ -9,6 +9,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { useHealthSafetyStore } from '../../store/healthSafetyStore';
 import { HEALTH_SAFETY_QUESTION_RO } from '../../utils/healthSafety';
 import { HealthGoalTag } from '../../types';
+import * as platformHealth from '../../utils/platformHealth';
 
 const setGoals = (healthGoalTags: HealthGoalTag[]) =>
   useAppStore.setState((s) => ({ preferences: { ...s.preferences, healthGoalTags } }));
@@ -231,6 +232,43 @@ describe('no stacked windows (A.7f-1)', () => {
       fireEvent.press(screen.getByLabelText('Închide întrebarea', { includeHiddenElements: true }));
     });
 
+    expect(screen.getByText(FACE_ID_TEXT)).toBeTruthy();
+  });
+});
+
+describe('on iOS the question for old goals never shows (A.8)', () => {
+  beforeEach(() => {
+    jest.spyOn(platformHealth, 'areHealthGoalsAvailable').mockReturnValue(false);
+    useAppStore.setState({ openWindowCount: 0, authStatus: 'signedIn', userEmail: 'ana@b.ro' });
+    useAuthSessionStore.setState({
+      shouldOfferBiometric: true,
+      biometricLabel: 'Face ID',
+      answerBiometricOffer: jest.fn(async () => undefined),
+    });
+  });
+  afterEach(() => {
+    jest.restoreAllMocks();
+    useAuthSessionStore.getState().clear();
+    useAppStore.setState({ openWindowCount: 0, authStatus: 'checking', userEmail: null });
+  });
+
+  test('stored, unanswered goals do not bring the question up, and stay stored', () => {
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+    expect(useAppStore.getState().openWindowCount).toBe(0);
+    expect(goals()).toEqual(['heart_healthy', 'pork_free']);
+  });
+
+  test('the Face ID offer does not wait for a question that will not come', () => {
+    render(
+      <>
+        <Biometric isDark={false} waitsForSafetyQuestion />
+        <ExistingGoalsSafetyPrompt isDark={false} />
+      </>
+    );
+
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
     expect(screen.getByText(FACE_ID_TEXT)).toBeTruthy();
   });
 });
