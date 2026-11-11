@@ -6,6 +6,8 @@
  * because the app can no longer protect what it cannot read.
  */
 
+import { areHealthGoalsAvailable } from '../utils/platformHealth';
+
 export interface PreferenceRepairs {
   allergensRepaired: boolean;
   dietRepaired: boolean;
@@ -37,7 +39,11 @@ export function hasRepairs(repairs: PreferenceRepairs): boolean {
 function pickTitle(repairs: PreferenceRepairs): string {
   if (repairs.allergensRepaired) return 'Verifică-ți alergiile';
   if (repairs.dietRepaired) return 'Verifică-ți dieta';
-  if (repairs.healthGoalsRepaired) return 'Verifică-ți obiectivele de sănătate';
+  if (repairs.healthGoalsRepaired) {
+    return areHealthGoalsAvailable()
+      ? 'Verifică-ți obiectivele de sănătate'
+      : 'Verifică-ți preferințele';
+  }
   if (repairs.stillInfeasible) return 'Setări incomplete';
   return 'Setări restaurate';
 }
@@ -50,6 +56,13 @@ function feasibilitySentence(repairs: PreferenceRepairs): string {
     : `Setările salvate nu permiteau generarea niciunui plan, așa că am restaurat ${what}. Le poți schimba oricând din Filtre.`;
 }
 
+/** On iOS there are no health goals to name (A.8), only pork-free under „Alte preferințe”. */
+function healthGoalsSentence(): string {
+  return areHealthGoalsAvailable()
+    ? 'Nu am putut citi complet obiectivele tale de sănătate, inclusiv „Fără porc”. Verifică-le din Filtre înainte să gătești.'
+    : 'Nu am putut citi complet preferințele tale salvate, inclusiv „Fără porc”. Verifică-le din Filtre înainte să gătești.';
+}
+
 export function buildPreferenceRepairNotice(repairs: PreferenceRepairs): RepairNotice {
   const sentences = [
     repairs.allergensRepaired
@@ -58,9 +71,7 @@ export function buildPreferenceRepairNotice(repairs: PreferenceRepairs): RepairN
     repairs.dietRepaired
       ? 'Nu am putut citi complet dieta ta salvată. Verific-o din Filtre înainte să gătești, ca să fim siguri că meniul o respectă.'
       : '',
-    repairs.healthGoalsRepaired
-      ? 'Nu am putut citi complet obiectivele tale de sănătate, inclusiv „Fără porc”. Verifică-le din Filtre înainte să gătești.'
-      : '',
+    repairs.healthGoalsRepaired ? healthGoalsSentence() : '',
     feasibilitySentence(repairs),
     repairs.planDropped
       ? 'Meniul salvat a fost scos, pentru că fusese făcut după reguli pe care nu le mai putem citi. Generează-l din nou după ce verifici.'
