@@ -1,5 +1,6 @@
 import { HEALTH_GOALS_CATALOG, PORK_FREE_TAG, isHealthGoal } from '../healthTags';
 import { RECIPES } from '../recipes';
+import { MOOD_OPTIONS_CATALOG } from '../../utils/moodCatalog';
 
 /**
  * A meal planner may describe food, not promise medical effects (EU Regulation 1924/2006 on
@@ -11,6 +12,53 @@ const MEDICAL_CLAIM =
 /** Diseases are named only on the goal's information line (A.3), never in its name or badge. */
 const DISEASE_NAME =
   /\b(diabet\w*|SOP|PCOS|ovar\w*|polichist\w*|inim\w*|cardio\w*|inflama\w*|hormonal\w*|insulin\w*|glicemia)\b/i;
+/**
+ * Effects on the body (energy, digestion, sleep, recovery, "sănătos" as a promise) are health
+ * claims too, and none is authorised for ordinary food (Reg. 1924/2006 art. 10 and 13). Built
+ * with `u` and letter lookarounds because JavaScript's `\b` ignores Romanian diacritics.
+ * "somn" alone stays allowed (the fish); "hidratat" stays allowed (chia seeds soaked in milk).
+ */
+const BODY_FUNCTION_FRAGMENTS = [
+  'antioxida\\p{L}*',
+  'polifenol\\p{L}*',
+  'energ(?:ie|ia|iz\\p{L}*)',
+  'glicem\\p{L}*',
+  'probiotic\\p{L}*',
+  'prebiotic\\p{L}*',
+  'microbio\\p{L}*',
+  'tranzit\\p{L}*',
+  'intestin\\p{L}*',
+  'digesti\\p{L}*',
+  'imunit\\p{L}*',
+  'imunitar\\p{L}*',
+  'detox\\p{L}*',
+  'depurat\\p{L}*',
+  'alcaliniz\\p{L}*',
+  'balon(?:are|at)\\p{L}*',
+  'recuper\\p{L}*',
+  'odihnitor\\p{L}*',
+  'sa[țţ]ietat\\p{L}*',
+  'metabolis\\p{L}*',
+  'arde\\s+gr[ăa]simi',
+  's[ăa]n[ăa]to(?:[sșş]|as)\\p{L}*',
+  'sus[țţ]in\\p{L}*',
+  'carbohidra\\p{L}*\\s+len[țţ]i',
+  'f[ăa]r[ăa]\\s+regret\\p{L}*',
+];
+const BODY_FUNCTION_CLAIM = new RegExp(
+  `(?<!\\p{L})(${BODY_FUNCTION_FRAGMENTS.join('|')})(?!\\p{L})`,
+  'iu'
+);
+const makesAClaim = (text: string) =>
+  MEDICAL_CLAIM.test(text) || DISEASE_NAME.test(text) || BODY_FUNCTION_CLAIM.test(text);
+
+test('the body-function check catches the claims it is for and spares the fish', () => {
+  const claims = ['Energie constantă', 'Somn odihnitor', 'Fără balonare', 'Fresh & Detox'];
+  const food = ['File de somn la grătar', 'Semințe de chia hidratate', 'Amestecă energic'];
+
+  expect(claims.filter((text) => !BODY_FUNCTION_CLAIM.test(text))).toEqual([]);
+  expect(food.filter((text) => BODY_FUNCTION_CLAIM.test(text))).toEqual([]);
+});
 
 describe('health goals describe food, not treatment', () => {
   test.each(HEALTH_GOALS_CATALOG.map((goal) => [goal.id, goal] as const))(
@@ -33,9 +81,16 @@ describe('health goals describe food, not treatment', () => {
 
 test('no recipe title or description promises a medical effect or targets a disease', () => {
   const offenders = RECIPES.flatMap((recipe) =>
-    [recipe.title, recipe.description]
-      .filter((text) => MEDICAL_CLAIM.test(text) || DISEASE_NAME.test(text))
-      .map((text) => `${recipe.id}: ${text}`)
+    [recipe.title, recipe.description].filter(makesAClaim).map((text) => `${recipe.id}: ${text}`)
+  );
+  expect(offenders).toEqual([]);
+});
+
+test('no craving card promises an effect on the body', () => {
+  const offenders = MOOD_OPTIONS_CATALOG.flatMap((mood) =>
+    [mood.label, mood.desc, mood.vibe, ...(mood.highlights ?? []), ...(mood.sampleDishes ?? [])]
+      .filter(makesAClaim)
+      .map((text) => `${mood.id}: ${text}`)
   );
   expect(offenders).toEqual([]);
 });
