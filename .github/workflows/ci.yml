@@ -21,11 +21,13 @@ env:
 jobs:
   checks:
     name: Types, lint, SQL and Jest
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04 and apt could not resolve the Ubuntu mirrors
+    # for `playwright install --with-deps` (2026-11-11). Revisit once 26.04 is stable.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -38,11 +40,13 @@ jobs:
 
   e2e:
     name: App in a browser (Playwright)
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04 and apt could not resolve the Ubuntu mirrors
+    # for `playwright install --with-deps` (2026-11-11). Revisit once 26.04 is stable.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -51,7 +55,7 @@ jobs:
       - run: npm run test:e2e
       - name: Keep screenshots and traces of a failed run
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-results
           path: e2e/.results
@@ -59,11 +63,13 @@ jobs:
 
   sync:
     name: Real sync against a local Supabase
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04 and apt could not resolve the Ubuntu mirrors
+    # for `playwright install --with-deps` (2026-11-11). Revisit once 26.04 is stable.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
