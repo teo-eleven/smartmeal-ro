@@ -1,4 +1,8 @@
 const COMPONENT_TESTS = '**/?(*.)component.test.(ts|tsx)';
+/** Copies of the repo that Claude Code agents work in; their tests are not this checkout's. */
+const AGENT_WORKTREES = '/\\.claude/';
+/** Tests against the local Supabase (`npm run db:start`), run only by `npm run test:sync`. */
+const SYNC_TESTS = '/src/__tests__/integration/';
 
 /**
  * One transform for both projects, so both instrument every file identically.
@@ -47,7 +51,15 @@ module.exports = {
       moduleNameMapper: sharedModuleNameMapper,
       testMatch: ['**/__tests__/**/*.(test|spec).(ts|tsx|js)', '**/?(*.)+(spec|test).(ts|tsx|js)'],
       // supabase/functions runs on Deno and has its own tests: `deno test supabase/functions`.
-      testPathIgnorePatterns: ['/node_modules/', '\\.component\\.test\\.(ts|tsx)$', '/supabase/'],
+      // e2e/ runs in a real browser under Playwright: `npm run test:e2e`.
+      testPathIgnorePatterns: [
+        '/node_modules/',
+        '\\.component\\.test\\.(ts|tsx)$',
+        '/supabase/',
+        '/e2e/',
+        SYNC_TESTS,
+        AGENT_WORKTREES,
+      ],
       // Babel, the same transformer the components project uses. Both projects load the
       // engine and the store, and coverage merges the two instrumentations of each file.
       // With ts-jest here the two maps counted different statements for the same file
@@ -64,9 +76,27 @@ module.exports = {
       moduleNameMapper: sharedModuleNameMapper,
       transform: sharedTransform,
       testMatch: [COMPONENT_TESTS],
+      testPathIgnorePatterns: ['/node_modules/', AGENT_WORKTREES],
       transformIgnorePatterns: [
         'node_modules/(?!(?:jest-)?react-native|@react-native|@testing-library|expo(nent)?|@expo(nent)?/.*|expo-.*)',
       ],
     },
+    ...(process.env.RUN_SYNC_TESTS ? [syncProject()] : []),
   ],
 };
+
+/**
+ * Real sign-ups, saves and conflicts against the local test database. Left out of a plain
+ * `jest` run, which must pass with no database; `npm run test:sync` turns it on.
+ */
+function syncProject() {
+  return {
+    displayName: 'sync',
+    testEnvironment: 'node',
+    setupFiles: ['<rootDir>/jest.setup.js', '<rootDir>/src/__tests__/integration/loadTestEnv.js'],
+    moduleNameMapper: sharedModuleNameMapper,
+    transform: sharedTransform,
+    testMatch: ['<rootDir>/src/__tests__/integration/**/*.sync.test.ts'],
+    testPathIgnorePatterns: ['/node_modules/', AGENT_WORKTREES],
+  };
+}

@@ -1,5 +1,6 @@
 # Environment variables
-.env
+.env*
+!.env.example
 .env*.local
 .env.production
 .env.development
@@ -34,3 +35,13 @@ coverage/
 # Written by `deno check` during local verification. Supabase does not read it at deploy,
 # so committing it would suggest a pin that is not applied.
 deno.lock
+
+# Claude Code agent worktrees
+.claude/worktrees/
+
+# Playwright output
+e2e/.results/
+playwright-report/
+
+# Supabase CLI cache
+supabase/.temp/

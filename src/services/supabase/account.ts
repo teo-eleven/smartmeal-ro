@@ -35,7 +35,8 @@ export const accountMethods = {
    * from the last few minutes (delete-account, reauth_required).
    */
   async deleteAccount(password?: string): Promise<{ success: boolean; error: string | null }> {
-    return signingOutOnPurpose(() => this.deleteAccountNow(password));
+    // By name, not `this`: the method may be handed on as a callback (an onPress).
+    return signingOutOnPurpose(() => accountMethods.deleteAccountNow(password));
   },
 
   async deleteAccountNow(password?: string): Promise<{ success: boolean; error: string | null }> {
