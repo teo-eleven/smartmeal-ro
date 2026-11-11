@@ -21,8 +21,8 @@ env:
 jobs:
   checks:
     name: Types, lint, SQL and Jest
-    # Pinned: ubuntu-latest moved to 26.04 and apt could not resolve the Ubuntu mirrors
-    # for `playwright install --with-deps` (2026-11-11). Revisit once 26.04 is stable.
+    # Pinned to a known image so runner upgrades (ubuntu-latest -> 26.04) are a deliberate
+    # change, not a surprise. Revisit when bumping to the next LTS.
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -40,8 +40,8 @@ jobs:
 
   e2e:
     name: App in a browser (Playwright)
-    # Pinned: ubuntu-latest moved to 26.04 and apt could not resolve the Ubuntu mirrors
-    # for `playwright install --with-deps` (2026-11-11). Revisit once 26.04 is stable.
+    # Pinned to a known image so runner upgrades (ubuntu-latest -> 26.04) are a deliberate
+    # change, not a surprise. Revisit when bumping to the next LTS.
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -51,7 +51,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # Browser only: the runner image already ships Chromium's system libraries. On 2026-11-11
+      # the Ubuntu apt mirrors were unreachable from GitHub runners (DNS), and `--with-deps`
+      # failed the job just to fetch optional fonts, so those are now best effort.
+      - run: npx playwright install chromium
+      - name: Optional fonts for the browser (best effort)
+        run: npx playwright install-deps chromium
+        continue-on-error: true
+        timeout-minutes: 5
       - run: npm run test:e2e
       - name: Keep screenshots and traces of a failed run
         if: failure()
@@ -63,8 +70,8 @@ jobs:
 
   sync:
     name: Real sync against a local Supabase
-    # Pinned: ubuntu-latest moved to 26.04 and apt could not resolve the Ubuntu mirrors
-    # for `playwright install --with-deps` (2026-11-11). Revisit once 26.04 is stable.
+    # Pinned to a known image so runner upgrades (ubuntu-latest -> 26.04) are a deliberate
+    # change, not a surprise. Revisit when bumping to the next LTS.
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
