@@ -1,9 +1,9 @@
 import { StyleSheet } from 'react-native';
+import { titleFont } from '../../styles/typography';
 
 export const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -15,7 +15,6 @@ export const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1.5,
     overflow: 'hidden',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
     shadowRadius: 24,
@@ -153,10 +152,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   heroPillText: {
-    color: '#ffffff',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -167,7 +164,7 @@ export const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: '900',
+    ...titleFont,
     letterSpacing: -0.4,
     marginBottom: 6,
     lineHeight: 28,
@@ -297,7 +294,6 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(148, 163, 184, 0.1)',
   },
   ingredientsHint: {
     fontSize: 12,
@@ -336,7 +332,6 @@ export const styles = StyleSheet.create({
     flexShrink: 0,
   },
   checkMark: {
-    color: '#ffffff',
     fontSize: 12,
     fontWeight: '900',
   },
@@ -511,7 +506,6 @@ export const styles = StyleSheet.create({
   eatOutActionBtn: {},
   doneActionBtn: {
     borderWidth: 0,
-    shadowColor: '#000000',
     shadowOpacity: 0.25,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 8,
@@ -543,7 +537,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   doneBtnText: {
-    color: '#ffffff',
     fontSize: 14,
     fontWeight: '800',
   },
@@ -587,7 +580,6 @@ export const styles = StyleSheet.create({
     gap: 6,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
   aiIngredientsLabel: {
     fontSize: 11,
@@ -612,7 +604,6 @@ export const styles = StyleSheet.create({
   dislikeSuggestionBadge: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#ef4444',
   },
   dislikeSuggestionSubtext: {
     fontSize: 12,
@@ -674,7 +665,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   confirmReplacementBtnText: {
-    color: '#ffffff',
     fontSize: 13,
     fontWeight: '800',
   },

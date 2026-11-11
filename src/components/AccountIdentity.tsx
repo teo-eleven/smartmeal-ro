@@ -107,12 +107,13 @@ export function AccountIdentity({ email, isDark }: { email: string; isDark: bool
           </TouchableOpacity>
         </View>
       )}
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && <Text style={[styles.error, { color: theme.danger }]}>{error}</Text>}
 
       {isBiometricAvailable && (
         <TouchableOpacity
           accessibilityRole="switch"
-          accessibilityState={{ checked: biometricEnabled, disabled: isSwitching }}
+          aria-checked={biometricEnabled}
+          aria-disabled={isSwitching}
           accessibilityLabel={`Deblochează cu ${biometricLabel}`}
           onPress={() => void toggleBiometric()}
           disabled={isSwitching}
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   link: { fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
-  error: { color: '#ef4444', fontSize: 12, fontWeight: '600' },
+  error: { fontSize: 12, fontWeight: '600' },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',

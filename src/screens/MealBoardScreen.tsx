@@ -126,7 +126,6 @@ export const MealBoardScreen: React.FC<MealBoardScreenProps> = ({ isDark }) => {
         {/* 1, 2 sau 3 Mese pe zi Quick Switcher Bar / Command Center */}
         <MealsPerDayToolbar
           theme={theme}
-          isDark={isDark}
           isDesktop={isDesktop}
           contentMaxWidth={contentMaxWidth}
           baseMealsCount={baseMealsCount}

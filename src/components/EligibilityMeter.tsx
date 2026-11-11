@@ -34,7 +34,7 @@ export const EligibilityMeter: React.FC<EligibilityMeterProps> = ({ preferences,
     ? suggestAppliancesToUnlock(preferences).map(getApplianceLabelRo)
     : [];
 
-  const accent = isBlocked ? '#ef4444' : isTight ? '#f59e0b' : theme.text;
+  const accent = isBlocked ? theme.danger : isTight ? theme.warningText : theme.text;
   const background = isBlocked || isTight ? theme.warningBg : theme.surfaceSecondary;
 
   let message: string;

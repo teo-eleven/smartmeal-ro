@@ -65,7 +65,7 @@ export const StepsCard: React.FC<StepsCardProps> = ({
           return (
             <TouchableOpacity
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: isDone }}
+              aria-checked={isDone}
               key={step.stepNumber}
               activeOpacity={0.8}
               onPress={() => onToggleStep(step.stepNumber)}

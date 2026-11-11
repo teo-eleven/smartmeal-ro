@@ -12,6 +12,7 @@ import { INGREDIENTS } from '../data/ingredients';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { useShallow } from 'zustand/react/shallow';
+import { titleFont } from '../styles/typography';
 
 interface PantryInventoryModalProps {
   visible: boolean;
@@ -99,7 +100,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
+      <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
         <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* Top Header */}
           <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
@@ -127,7 +128,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
               style={[
                 styles.savingsBanner,
                 {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
+                  backgroundColor: theme.trackBg,
                   borderColor: theme.border,
                 },
               ]}
@@ -186,7 +187,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
 
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityState={{ disabled: currentPantry.length === 0 }}
+                aria-disabled={currentPantry.length === 0}
                 disabled={currentPantry.length === 0}
                 onPress={() => setIsConfirmingClear(true)}
                 style={[
@@ -237,7 +238,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
                 return (
                   <TouchableOpacity
                     accessibilityRole="checkbox"
-                    accessibilityState={{ checked: isSelected }}
+                    aria-checked={isSelected}
                     key={item.id}
                     onPress={() => togglePantryItem(item.id)}
                     activeOpacity={0.75}
@@ -303,7 +304,6 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -315,7 +315,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1.5,
     overflow: 'hidden',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
     shadowRadius: 24,
@@ -338,7 +337,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '900',
+    ...titleFont,
     letterSpacing: -0.4,
   },
   subtitle: {
@@ -391,13 +390,11 @@ const styles = StyleSheet.create({
     minWidth: 110,
   },
   savingsBadgeLabel: {
-    color: '#ffffff',
     fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
   savingsBadgeVal: {
-    color: '#ffffff',
     fontSize: 15,
     fontWeight: '900',
   },
@@ -459,7 +456,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkMark: {
-    color: '#ffffff',
     fontSize: 13,
     fontWeight: '900',
   },
@@ -468,14 +464,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
     elevation: 3,
   },
   doneBtnText: {
-    color: '#ffffff',
     fontSize: 15,
     fontWeight: '900',
   },

@@ -90,9 +90,9 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const appTheme = getAppTheme(isDark);
   const theme: RecipeDetailTheme = {
     ...appTheme,
-    stepDoneBg: isDark ? 'rgba(230, 167, 86, 0.15)' : '#f0fdf4',
-    badgeBg: isDark ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9',
-    accentCard: isDark ? '#243027' : '#f8fafc',
+    stepDoneBg: appTheme.primaryLight,
+    badgeBg: appTheme.accentBg,
+    accentCard: appTheme.surfaceSecondary,
   };
 
   const totalTime = recipe.prepTimeMinutes + recipe.cookTimeMinutes;
@@ -112,7 +112,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       {/* The notes box sits low in the sheet; without this the keyboard covered it. */}
       <KeyboardAvoidingView
-        style={styles.modalOverlay}
+        style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View
@@ -125,7 +125,6 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           <RecipeTopBar
             recipe={recipe}
             theme={theme}
-            isDark={isDark}
             totalTime={totalTime}
             formattedCostPerServing={formattedCostPerServing}
             targetDay={targetDay}
@@ -182,7 +181,6 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 />
                 <MealActionsCard
                   theme={theme}
-                  isDark={isDark}
                   targetDay={targetDay}
                   isEatenOut={isEatenOut}
                   onSwap={onSwap}
@@ -221,7 +219,6 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                     recipe={recipe}
                     suggestedReplacement={suggestedReplacement}
                     theme={theme}
-                    isDark={isDark}
                     activeServings={activeServings}
                     preferences={preferences}
                     targetDay={targetDay}

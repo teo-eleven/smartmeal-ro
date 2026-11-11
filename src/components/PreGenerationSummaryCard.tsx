@@ -55,7 +55,7 @@ export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> =
       : [preferences.dietType];
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <View style={[styles.container, { backgroundColor: theme.card, borderColor: theme.cardRim }]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.headerIconBox, { backgroundColor: theme.primaryLight }]}>
@@ -149,12 +149,14 @@ export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> =
           </Text>
           <View style={styles.macroTargetRow}>
             <View style={styles.macroPill}>
-              <Text style={[styles.macroPillVal, { color: '#fb923c' }]}>~{targetCalories}</Text>
+              <Text style={[styles.macroPillVal, { color: theme.macro.kcal }]}>
+                ~{targetCalories}
+              </Text>
               <Text style={[styles.macroPillLbl, { color: theme.textMuted }]}>kcal/zi</Text>
             </View>
             <View style={[styles.macroDivider, { backgroundColor: theme.border }]} />
             <View style={styles.macroPill}>
-              <Text style={[styles.macroPillVal, { color: '#38bdf8' }]}>
+              <Text style={[styles.macroPillVal, { color: theme.macro.protein }]}>
                 ~{targetProteinGrams}g
               </Text>
               <Text style={[styles.macroPillLbl, { color: theme.textMuted }]}>proteine/zi</Text>

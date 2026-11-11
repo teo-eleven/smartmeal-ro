@@ -23,7 +23,7 @@ export const RecipeSummaryCard: React.FC<RecipeSummaryCardProps> = ({
   supermarketId,
   formattedTotalCost,
 }) => (
-  <View style={[styles.detailsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+  <View style={[styles.detailsCard, { backgroundColor: theme.card, borderColor: theme.cardRim }]}>
     <Text style={[styles.title, { color: theme.text }]}>{recipe.title}</Text>
     <Text style={[styles.description, { color: theme.textMuted }]}>{recipe.description}</Text>
 

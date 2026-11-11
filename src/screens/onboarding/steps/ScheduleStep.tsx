@@ -5,10 +5,10 @@ import { DayOfWeek } from '../../../types';
 import { COOKING_DAY_PRESETS, MEAL_MOMENT_OPTIONS, FOOD_TIER_OPTIONS } from '../onboardingOptions';
 import { sharedStyles } from '../onboardingStyles';
 import { OnboardingStepProps } from './stepProps';
+import { pressedState } from '../../../utils/pressedState';
 
 /** Step 4: cooking days & meals & food tier */
 export function ScheduleStep({
-  isDark,
   isLargeScreen,
   preferences,
   setCookingDays,
@@ -46,7 +46,7 @@ export function ScheduleStep({
           return (
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
+              {...pressedState(isSelected)}
               key={preset.id}
               onPress={() => setCookingDays(preset.days)}
               activeOpacity={0.7}
@@ -85,7 +85,7 @@ export function ScheduleStep({
         })}
       </View>
 
-      <View style={styles.daysCounterBadge}>
+      <View style={[styles.daysCounterBadge, { backgroundColor: theme.trackBg }]}>
         <Text style={[styles.daysCounterText, { color: theme.text }]}>
           {preferences.cookingDays.length}{' '}
           {preferences.cookingDays.length === 1 ? 'zi selectată' : 'zile selectate'}
@@ -108,7 +108,7 @@ export function ScheduleStep({
           return (
             <TouchableOpacity
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: isSelected }}
+              aria-checked={isSelected}
               key={day}
               onPress={() => toggleCookingDay(day)}
               style={[
@@ -159,7 +159,7 @@ export function ScheduleStep({
           return (
             <TouchableOpacity
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: isSelected }}
+              aria-checked={isSelected}
               key={option.slot}
               onPress={() => {
                 if (isSelected) {
@@ -210,15 +210,17 @@ export function ScheduleStep({
                   {option.slot === 'dessert' && preferences.moodTags.includes('sweet_treat') && (
                     <View
                       style={{
-                        backgroundColor: isDark ? 'rgba(236, 72, 153, 0.22)' : '#fdf2f8',
-                        borderColor: '#ec4899',
+                        backgroundColor: theme.primaryLight,
+                        borderColor: theme.accentHighlight,
                         borderWidth: 1,
                         paddingHorizontal: 7,
                         paddingVertical: 2,
                         borderRadius: 6,
                       }}
                     >
-                      <Text style={{ fontSize: 11, fontWeight: '800', color: '#ec4899' }}>
+                      <Text
+                        style={{ fontSize: 11, fontWeight: '800', color: theme.accentHighlight }}
+                      >
                         ✨ Recomandat din Pofte
                       </Text>
                     </View>
@@ -256,7 +258,7 @@ export function ScheduleStep({
           return (
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
+              {...pressedState(isSelected)}
               key={tierOpt.id}
               onPress={() => setFoodTier(tierOpt.id)}
               activeOpacity={0.7}
@@ -375,15 +377,15 @@ export function ScheduleStep({
                   style={[
                     sharedStyles.stepImpactMiniPill,
                     {
-                      backgroundColor: isDark ? 'rgba(236, 72, 153, 0.16)' : '#fdf2f8',
-                      borderColor: '#ec4899',
+                      backgroundColor: theme.primaryLight,
+                      borderColor: theme.accentHighlight,
                     },
                   ]}
                 >
                   <Text
                     style={[
                       sharedStyles.stepImpactMiniPillText,
-                      { color: '#ec4899', fontWeight: '800' },
+                      { color: theme.accentHighlight, fontWeight: '800' },
                     ]}
                   >
                     🍰{' '}
@@ -449,7 +451,6 @@ const styles = StyleSheet.create({
   },
   daysCounterBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -476,7 +477,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   dayCheckboxText: {
-    color: '#000000',
     fontSize: 13,
     fontWeight: '900',
   },
@@ -515,7 +515,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   extraCheckmark: {
-    color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
   },

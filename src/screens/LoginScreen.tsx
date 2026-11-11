@@ -10,6 +10,7 @@ import { getAuthTheme } from './auth/authStyles';
 import { PrivacyPolicyLink } from '../components/PrivacyPolicyLink';
 import { localAuthSimulation } from '../services/localAuthSimulation';
 import { getAppTheme } from '../styles/theme';
+import { titleFont } from '../styles/typography';
 
 interface LoginScreenProps {
   isDark: boolean;
@@ -55,7 +56,11 @@ export function LoginScreen({ isDark, onSignedIn, onContinueAsGuest }: LoginScre
         </Text>
 
         <View style={styles.formArea}>
-          <AuthMessages errorMessage={form.errorMessage} successMessage={form.successMessage} />
+          <AuthMessages
+            errorMessage={form.errorMessage}
+            successMessage={form.successMessage}
+            isDark={isDark}
+          />
           {form.resetStep !== 'off' ? (
             <ResetPasswordFlow form={form} theme={theme} />
           ) : isCodeMode && form.mode === 'signin' ? (
@@ -120,7 +125,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   mark: { fontSize: 44, textAlign: 'center', marginBottom: 8 },
-  title: { fontSize: 26, fontWeight: '900', textAlign: 'center', letterSpacing: -0.5 },
+  title: { fontSize: 26, ...titleFont, textAlign: 'center', letterSpacing: -0.5 },
   subtitle: { fontSize: 14, fontWeight: '500', textAlign: 'center', lineHeight: 20, marginTop: 8 },
   formArea: { marginTop: 24 },
   guestBtn: { paddingVertical: 14, alignItems: 'center', marginTop: 8 },

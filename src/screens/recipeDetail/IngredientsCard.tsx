@@ -27,7 +27,7 @@ export const IngredientsCard: React.FC<IngredientsCardProps> = ({
   <View
     style={[styles.ingredientsCard, { backgroundColor: theme.card, borderColor: theme.border }]}
   >
-    <View style={styles.ingredientsHeaderRow}>
+    <View style={[styles.ingredientsHeaderRow, { borderBottomColor: theme.borderSubtle }]}>
       <Text style={[styles.sectionHeading, { color: theme.text, marginBottom: 0 }]}>
         🛒 Ingrediente necesare ({activeServings} {activeServings === 1 ? 'porție' : 'porții'})
       </Text>
@@ -43,7 +43,7 @@ export const IngredientsCard: React.FC<IngredientsCardProps> = ({
         return (
           <TouchableOpacity
             accessibilityRole="checkbox"
-            accessibilityState={{ checked: isChecked }}
+            aria-checked={isChecked}
             key={ing.ingredientId}
             onPress={() => onToggleIngredient(ing.ingredientId)}
             activeOpacity={0.7}

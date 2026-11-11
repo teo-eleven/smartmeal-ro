@@ -15,6 +15,8 @@ import { useResponsive } from '../hooks/useResponsive';
 import { DAY_LABELS_RO } from '../constants/days';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { useShallow } from 'zustand/react/shallow';
+import { titleFont } from '../styles/typography';
+import { pressedState } from '../utils/pressedState';
 
 interface MealsPerDayModalProps {
   visible: boolean;
@@ -168,7 +170,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
+      <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
         <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* Header */}
           <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
@@ -207,7 +209,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                     <TouchableOpacity
                       key={cnt}
                       accessibilityRole="button"
-                      accessibilityState={{ selected: isActive }}
+                      {...pressedState(isActive)}
                       onPress={() => handleSwitchCount(cnt)}
                       style={[
                         styles.segmentBtn,
@@ -349,7 +351,7 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
                           <TouchableOpacity
                             key={slot}
                             accessibilityRole="checkbox"
-                            accessibilityState={{ checked: isSelected }}
+                            aria-checked={isSelected}
                             onPress={() => handleToggleSlotForDay(day.dayOfWeek, slot)}
                             style={[
                               styles.slotPill,
@@ -403,7 +405,6 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -415,7 +416,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1.5,
     overflow: 'hidden',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
     shadowRadius: 24,
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '900',
+    ...titleFont,
     letterSpacing: -0.3,
   },
   headerSubtitle: {

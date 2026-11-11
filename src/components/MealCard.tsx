@@ -62,7 +62,6 @@ const MealCardView: React.FC<MealCardProps> = ({
         dayOfWeek={day.dayOfWeek}
         slotLabel={effectiveSlotLabel}
         theme={theme}
-        isDark={isDark}
         onPressRecipe={onPressRecipe}
         onToggleEatOut={onToggleEatOut}
       />
@@ -80,17 +79,13 @@ const MealCardView: React.FC<MealCardProps> = ({
           double" and "Schimbă" were out of reach, and on the web it was invalid HTML. The
           picture now opens the recipe, as does "Vezi Rețeta" below. */}
       <View
-        {...glass('card')}
+        {...glass('card-rim')}
         style={[
           styles.card,
           {
             backgroundColor: theme.card,
-            borderColor: isDessert
-              ? isDark
-                ? 'rgba(236, 72, 153, 0.45)'
-                : '#fbcfe8'
-              : theme.border,
-            shadowColor: '#000000',
+            borderColor: isDessert ? theme.borderStrong : theme.cardRim,
+            shadowColor: theme.shadowColor,
             flex: 1,
             height: '100%',
             marginBottom: 0,
@@ -130,7 +125,6 @@ const MealCardView: React.FC<MealCardProps> = ({
             servings={servings}
             isDessert={isDessert}
             theme={theme}
-            isDark={isDark}
             onPressRecipe={onPressRecipe}
             onSwapMeal={onSwapMeal}
             onToggleEatOut={onToggleEatOut}

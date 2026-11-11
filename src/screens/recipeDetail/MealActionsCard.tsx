@@ -6,7 +6,6 @@ import { styles } from './styles';
 
 interface MealActionsCardProps {
   theme: RecipeDetailTheme;
-  isDark: boolean;
   targetDay?: DayOfWeek | null;
   isEatenOut: boolean;
   onSwap: () => void;
@@ -16,7 +15,6 @@ interface MealActionsCardProps {
 
 export const MealActionsCard: React.FC<MealActionsCardProps> = ({
   theme,
-  isDark,
   targetDay,
   isEatenOut,
   onSwap,
@@ -54,30 +52,21 @@ export const MealActionsCard: React.FC<MealActionsCardProps> = ({
       {targetDay && (
         <TouchableOpacity
           accessibilityRole="checkbox"
-          accessibilityState={{ checked: isEatenOut }}
+          aria-checked={isEatenOut}
           accessibilityLabel={isEatenOut ? 'Gătește acasă' : 'Mănâncă în oraș'}
           onPress={onToggleEatOut}
           style={[
             styles.actionBtn,
             styles.eatOutActionBtn,
             {
-              backgroundColor: isEatenOut
-                ? isDark
-                  ? 'rgba(234, 179, 8, 0.2)'
-                  : '#fef9c3'
-                : isDark
-                  ? 'rgba(255, 255, 255, 0.08)'
-                  : '#f3f4f6',
-              borderColor: isEatenOut ? (isDark ? '#ca8a04' : '#eab308') : theme.border,
+              backgroundColor: isEatenOut ? theme.warningBg : theme.trackBg,
+              borderColor: isEatenOut ? theme.warningBorder : theme.border,
             },
           ]}
           activeOpacity={0.8}
         >
           <Text
-            style={[
-              styles.actionBtnText,
-              { color: isEatenOut ? (isDark ? '#facc15' : '#854d0e') : theme.text },
-            ]}
+            style={[styles.actionBtnText, { color: isEatenOut ? theme.warningText : theme.text }]}
           >
             {isEatenOut ? '↺ Gătește acasă această masă' : '🍽️ Mâncat în oraș la această masă'}
           </Text>

@@ -36,14 +36,14 @@ export function BudgetStep({
           <Text style={[styles.pipelineTitle, { color: theme.text }]}>
             🔗 Lanț Decizional Sincronizat (Etapele 1 ➔ 8)
           </Text>
-          <View style={[styles.pipelineStatusBadge, { backgroundColor: '#30d158' }]}>
-            <Text style={styles.pipelineStatusText}>✓ INTEGRAT</Text>
+          <View style={[styles.pipelineStatusBadge, { backgroundColor: theme.success }]}>
+            <Text style={[styles.pipelineStatusText, { color: theme.onSuccess }]}>✓ INTEGRAT</Text>
           </View>
         </View>
 
         <View style={styles.pipelineStepsList}>
-          <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>1</Text>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>1</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.dietTypes
                 ?.map((d) => DIET_OPTIONS_CATALOG.find((o) => o.id === d)?.label || d)
@@ -52,48 +52,48 @@ export function BudgetStep({
           </View>
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
-          <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>2</Text>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>2</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.moodTags.length} pofte
             </Text>
           </View>
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
-          <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>3</Text>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>3</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.peopleCount} {preferences.peopleCount === 1 ? 'pers.' : 'pers.'}
             </Text>
           </View>
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
-          <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>4</Text>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>4</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.cookingDays.length} zile ({preferences.mealSlots.length} mese/zi)
             </Text>
           </View>
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
-          <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>5</Text>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>5</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {preferences.appliances.length} aparate
             </Text>
           </View>
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
-          <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>6</Text>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>6</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId)?.name || 'Kaufland'}
             </Text>
           </View>
           <Text style={[styles.pipelineArrow, { color: theme.textMuted }]}>➔</Text>
 
-          <View style={styles.pipelineStepItem}>
-            <Text style={styles.pipelineStepNumber}>7</Text>
+          <View style={[styles.pipelineStepItem, { backgroundColor: theme.trackBg }]}>
+            <Text style={[styles.pipelineStepNumber, { color: theme.accentHighlight }]}>7</Text>
             <Text style={[styles.pipelineStepText, { color: theme.text }]}>
               {(preferences.selectedSnackIds?.length || 0) +
                 (preferences.selectedDrinkIds?.length || 0)}{' '}
@@ -143,7 +143,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   pipelineStatusText: {
-    color: '#000000',
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 0.5,
@@ -161,12 +160,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 6,
-    backgroundColor: 'rgba(128,128,128,0.12)',
   },
   pipelineStepNumber: {
     fontSize: 9,
     fontWeight: '900',
-    color: '#F3C06D',
   },
   pipelineStepText: {
     fontSize: 10,

@@ -4,6 +4,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useAuthSessionStore } from '../store/authSessionStore';
 import { REAUTH_INTERVAL_DAYS } from '../services/reauth';
 import { getAppTheme } from '../styles/theme';
+import { titleFont } from '../styles/typography';
 
 interface BiometricOptInPromptProps {
   isDark: boolean;
@@ -53,7 +54,7 @@ export function BiometricOptInPrompt({ isDark, isSuppressed = false }: Biometric
   return (
     // Android's back button answers like "Nu acum"; without it the prompt could not be left.
     <Modal visible transparent animationType="fade" onRequestClose={() => void answer(false)}>
-      <View style={styles.backdrop}>
+      <View style={[styles.backdrop, { backgroundColor: theme.overlay }]}>
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <Text style={styles.mark}>🔐</Text>
           <Text style={[styles.title, { color: theme.text }]}>
@@ -94,11 +95,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   card: { width: '100%', maxWidth: 380, borderRadius: 20, borderWidth: 1, padding: 24 },
   mark: { fontSize: 36, textAlign: 'center', marginBottom: 8 },
-  title: { fontSize: 18, fontWeight: '900', textAlign: 'center' },
+  title: { fontSize: 18, ...titleFont, textAlign: 'center' },
   body: { fontSize: 13, fontWeight: '500', textAlign: 'center', lineHeight: 19, marginTop: 8 },
   primaryBtn: {
     height: 46,

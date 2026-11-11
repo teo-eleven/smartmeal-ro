@@ -28,7 +28,7 @@ describe('tematica permanentă a aplicației', () => {
 
     expect(screen.queryByLabelText(/Temă: întunecată/i)).toBeNull();
     expect(screen.queryByLabelText(/Temă: luminoasă/i)).toBeNull();
-    expect(screen.getByLabelText(/Contul meu/i)).toBeTruthy();
+    expect(screen.getByLabelText('Cont')).toBeTruthy();
   });
 });
 

@@ -7,6 +7,7 @@ import { AppTheme } from '../../styles/theme';
 import { DAY_LABELS_RO } from '../../constants/days';
 import { getSlotColor } from './cardLabels';
 import { styles } from './styles';
+import { getRecipeHighlights } from '../../utils/recipeVisual';
 
 interface CardHeroProps {
   day: MealPlanDay;
@@ -46,10 +47,11 @@ export const CardHero: React.FC<CardHeroProps> = ({
   onPressOut: handlePressOut,
   onRemoveMeal,
 }) => (
-  <View style={styles.imageContainer}>
+  <View style={[styles.imageContainer, { backgroundColor: theme.card }]}>
     <TouchableOpacity
       accessibilityRole="button"
-      accessibilityLabel={`${recipe.title}. Vezi rețeta.`}
+      // The visible title and ingredients first, so voice control matches (WCAG 2.5.3).
+      accessibilityLabel={`${recipe.title}. ${getRecipeHighlights(recipe, 3).join(', ')}. Vezi rețeta.`}
       activeOpacity={0.92}
       onPress={onPressRecipe}
       onPressIn={handlePressIn}
@@ -59,10 +61,7 @@ export const CardHero: React.FC<CardHeroProps> = ({
       <RecipeVisual recipe={recipe} isDark={isDark} style={styles.image} />
 
       {/* Smooth Bottom Subtle Edge Shading for Contrast */}
-      <LinearGradient
-        colors={['transparent', isDark ? 'rgba(0, 0, 0, 0.30)' : 'rgba(0, 0, 0, 0.15)']}
-        style={styles.gradientOverlay}
-      />
+      <LinearGradient colors={['transparent', theme.photoScrim]} style={styles.gradientOverlay} />
     </TouchableOpacity>
 
     {/* Floating Day Badge (Top-Left) */}
@@ -72,7 +71,7 @@ export const CardHero: React.FC<CardHeroProps> = ({
         styles.floatingBadge,
         styles.dayBadge,
         isDessert && styles.dessertBadgeRow,
-        { backgroundColor: isDark ? 'rgba(28, 36, 30, 0.92)' : 'rgba(255, 255, 255, 0.94)' },
+        { backgroundColor: theme.cardGlass, borderColor: theme.onPhotoBorder },
       ]}
     >
       <View pointerEvents="none" style={styles.dayBadgeLabel}>
@@ -91,10 +90,10 @@ export const CardHero: React.FC<CardHeroProps> = ({
           accessibilityLabel="Șterge desertul din această zi"
           onPress={onRemoveMeal}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.headerRemoveBtn}
+          style={[styles.headerRemoveBtn, { backgroundColor: theme.dangerBg }]}
           activeOpacity={0.7}
         >
-          <Text style={styles.headerRemoveBtnText}>✕</Text>
+          <Text style={[styles.headerRemoveBtnText, { color: theme.danger }]}>✕</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -105,7 +104,7 @@ export const CardHero: React.FC<CardHeroProps> = ({
       style={[
         styles.floatingBadge,
         styles.priceBadge,
-        { backgroundColor: isDark ? 'rgba(28, 36, 30, 0.92)' : 'rgba(255, 255, 255, 0.94)' },
+        { backgroundColor: theme.cardGlass, borderColor: theme.onPhotoBorder },
       ]}
     >
       <View style={styles.priceMainRow}>

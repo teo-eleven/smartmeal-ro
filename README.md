@@ -82,8 +82,16 @@ Aplicația se va deschide pe: `http://localhost:8081`.
 ```bash
 npm test                 # toate testele (logică + componente)
 npm run test:components  # doar testele de componente
-npm run test:coverage    # cu raport de acoperire (praguri în jest.config.js: 83/83/84/62)
+npm run test:coverage    # cu raport de acoperire (praguri în jest.config.js: 87/88/87/76)
+npm run test:e2e         # aplicația în Chromium (Playwright): fluxul principal, fontul,
+                         # accesibilitatea WCAG 2.1 AA cu axe pe 6 ecrane
+npm run db:start && npm run db:env && npm run test:sync
+                         # sync real pe un Supabase local (Docker), cu conturi de test
 ```
+
+Iconița, ecranul de pornire și favicon-ul se desenează din `assets/source/mark.svg` cu
+`npm run icons`. Culorile vin toate din paleta „Midnight Forest & Smoked Walnut”
+(`src/styles/theme.ts`); un test pică dacă apare o culoare scrisă direct în cod.
 
 Testele rulează în două proiecte Jest: logica (motor, store, date) în Node, iar componentele
 cu preset-ul `react-native`, care are nevoie de resolverul propriu pentru modulele specifice

@@ -24,6 +24,8 @@ import { AppliancesStep } from './steps/AppliancesStep';
 import { SupermarketStep } from './steps/SupermarketStep';
 import { ExtrasStep } from './steps/ExtrasStep';
 import { BudgetStep } from './steps/BudgetStep';
+import { titleFont } from '../../styles/typography';
+import { pressedState } from '../../utils/pressedState';
 
 interface OnboardingWizardProps {
   isDark: boolean;
@@ -122,7 +124,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 {onOpenAccount && (
                   <TouchableOpacity
                     accessibilityRole="button"
-                    accessibilityLabel="Contul meu"
+                    accessibilityLabel="Cont"
                     onPress={onOpenAccount}
                     style={[
                       styles.accountBtn,
@@ -190,7 +192,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                       >
                         {(isCompleted || isCurrent) && (
                           <LinearGradient
-                            colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
+                            colors={theme.primaryGradient}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
                             style={StyleSheet.absoluteFill}
@@ -201,10 +203,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
 
                     <TouchableOpacity
                       accessibilityRole="button"
-                      accessibilityState={{
-                        selected: isCurrent,
-                        disabled: stepItem.step > maxVisitedStep,
-                      }}
+                      {...pressedState(isCurrent)}
+                      aria-disabled={stepItem.step > maxVisitedStep}
                       onPress={() => {
                         if (stepItem.step <= maxVisitedStep) {
                           goToStep(stepItem.step);
@@ -219,7 +219,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                           {
                             borderColor: theme.primary,
                             backgroundColor: theme.primary,
-                            shadowColor: '#E6A756',
+                            shadowColor: theme.primary,
                           },
                         ],
                         isCompleted && [
@@ -289,7 +289,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               {onOpenAccount && (
                 <TouchableOpacity
                   accessibilityRole="button"
-                  accessibilityLabel="Contul meu"
+                  accessibilityLabel="Cont"
                   onPress={onOpenAccount}
                   style={[
                     styles.accountBtn,
@@ -306,7 +306,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
           {/* Progress Bar */}
           <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
             <LinearGradient
-              colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
+              colors={theme.primaryGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.progressBar, { width: `${progressPercent}%` }]}
@@ -378,16 +378,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
             style={[styles.footerContinueWrap, { flex: 1, maxWidth: isLargeScreen ? 460 : '100%' }]}
           >
             <LinearGradient
-              colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
+              colors={theme.primaryGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.continueButton}
             >
               <Text
-                style={[
-                  styles.continueButtonText,
-                  { color: isDark ? '#131914' : '#ffffff', fontWeight: '800' },
-                ]}
+                style={[styles.continueButtonText, { color: theme.primaryText, fontWeight: '800' }]}
               >
                 {currentStep === totalSteps ? '✨ Generează Meniul Săptămânal' : 'Continuă →'}
               </Text>
@@ -471,7 +468,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   stepNodeActive: {
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -501,7 +497,7 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 18,
-    fontWeight: '900',
+    ...titleFont,
     letterSpacing: -0.5,
   },
   backButton: {
@@ -576,14 +572,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 3,
   },
   continueButtonText: {
-    color: '#ffffff',
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '800',

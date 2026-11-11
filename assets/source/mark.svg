@@ -1,0 +1,19 @@
+<!-- The SmartMeal mark: a plate between a fork and a knife, in bronze and cream.
+     Drawn on a 1024 grid centred at 512; scripts/renderIcons.mjs places it on each asset. -->
+<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="512" cy="512" r="232" stroke="#C9A57B" stroke-width="30" />
+  <circle cx="512" cy="512" r="160" stroke="#E6DCCC" stroke-width="10" opacity="0.85" />
+  <!-- Fork: three tines joined by a shoulder, then the handle. -->
+  <g stroke="#E6DCCC" stroke-width="16">
+    <path d="M206 330 V420" />
+    <path d="M236 330 V420" />
+    <path d="M266 330 V420" />
+    <path d="M206 420 Q206 456 236 456 Q266 456 266 420" />
+    <path d="M236 456 V700" stroke-width="22" />
+  </g>
+  <!-- Knife: a rounded blade on the left of its spine, then the handle. -->
+  <g fill="#E6DCCC" stroke="none">
+    <path d="M800 324 C760 360 752 430 760 492 L800 492 Z" />
+    <rect x="789" y="486" width="22" height="214" rx="11" />
+  </g>
+</g>

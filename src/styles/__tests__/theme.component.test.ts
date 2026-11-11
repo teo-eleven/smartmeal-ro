@@ -5,6 +5,7 @@ import {
   getEmeraldGlassDock,
   getEmeraldGlassPill,
   injectEmeraldGlassStyles,
+  withAlpha,
 } from '../theme';
 
 describe('theme tokens', () => {
@@ -123,6 +124,43 @@ describe('injectEmeraldGlassStyles', () => {
     expect(created[0].textContent).toContain('glass');
   });
 
+  test.each([true, false])('gives key cards their bronze rim on the web (dark: %s)', (isDark) => {
+    const sheet: StubElement = {};
+    installStubDocument({
+      getElementById: () => sheet,
+      createElement: () => ({}),
+      head: { appendChild: () => undefined },
+    });
+
+    injectEmeraldGlassStyles(isDark);
+
+    // The rim card shares the glass card's rule, then its own sets the edge colour.
+    const rimRules = [
+      ...(sheet.textContent ?? '').matchAll(/\[data-glass="card-rim"\]\s*\{([^}]*)\}/g),
+    ]
+      .map((rule) => rule[1])
+      .join('\n');
+    expect(rimRules).toContain(`border-color: ${getAppTheme(isDark).cardRim} !important`);
+  });
+
+  test.each([true, false])(
+    'draws the keyboard focus ring in the accent, not the browser blue (dark: %s)',
+    (isDark) => {
+      const sheet: StubElement = {};
+      installStubDocument({
+        getElementById: () => sheet,
+        createElement: () => ({}),
+        head: { appendChild: () => undefined },
+      });
+
+      injectEmeraldGlassStyles(isDark);
+
+      expect(sheet.textContent).toContain(
+        `outline: 2px solid ${getAppTheme(isDark).primary} !important`
+      );
+    }
+  );
+
   test('reuses the existing stylesheet instead of stacking duplicates', () => {
     // Arrange
     const existing: StubElement = { textContent: 'old' };
@@ -143,4 +181,38 @@ describe('injectEmeraldGlassStyles', () => {
     expect(createdCount).toBe(0);
     expect(existing.textContent).not.toBe('old');
   });
+});
+
+describe('glass surfaces on the web', () => {
+  const originalPlatform = Platform.OS;
+  beforeEach(() => Object.defineProperty(Platform, 'OS', { value: 'web', configurable: true }));
+  afterEach(() =>
+    Object.defineProperty(Platform, 'OS', { value: originalPlatform, configurable: true })
+  );
+
+  test.each([true, false])(
+    'the card and the dock blur what is behind them (dark: %s)',
+    (isDark) => {
+      const card = getEmeraldGlassCard(isDark) as Record<string, unknown>;
+      const dock = getEmeraldGlassDock(isDark) as Record<string, unknown>;
+
+      expect(card.backdropFilter).toMatch(/blur/);
+      expect(dock.backdropFilter).toMatch(/blur/);
+      // Translucent on the web, so the blur has something to show through.
+      expect(card.backgroundColor).toMatch(/^rgba\(/);
+    }
+  );
+});
+
+describe('withAlpha', () => {
+  test('turns a palette tone into rgba at the given opacity', () => {
+    expect(withAlpha('#B08868', 0.3)).toBe('rgba(176, 136, 104, 0.3)');
+  });
+
+  test.each(['#abc', '#B08868FF', 'B08868', 'bronze'])(
+    'refuses %s instead of drawing rgba(NaN)',
+    (hex) => {
+      expect(() => withAlpha(hex, 0.5)).toThrow(/#RRGGBB/);
+    }
+  );
 });

@@ -35,13 +35,13 @@ export function AuthForm({
 
   return (
     <View style={styles.formSection}>
-      <View style={styles.tabSwitch}>
+      <View style={styles.tabSwitch} accessibilityRole="tablist">
         {(['signin', 'signup'] as const).map((tab) => (
           <TouchableOpacity
             key={tab}
             accessibilityRole="tab"
             accessibilityLabel={`Fila ${tabLabels[tab]}`}
-            accessibilityState={{ selected: form.mode === tab }}
+            aria-selected={form.mode === tab}
             style={[
               styles.tabItem,
               form.mode === tab && [styles.tabItemActive, { borderBottomColor: theme.primary }],

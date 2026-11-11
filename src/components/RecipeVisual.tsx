@@ -11,6 +11,7 @@ import {
   getTotalMinutes,
 } from '../utils/recipeVisual';
 import { getRecipePhoto } from '../utils/recipePhotography';
+import { titleFont } from '../styles/typography';
 
 interface RecipeVisualProps {
   recipe: Recipe;
@@ -79,6 +80,7 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
           onError={() => setFailedUrl(photo.url)}
           style={StyleSheet.absoluteFill}
           accessible={false}
+          accessibilityLabel=""
           accessibilityIgnoresInvertColors
         />
       ) : backdrop ? (
@@ -87,6 +89,7 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
           contentFit="cover"
           style={StyleSheet.absoluteFill}
           accessible={false}
+          accessibilityLabel=""
           accessibilityIgnoresInvertColors
         />
       ) : (
@@ -157,7 +160,7 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     color: '#ffffff',
     fontSize: 18,
-    fontWeight: '800',
+    ...titleFont,
     textAlign: 'center',
     lineHeight: 23,
     letterSpacing: -0.3,

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { titleFont } from '../styles/typography';
 
 interface BudgetOverrunModalProps {
   visible: boolean;
@@ -40,7 +41,7 @@ export const BudgetOverrunModal: React.FC<BudgetOverrunModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, { backgroundColor: theme.overlay }]}>
         <View
           style={[
             styles.modalContainer,
@@ -55,7 +56,7 @@ export const BudgetOverrunModal: React.FC<BudgetOverrunModalProps> = ({
             style={[
               styles.iconWrapper,
               {
-                backgroundColor: isDark ? 'rgba(230, 167, 86, 0.18)' : '#fef3c7',
+                backgroundColor: theme.primaryLight,
                 borderColor: theme.primary,
               },
             ]}
@@ -78,7 +79,7 @@ export const BudgetOverrunModal: React.FC<BudgetOverrunModalProps> = ({
               {currentBudgetRon} lei
             </Text>{' '}
             cu{' '}
-            <Text style={[styles.excessText, { color: '#f87171' }]}>
+            <Text style={[styles.excessText, { color: theme.danger }]}>
               +{excessRon.toFixed(1)} lei
             </Text>
             .
@@ -138,7 +139,6 @@ export const BudgetOverrunModal: React.FC<BudgetOverrunModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: '900',
+    ...titleFont,
     textAlign: 'center',
     letterSpacing: -0.4,
     marginBottom: 10,

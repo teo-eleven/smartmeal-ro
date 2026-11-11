@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import { Recipe, SupermarketId } from '../../types';
 import { AppTheme } from '../../styles/theme';
 import { getHealthGoalMeta } from '../../data/healthTags';
-import { getStoreBadgeBg, getStoreSignatureBadge } from '../../utils/storeBadge';
+import { getStoreSignatureBadge } from '../../utils/storeBadge';
 import { MOOD_LABELS, getTierBadgeStyle, getTierLabel } from './cardLabels';
 import { styles } from './styles';
 
@@ -34,7 +34,12 @@ export const CardChips: React.FC<CardChipsProps> = ({ recipe, supermarketId, the
         (() => {
           const tierStyle = getTierBadgeStyle(recipe.tier, isDark);
           return (
-            <View style={[styles.pillBadge, { backgroundColor: tierStyle.bg }]}>
+            <View
+              style={[
+                styles.pillBadge,
+                { backgroundColor: tierStyle.bg, borderColor: theme.border },
+              ]}
+            >
               <Text style={[styles.pillText, { color: tierStyle.text }]}>
                 {getTierLabel(recipe.tier)}
               </Text>
@@ -43,9 +48,15 @@ export const CardChips: React.FC<CardChipsProps> = ({ recipe, supermarketId, the
         })()}
       {getStoreSignatureBadge(recipe, supermarketId) && (
         <View
-          style={[styles.pillBadge, { backgroundColor: getStoreBadgeBg(recipe.storeSignature) }]}
+          style={[
+            styles.pillBadge,
+            {
+              backgroundColor: theme.storeBadge,
+              borderColor: theme.onPhotoBorder,
+            },
+          ]}
         >
-          <Text style={styles.pillText}>{recipe.storeBadgeLabel}</Text>
+          <Text style={[styles.pillText, { color: theme.onPhoto }]}>{recipe.storeBadgeLabel}</Text>
         </View>
       )}
       <View style={[styles.pillBadge, { backgroundColor: theme.btnBg, borderColor: theme.border }]}>
@@ -61,17 +72,12 @@ export const CardChips: React.FC<CardChipsProps> = ({ recipe, supermarketId, the
             style={[
               styles.pillBadge,
               {
-                backgroundColor: isDark ? 'rgba(52, 199, 89, 0.15)' : '#e8f5e9',
-                borderColor: isDark ? 'rgba(52, 199, 89, 0.4)' : '#c8e6c9',
+                backgroundColor: theme.successBg,
+                borderColor: theme.successBorder,
               },
             ]}
           >
-            <Text
-              style={[
-                styles.pillText,
-                { color: isDark ? '#4ade80' : '#15803d', fontWeight: '800' },
-              ]}
-            >
+            <Text style={[styles.pillText, { color: theme.successText, fontWeight: '800' }]}>
               {meta.icon} {meta.shortBadgeRo}
             </Text>
           </View>

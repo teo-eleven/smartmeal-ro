@@ -77,7 +77,7 @@ export function DevicesSection({ isDark }: { isDark: boolean }) {
     <View>
       {error && (
         <View style={styles.errorRow}>
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text>
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Încearcă din nou"
@@ -110,7 +110,7 @@ export function DevicesSection({ isDark }: { isDark: boolean }) {
               disabled={isRevoking}
               style={[styles.revokeBtn, { borderColor: theme.border }]}
             >
-              <Text style={styles.revokeText}>Deconectează</Text>
+              <Text style={[styles.revokeText, { color: theme.danger }]}>Deconectează</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -152,9 +152,9 @@ const styles = StyleSheet.create({
   name: { fontSize: 14, fontWeight: '700' },
   meta: { fontSize: 11, fontWeight: '500', marginTop: 2 },
   revokeBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },
-  revokeText: { fontSize: 12, fontWeight: '700', color: '#ef4444' },
+  revokeText: { fontSize: 12, fontWeight: '700' },
   note: { fontSize: 12, lineHeight: 17, marginBottom: 8 },
   errorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  errorText: { flex: 1, color: '#ef4444', fontSize: 12, fontWeight: '600' },
+  errorText: { flex: 1, fontSize: 12, fontWeight: '600' },
   link: { fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
 });

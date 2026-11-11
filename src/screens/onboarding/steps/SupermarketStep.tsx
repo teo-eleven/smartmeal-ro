@@ -4,6 +4,7 @@ import { SUPERMARKET_LIST } from '../../../data/supermarkets';
 import { SupermarketId } from '../../../types';
 import { sharedStyles } from '../onboardingStyles';
 import { OnboardingStepProps } from './stepProps';
+import { pressedState } from '../../../utils/pressedState';
 
 /** Step 6: supermarket */
 export function SupermarketStep({
@@ -25,7 +26,7 @@ export function SupermarketStep({
           return (
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
+              {...pressedState(isSelected)}
               key={market.id}
               onPress={() => setSupermarket(market.id as SupermarketId)}
               activeOpacity={0.7}
@@ -39,7 +40,9 @@ export function SupermarketStep({
               ]}
             >
               <View style={[styles.marketBadge, { backgroundColor: market.brandColor }]}>
-                <Text style={styles.marketBadgeText}>{market.name[0]}</Text>
+                <Text style={[styles.marketBadgeText, { color: theme.onBrand }]}>
+                  {market.name[0]}
+                </Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.supermarketName, { color: theme.text }]}>{market.name}</Text>
@@ -153,7 +156,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   supermarketRadioCheck: {
-    color: '#ffffff',
     fontSize: 12,
     fontWeight: '900',
   },
@@ -165,7 +167,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   marketBadgeText: {
-    color: '#ffffff',
     fontSize: 20,
     fontWeight: '900',
   },

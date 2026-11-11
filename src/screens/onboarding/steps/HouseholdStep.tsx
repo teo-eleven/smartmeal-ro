@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { DIET_OPTIONS_CATALOG } from '../../../utils/dietCompatibility';
 import { sharedStyles } from '../onboardingStyles';
 import { OnboardingStepProps } from './stepProps';
+import { pressedState } from '../../../utils/pressedState';
 
 /** Step 3: people count */
 export function HouseholdStep({ preferences, setPeopleCount, theme }: OnboardingStepProps) {
@@ -49,7 +50,7 @@ export function HouseholdStep({ preferences, setPeopleCount, theme }: Onboarding
           return (
             <TouchableOpacity
               accessibilityRole="button"
-              accessibilityState={{ selected: isActive }}
+              {...pressedState(isActive)}
               key={num}
               onPress={() => setPeopleCount(num)}
               style={[

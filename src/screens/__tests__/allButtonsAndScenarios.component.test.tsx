@@ -256,7 +256,7 @@ describe('TESTARE EXHAUSTIVĂ: Toate butoanele și scenariile din aplicație', (
       render(<OnboardingWizard isDark={false} onPlanGenerated={onPlanGenerated} />);
 
       // Buton de aplicare buget minim calculat
-      fireEvent.press(screen.getByLabelText(/Folosește bugetul sugerat/i));
+      fireEvent.press(screen.getByRole('button', { name: /Buget sugerat:/ }));
       expect(useAppStore.getState().preferences.budgetRon).toBeGreaterThan(0);
 
       // Buton final de generare meniu
@@ -291,7 +291,7 @@ describe('TESTARE EXHAUSTIVĂ: Toate butoanele și scenariile din aplicație', (
 
     test('butonul „Gătesc dublu” transformă masa de a doua zi în reîncălzită', () => {
       render(<MealBoardScreen isDark={false} />);
-      const cookDoubleBtn = screen.getAllByLabelText('Gătesc porție dublă și reîncălzesc mâine')[0];
+      const cookDoubleBtn = screen.getAllByLabelText('Gătesc dublu · mâine doar reîncălzesc')[0];
       fireEvent.press(cookDoubleBtn);
 
       const nextDayMeal = useAppStore.getState().currentPlan!.days[1].meals[0];

@@ -66,6 +66,7 @@ export const DayRow: React.FC<DayRowProps> = ({
       {...glass('card')}
       style={[
         styles.dayRowContainer,
+        { shadowColor: theme.shadowColor },
         {
           backgroundColor: theme.card,
           borderColor: theme.border,
@@ -115,14 +116,15 @@ export const DayRow: React.FC<DayRowProps> = ({
               {...glass('pill')}
               style={[
                 styles.addDessertBtn,
+                { shadowColor: theme.accentHighlight },
                 {
-                  backgroundColor: isDark ? 'rgba(236, 72, 153, 0.15)' : '#fdf2f8',
-                  borderColor: '#ec4899',
+                  backgroundColor: theme.primaryLight,
+                  borderColor: theme.accentHighlight,
                 },
               ]}
               activeOpacity={0.7}
             >
-              <Text style={[styles.addDessertBtnText, { color: '#ec4899' }]}>
+              <Text style={[styles.addDessertBtnText, { color: theme.accentHighlight }]}>
                 + 🍰 Adaugă Desert de Casă
               </Text>
             </TouchableOpacity>
@@ -131,12 +133,12 @@ export const DayRow: React.FC<DayRowProps> = ({
               style={[
                 styles.dessertIncludedBadge,
                 {
-                  backgroundColor: isDark ? 'rgba(236, 72, 153, 0.16)' : '#fdf2f8',
-                  borderColor: 'rgba(236, 72, 153, 0.4)',
+                  backgroundColor: theme.primaryLight,
+                  borderColor: theme.borderStrong,
                 },
               ]}
             >
-              <Text style={[styles.dessertIncludedText, { color: '#ec4899' }]}>
+              <Text style={[styles.dessertIncludedText, { color: theme.accentHighlight }]}>
                 ✨ Desert de Casă inclus
               </Text>
             </View>

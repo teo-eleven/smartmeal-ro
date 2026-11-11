@@ -56,7 +56,7 @@ export const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
     primaryText: appTheme.primaryText,
     cardBg: appTheme.card,
     border: appTheme.border,
-    selectedBg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
+    selectedBg: appTheme.trackBg,
   };
 
   return (
@@ -67,7 +67,7 @@ export const ApplianceSelector: React.FC<ApplianceSelectorProps> = ({
         return (
           <TouchableOpacity
             accessibilityRole="checkbox"
-            accessibilityState={{ checked: isSelected }}
+            aria-checked={isSelected}
             accessibilityLabel={app.name}
             key={app.id}
             onPress={() => onToggleAppliance(app.id)}
@@ -138,7 +138,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkmark: {
-    color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
   },

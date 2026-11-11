@@ -42,7 +42,6 @@ export function DietStep({
     <View style={sharedStyles.stepSection}>
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel="Pornire rapidă: generează un plan cu setări implicite"
         onPress={() => {
           quickStart();
           if (useAppStore.getState().currentPlan) {
@@ -57,7 +56,9 @@ export function DietStep({
         ]}
         activeOpacity={0.8}
       >
-        <Text style={styles.quickStartIcon}>⚡</Text>
+        <Text style={styles.quickStartIcon} aria-hidden>
+          ⚡
+        </Text>
         <View style={{ flex: 1 }}>
           <Text style={[styles.quickStartTitle, { color: theme.text }]}>Sari peste întrebări</Text>
           <Text style={[styles.quickStartSubtitle, { color: theme.textMuted }]}>
@@ -92,7 +93,7 @@ export function DietStep({
           return (
             <TouchableOpacity
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: isSelected }}
+              aria-checked={isSelected}
               accessibilityLabel={`${diet.label}, ${diet.desc}`}
               key={diet.id}
               onPress={() => toggleDietType(diet.id)}
@@ -155,7 +156,7 @@ export function DietStep({
           return (
             <TouchableOpacity
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: isSelected }}
+              aria-checked={isSelected}
               accessibilityLabel={`${diet.label}, ${diet.desc}`}
               key={diet.id}
               onPress={() => toggleDietType(diet.id)}
@@ -179,11 +180,11 @@ export function DietStep({
                       style={[
                         styles.incompatibleBadge,
                         {
-                          backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2',
+                          backgroundColor: theme.dangerBg,
                         },
                       ]}
                     >
-                      <Text style={{ fontSize: 10, color: '#ef4444', fontWeight: '800' }}>
+                      <Text style={{ fontSize: 10, color: theme.danger, fontWeight: '800' }}>
                         Incompatibil cu {activeBaseDiet === 'vegan' ? 'Vegan' : activeBaseDiet}
                       </Text>
                     </View>
@@ -217,7 +218,7 @@ export function DietStep({
         })}
       </View>
 
-      <View style={styles.allergenBlock}>
+      <View style={[styles.allergenBlock, { borderTopColor: theme.border }]}>
         <Text style={[sharedStyles.questionTitle, { color: theme.text, fontSize: 17 }]}>
           Ai alergii alimentare?
         </Text>
@@ -249,7 +250,7 @@ export function DietStep({
             return (
               <TouchableOpacity
                 accessibilityRole="checkbox"
-                accessibilityState={{ checked: isSelected }}
+                aria-checked={isSelected}
                 key={goal.id}
                 onPress={() => toggleHealthGoalTag(goal.id)}
                 activeOpacity={0.75}
@@ -320,7 +321,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(128,128,128,0.35)',
   },
   dietListDesktop: {
     flexDirection: 'row',

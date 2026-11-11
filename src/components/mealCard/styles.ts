@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { titleFont } from '../../styles/typography';
 
 export const styles = StyleSheet.create({
   leftoverBtn: {
@@ -31,7 +32,6 @@ export const styles = StyleSheet.create({
     minHeight: 190,
     maxHeight: 380,
     position: 'relative',
-    backgroundColor: '#1C241E',
   },
   image: {
     width: '100%',
@@ -50,8 +50,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    shadowColor: '#000000',
     shadowOpacity: 0.18,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 5,
@@ -72,12 +70,10 @@ export const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(239, 68, 68, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerRemoveBtnText: {
-    color: '#ef4444',
     fontSize: 11,
     fontWeight: '900',
     lineHeight: 13,
@@ -120,10 +116,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   pillText: {
-    color: '#ffffff',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -169,7 +163,6 @@ export const styles = StyleSheet.create({
   macroDivider: {
     width: 1,
     height: 18,
-    backgroundColor: 'rgba(148, 163, 184, 0.2)',
   },
   footerContainer: {
     gap: 8,
@@ -257,7 +250,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   viewBtnText: {
-    color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
   },
@@ -312,7 +304,7 @@ export const styles = StyleSheet.create({
   },
   eatenOutTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    ...titleFont,
     marginBottom: 6,
     textAlign: 'center',
   },

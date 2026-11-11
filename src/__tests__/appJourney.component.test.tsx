@@ -37,7 +37,7 @@ describe('a full journey through the real app', () => {
   test('quick start takes the user from a cold app to a usable plan', () => {
     render(<App />);
 
-    fireEvent.press(screen.getByLabelText(/Pornire rapidă/i));
+    fireEvent.press(screen.getByRole('button', { name: /Sari peste întrebări/ }));
 
     expect(useAppStore.getState().currentPlan).not.toBeNull();
     expect(useAppStore.getState().groceryItems.length).toBeGreaterThan(0);
@@ -45,7 +45,7 @@ describe('a full journey through the real app', () => {
 
   test('the meal board renders after a plan exists', () => {
     render(<App />);
-    fireEvent.press(screen.getByLabelText(/Pornire rapidă/i));
+    fireEvent.press(screen.getByRole('button', { name: /Sari peste întrebări/ }));
 
     act(() => {
       useAppStore.getState().setActiveView('meals');
@@ -56,7 +56,7 @@ describe('a full journey through the real app', () => {
 
   test('the grocery screen renders the aisles of that plan', () => {
     render(<App />);
-    fireEvent.press(screen.getByLabelText(/Pornire rapidă/i));
+    fireEvent.press(screen.getByRole('button', { name: /Sari peste întrebări/ }));
 
     act(() => {
       useAppStore.getState().setActiveView('grocery');
@@ -68,7 +68,7 @@ describe('a full journey through the real app', () => {
 
   test('ticking a grocery item is reflected in the header count', () => {
     render(<App />);
-    fireEvent.press(screen.getByLabelText(/Pornire rapidă/i));
+    fireEvent.press(screen.getByRole('button', { name: /Sari peste întrebări/ }));
     act(() => {
       useAppStore.getState().setActiveView('grocery');
     });
@@ -83,7 +83,7 @@ describe('a full journey through the real app', () => {
 
   test('asking for a new plan shows the confirmation, and cancelling keeps the plan', () => {
     render(<App />);
-    fireEvent.press(screen.getByLabelText(/Pornire rapidă/i));
+    fireEvent.press(screen.getByRole('button', { name: /Sari peste întrebări/ }));
     act(() => {
       useAppStore.getState().setActiveView('meals');
     });
@@ -99,7 +99,7 @@ describe('a full journey through the real app', () => {
 
   test('confirming the reset offers the undo, and undo brings the week back', () => {
     render(<App />);
-    fireEvent.press(screen.getByLabelText(/Pornire rapidă/i));
+    fireEvent.press(screen.getByRole('button', { name: /Sari peste întrebări/ }));
     act(() => {
       useAppStore.getState().setActiveView('meals');
     });
@@ -115,7 +115,7 @@ describe('a full journey through the real app', () => {
 
   test('the app survives a reload with a plan in storage', async () => {
     render(<App />);
-    fireEvent.press(screen.getByLabelText(/Pornire rapidă/i));
+    fireEvent.press(screen.getByRole('button', { name: /Sari peste întrebări/ }));
     const planId = useAppStore.getState().currentPlan!.id;
 
     // Simulate a fresh launch reading what the previous session persisted
@@ -220,21 +220,21 @@ describe('the screens reachable from the meal board', () => {
 
   test('the supermarket comparison opens and lists the chains', () => {
     render(<App />);
-    fireEvent.press(screen.getByLabelText(/Compară prețul coșului/i));
+    fireEvent.press(screen.getByRole('button', { name: /Compară Magazine/ }));
     expect(screen.getByText(/Același coș, alt magazin/i)).toBeTruthy();
     expect(screen.getAllByText(/lei/i).length).toBeGreaterThan(0);
   });
 
   test('switching chains from the comparison updates the plan', () => {
     render(<App />);
-    fireEvent.press(screen.getByLabelText(/Compară prețul coșului/i));
+    fireEvent.press(screen.getByRole('button', { name: /Compară Magazine/ }));
     fireEvent.press(screen.getAllByLabelText(/Mută cumpărăturile la/i)[0]);
     expect(useAppStore.getState().currentPlan!.supermarketId).not.toBe('lidl');
   });
 
   test('the saved plan library opens, saves and restores', () => {
     render(<App />);
-    fireEvent.press(screen.getByLabelText(/Planurile mele salvate/i));
+    fireEvent.press(screen.getByRole('button', { name: /Planurile Mele/ }));
 
     fireEvent.changeText(screen.getByLabelText(/Numele planului/i), 'Săptămâna mea');
     fireEvent.press(screen.getByLabelText(/Salvează planul curent/i));

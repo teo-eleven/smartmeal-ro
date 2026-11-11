@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
+  ViewStyle,
 } from 'react-native';
 import { DietType, MoodTag } from '../types';
 import { MOOD_OPTIONS_CATALOG, MoodOptionInfo } from '../utils/moodCatalog';
@@ -14,6 +15,7 @@ import { styles } from './foodMood/styles';
 import { getAppTheme } from '../styles/theme';
 import { RECIPES } from '../data/recipes';
 import { isRecipeMatchingDiets } from '../utils/dietCompatibility';
+import { pressedState } from '../utils/pressedState';
 
 
 export interface FoodMoodSwiperProps {
@@ -170,10 +172,10 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
     <View style={styles.container}>
       {/* Top Header: Mode Switcher & Quick Bulk Select */}
       <View style={styles.topControlRow}>
-        <View style={styles.modeSegment}>
+        <View style={[styles.modeSegment, { borderColor: theme.border, backgroundColor: theme.trackBg }]}>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityState={{ selected: viewMode === 'swipe' }}
+            {...pressedState(viewMode === 'swipe')}
             accessibilityLabel="Mod Swipe Carduri"
             onPress={() => setViewMode('swipe')}
             style={[
@@ -199,7 +201,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
 
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityState={{ selected: viewMode === 'grid' }}
+            {...pressedState(viewMode === 'grid')}
             accessibilityLabel="Vizualizare Grilă"
             onPress={() => setViewMode('grid')}
             style={[
@@ -230,7 +232,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
             styles.counterBadge,
             {
               backgroundColor: theme.accentBg,
-              borderColor: selectedMoods.length > 0 ? '#30d158' : theme.border,
+              borderColor: selectedMoods.length > 0 ? theme.successText : theme.border,
             },
           ]}
         >
@@ -317,15 +319,17 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                     activeOpacity={0.88}
                     style={[
                       styles.carouselCardInner,
-                      isActive && styles.activeCardShadow,
+                      isActive && [
+                        styles.activeCardShadow,
+                        { shadowColor: theme.shadowColor },
+                        Platform.OS === 'web' && ({ boxShadow: theme.liftShadow } as unknown as ViewStyle),
+                      ],
                       {
                         backgroundColor: theme.card,
                         borderColor: isSelected
-                          ? '#30d158'
+                          ? theme.successText
                           : isActive
-                          ? isDark
-                            ? '#F3C06D'
-                            : '#D98E3A'
+                          ? theme.accentHighlight
                           : theme.border,
                         borderWidth: isSelected ? 2 : isActive ? 1.5 : 1,
                       },
@@ -339,12 +343,8 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                         style={[
                           styles.toggleSelectPill,
                           {
-                            backgroundColor: isSelected
-                              ? '#30d158'
-                              : isDark
-                              ? 'rgba(255,255,255,0.08)'
-                              : 'rgba(0,0,0,0.05)',
-                            borderColor: isSelected ? '#30d158' : theme.border,
+                            backgroundColor: isSelected ? theme.success : theme.trackBg,
+                            borderColor: isSelected ? theme.successText : theme.border,
                           },
                         ]}
                       >
@@ -352,7 +352,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                           style={[
                             styles.toggleSelectText,
                             {
-                              color: isSelected ? '#000000' : theme.text,
+                              color: isSelected ? theme.onSuccess : theme.text,
                               fontWeight: isSelected ? '900' : '700',
                             },
                           ]}
@@ -376,11 +376,15 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
               onPress={() => {
                 if (currentItem) advanceCard('passed', currentItem);
               }}
-              style={[styles.actionBtn, styles.nopeBtn]}
+              style={[
+                styles.actionBtn,
+                styles.nopeBtn,
+                { backgroundColor: theme.dangerBg, borderColor: theme.dangerBorder },
+              ]}
               activeOpacity={0.75}
             >
-              <Text style={styles.actionIconNope}>✕</Text>
-              <Text style={styles.actionLabelNope}>Pas</Text>
+              <Text style={[styles.actionIconNope, { color: theme.danger }]}>✕</Text>
+              <Text style={[styles.actionLabelNope, { color: theme.danger }]}>Pas</Text>
             </TouchableOpacity>
 
             {/* PREV CARD ARROW */}
@@ -447,11 +451,15 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
               onPress={() => {
                 if (currentItem) advanceCard('liked', currentItem);
               }}
-              style={[styles.actionBtn, styles.likeBtn]}
+              style={[
+                styles.actionBtn,
+                styles.likeBtn,
+                { backgroundColor: theme.successBg, borderColor: theme.successBorder },
+              ]}
               activeOpacity={0.75}
             >
               <Text style={styles.actionIconLike}>💚</Text>
-              <Text style={styles.actionLabelLike}>Îmi place</Text>
+              <Text style={[styles.actionLabelLike, { color: theme.successText }]}>Îmi place</Text>
             </TouchableOpacity>
           </View>
 
@@ -472,7 +480,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
               return (
                 <TouchableOpacity
                   accessibilityRole="checkbox"
-                  accessibilityState={{ checked: isSelected }}
+                  aria-checked={isSelected}
                   accessibilityLabel={`${mood.label}, ${mood.desc}`}
                   key={mood.id}
                   onPress={() => onToggleMood(mood.id)}
@@ -578,7 +586,7 @@ export const FoodMoodSwiper: React.FC<FoodMoodSwiperProps> = ({
                   <Text style={[styles.activeMoodPillText, { color: theme.text }]}>
                     {item.icon} {item.label}
                   </Text>
-                  <Text style={styles.activeMoodPillRemove}>✕</Text>
+                  <Text style={[styles.activeMoodPillRemove, { color: theme.danger }]}>✕</Text>
                 </TouchableOpacity>
               );
             })

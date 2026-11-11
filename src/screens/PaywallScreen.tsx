@@ -13,6 +13,7 @@ import { subscriptionService } from '../services/subscription';
 import { SubscriptionOffer } from '../services/subscriptionParse';
 import { useSubscriptionStore } from '../store/subscriptionStore';
 import { getAppTheme } from '../styles/theme';
+import { titleFont } from '../styles/typography';
 
 interface PaywallScreenProps {
   isDark: boolean;
@@ -131,7 +132,7 @@ export const PaywallScreen: React.FC<PaywallScreenProps> = ({ isDark, onBackToQu
         )}
 
         {error && (
-          <Text testID="paywall-error" style={styles.error}>
+          <Text testID="paywall-error" style={[styles.error, { color: theme.danger }]}>
             {error}
           </Text>
         )}
@@ -168,7 +169,7 @@ const styles = StyleSheet.create({
   content: { padding: 24, maxWidth: 560, width: '100%', alignSelf: 'center' },
   back: { alignSelf: 'flex-start', paddingVertical: 6, marginBottom: 12 },
   backText: { fontSize: 13, fontWeight: '600' },
-  title: { fontSize: 28, fontWeight: '900', letterSpacing: -0.5 },
+  title: { fontSize: 28, ...titleFont, letterSpacing: -0.5 },
   subtitle: { fontSize: 15, marginTop: 6, marginBottom: 18 },
   card: { borderWidth: 1, borderRadius: 18, padding: 18, gap: 10, marginBottom: 22 },
   benefit: { fontSize: 14, lineHeight: 20, fontWeight: '600' },
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     minHeight: 54,
   },
   buyText: { fontSize: 16, fontWeight: '900' },
-  error: { color: '#ef4444', fontSize: 13, fontWeight: '600', marginTop: 12, textAlign: 'center' },
+  error: { fontSize: 13, fontWeight: '600', marginTop: 12, textAlign: 'center' },
   fineprint: { fontSize: 11, lineHeight: 16, marginTop: 18 },
   restore: { alignSelf: 'center', paddingVertical: 12, marginTop: 8 },
   restoreText: { fontSize: 14, fontWeight: '700', textDecorationLine: 'underline' },

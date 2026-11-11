@@ -51,7 +51,7 @@ describe('surplusul pe ecranul de cumpărături', () => {
   test('apăsarea mută surplusul în cămară', () => {
     render(<GroceryScreen isDark={false} />);
 
-    fireEvent.press(screen.getByLabelText('Pune surplusul în cămară'));
+    fireEvent.press(screen.getByRole('button', { name: /Îți rămân \d+ ingrediente? după săptămâna asta/ }));
 
     // Parked until the next plan; the list being shopped from must not change underfoot.
     const parked = useAppStore.getState().preferences.pendingPantryStock!;
@@ -70,6 +70,6 @@ describe('surplusul pe ecranul de cumpărături', () => {
     }));
     render(<GroceryScreen isDark={false} />);
 
-    expect(screen.queryByLabelText('Pune surplusul în cămară')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Îți rămân \d+ ingrediente? după săptămâna asta/ })).toBeNull();
   });
 });

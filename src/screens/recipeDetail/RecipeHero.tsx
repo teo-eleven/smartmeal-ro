@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Recipe, SupermarketId } from '../../types';
 import { RecipeVisual } from '../../components/RecipeVisual';
 import { PhotoCreditLine } from '../../components/PhotoCreditLine';
-import { getStoreBadgeBg, getStoreSignatureBadge } from '../../utils/storeBadge';
+import { getStoreSignatureBadge } from '../../utils/storeBadge';
 import { RecipeDetailTheme } from './types';
 import { styles } from './styles';
 
@@ -26,23 +26,35 @@ export const RecipeHero: React.FC<RecipeHeroProps> = ({
   <>
     <View style={[styles.heroCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
       <RecipeVisual recipe={recipe} isDark={isDark} style={styles.heroImage} />
-      <LinearGradient
-        colors={['transparent', isDark ? 'rgba(11, 17, 32, 0.95)' : 'rgba(0, 0, 0, 0.65)']}
-        style={styles.heroGradient}
-      />
+      <LinearGradient colors={['transparent', theme.heroScrim]} style={styles.heroGradient} />
 
       <View style={styles.heroBadgesRow}>
-        <View style={[styles.heroPill, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-          <Text style={styles.heroPillText}>⏱️ {totalTime} min</Text>
+        <View
+          style={[
+            styles.heroPill,
+            { backgroundColor: theme.photoPill, borderColor: theme.onPhotoBorder },
+          ]}
+        >
+          <Text style={[styles.heroPillText, { color: theme.onPhoto }]}>⏱️ {totalTime} min</Text>
         </View>
-        <View style={[styles.heroPill, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-          <Text style={styles.heroPillText}>
+        <View
+          style={[
+            styles.heroPill,
+            { backgroundColor: theme.photoPill, borderColor: theme.onPhotoBorder },
+          ]}
+        >
+          <Text style={[styles.heroPillText, { color: theme.onPhoto }]}>
             🔥 {recipe.nutritionPerServing.calories} kcal/porție
           </Text>
         </View>
         {recipe.tier && (
-          <View style={[styles.heroPill, { backgroundColor: 'rgba(255, 255, 255, 0.18)' }]}>
-            <Text style={styles.heroPillText}>
+          <View
+            style={[
+              styles.heroPill,
+              { backgroundColor: theme.photoPillLight, borderColor: theme.onPhotoBorder },
+            ]}
+          >
+            <Text style={[styles.heroPillText, { color: theme.onPhoto }]}>
               {recipe.tier === 'basic'
                 ? '🥉 Basic'
                 : recipe.tier === 'medium'
@@ -52,10 +64,10 @@ export const RecipeHero: React.FC<RecipeHeroProps> = ({
           </View>
         )}
         {getStoreSignatureBadge(recipe, supermarketId) && (
-          <View
-            style={[styles.heroPill, { backgroundColor: getStoreBadgeBg(recipe.storeSignature) }]}
-          >
-            <Text style={styles.heroPillText}>{recipe.storeBadgeLabel}</Text>
+          <View style={[styles.heroPill, { backgroundColor: theme.storeBadge }]}>
+            <Text style={[styles.heroPillText, { color: theme.onPhoto }]}>
+              {recipe.storeBadgeLabel}
+            </Text>
           </View>
         )}
       </View>

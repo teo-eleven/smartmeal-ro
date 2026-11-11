@@ -238,7 +238,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
 
               <View style={[styles.progressTrack, { backgroundColor: theme.trackBg }]}>
                 <LinearGradient
-                  colors={isDark ? ['#F3C06D', '#E6A756'] : ['#D98E3A', '#C88232']}
+                  colors={theme.primaryGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={[styles.progressBar, { width: `${progressPercent}%` }]}
@@ -258,7 +258,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
               </View>
 
               <View style={[styles.statChip, { backgroundColor: theme.btnBg }]}>
-                <Text style={[styles.statChipVal, { color: '#f59e0b' }]}>{remainingItems}</Text>
+                <Text style={[styles.statChipVal, { color: theme.warningText }]}>{remainingItems}</Text>
                 <Text style={[styles.statChipLbl, { color: theme.textMuted }]}>rămase</Text>
               </View>
             </View>
@@ -312,7 +312,6 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
         {surplusCount > 0 && (
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Pune surplusul în cămară"
             onPress={carryOverSurplus}
             style={[styles.surplusBtn, { borderColor: theme.border, backgroundColor: theme.accentBg }]}
             activeOpacity={0.8}
@@ -333,7 +332,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
           style={[
             styles.celebrationCard,
             {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
+              backgroundColor: theme.trackBg,
               borderColor: theme.border,
               maxWidth: contentMaxWidth,
             },
@@ -359,21 +358,22 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
       {/* Retail Snacks & Drinks Supermarket Bar */}
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel="Ronțăieli și Băuturi de Magazin"
         onPress={() => setShowSnacksModal(true)}
         style={[
           styles.retailSnacksBanner,
           {
-            backgroundColor: isDark ? 'rgba(249, 115, 22, 0.12)' : '#fff7ed',
-            borderColor: '#f97316',
+            backgroundColor: theme.warningBg,
+            borderColor: theme.warningBorder,
             maxWidth: contentMaxWidth,
           },
         ]}
         activeOpacity={0.8}
       >
-        <Text style={styles.retailSnacksIcon}>🍿</Text>
+        <Text style={styles.retailSnacksIcon} aria-hidden>
+          🍿
+        </Text>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.retailSnacksTitle, { color: isDark ? '#fdba74' : '#c2410c' }]}>
+          <Text style={[styles.retailSnacksTitle, { color: theme.warningText }]}>
             Ronțăieli & Băuturi de Magazin
           </Text>
           <Text style={[styles.retailSnacksSubtitle, { color: theme.textMuted }]}>
@@ -382,8 +382,8 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
               : `${((preferences.selectedSnackIds?.length || 0) + (preferences.selectedDrinkIds?.length || 0))} produse ambalate în coșul tău`}
           </Text>
         </View>
-        <View style={[styles.retailSnacksBtn, { backgroundColor: '#f97316' }]}>
-          <Text style={styles.retailSnacksBtnText}>
+        <View style={[styles.retailSnacksBtn, { backgroundColor: theme.primary }]}>
+          <Text style={[styles.retailSnacksBtnText, { color: theme.primaryText }]}>
             {((preferences.selectedSnackIds?.length || 0) + (preferences.selectedDrinkIds?.length || 0)) === 0
               ? '+ Adaugă'
               : 'Modifică'}
@@ -677,7 +677,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   retailSnacksBtnText: {
-    color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
   },

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { RecipeNutrition } from '../types';
+import { getAppTheme } from '../styles/theme';
 
 interface MacroBarProps {
   nutrition: RecipeNutrition;
@@ -8,17 +9,18 @@ interface MacroBarProps {
 }
 
 export const MacroBar: React.FC<MacroBarProps> = ({ nutrition, isDark }) => {
+  const appTheme = getAppTheme(isDark);
   const theme = {
-    cardBg: isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc',
-    border: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-    label: isDark ? '#8e8e93' : '#64748b',
-    text: isDark ? '#ffffff' : '#000000',
-    calories: isDark ? '#ffffff' : '#000000',
-    caloriesBg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
-    caloriesBorder: isDark ? 'rgba(255, 255, 255, 0.16)' : '#e5e5ea',
-    protein: '#38bdf8',
-    carbs: '#fbbf24',
-    fat: '#f87171',
+    cardBg: appTheme.accentBg,
+    border: appTheme.border,
+    label: appTheme.textMuted,
+    text: appTheme.text,
+    calories: appTheme.text,
+    caloriesBg: appTheme.trackBg,
+    caloriesBorder: appTheme.borderStrong,
+    protein: appTheme.macro.protein,
+    carbs: appTheme.macro.carbs,
+    fat: appTheme.macro.fat,
   };
 
   return (

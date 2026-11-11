@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ReminderSettings } from '../types';
 import { getAppTheme } from '../styles/theme';
 import { reminderScheduler } from '../services/reminderScheduler';
+import { pressedState } from '../utils/pressedState';
 
 interface ReminderSettingsPanelProps {
   reminders: ReminderSettings;
@@ -48,7 +49,7 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
           <TouchableOpacity
             key={time}
             accessibilityRole="button"
-            accessibilityState={{ selected: active }}
+            {...pressedState(active)}
             accessibilityLabel={`${what} la ora ${time}`}
             onPress={() => onPick(time)}
             style={[
@@ -87,7 +88,7 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
 
       <TouchableOpacity
         accessibilityRole="switch"
-        accessibilityState={{ checked: cookingOn, disabled: !canRing }}
+        aria-checked={cookingOn} aria-disabled={!canRing}
         disabled={!canRing}
         accessibilityLabel="Memento pentru gătit"
         onPress={() => onChange({ cookingEnabled: !reminders.cookingEnabled })}
@@ -125,7 +126,7 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
 
       <TouchableOpacity
         accessibilityRole="switch"
-        accessibilityState={{ checked: shoppingOn, disabled: !canRing }}
+        aria-checked={shoppingOn} aria-disabled={!canRing}
         disabled={!canRing}
         accessibilityLabel="Memento pentru cumpărături"
         onPress={() => onChange({ shoppingEnabled: !reminders.shoppingEnabled })}
@@ -164,7 +165,7 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
         <>
           <TouchableOpacity
             accessibilityRole="switch"
-            accessibilityState={{ checked: reminders.emailEnabled }}
+            aria-checked={reminders.emailEnabled}
             accessibilityLabel="Mementouri pe email"
             onPress={() => onChange({ emailEnabled: !reminders.emailEnabled })}
             style={[styles.toggleRow, { borderColor: theme.border }]}
@@ -204,7 +205,7 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
                   <TouchableOpacity
                     key={days}
                     accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
+                    {...pressedState(active)}
                     accessibilityLabel={`Email la ${days} zile`}
                     onPress={() => onChange({ emailFrequencyDays: days })}
                     style={[
@@ -241,7 +242,7 @@ export const ReminderSettingsPanel: React.FC<ReminderSettingsPanelProps> = ({
                 <TouchableOpacity
                   key={label}
                   accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
+                  {...pressedState(active)}
                   accessibilityLabel={`Cumpărături ${label}`}
                   onPress={() => onChange({ shoppingWeekday: index })}
                   style={[

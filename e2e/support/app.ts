@@ -45,8 +45,14 @@ export async function continueWithoutAccount(page: Page): Promise<void> {
   await expect(page.getByText(/Pasul 1 din \d+/)).toBeVisible();
 }
 
-/** Accepts every default answer, step by step, the way a hurried user would. */
-export async function finishOnboardingWithDefaults(page: Page): Promise<void> {
+/**
+ * Accepts every default answer, step by step, the way a hurried user would. `onLastStep` runs
+ * on the last step, before the plan is generated.
+ */
+export async function finishOnboardingWithDefaults(
+  page: Page,
+  onLastStep?: () => Promise<void>
+): Promise<void> {
   const generate = page.getByRole('button', { name: 'Generează Meniul Săptămânal' });
   const next = page.getByRole('button', { name: 'Continuă la pasul următor' });
   for (let step = 0; step < MAX_ONBOARDING_STEPS; step += 1) {
@@ -54,6 +60,7 @@ export async function finishOnboardingWithDefaults(page: Page): Promise<void> {
     // mistaken for one without the generate button.
     await expect(generate.or(next).first()).toBeVisible();
     if (await generate.count()) {
+      await onLastStep?.();
       await generate.first().click();
       return;
     }

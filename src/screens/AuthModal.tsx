@@ -19,6 +19,7 @@ import { AuthMessages } from './auth/AuthMessages';
 import { getAuthTheme } from './auth/authStyles';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { useShallow } from 'zustand/react/shallow';
+import { titleFont } from '../styles/typography';
 
 interface AuthModalProps {
   visible: boolean;
@@ -119,7 +120,11 @@ export function AuthModal({
                 )}
               </View>
 
-              <AuthMessages errorMessage={form.errorMessage} successMessage={form.successMessage} />
+              <AuthMessages
+            errorMessage={form.errorMessage}
+            successMessage={form.successMessage}
+            isDark={isDark}
+          />
 
               {/* Authenticated State */}
               {userEmail ? (
@@ -188,7 +193,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     overflow: 'hidden',
-    shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 8,
@@ -224,7 +228,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: '800',
+    ...titleFont,
     letterSpacing: -0.3,
   },
   subtitle: {

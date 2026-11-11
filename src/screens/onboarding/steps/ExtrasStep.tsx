@@ -4,11 +4,11 @@ import { getRetailProductsByCategory } from '../../../data/retailProducts';
 import { SUPERMARKET_LIST } from '../../../data/supermarkets';
 import { sharedStyles } from '../onboardingStyles';
 import { OnboardingStepProps } from './stepProps';
+import { pressedState } from '../../../utils/pressedState';
 
 /** Step 7: retail snacks & beverages */
 export function ExtrasStep({
   extrasCost,
-  isDark,
   isLargeScreen,
   preferences,
   setIncludeAlcohol,
@@ -67,7 +67,7 @@ export function ExtrasStep({
             return (
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityState={{ selected: isCurrent }}
+                {...pressedState(isCurrent)}
                 key={tab.id}
                 onPress={() => setSnackTastePreference(tab.id as 'sweet' | 'savory')}
                 style={[
@@ -113,7 +113,7 @@ export function ExtrasStep({
                 return (
                   <TouchableOpacity
                     accessibilityRole="checkbox"
-                    accessibilityState={{ checked: isSelected }}
+                    aria-checked={isSelected}
                     key={prod.id}
                     onPress={() => toggleSnackProduct(prod.id)}
                     activeOpacity={0.7}
@@ -184,7 +184,7 @@ export function ExtrasStep({
                 return (
                   <TouchableOpacity
                     accessibilityRole="checkbox"
-                    accessibilityState={{ checked: isSelected }}
+                    aria-checked={isSelected}
                     key={prod.id}
                     onPress={() => toggleSnackProduct(prod.id)}
                     activeOpacity={0.7}
@@ -258,7 +258,7 @@ export function ExtrasStep({
           return (
             <TouchableOpacity
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: isSelected }}
+              aria-checked={isSelected}
               key={prod.id}
               onPress={() => toggleDrinkProduct(prod.id)}
               activeOpacity={0.7}
@@ -321,18 +321,14 @@ export function ExtrasStep({
       <TouchableOpacity
         accessibilityRole="switch"
         accessibilityLabel="Activează secțiunea de băuturi alcoolice (18+)"
-        accessibilityState={{ checked: Boolean(preferences.includeAlcohol) }}
+        aria-checked={Boolean(preferences.includeAlcohol)}
         onPress={() => setIncludeAlcohol(!preferences.includeAlcohol)}
         activeOpacity={0.7}
         style={[
           styles.alcoholToggleBox,
           {
-            backgroundColor: preferences.includeAlcohol
-              ? isDark
-                ? 'rgba(239, 68, 68, 0.15)'
-                : '#fef2f2'
-              : theme.accentBg,
-            borderColor: preferences.includeAlcohol ? '#ef4444' : theme.border,
+            backgroundColor: preferences.includeAlcohol ? theme.dangerBg : theme.accentBg,
+            borderColor: preferences.includeAlcohol ? theme.danger : theme.border,
           },
         ]}
       >
@@ -341,7 +337,7 @@ export function ExtrasStep({
           <Text
             style={[
               styles.retailBannerTitle,
-              { color: preferences.includeAlcohol ? '#ef4444' : theme.text },
+              { color: preferences.includeAlcohol ? theme.danger : theme.text },
             ]}
           >
             Activează secțiunea de băuturi alcoolice (18+)
@@ -354,13 +350,13 @@ export function ExtrasStep({
           style={[
             styles.retailCheckbox,
             {
-              backgroundColor: preferences.includeAlcohol ? '#ef4444' : 'transparent',
-              borderColor: preferences.includeAlcohol ? '#ef4444' : theme.border,
+              backgroundColor: preferences.includeAlcohol ? theme.danger : 'transparent',
+              borderColor: preferences.includeAlcohol ? theme.danger : theme.border,
             },
           ]}
         >
           {preferences.includeAlcohol && (
-            <Text style={[styles.retailCheckmark, { color: '#ffffff' }]}>✓</Text>
+            <Text style={[styles.retailCheckmark, { color: theme.onDanger }]}>✓</Text>
           )}
         </View>
       </TouchableOpacity>
@@ -379,7 +375,7 @@ export function ExtrasStep({
             return (
               <TouchableOpacity
                 accessibilityRole="checkbox"
-                accessibilityState={{ checked: isSelected }}
+                aria-checked={isSelected}
                 key={prod.id}
                 onPress={() => toggleDrinkProduct(prod.id)}
                 activeOpacity={0.7}
@@ -551,7 +547,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   retailCheckmark: {
-    color: '#000000',
     fontSize: 11,
     fontWeight: '800',
   },

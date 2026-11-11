@@ -10,7 +10,6 @@ interface DislikeSuggestionProps {
   recipe: Recipe;
   suggestedReplacement: Recipe;
   theme: RecipeDetailTheme;
-  isDark: boolean;
   activeServings: number;
   preferences: UserPreferences;
   targetDay?: DayOfWeek | null;
@@ -26,7 +25,6 @@ export const DislikeSuggestion: React.FC<DislikeSuggestionProps> = ({
   recipe,
   suggestedReplacement,
   theme,
-  isDark,
   activeServings,
   preferences,
   targetDay,
@@ -40,13 +38,15 @@ export const DislikeSuggestion: React.FC<DislikeSuggestionProps> = ({
     style={[
       styles.dislikeSuggestionCard,
       {
-        backgroundColor: isDark ? '#1C241E' : '#f8fafc',
-        borderColor: isDark ? 'rgba(239, 68, 68, 0.4)' : '#fca5a5',
+        backgroundColor: theme.card,
+        borderColor: theme.dangerBorder,
       },
     ]}
   >
     <View style={styles.dislikeSuggestionHeader}>
-      <Text style={styles.dislikeSuggestionBadge}>💡 Sugestie de înlocuire recomandată</Text>
+      <Text style={[styles.dislikeSuggestionBadge, { color: theme.danger }]}>
+        💡 Sugestie de înlocuire recomandată
+      </Text>
     </View>
     <Text style={[styles.dislikeSuggestionSubtext, { color: theme.textMuted }]}>
       Rețeta „{recipe.title}” a fost exclusă definitiv de pe acest cont. Iată alternativa optimă
@@ -128,10 +128,12 @@ export const DislikeSuggestion: React.FC<DislikeSuggestionProps> = ({
             onSwap();
           }
         }}
-        style={[styles.confirmReplacementBtn, { backgroundColor: '#16a34a' }]}
+        style={[styles.confirmReplacementBtn, { backgroundColor: theme.success }]}
         activeOpacity={0.85}
       >
-        <Text style={styles.confirmReplacementBtnText}>✓ Înlocuiește cu această rețetă</Text>
+        <Text style={[styles.confirmReplacementBtnText, { color: theme.onSuccess }]}>
+          ✓ Înlocuiește cu această rețetă
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity

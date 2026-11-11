@@ -12,6 +12,7 @@ import { MealPlan, MealPrepPhase } from '../types';
 import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { titleFont } from '../styles/typography';
 
 interface MealPrepModalProps {
   visible: boolean;
@@ -129,7 +130,7 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
+      <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
         <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* Top Header */}
           <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
@@ -157,7 +158,7 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
               style={[
                 styles.overviewBanner,
                 {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f2f2f7',
+                  backgroundColor: theme.trackBg,
                   borderColor: theme.border,
                 },
               ]}
@@ -186,7 +187,7 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
                     <View
                       style={[
                         styles.phaseIconBadge,
-                        { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' },
+                        { backgroundColor: theme.trackBg },
                       ]}
                     >
                       <Text style={styles.phaseIconText}>{phase.icon}</Text>
@@ -211,7 +212,7 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
                       return (
                         <TouchableOpacity
                           accessibilityRole="checkbox"
-                          accessibilityState={{ checked: isDone }}
+                          aria-checked={isDone}
                           key={task.id}
                           onPress={() => toggleTask(task.id)}
                           activeOpacity={0.75}
@@ -283,7 +284,6 @@ export const MealPrepModal: React.FC<MealPrepModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -295,7 +295,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1.5,
     overflow: 'hidden',
-    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
     shadowRadius: 24,
@@ -318,7 +317,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '900',
+    ...titleFont,
     letterSpacing: -0.4,
   },
   subtitle: {
@@ -366,7 +365,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   progressBadgeText: {
-    color: '#ffffff',
     fontSize: 14,
     fontWeight: '900',
   },
@@ -429,7 +427,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkMark: {
-    color: '#ffffff',
     fontSize: 12,
     fontWeight: '900',
   },
@@ -458,14 +455,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
     elevation: 3,
   },
   doneBtnText: {
-    color: '#ffffff',
     fontSize: 15,
     fontWeight: '900',
   },

@@ -3,7 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AisleCategory, GroceryListItem } from '../types';
 import { GroceryItemRow } from './GroceryItemRow';
 
-import { getAppTheme } from '../styles/theme';
+import { CategoryTone, getAppTheme } from '../styles/theme';
 
 interface GroceryAisleSectionProps {
   category: AisleCategory;
@@ -16,18 +16,18 @@ interface GroceryAisleSectionProps {
 
 export const AISLE_METADATA: Record<
   AisleCategory,
-  { name: string; icon: string; color: string }
+  { name: string; icon: string; tone: CategoryTone }
 > = {
-  produce: { name: 'Legume & Fructe Proaspete', icon: '🥦', color: '#30d158' },
-  meat_fish: { name: 'Carne & Pește', icon: '🥩', color: '#ff453a' },
-  dairy: { name: 'Lactate & Ouă', icon: '🧀', color: '#ff9f0a' },
-  pantry: { name: 'Cămară & Condimente', icon: '🌾', color: '#bf5af2' },
-  canned_sauces: { name: 'Conserve & Sosuri', icon: '🥫', color: '#ff375f' },
-  bakery: { name: 'Panificație & Pâine', icon: '🥖', color: '#d97706' },
-  frozen: { name: 'Produse Congelate', icon: '❄️', color: '#64d2ff' },
-  snacks: { name: 'Ronțăieli & Dulciuri de Magazin', icon: '🍿', color: '#ff9f0a' },
-  beverages: { name: 'Băuturi Răcoritoare & Apă', icon: '🥤', color: '#0a84ff' },
-  alcohol: { name: 'Băuturi Alcoolice (18+)', icon: '🍺', color: '#af52de' },
+  produce: { name: 'Legume & Fructe Proaspete', icon: '🥦', tone: 'sage' },
+  meat_fish: { name: 'Carne & Pește', icon: '🥩', tone: 'coral' },
+  dairy: { name: 'Lactate & Ouă', icon: '🧀', tone: 'gold' },
+  pantry: { name: 'Cămară & Condimente', icon: '🌾', tone: 'plum' },
+  canned_sauces: { name: 'Conserve & Sosuri', icon: '🥫', tone: 'ember' },
+  bakery: { name: 'Panificație & Pâine', icon: '🥖', tone: 'bronze' },
+  frozen: { name: 'Produse Congelate', icon: '❄️', tone: 'frost' },
+  snacks: { name: 'Ronțăieli & Dulciuri de Magazin', icon: '🍿', tone: 'gold' },
+  beverages: { name: 'Băuturi Răcoritoare & Apă', icon: '🥤', tone: 'frost' },
+  alcohol: { name: 'Băuturi Alcoolice (18+)', icon: '🍺', tone: 'plum' },
 };
 
 export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
@@ -44,7 +44,7 @@ export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
   const meta = AISLE_METADATA[category] ?? {
     name: 'Alte produse',
     icon: '🛒',
-    color: '#8e8e93',
+    tone: 'bronze' as CategoryTone,
   };
 
   const purchasedCount = items.filter((i) => i.isPurchased).length;
@@ -52,6 +52,7 @@ export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
 
   const appTheme = getAppTheme(isDark);
   const theme = {
+    ...appTheme,
     text: appTheme.text,
     textMuted: appTheme.textMuted,
     border: appTheme.border,
@@ -76,7 +77,7 @@ export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
           <Text
             style={[
               styles.countBadge,
-              { color: isAllPurchased ? (isDark ? '#30d158' : '#34c759') : theme.textMuted },
+              { color: isAllPurchased ? theme.successText : theme.textMuted },
             ]}
           >
             {purchasedCount}/{items.length} {isAllPurchased ? '✓' : ''}
@@ -91,7 +92,7 @@ export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
       <View
         style={[
           styles.progressBarTrack,
-          { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' },
+          { backgroundColor: theme.trackBg },
         ]}
       >
         <View
@@ -99,7 +100,7 @@ export const GroceryAisleSection: React.FC<GroceryAisleSectionProps> = ({
             styles.progressBarFill,
             {
               width: `${(purchasedCount / items.length) * 100}%`,
-              backgroundColor: isAllPurchased ? (isDark ? '#30d158' : '#34c759') : meta.color,
+              backgroundColor: isAllPurchased ? theme.success : theme.category[meta.tone],
             },
           ]}
         />
