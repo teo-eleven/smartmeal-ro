@@ -40,13 +40,13 @@ export type MoodTag =
   | 'family_fav' // Favoritele familiei
   | 'healthy_comfort' // Mâncare caldă & nutritivă
   | 'fakeaway' // Stil restaurant / fast food acasă
-  | 'high_protein' // Peste 35g proteine / porție
+  | 'high_protein' // Cel puțin 28g proteine / porție (moodTagHonesty.test.ts)
   | 'romanian_classic' // Tradiționale românești
   | 'soups_stews' // Ciorbe & Supe calde de casă
   | 'pasta_italian' // Paste & Italienești
   | 'grill_meat' // Grătar & Cărnuri fragede
   | 'spicy_fiesta' // Condimentat, picant & Mexican
-  | 'light_dinner' // Cină ușoară de seară (<400 kcal)
+  | 'light_dinner' // Cină ușoară de seară (cel mult 420 kcal, moodTagHonesty.test.ts)
   | 'fresh_salad' // Salate crocante & Fresh Bowls
   | 'sweet_treat'; // Desert & Dulce de casă
 

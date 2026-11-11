@@ -85,7 +85,7 @@ describe('FoodMoodSwiper Component (Tinder-style Food Swiper)', () => {
     // In grid view, multiple cards should be rendered at once
     expect(screen.getByText('Paste & Arome Italienești')).toBeTruthy();
     expect(screen.getByText('Grătar & Cărnuri Fragede')).toBeTruthy();
-    expect(screen.getByText('Bogat în Proteine (>35g)')).toBeTruthy();
+    expect(screen.getByText('Bogat în Proteine (>28g)')).toBeTruthy();
 
     // Clicking a grid item toggles it
     const pastaCard = screen.getByText('Paste & Arome Italienești');
@@ -136,13 +136,7 @@ describe('FoodMoodSwiper Component (Tinder-style Food Swiper)', () => {
   });
 
   it('supports navigation via next and prev arrow buttons', () => {
-    render(
-      <FoodMoodSwiper
-        selectedMoods={[]}
-        onToggleMood={mockOnToggleMood}
-        isDark={false}
-      />
-    );
+    render(<FoodMoodSwiper selectedMoods={[]} onToggleMood={mockOnToggleMood} isDark={false} />);
 
     const nextArrow = screen.getByLabelText('Cardul următor');
     fireEvent.press(nextArrow);
