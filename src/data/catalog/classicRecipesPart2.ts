@@ -351,7 +351,7 @@ export const CLASSIC_RECIPES_PART_2: RecipeSource[] = [
     id: 'somon_cuptor_legume',
     title: 'Somon fraged la cuptor cu dovlecei și ardei copți',
     description:
-      'O cină lejeră și plină de acizi grași omega-3: file de somon rumenit la tavă alături de fâșii dulci de legume de sezon.',
+      'O cină lejeră cu pește: file de somon rumenit la tavă alături de fâșii dulci de dovlecei și ardei copți.',
     prepTimeMinutes: 8,
     cookTimeMinutes: 18,
     dietType: 'pescatarian',

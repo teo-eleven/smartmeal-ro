@@ -162,7 +162,7 @@ export const LIGHT_BREAKFASTS_AND_DESSERTS: RecipeSource[] = [
     id: 'tartine_unt_arahide_banane',
     title: 'Tartine cu unt de arahide, banane și scorțișoară',
     description:
-      '100% vegetal. Mic dejun bogat în proteine, gata în 5 minute, cu unt de arahide natural și banane felii.',
+      '100% vegetal. Mic dejun dulce-sărat, gata în 5 minute, cu unt de arahide natural și banane felii.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 0,
     dietType: 'vegan',

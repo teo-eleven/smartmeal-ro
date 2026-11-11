@@ -63,9 +63,9 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
   },
   {
     id: 'smoothie_bowl_ghimbir_afine',
-    title: 'Smoothie bowl antioxidant cu afine, ghimbir și chia',
+    title: 'Smoothie bowl cu afine, ghimbir și chia',
     description:
-      'Mic dejun energizant plin de polifenoli și antioxidanți, cu afine sălbatice, ghimbir proaspăt și semințe de chia.',
+      'Mic dejun rece și cremos din afine de pădure mixate cu lapte de migdale, ghimbir proaspăt și spanac, cu semințe de chia și de dovleac.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 0,
     dietType: 'vegan',
@@ -177,7 +177,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'tocanita_linte_ciuperci_naut_pcos',
     title: 'Tocăniță de linte și ciuperci cu năut și cimbru',
     description:
-      'Tocăniță sățioasă de linte, năut și ciuperci în sos de roșii cu cimbru, plină de proteine vegetale.',
+      'Tocăniță sățioasă de linte, năut și ciuperci în sos de roșii cu cimbru și un fir de ulei de măsline.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 25,
     dietType: 'vegan',
@@ -207,7 +207,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'cod_cuptor_dovlecei_ierburi',
     title: 'File de cod la cuptor pe pat de dovlecei și roșii cherry',
     description:
-      'Pește alb delicat cu conținut caloric redus și proteine pure, așezat pe felii subțiri de dovlecei și ierburi aromatice.',
+      'File de cod delicat, copt pe felii subțiri de dovlecei cu roșii cherry, usturoi și mărar.',
     prepTimeMinutes: 8,
     cookTimeMinutes: 20,
     dietType: 'pescatarian',
@@ -236,7 +236,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'tocanita_fasole_verde_rosii_usturoi',
     title: 'Mâncărică de fasole verde păstăi cu roșii și mărar',
     description:
-      'Mâncare clasică românească cu indice glicemic minim, bogată în clorofilă și fibre, asezonată generos cu mărar și usturoi.',
+      'Mâncare clasică românească de fasole verde păstăi călită cu ceapă și roșii, asezonată generos cu mărar și usturoi.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 20,
     dietType: 'vegan',
@@ -265,7 +265,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'peste_alb_cuptor_ardei_masline',
     title: 'File de pește la cuptor cu ardei copt și măsline Kalamata',
     description:
-      'Gust mediteraneean desăvârșit: file alb rumenit cu ardei dulce, măsline Kalamata bogate în grăsimi monosaturate și pătrunjel.',
+      'Gust mediteranean desăvârșit: file alb rumenit cu ardei dulce, roșii cherry, măsline Kalamata și pătrunjel.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 22,
     dietType: 'pescatarian',
@@ -323,7 +323,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'salata_castraveti_iaurt_grecesc_marar',
     title: 'Salată răcoritoare de castraveți cu iaurt grecesc 10% și mărar',
     description:
-      'Rețetă ușoară cu probiotice naturale pentru microbiom și indice glicemic apropiat de zero.',
+      'Salată rece și crocantă de castraveți în iaurt grecesc cremos, cu usturoi, mărar și un fir de ulei de măsline.',
     prepTimeMinutes: 7,
     cookTimeMinutes: 0,
     dietType: 'vegetarian',
@@ -349,9 +349,9 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
   },
   {
     id: 'chili_vegan_fasole_rosie_marar',
-    title: 'Chili vegan aromat cu fasole roșie, porumb și mărar',
+    title: 'Chili vegan aromat cu fasole roșie, porumb și cartofi',
     description:
-      'Festin bogat în fibre prebiotice, antioxidanți și carbohidrați lenți care susțin tranzitul intestinal optim.',
+      'Chili vegan consistent cu fasole roșie, cartofi și porumb dulce, într-un sos de roșii cu boia dulce.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 25,
     dietType: 'vegan',
@@ -381,7 +381,7 @@ export const HEALTH_SPECIALTY_RECIPES: RecipeSource[] = [
     id: 'hummus_cremos_morcovi_seminte',
     title: 'Hummus catifelat de casă cu semințe de dovleac și morcovi',
     description:
-      'Pastă cremoasă de năut și lămâie cu semințe de dovleac bogate în zinc și bastonașe proaspete de morcov.',
+      'Pastă cremoasă de năut și lămâie cu semințe de dovleac crocante și bastonașe proaspete de morcov.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 0,
     dietType: 'vegan',
