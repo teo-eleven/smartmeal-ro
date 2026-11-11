@@ -95,7 +95,7 @@ export const ROMANIAN_MAINS: RecipeSource[] = [
     id: 'mic_dejun_englezesc_romanesc',
     title: 'Mic dejun la tigaie cu cârnăciori oltenești și ouă ochiuri',
     description:
-      'Mic dejun energizant și sățios: cârnăciori rumeniți, ouă ochiuri moi, fasole boabe caldă și pâine prăjită crocantă.',
+      'Mic dejun consistent și sățios: cârnăciori rumeniți, ouă ochiuri moi, fasole boabe caldă și pâine prăjită crocantă.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 10,
     dietType: 'omnivore',

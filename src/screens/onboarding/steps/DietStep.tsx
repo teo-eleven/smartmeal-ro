@@ -2,7 +2,10 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AllergenSelector } from '../../../components/AllergenSelector';
 import { EligibilityMeter } from '../../../components/EligibilityMeter';
-import { HEALTH_GOALS_CATALOG } from '../../../data/healthTags';
+import { HealthDisclaimer } from '../../../components/HealthDisclaimer';
+import { HealthSafetyBlockedNotice } from '../../../components/HealthSafetyBlockedNotice';
+import { HealthSafetyPrompt } from '../../../components/HealthSafetyPrompt';
+import { useHealthGoalToggle } from '../../../hooks/useHealthGoalToggle';
 import { useAppStore } from '../../../store/useAppStore';
 import { glass } from '../../../styles/glass';
 import { DietType } from '../../../types';
@@ -12,6 +15,8 @@ import {
   isBaseDiet,
   isModifierDiet,
 } from '../../../utils/dietCompatibility';
+import { OTHER_PREFERENCES_TITLE_RO, shownGoalCatalog } from '../../../utils/healthGoalVisibility';
+import { areHealthGoalsAvailable } from '../../../utils/platformHealth';
 import { sharedStyles } from '../onboardingStyles';
 import { OnboardingStepProps } from './stepProps';
 
@@ -35,6 +40,15 @@ export function DietStep({
   const activeBaseDiet: DietType =
     selectedDiets.find(isBaseDiet) || preferences.dietType || 'omnivore';
 
+  const setHealthGoalTags = useAppStore((s) => s.setHealthGoalTags);
+  const healthGoals = useHealthGoalToggle({
+    selectedGoals: preferences.healthGoalTags || [],
+    toggleGoal: toggleHealthGoalTag,
+    replaceGoals: setHealthGoalTags,
+  });
+
+  // On iOS only pork-free is offered, with no health wording around it (A.8).
+  const showsHealthGoals = areHealthGoalsAvailable();
   const baseDietOptions = DIET_OPTIONS_CATALOG.filter((d) => isBaseDiet(d.id));
   const modifierDietOptions = DIET_OPTIONS_CATALOG.filter((d) => isModifierDiet(d.id));
 
@@ -237,26 +251,37 @@ export function DietStep({
       {/* HEALTH & WELLNESS GOALS */}
       <View style={styles.healthGoalsBlock}>
         <Text style={[sharedStyles.questionTitle, { color: theme.text, fontSize: 17 }]}>
-          🩺 Obiective de sănătate & stil de viață
+          {showsHealthGoals
+            ? '🥗 Obiective de sănătate & stil de viață'
+            : OTHER_PREFERENCES_TITLE_RO}
         </Text>
-        <Text style={[sharedStyles.questionSubtitle, { color: theme.textMuted }]}>
-          Opțional: filtre speciale nutriționale și medicale populare în România. Meniul recomandat
-          va prioritiza aceste criterii.
-        </Text>
+        {showsHealthGoals && (
+          <Text style={[sharedStyles.questionSubtitle, { color: theme.textMuted }]}>
+            Opțional: cum vrei să arate farfuria. Meniul pune pe primul loc rețetele potrivite.
+          </Text>
+        )}
+
+        {healthGoals.isBlockedNoticeShown && (
+          <HealthSafetyBlockedNotice isDark={isDark} onChangeAnswer={healthGoals.changeAnswer} />
+        )}
 
         <View style={[styles.dietList, isLargeScreen && styles.dietListDesktop]}>
-          {HEALTH_GOALS_CATALOG.map((goal) => {
+          {shownGoalCatalog().map((goal) => {
             const isSelected = (preferences.healthGoalTags || []).includes(goal.id);
+            const isDisabled = healthGoals.isDisabled(goal.id);
             return (
               <TouchableOpacity
                 accessibilityRole="checkbox"
                 aria-checked={isSelected}
+                aria-disabled={isDisabled}
+                disabled={isDisabled}
                 key={goal.id}
-                onPress={() => toggleHealthGoalTag(goal.id)}
+                onPress={() => healthGoals.pressGoal(goal.id)}
                 activeOpacity={0.75}
                 style={[
                   styles.dietCard,
                   isLargeScreen && styles.dietCardDesktop,
+                  isDisabled && styles.blockedGoal,
                   {
                     backgroundColor: isSelected ? theme.primaryLight : theme.accentBg,
                     borderColor: isSelected ? theme.primary : theme.border,
@@ -269,6 +294,13 @@ export function DietStep({
                   <Text style={[styles.dietDesc, { color: theme.textMuted }]}>
                     {goal.descriptionRo}
                   </Text>
+                  {goal.conditionInfoRo && (
+                    <Text
+                      style={[styles.dietDesc, styles.conditionInfo, { color: theme.textMuted }]}
+                    >
+                      ⓘ {goal.conditionInfoRo}
+                    </Text>
+                  )}
                 </View>
                 <View
                   style={[
@@ -295,6 +327,16 @@ export function DietStep({
             );
           })}
         </View>
+
+        {showsHealthGoals && <HealthDisclaimer isDark={isDark} />}
+        {showsHealthGoals && (
+          <HealthSafetyPrompt
+            visible={healthGoals.isAsking}
+            onAnswer={healthGoals.answerQuestion}
+            onDismiss={healthGoals.dismissQuestion}
+            isDark={isDark}
+          />
+        )}
       </View>
 
       <EligibilityMeter preferences={preferences} isDark={isDark} />
@@ -375,6 +417,13 @@ const styles = StyleSheet.create({
   dietDesc: {
     fontSize: 11,
     lineHeight: 14,
+  },
+  /** A health goal after a "yes" to the safety question: visible, but not choosable. */
+  blockedGoal: { opacity: 0.45 },
+  /** The condition a goal suits: information, set apart from what is on the plate. */
+  conditionInfo: {
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   healthGoalsBlock: {
     marginTop: 24,

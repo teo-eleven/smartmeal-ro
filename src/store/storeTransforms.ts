@@ -2,9 +2,10 @@ import { resolveRecipeId } from '../data/recipeIdAliases';
 import { RECIPES_MAP } from '../data/recipes';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { aggregateGroceryList } from '../engine/groceryAggregator';
-import { checkPlanFeasibility, generateMealPlan } from '../engine/plannerEngine';
+import { checkPlanFeasibility, currentSafetyAnswer, generateMealPlan } from './guardedEngine';
 import { storageService } from '../services/storage';
 import { MealPlan, MealPlanDay, PlannedMeal, UserPreferences } from '../types';
+import { withoutBlockedGoals } from '../utils/healthSafety';
 import { parseUserPreferences } from '../utils/preferencesValidation';
 import {
   collectMealsFromDays,
@@ -272,10 +273,15 @@ export function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Part
     : state.preferences;
 
   // Taste follows the cloud, which is what the user asked for; protections only get stricter.
-  const effectivePrefs: UserPreferences = {
+  const merged: UserPreferences = {
     ...cloudPrefs,
     ...mergeProtections(cloudPrefs, state.preferences),
     ...stricterDiet(state.preferences, cloudPrefs),
+  };
+  // The cloud may carry goals this phone's owner has said "yes" to blocking (A.7e-2).
+  const effectivePrefs: UserPreferences = {
+    ...merged,
+    healthGoalTags: withoutBlockedGoals(merged.healthGoalTags ?? [], currentSafetyAnswer()),
   };
 
   // Even valid-looking preferences can describe a week nobody can cook. Refusing beats

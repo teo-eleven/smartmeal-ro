@@ -1,9 +1,11 @@
 import { aggregateGroceryList } from '../engine/groceryAggregator';
-import { checkPlanFeasibility } from '../engine/plannerEngine';
+import { checkPlanFeasibility } from './guardedEngine';
 import { describeFailure } from '../services/authErrors';
 import { checkReauth } from '../services/reauth';
 import { reminderScheduler } from '../services/reminderScheduler';
 import { storageService } from '../services/storage';
+import { withoutBlockedGoals } from '../utils/healthSafety';
+import { useHealthSafetyStore } from './healthSafetyStore';
 import { cloudSyncService } from '../services/supabase';
 import { ReminderSettings, UserPreferences } from '../types';
 import {
@@ -66,6 +68,16 @@ function signedInEmailForOwner(email: string | null): string | null {
   return email && email.includes('@') ? email : null;
 }
 
+/** A "yes" on this phone blocks the health goals stored beside it; the strip is saved (A.7e-2). */
+function dropGoalsBlockedByAnswer(prefs: UserPreferences): UserPreferences {
+  const stored = prefs.healthGoalTags ?? [];
+  const kept = withoutBlockedGoals(stored, useHealthSafetyStore.getState().answer);
+  if (kept.length === stored.length) return prefs;
+  const stripped = { ...prefs, healthGoalTags: kept };
+  void storageService.savePreferences(stripped);
+  return stripped;
+}
+
 type SetState = StoreApi<AppState>['setState'];
 type GetState = () => AppState;
 
@@ -74,6 +86,9 @@ export function createSessionActions(set: SetState, get: GetState) {
   return {
     hydrateStorage: async () => {
       try {
+        // Before anything is decided: no generation may run on an unread answer as if it were
+        // a "no" (A.7e-2). load() never throws; a failed read leaves the answer unset.
+        await useHealthSafetyStore.getState().load();
         const rawStoredPrefs = await storageService.loadPreferences();
         const { plan, items } = await storageService.loadPlanAndGrocery();
         const savedPlans = await storageService.loadSavedPlans();
@@ -110,6 +125,8 @@ export function createSessionActions(set: SetState, get: GetState) {
 
         if (storedPrefs) {
           const repairs: string[] = [];
+
+          storedPrefs = dropGoalsBlockedByAnswer(storedPrefs);
 
           // Storage is untrusted. An unreadable allergen list must not cost the user the rest
           // of their settings, and must never be silently treated as "no allergies".

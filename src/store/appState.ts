@@ -2,6 +2,7 @@ import {
   Allergen,
   Appliance,
   DayOfWeek,
+  DiscardReason,
   DietType,
   FoodTier,
   GroceryListItem,
@@ -23,8 +24,7 @@ export type ActiveView = 'onboarding' | 'generating' | 'meals' | 'grocery';
 export type ConfirmActionId = 'reset_onboarding' | 'apply_cloud_plan' | 'overwrite_cloud_plan';
 
 /** Everything needed to put a reset week back exactly as it was. */
-/** What replaced the plan, so the Undo banner can say so. */
-export type DiscardReason = 'reset' | 'restore' | 'cloud' | 'rebuild';
+export type { DiscardReason };
 
 export interface DiscardedPlan {
   reason: DiscardReason;
@@ -115,8 +115,10 @@ export interface AppState {
   clearNotice: () => void;
   /** Modals on screen; notices wait for zero, because iOS shows one Modal at a time. */
   openWindowCount: number;
-  windowOpened: () => void;
-  windowClosed: () => void;
+  /** Ids of the windows that named themselves, so one can ask about "windows other than mine". */
+  openWindowIds: string[];
+  windowOpened: (id?: string) => void;
+  windowClosed: (id?: string) => void;
 
   // Domain State
   preferences: UserPreferences;

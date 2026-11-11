@@ -22,7 +22,8 @@ const ROWS: Row[] = [
   { key: 'isAtLeast16', label: 'Am cel puțin 16 ani', detail: null },
   {
     key: 'healthDataConsent',
-    label: 'Sunt de acord ca alergiile și dieta mea să fie păstrate în cont',
+    label:
+      'Sunt de acord ca alergiile, dieta și obiectivele mele de sănătate să fie păstrate în cont',
     detail:
       'Sunt date de sănătate. Le folosim doar ca să nu-ți propunem ce nu poți mânca și ' +
       'le poți șterge oricând, odată cu contul.',

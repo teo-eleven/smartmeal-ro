@@ -1,12 +1,11 @@
 import { SUPERMARKETS } from '../data/supermarkets';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { aggregateGroceryList } from '../engine/groceryAggregator';
-import {
-  getAlternativeRecipes,
-  isSupermarketCompatible,
-  selectOptimalDessertForDay,
-} from '../engine/plannerEngine';
+import { isSupermarketCompatible } from '../engine/plannerEngine';
+import { getAlternativeRecipes, selectOptimalDessertForDay } from './guardedEngine';
 import { storageService } from '../services/storage';
+import { withoutBlockedGoals } from '../utils/healthSafety';
+import { currentSafetyAnswer } from './guardedEngine';
 import {
   Allergen,
   Appliance,
@@ -485,7 +484,7 @@ export function createPreferencesActions(set: SetState, _get: GetState) {
           : [...current, tag];
         const nextPrefs: UserPreferences = {
           ...state.preferences,
-          healthGoalTags: updated,
+          healthGoalTags: withoutBlockedGoals(updated, currentSafetyAnswer()),
         };
         return applyPreferenceStep(state, nextPrefs);
       });
@@ -495,7 +494,7 @@ export function createPreferencesActions(set: SetState, _get: GetState) {
       set((state) => {
         const nextPrefs: UserPreferences = {
           ...state.preferences,
-          healthGoalTags: tags,
+          healthGoalTags: withoutBlockedGoals(tags, currentSafetyAnswer()),
         };
         return applyPreferenceStep(state, nextPrefs);
       });

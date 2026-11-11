@@ -238,7 +238,7 @@ export const EXTENDED_RECIPES: RecipeSource[] = [
   {
     id: 'naut_spanac_rosii_vegan',
     title: 'Tigaie caldă de năut cu spanac și roșii',
-    description: 'Mâncare vegană energizantă și bogată în fibre și proteine: năut cremos tras la tigaie cu spanac proaspăt, usturoi și roșii aromatizate.',
+    description: 'Mâncare vegană caldă: năut cremos tras la tigaie cu spanac proaspăt, ceapă roșie, usturoi și roșii aromatizate.',
     prepTimeMinutes: 5,
     cookTimeMinutes: 12,
     dietType: 'vegan',
@@ -263,7 +263,7 @@ export const EXTENDED_RECIPES: RecipeSource[] = [
   {
     id: 'mancare_linte_verde_vegan',
     title: 'Mâncărică aromată de linte verde cu morcov',
-    description: 'Sursă excepțională de fier și proteine vegetale: linte verde boabe gătită domol cu ceapă, morcov, usturoi și pastă de tomate dulce.',
+    description: 'Mâncare de post pe gustul tuturor: linte verde boabe gătită domol cu ceapă, morcov, usturoi și pastă de tomate dulce.',
     prepTimeMinutes: 10,
     cookTimeMinutes: 25,
     dietType: 'vegan',

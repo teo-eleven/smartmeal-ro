@@ -40,13 +40,13 @@ export type MoodTag =
   | 'family_fav' // Favoritele familiei
   | 'healthy_comfort' // Mâncare caldă & nutritivă
   | 'fakeaway' // Stil restaurant / fast food acasă
-  | 'high_protein' // Peste 35g proteine / porție
+  | 'high_protein' // Cel puțin 28g proteine / porție (moodTagHonesty.test.ts)
   | 'romanian_classic' // Tradiționale românești
   | 'soups_stews' // Ciorbe & Supe calde de casă
   | 'pasta_italian' // Paste & Italienești
   | 'grill_meat' // Grătar & Cărnuri fragede
   | 'spicy_fiesta' // Condimentat, picant & Mexican
-  | 'light_dinner' // Cină ușoară de seară (<400 kcal)
+  | 'light_dinner' // Cină ușoară de seară (cel mult 420 kcal, moodTagHonesty.test.ts)
   | 'fresh_salad' // Salate crocante & Fresh Bowls
   | 'sweet_treat'; // Desert & Dulce de casă
 
@@ -94,11 +94,11 @@ export interface RecipeNutrition {
 }
 
 export type HealthGoalTag =
-  | 'anti_inflammatory' // Antiinflamator
-  | 'pcos_friendly' // Potrivit pentru SOP (Sindrom Ovar Polichistic)
-  | 'diabetic_friendly' // Potrivit pentru Diabet (indice glicemic mic)
+  | 'anti_inflammatory' // Stil mediteranean
+  | 'pcos_friendly' // Echilibrat
+  | 'diabetic_friendly' // Atent la zaharuri
   | 'high_fiber' // Bogat în fibre
-  | 'heart_healthy' // Bun pentru inimă
+  | 'heart_healthy' // Grăsimi bune, puțină sare
   | 'pork_free'; // Fără carne de porc (Halal)
 
 export interface Recipe {
@@ -354,3 +354,6 @@ export interface WeeklyMacroSummaryData {
   balanceScore: number; // 0-100
   balanceRating: string;
 }
+
+/** Why a plan was set aside, so the Undo banner can say so. */
+export type DiscardReason = 'reset' | 'restore' | 'cloud' | 'rebuild';

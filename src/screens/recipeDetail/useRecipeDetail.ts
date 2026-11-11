@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store/useAppStore';
+import { useHealthSafetyStore } from '../../store/healthSafetyStore';
 import { useBlockingWindow } from '../../hooks/useBlockingWindow';
-import { getEligibleRecipes, getEligibleDessertRecipes } from '../../engine/plannerEngine';
+import { getEligibleRecipes, getEligibleDessertRecipes } from '../../store/guardedEngine';
 import { DayOfWeek, MealSlot, Recipe } from '../../types';
 
 interface UseRecipeDetailArgs {
@@ -60,6 +61,10 @@ export function useRecipeDetail({
     }))
   );
 
+  // The guarded engine reads the answer when it is called, so the memo below has to re-run
+  // when the answer changes, or the suggestion would still follow the old one.
+  const safetyAnswer = useHealthSafetyStore((state) => state.answer);
+
   const targetMeal = useMemo(() => {
     if (!currentPlan || !targetDay) return null;
     const dayPlan = currentPlan.days.find((d) => d.dayOfWeek === targetDay);
@@ -107,7 +112,7 @@ export function useRecipeDetail({
     if (sameTier.length > 0) return sameTier[0];
 
     return pool[0];
-  }, [recipe, preferences, currentPlan, targetSlot]);
+  }, [recipe, preferences, currentPlan, targetSlot, safetyAnswer]);
 
   useEffect(() => {
     setActiveServings(initialServings);

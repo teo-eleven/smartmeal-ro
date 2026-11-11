@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 
 import { AppLoadingScreen } from '../../components/AppLoadingScreen';
 import { useAppStore } from '../../store/useAppStore';
+import { areHealthGoalsAvailable } from '../../utils/platformHealth';
 
 /** How long the "building your menu" screen stays up. */
 const GENERATING_SCREEN_MS = 1600;
@@ -25,7 +26,8 @@ export const GeneratingPlanModal: React.FC<GeneratingPlanModalProps> = ({ onComp
     return () => clearTimeout(timer);
   }, []);
 
-  const activeHealth = preferences.healthGoalTags && preferences.healthGoalTags.length > 0;
+  // Never on iOS, where health goals are hidden and not applied (A.8).
+  const activeHealth = areHealthGoalsAvailable() && (preferences.healthGoalTags ?? []).length > 0;
 
   return (
     <AppLoadingScreen

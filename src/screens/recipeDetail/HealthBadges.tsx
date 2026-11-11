@@ -1,8 +1,10 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { Recipe } from '../../types';
-import { getHealthGoalMeta } from '../../data/healthTags';
+import { getHealthGoalMeta, isHealthGoal } from '../../data/healthTags';
+import { shownGoalTags } from '../../utils/healthGoalVisibility';
 import { getAppTheme } from '../../styles/theme';
+import { HealthDisclaimer } from '../../components/HealthDisclaimer';
 import { styles } from './styles';
 
 interface HealthBadgesProps {
@@ -10,17 +12,18 @@ interface HealthBadgesProps {
   isDark: boolean;
 }
 
-/** The recipe's health and wellness badges; pork-free is left out, the allergen notice covers it. */
+/**
+ * The recipe's health and wellness badges, with the short disclaimer under them; pork-free is
+ * left out, the allergen notice covers it. None on iOS, where health goals are hidden (A.8).
+ */
 export const HealthBadges: React.FC<HealthBadgesProps> = ({ recipe, isDark }) => {
-  if (!recipe.healthTags || recipe.healthTags.filter((t) => t !== 'pork_free').length === 0) {
-    return null;
-  }
+  const visibleTags = shownGoalTags(recipe.healthTags).filter(isHealthGoal);
+  if (visibleTags.length === 0) return null;
   const theme = getAppTheme(isDark);
   return (
-    <View style={styles.healthTagsRow}>
-      {recipe.healthTags
-        .filter((t) => t !== 'pork_free')
-        .map((tag) => {
+    <View style={styles.healthBlock}>
+      <View style={styles.healthTagsRow}>
+        {visibleTags.map((tag) => {
           const meta = getHealthGoalMeta(tag);
           if (!meta) return null;
           return (
@@ -41,6 +44,8 @@ export const HealthBadges: React.FC<HealthBadgesProps> = ({ recipe, isDark }) =>
             </View>
           );
         })}
+      </View>
+      <HealthDisclaimer isDark={isDark} />
     </View>
   );
 };

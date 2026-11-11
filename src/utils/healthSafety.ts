@@ -1,0 +1,53 @@
+import { isHealthGoal } from '../data/healthTags';
+import { HealthGoalTag } from '../types';
+import { areHealthGoalsAvailable } from './platformHealth';
+
+/**
+ * The safety question asked before the first health goal (HEALTH_GUIDELINES.md §9.1–9.3).
+ * One yes/no for all situations: a "yes" blocks every health goal, because which goal is safe
+ * for which condition is a medical call no dietitian has reviewed yet (stage G).
+ */
+export type HealthSafetyAnswer = 'yes' | 'no' | null;
+
+export const HEALTH_SAFETY_QUESTION_RO =
+  'Înainte de obiectivele de sănătate: ești însărcinată sau alăptezi, ai boală de rinichi, iei ' +
+  'insulină, sulfoniluree, anticoagulante sau antidepresive IMAO, ori ai sau ai avut o ' +
+  'tulburare de alimentație?';
+
+export const HEALTH_SAFETY_BLOCKED_RO =
+  'Pentru situația ta, obiectivele de sănătate nu sunt potrivite fără sfatul medicului. ' +
+  'Discută orice schimbare de alimentație cu medicul sau cu un dietetician autorizat. ' +
+  'Restul aplicației funcționează normal.';
+
+export function needsSafetyQuestion(goal: HealthGoalTag, answer: HealthSafetyAnswer): boolean {
+  return isHealthGoal(goal) && answer === null;
+}
+
+export function isGoalBlocked(goal: HealthGoalTag, answer: HealthSafetyAnswer): boolean {
+  return isHealthGoal(goal) && answer === 'yes';
+}
+
+/** The goals that may stay chosen after this answer; a new array, the input is not touched. */
+export function withoutBlockedGoals(
+  goals: readonly HealthGoalTag[],
+  answer: HealthSafetyAnswer
+): HealthGoalTag[] {
+  return goals.filter((goal) => !isGoalBlocked(goal, answer));
+}
+
+/**
+ * The preferences the planner may see. Health goals only apply after an explicit "no": with
+ * "yes" they are blocked, and with no answer (not asked yet, or not read yet) nothing is
+ * assumed. Where the platform hides health goals (iOS, A.8) they never apply, whatever the
+ * answer; the stored ones are kept. Pork-free always applies. Returns the same object when
+ * nothing has to change.
+ */
+export function effectivePreferences<T extends { healthGoalTags?: HealthGoalTag[] }>(
+  preferences: T,
+  answer: HealthSafetyAnswer
+): T {
+  const goals = preferences.healthGoalTags;
+  const mayApply = answer === 'no' && areHealthGoalsAvailable();
+  if (mayApply || !goals || !goals.some(isHealthGoal)) return preferences;
+  return { ...preferences, healthGoalTags: goals.filter((goal) => !isHealthGoal(goal)) };
+}

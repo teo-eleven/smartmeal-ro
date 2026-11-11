@@ -1,6 +1,6 @@
 # Politica de confidențialitate — SmartMeal RO
 
-**Ultima actualizare:** 28 septembrie 2026 (versiunea `2026-09-28`)
+**Ultima actualizare:** 6 noiembrie 2026 (versiunea `2026-11-06`)
 **Operator:** *[completează: nume / firmă, adresă, email de contact]*
 
 Aceasta este o primă variantă, scrisă pe ce face aplicația azi. **Citește-o și
@@ -21,7 +21,8 @@ transmitem date către brokeri sau agenții de publicitate.
 
 ### Pe dispozitivul tău, întotdeauna
 
-- preferințele alimentare: **dieta, alergiile declarate**, aparatele de bucătărie, numărul de
+- preferințele alimentare: **dieta, alergiile declarate, obiectivele de sănătate alese**,
+  aparatele de bucătărie, numărul de
   persoane, bugetul, magazinul preferat
 - planul săptămânal generat și lista de cumpărături
 - ce ai marcat că ai deja în cămară, ce rețete ți-au plăcut și pe care nu vrei să le mai vezi
@@ -52,6 +53,32 @@ comercial.
   căsuța dedicată la crearea contului. Împreună cu contul păstrăm data acordului și
   versiunea acestei politici pe care ai acceptat-o.
 - Îți retragi acordul ștergând contul, din același ecran, oricând.
+
+**Obiectivele de sănătate alese** (de exemplu „Atent la zaharuri”) sunt și ele date privind
+sănătatea, pentru că pot arăta o afecțiune. Le folosim doar ca să alegem rețete potrivite
+obiectivului tău, nu în alt scop.
+
+- **Fără cont**, rămân doar pe telefonul tău.
+- **Cu cont**, se sincronizează în cloud, împreună cu preferințele tale, pe baza aceluiași
+  consimțământ. Căsuța bifată la crearea contului acoperă „alergiile, dieta și obiectivele mele de sănătate”.
+
+**Întrebarea de siguranță.** Înainte de primul obiectiv de sănătate, aplicația te întreabă o
+dată, cu da sau nu, dacă ești însărcinată sau alăptezi, ai boală de rinichi, iei insulină,
+sulfoniluree, anticoagulante sau antidepresive IMAO, ori ai sau ai avut o tulburare de
+alimentație. Dacă răspunzi „Da”, cele cinci obiective de sănătate sunt blocate.
+
+- Răspunsul rămâne **doar pe telefonul tău**, separat de preferințe. Nu se sincronizează în
+  cloud și nu apare în exportul de date.
+- Îl ștergi cu „Reia Configuratorul Complet (de la zero)”. Dacă ai răspuns „Da” din greșeală,
+  apasă „Am răspuns greșit”.
+
+### Obiectivele de sănătate nu sunt sfat medical
+
+Obiectivele din aplicație (de exemplu „Atent la zaharuri”, „Grăsimi bune, puțină sare”) descriu
+ce este în farfurie, nu efectul asupra unei afecțiuni. În aplicație, textul de mai jos se
+deschide din Filtre → „Despre obiectivele de sănătate”.
+
+> SmartMeal oferă planificare de mese și informații nutriționale pentru un stil de viață sănătos. Criteriile fiecărui obiectiv se bazează pe surse publice (de exemplu avizele EFSA și regulamentele UE privind mențiunile nutriționale și de sănătate). Valorile nutriționale sunt estimate pe baza ingredientelor și pot varia. Aplicația nu înlocuiește consultul medical și nu stabilește tratamente. Nu modifica medicația sau dieta prescrisă fără acordul medicului. Contează o alimentație variată și echilibrată și un stil de viață sănătos. În caz de urgență sună la 112.
 
 ## Ce NU colectăm
 

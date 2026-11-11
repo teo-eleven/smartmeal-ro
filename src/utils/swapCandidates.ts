@@ -19,6 +19,9 @@ const roundRon = (value: number) => Math.round(value * 100) / 100;
  * The replacements offered in the swap modal, best first: those that keep the week within
  * budget, then dishes not already on the plan, then the cheapest. The list used to start with
  * whatever came first in the catalog, so the first choice could push the cart over budget.
+ *
+ * Pure: `preferences` must already be the effective ones (effectivePreferences with the
+ * safety answer, A.7e-2). The caller reads the answer, so this stays free of the store.
  */
 export function rankSwapCandidates(
   plan: MealPlan,

@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import React from 'react';
 import { Linking } from 'react-native';
 import { render, screen, fireEvent } from '@testing-library/react-native';
@@ -36,5 +38,18 @@ describe('bifele de la cont nou', () => {
     render(<SignUpConsent consent={NONE} onChange={jest.fn()} isDark={false} />);
 
     expect(screen.queryByLabelText('Citește politica de confidențialitate')).toBeNull();
+  });
+});
+
+describe('the consent names health goals (A.7e-6)', () => {
+  const LABEL =
+    'Sunt de acord ca alergiile, dieta și obiectivele mele de sănătate să fie păstrate în cont';
+
+  test('the checkbox says so, and docs/PRIVACY.md quotes the same wording', () => {
+    render(<SignUpConsent consent={NONE} onChange={jest.fn()} isDark={false} />);
+    const privacy = readFileSync(join(__dirname, '../../../docs/PRIVACY.md'), 'utf8');
+
+    expect(screen.getByLabelText(LABEL)).toBeTruthy();
+    expect(privacy).toContain('„alergiile, dieta și obiectivele mele de sănătate”');
   });
 });

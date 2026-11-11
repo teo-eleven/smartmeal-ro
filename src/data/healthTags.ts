@@ -3,53 +3,67 @@ import { INGREDIENTS } from './ingredients';
 
 export interface HealthGoalMeta {
   id: HealthGoalTag;
+  /**
+   * What is on the plate, never what it does to the body: no "prevents", "reduces" or disease
+   * names here (EU Regulation 1924/2006; src/data/__tests__/healthClaims.test.ts). The keys
+   * stay as they were, so goals already saved keep working.
+   */
   labelRo: string;
   shortBadgeRo: string;
   icon: string;
   descriptionRo: string;
-  benefitRo: string;
+  /**
+   * The condition the goal suits, as information only, and that it does not replace a doctor.
+   * Absent for choices that are not about health (pork-free).
+   */
+  conditionInfoRo?: string;
 }
 
 export const HEALTH_GOALS_CATALOG: HealthGoalMeta[] = [
   {
     id: 'anti_inflammatory',
-    labelRo: 'Antiinflamator',
-    shortBadgeRo: 'Antiinflamator',
-    icon: '🩺',
-    descriptionRo: 'Fără zahăr rafinat, bogat în omega-3, antioxidanți și ulei de măsline.',
-    benefitRo: 'Reduce inflamația cronică, susține imunitatea și articulațiile.',
+    labelRo: 'Stil mediteranean',
+    shortBadgeRo: 'Mediteranean',
+    icon: '🫒',
+    descriptionRo: 'Pește, legume, leguminoase, nuci și ulei de măsline; fără zahăr rafinat.',
+    conditionInfoRo:
+      'Relevant dacă ai o afecțiune inflamatorie, de exemplu artrită. Nu înlocuiește medicul.',
   },
   {
     id: 'pcos_friendly',
-    labelRo: 'SOP (Ovare Polichistice)',
-    shortBadgeRo: 'SOP / Hormonal',
-    icon: '🌸',
-    descriptionRo: 'Indice glicemic scăzut, proteine de calitate și echilibru hormonal.',
-    benefitRo: 'Stabilizează insulina și previne fluctuațiile glicemice.',
+    labelRo: 'Echilibrat',
+    shortBadgeRo: 'Echilibrat',
+    icon: '⚖️',
+    descriptionRo:
+      'Proteine la fiecare masă, carbohidrați din cereale integrale și grăsimi din pește, nuci, avocado.',
+    conditionInfoRo:
+      'Relevant dacă ai sindromul ovarelor polichistice (SOP). Nu înlocuiește medicul.',
   },
   {
     id: 'diabetic_friendly',
-    labelRo: 'Diabet & Glicemie Stabilă',
-    shortBadgeRo: 'IG Mic / Diabet',
-    icon: '🩸',
-    descriptionRo: 'Carbohidrați complecși, indice glicemic mic, eliberare treptată.',
-    benefitRo: 'Previne vârfurile de zahăr în sânge și oferă energie constantă.',
+    labelRo: 'Atent la zaharuri',
+    shortBadgeRo: 'Puține zaharuri',
+    icon: '🥣',
+    descriptionRo: 'Fără zahăr adăugat, carbohidrați din cereale integrale și leguminoase.',
+    conditionInfoRo: 'Relevant dacă ai diabet sau prediabet. Nu înlocuiește medicul.',
   },
   {
     id: 'high_fiber',
-    labelRo: 'Bogat în Fibre',
+    labelRo: 'Bogat în fibre',
     shortBadgeRo: 'Bogat în fibre',
     icon: '🌾',
-    descriptionRo: 'Legume proaspete, leguminoase, cereale integrale și semințe.',
-    benefitRo: 'Digestie sănătoasă, microbiom echilibrat și sațietate crescută.',
+    descriptionRo: 'Legume, leguminoase, cereale integrale și semințe la fiecare masă.',
+    conditionInfoRo:
+      'Relevant dacă medicul ți-a recomandat mai multe fibre. Nu înlocuiește medicul.',
   },
   {
     id: 'heart_healthy',
-    labelRo: 'Sănătos pentru Inimă',
-    shortBadgeRo: 'Cardio-Protector',
-    icon: '🫀',
-    descriptionRo: 'Sărac în grăsimi saturate și sodiu, bogat în grăsimi monosaturate.',
-    benefitRo: 'Protecție cardiovasculară și susținerea tensiunii arteriale optime.',
+    labelRo: 'Grăsimi bune, puțină sare',
+    shortBadgeRo: 'Puțină sare',
+    icon: '🐟',
+    descriptionRo: 'Pește, ulei de măsline și nuci în locul grăsimilor saturate; sare puțină.',
+    conditionInfoRo:
+      'Relevant dacă ai tensiunea mare sau colesterolul mărit. Nu înlocuiește medicul.',
   },
   {
     id: 'pork_free',
@@ -57,13 +71,23 @@ export const HEALTH_GOALS_CATALOG: HealthGoalMeta[] = [
     shortBadgeRo: 'Fără porc',
     icon: '🥩',
     descriptionRo: 'Exclude complet carnea de porc, mezelurile și untura din meniu.',
-    benefitRo: 'Rețete exclusive cu pui, curcan, vită, pește sau 100% vegetale.',
   },
 ];
 
 const HEALTH_GOALS_MAP = new Map<HealthGoalTag, HealthGoalMeta>(
   HEALTH_GOALS_CATALOG.map((g) => [g.id, g])
 );
+
+/**
+ * Pork-free is a religious or personal choice, not a health one: never asked about, never
+ * blocked by the safety answer. The single place that says so.
+ */
+export const PORK_FREE_TAG: HealthGoalTag = 'pork_free';
+
+/** True for every goal except pork-free. */
+export function isHealthGoal(tag: HealthGoalTag): boolean {
+  return tag !== PORK_FREE_TAG;
+}
 
 export function getHealthGoalMeta(id: HealthGoalTag): HealthGoalMeta | undefined {
   return HEALTH_GOALS_MAP.get(id);
@@ -91,9 +115,9 @@ export function getRecipeHealthTags(
   // Derived, never trusted from the data: a hand-written 'pork_free' on a recipe with pork
   // must not survive, and a recipe without pork is pork-free whether or not anyone said so.
   if (recipeContainsPork(recipe)) {
-    tags.delete('pork_free');
+    tags.delete(PORK_FREE_TAG);
   } else {
-    tags.add('pork_free');
+    tags.add(PORK_FREE_TAG);
   }
 
   return Array.from(tags);

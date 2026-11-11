@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { getHealthGoalMeta } from '../data/healthTags';
 import { getAppTheme } from '../styles/theme';
+import { shownGoalTags } from '../utils/healthGoalVisibility';
 import { UserPreferences } from '../types';
 
 interface PreGenerationSummaryCardProps {
@@ -29,10 +30,12 @@ export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> =
     icon: '🛒',
   };
 
+  // Only the goals this platform shows count: none of the health ones on iOS (A.8).
+  const activeHealthTags = shownGoalTags(preferences.healthGoalTags);
+
   // Nutrition targets calculated from profile
   const isHighProtein =
-    preferences.moodTags?.includes('high_protein') ||
-    preferences.healthGoalTags?.includes('pcos_friendly');
+    preferences.moodTags?.includes('high_protein') || activeHealthTags.includes('pcos_friendly');
   const isLowCalorie = preferences.moodTags?.includes('low_calorie');
 
   let targetCalories = 2050;
@@ -48,7 +51,6 @@ export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> =
   const costPerPortion =
     totalPortions > 0 ? (preferences.budgetRon / totalPortions).toFixed(1) : '15.0';
 
-  const activeHealthTags = preferences.healthGoalTags || [];
   const selectedDiets =
     preferences.dietTypes && preferences.dietTypes.length > 0
       ? preferences.dietTypes

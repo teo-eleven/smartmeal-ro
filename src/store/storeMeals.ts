@@ -3,7 +3,8 @@ import { resolveRecipeId } from '../data/recipeIdAliases';
 import { RECIPES_MAP } from '../data/recipes';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
 import { aggregateGroceryList } from '../engine/groceryAggregator';
-import { getSlotLabelRo, selectOptimalDessertForDay } from '../engine/plannerEngine';
+import { getSlotLabelRo } from '../engine/plannerEngine';
+import { selectOptimalDessertForDay } from './guardedEngine';
 import { storageService } from '../services/storage';
 import { DayOfWeek, MealPlan, MealPlanDay, MealSlot, PlannedMeal, Recipe } from '../types';
 import {

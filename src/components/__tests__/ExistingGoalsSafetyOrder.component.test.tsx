@@ -1,0 +1,268 @@
+import React from 'react';
+import { Modal, Text, View } from 'react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ExistingGoalsSafetyPrompt } from '../ExistingGoalsSafetyPrompt';
+import { BiometricOptInPrompt } from '../BiometricOptInPrompt';
+import { useAuthSessionStore } from '../../store/authSessionStore';
+import { useBlockingWindow } from '../../hooks/useBlockingWindow';
+import { useAppStore } from '../../store/useAppStore';
+import { useHealthSafetyStore } from '../../store/healthSafetyStore';
+import { HEALTH_SAFETY_QUESTION_RO } from '../../utils/healthSafety';
+
+const FACE_ID_TEXT = 'Folosești Face ID data viitoare?';
+
+beforeEach(async () => {
+  await AsyncStorage.clear();
+  useHealthSafetyStore.setState({
+    answer: null,
+    isLoaded: true,
+    isReminderDismissed: false,
+  });
+  useAppStore.setState((s) => ({
+    activeNotice: null,
+    confirmRequest: null,
+    openWindowCount: 0,
+    openWindowIds: [],
+    authStatus: 'signedIn',
+    userEmail: 'ana@b.ro',
+    preferences: { ...s.preferences, healthGoalTags: ['heart_healthy'] },
+  }));
+  useAuthSessionStore.setState({
+    shouldOfferBiometric: true,
+    biometricLabel: 'Face ID',
+    answerBiometricOffer: jest.fn(async () => undefined),
+  });
+});
+
+afterEach(() => {
+  useAuthSessionStore.getState().clear();
+  useAppStore.setState({ authStatus: 'checking', userEmail: null });
+});
+
+describe('Face ID offer waits only for a question that is on this screen (A.7g-1)', () => {
+  test('shows on a branch without the safety prompt even though the question is due', () => {
+    render(<BiometricOptInPrompt isDark={false} />);
+
+    expect(screen.getByText(FACE_ID_TEXT)).toBeTruthy();
+  });
+
+  test('on the main shell the question still goes first', () => {
+    render(
+      <>
+        <BiometricOptInPrompt isDark={false} waitsForSafetyQuestion />
+        <ExistingGoalsSafetyPrompt isDark={false} />
+      </>
+    );
+
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+    expect(screen.queryByText(FACE_ID_TEXT)).toBeNull();
+  });
+
+  test('the offer comes through once the safety prompt leaves the screen', () => {
+    const tree = (hasSafety: boolean) => (
+      <>
+        <BiometricOptInPrompt isDark={false} waitsForSafetyQuestion={hasSafety} />
+        {hasSafety ? <ExistingGoalsSafetyPrompt isDark={false} /> : null}
+      </>
+    );
+    const view = render(tree(true));
+    expect(screen.queryByText(FACE_ID_TEXT)).toBeNull();
+
+    view.rerender(tree(false));
+
+    expect(screen.getByText(FACE_ID_TEXT)).toBeTruthy();
+  });
+
+  test('the safety prompt shows on its first render of the shell', () => {
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+  });
+});
+
+describe('the main shell never shows both windows in one commit (A.7h-1)', () => {
+  test('moving to the shell with the question due: the Face ID offer is never visible', () => {
+    const faceIdSeen: boolean[] = [];
+    let isRecording = false;
+    const onRender = () => {
+      // The host output as committed, read in the middle of the commit.
+      if (isRecording) faceIdSeen.push(JSON.stringify(screen.toJSON()).includes(FACE_ID_TEXT));
+    };
+    // A stable root View, so `screen` keeps pointing at a mounted node across branches.
+    const tree = (isShell: boolean) => (
+      <View>
+        <React.Profiler id="shell" onRender={onRender}>
+          {isShell ? (
+            <>
+              <BiometricOptInPrompt isDark={false} waitsForSafetyQuestion />
+              <ExistingGoalsSafetyPrompt isDark={false} />
+            </>
+          ) : (
+            <Text>paywall</Text>
+          )}
+        </React.Profiler>
+      </View>
+    );
+    // Start on a branch with neither window, so `screen` exists for every later commit.
+    const view = render(tree(false));
+    isRecording = true;
+
+    view.rerender(tree(true));
+
+    expect(faceIdSeen.length).toBeGreaterThan(0);
+    expect(faceIdSeen.some(Boolean)).toBe(false);
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+  });
+});
+
+describe('other windows and the question, in any order (A.7g-2)', () => {
+  const OtherWindow: React.FC<{ open: boolean }> = ({ open }) => {
+    useBlockingWindow(open);
+    return null;
+  };
+
+  /** Visible state of the question's Modal after every commit, so a transient flash shows up. */
+  const recordVisibleCommits = () => {
+    const seen: boolean[] = [];
+    // The first commit happens inside render(), before `screen` exists: record after start().
+    let isRecording = false;
+    const start = () => {
+      isRecording = true;
+    };
+    const onRender = () => {
+      if (!isRecording) return;
+      seen.push(screen.UNSAFE_queryAllByType(Modal).some((m) => m.props.visible === true));
+    };
+    const wrap = (open: boolean) => (
+      <React.Profiler id="q" onRender={onRender}>
+        <OtherWindow open={open} />
+        <ExistingGoalsSafetyPrompt isDark={false} />
+      </React.Profiler>
+    );
+    return { seen, wrap, start };
+  };
+
+  // Regression guard: this passes on the pre-A.7g-2 code too; it did not reproduce a bug.
+  test('regression guard: another window opening hides the question without a re-show', () => {
+    const { seen, wrap, start } = recordVisibleCommits();
+    const view = render(wrap(false));
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+
+    start();
+    view.rerender(wrap(true));
+
+    // The commit that opens the other window still shows it (the window registers after that
+    // commit); what must never happen is hiding and then showing again.
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.at(-1)).toBe(false);
+    expect(seen.some((isVisible, i) => i > 0 && isVisible && !seen[i - 1])).toBe(false);
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+  });
+
+  test('it stays hidden until that window closes, then returns', () => {
+    const { seen, wrap, start } = recordVisibleCommits();
+    const view = render(wrap(false));
+    view.rerender(wrap(true));
+
+    start();
+    view.rerender(wrap(true));
+    expect(seen.every((isVisible) => !isVisible)).toBe(true);
+
+    view.rerender(wrap(false));
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+  });
+
+  test('a window already open before the question is mounted keeps it hidden', () => {
+    const view = render(<OtherWindow open />);
+    view.rerender(
+      <>
+        <OtherWindow open />
+        <ExistingGoalsSafetyPrompt isDark={false} />
+      </>
+    );
+
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+  });
+
+  test('two other windows: the question returns only after both close', () => {
+    useAppStore.getState().windowOpened('a');
+    useAppStore.getState().windowOpened('b');
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+
+    act(() => useAppStore.getState().windowClosed('a'));
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+
+    act(() => useAppStore.getState().windowClosed('b'));
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+  });
+
+  test('windows opened with no id still count as other windows', () => {
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+
+    act(() => useAppStore.getState().windowOpened());
+
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+  });
+
+  test('closing a window id that is not registered leaves the others alone', () => {
+    useAppStore.getState().windowOpened('a');
+
+    useAppStore.getState().windowClosed('zzz');
+
+    expect(useAppStore.getState().openWindowIds).toEqual(['a']);
+  });
+});
+
+describe('closed without an answer lasts the whole launch (A.7g-3)', () => {
+  const dismiss = async () => {
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Închide întrebarea', { includeHiddenElements: true }));
+    });
+  };
+
+  test('after closing, leaving and coming back to the screen does not ask again', async () => {
+    const first = render(<ExistingGoalsSafetyPrompt isDark={false} />);
+    await dismiss();
+
+    first.unmount();
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+    expect(useHealthSafetyStore.getState().isReminderDismissed).toBe(true);
+  });
+
+  test('a real relaunch (fresh store state) asks again', async () => {
+    const first = render(<ExistingGoalsSafetyPrompt isDark={false} />);
+    await dismiss();
+    first.unmount();
+
+    // A new launch starts from the store's initial state; nothing was persisted.
+    useHealthSafetyStore.setState({ isReminderDismissed: false, isLoaded: true, answer: null });
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+  });
+
+  test('closing writes nothing to storage', async () => {
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+
+    await dismiss();
+
+    expect(await AsyncStorage.getAllKeys()).toEqual([]);
+  });
+
+  test('after closing, a reset and a remount do not bring the question back this launch', async () => {
+    const first = render(<ExistingGoalsSafetyPrompt isDark={false} />);
+    await dismiss();
+    first.unmount();
+
+    await act(async () => {
+      await useHealthSafetyStore.getState().reset();
+    });
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+  });
+});

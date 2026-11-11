@@ -1,4 +1,5 @@
 import { RECIPES, RECIPES_MAP } from '../recipes';
+import { MOOD_OPTIONS_CATALOG } from '../../utils/moodCatalog';
 
 /**
  * Mood tags are promises the craving cards make: "Bogat în Proteine", "Mese Rapide",
@@ -64,6 +65,32 @@ describe('etichetele de poftă spun adevărul', () => {
   test('guacamole nu e desert, iar hummus-ul nu e bogat în proteine', () => {
     expect(RECIPES_MAP.guacamole_chips_nachos.moodTags).not.toContain('sweet_treat');
     expect(RECIPES_MAP.hummus_cremos_legume_crocante.moodTags).not.toContain('high_protein');
+  });
+
+  test('cardurile de poftă promit exact pragurile verificate mai sus', () => {
+    const cardTexts = (id: string) => {
+      const card = MOOD_OPTIONS_CATALOG.find((m) => m.id === id);
+      return [card?.label, card?.desc, ...(card?.highlights ?? [])].join(' ');
+    };
+    const numbersBefore = (text: string, unit: string) =>
+      [...text.matchAll(new RegExp(`(\\d+)\\s*${unit}`, 'g'))].map((m) => Number(m[1]));
+
+    expect(numbersBefore(cardTexts('high_protein'), 'g')).toEqual([
+      HIGH_PROTEIN_MIN_G,
+      HIGH_PROTEIN_MIN_G,
+    ]);
+    expect(new Set(numbersBefore(cardTexts('light_dinner'), 'kcal'))).toEqual(
+      new Set([LIGHT_DINNER_MAX_KCAL])
+    );
+    expect(cardTexts('high_protein').match(/\b(min\.|max\.|peste|sub)\s*\d+/gi)).toEqual([
+      `min. ${HIGH_PROTEIN_MIN_G}`,
+      `Min. ${HIGH_PROTEIN_MIN_G}`,
+    ]);
+    expect(cardTexts('light_dinner').match(/\b(min\.|max\.|peste|sub)\s*\d+/gi)).toEqual([
+      `max. ${LIGHT_DINNER_MAX_KCAL}`,
+      `max. ${LIGHT_DINNER_MAX_KCAL}`,
+      `Max. ${LIGHT_DINNER_MAX_KCAL}`,
+    ]);
   });
 
   test('fiecare rețetă păstrează cel puțin o etichetă de poftă', () => {

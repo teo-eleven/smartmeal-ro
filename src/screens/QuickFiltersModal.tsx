@@ -10,10 +10,18 @@ import {
   View,
 } from 'react-native';
 import { Appliance, DayOfWeek, HealthGoalTag, MoodTag, UserPreferences } from '../types';
-import { HEALTH_GOALS_CATALOG } from '../data/healthTags';
+import { HealthDisclaimer } from '../components/HealthDisclaimer';
+import { HealthGoalsAbout } from '../components/HealthGoalsAbout';
+import { HealthSafetyBlockedNotice } from '../components/HealthSafetyBlockedNotice';
+import { HealthSafetyPrompt } from '../components/HealthSafetyPrompt';
+import { useHealthSafetyStore } from '../store/healthSafetyStore';
+import { withoutBlockedGoals } from '../utils/healthSafety';
+import { useHealthGoalToggle } from '../hooks/useHealthGoalToggle';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { pressedState } from '../utils/pressedState';
+import { OTHER_PREFERENCES_TITLE_RO, shownGoalCatalog, shownGoalTags } from '../utils/healthGoalVisibility';
+import { areHealthGoalsAvailable } from '../utils/platformHealth';
 
 interface QuickFiltersModalProps {
   visible: boolean;
@@ -91,9 +99,27 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
     // Only on opening: syncing while open would erase what the user is editing.
   }, [visible]);
 
+  // Hooks run on every render, so this sits above the early return below.
+  const toggleHealthGoal = (tag: HealthGoalTag) => {
+    if (healthGoalTags.includes(tag)) {
+      setHealthGoalTags(healthGoalTags.filter((t) => t !== tag));
+    } else {
+      setHealthGoalTags([...healthGoalTags, tag]);
+    }
+  };
+
+  const healthGoals = useHealthGoalToggle({
+    selectedGoals: healthGoalTags,
+    toggleGoal: toggleHealthGoal,
+    replaceGoals: setHealthGoalTags,
+    isOpen: visible,
+  });
+
   if (!visible) return null;
 
   const theme = getAppTheme(isDark);
+  // On iOS only pork-free is shown; the hidden goals stay in the local copy untouched (A.8).
+  const showsHealthGoals = areHealthGoalsAvailable();
 
   const toggleDay = (day: DayOfWeek) => {
     if (cookingDays.includes(day)) {
@@ -123,14 +149,6 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
     }
   };
 
-  const toggleHealthGoal = (tag: HealthGoalTag) => {
-    if (healthGoalTags.includes(tag)) {
-      setHealthGoalTags(healthGoalTags.filter((t) => t !== tag));
-    } else {
-      setHealthGoalTags([...healthGoalTags, tag]);
-    }
-  };
-
   const handleSave = () => {
     const finalBudget = Math.max(50, Number(budgetInputText) || budgetRon);
     onApplyFilters({
@@ -139,7 +157,8 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
       budgetRon: finalBudget,
       moodTags,
       appliances,
-      healthGoalTags,
+      // Read at press time: the answer may have changed since the goals were ticked.
+      healthGoalTags: withoutBlockedGoals(healthGoalTags, useHealthSafetyStore.getState().answer),
     });
     onClose();
   };
@@ -399,23 +418,33 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
             {/* Section 6: Obiective de Sănătate & Stil de Viață */}
             <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={styles.sectionHeaderRow}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>🩺 Obiective de Sănătate & Nutriție</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                  {showsHealthGoals ? '🥗 Obiective de Sănătate & Nutriție' : OTHER_PREFERENCES_TITLE_RO}
+                </Text>
                 <Text style={[styles.sectionSubtitle, { color: theme.textMuted }]}>
-                  {healthGoalTags.length} active
+                  {shownGoalTags(healthGoalTags).length} active
                 </Text>
               </View>
 
+              {healthGoals.isBlockedNoticeShown && (
+                <HealthSafetyBlockedNotice isDark={isDark} onChangeAnswer={healthGoals.changeAnswer} />
+              )}
+
               <View style={styles.moodGrid}>
-                {HEALTH_GOALS_CATALOG.map((goal) => {
+                {shownGoalCatalog().map((goal) => {
                   const isActive = healthGoalTags.includes(goal.id);
+                  const isDisabled = healthGoals.isDisabled(goal.id);
                   return (
                     <TouchableOpacity
                       accessibilityRole="checkbox"
                       aria-checked={isActive}
+                      aria-disabled={isDisabled}
+                      disabled={isDisabled}
                       key={goal.id}
-                      onPress={() => toggleHealthGoal(goal.id)}
+                      onPress={() => healthGoals.pressGoal(goal.id)}
                       style={[
                         styles.moodChip,
+                        isDisabled && styles.blockedChip,
                         {
                           backgroundColor: isActive ? theme.primaryLight : theme.btnBg,
                           borderColor: isActive ? theme.primary : theme.border,
@@ -440,6 +469,13 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                   );
                 })}
               </View>
+
+              {showsHealthGoals && (
+                <View style={styles.disclaimerSpacing}>
+                  <HealthDisclaimer isDark={isDark} />
+                  <HealthGoalsAbout isDark={isDark} />
+                </View>
+              )}
             </View>
 
             {/* Actions Bottom Bar */}
@@ -473,6 +509,15 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
         </ScrollView>
         </View>
       </View>
+      {/* A sibling of the card, not inside the ScrollView: the question is not part of the list. */}
+      {showsHealthGoals && (
+        <HealthSafetyPrompt
+          visible={healthGoals.isAsking}
+          onAnswer={healthGoals.answerQuestion}
+          onDismiss={healthGoals.dismissQuestion}
+          isDark={isDark}
+        />
+      )}
     </Modal>
   );
 };
@@ -631,6 +676,9 @@ const styles = StyleSheet.create({
   presetBtnText: {
     fontSize: 12,
   },
+  disclaimerSpacing: { marginTop: 12 },
+  /** A health goal after a "yes" to the safety question: visible, but not choosable. */
+  blockedChip: { opacity: 0.45 },
   moodGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

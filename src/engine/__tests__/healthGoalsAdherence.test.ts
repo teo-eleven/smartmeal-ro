@@ -24,7 +24,7 @@ describe('Health Goals Adherence & Recipe Filtering', () => {
     expect(unconstrained.length).toBeGreaterThan(100);
   });
 
-  it('filters recipes strictly when Antiinflamator is selected', () => {
+  it('filters recipes strictly when Stil mediteranean (anti_inflammatory) is selected', () => {
     const antiInflammatoryPrefs: UserPreferences = {
       ...basePrefs,
       healthGoalTags: ['anti_inflammatory'],
@@ -37,7 +37,7 @@ describe('Health Goals Adherence & Recipe Filtering', () => {
     });
   });
 
-  it('filters recipes strictly when Diabet & Glicemie Stabilă is selected', () => {
+  it('filters recipes strictly when Atent la zaharuri (diabetic_friendly) is selected', () => {
     const diabeticPrefs: UserPreferences = {
       ...basePrefs,
       healthGoalTags: ['diabetic_friendly'],

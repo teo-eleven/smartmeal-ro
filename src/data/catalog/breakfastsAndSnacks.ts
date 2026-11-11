@@ -12,7 +12,7 @@ export const BREAKFASTS_AND_SNACKS: RecipeSource[] = [
     id: 'terci_ovaz_fructe_miere',
     title: 'Terci cremos de ovăz cu fructe de pădure și miere',
     description:
-      'Mic dejun energizant din fulgi fini de ovăz fierți în lapte călduț, îmbogățiți cu fructe de pădure parfumate și miere polifloră.',
+      'Mic dejun cald din fulgi fini de ovăz fierți în lapte călduț, îmbogățiți cu fructe de pădure parfumate și miere polifloră.',
     prepTimeMinutes: 3,
     cookTimeMinutes: 7,
     dietType: 'vegetarian',
@@ -420,7 +420,7 @@ export const BREAKFASTS_AND_SNACKS: RecipeSource[] = [
   },
   {
     id: 'mix_nuci_seminte_miere',
-    title: 'Mix energizant de nuci rumenite și semințe cu miere',
+    title: 'Mix crocant de nuci rumenite și semințe de chia cu miere',
     description:
       'Miez de nucă românească și semințe crocante de chia rumenite la tigaie cu miere și parfum de scorțișoară.',
     prepTimeMinutes: 2,

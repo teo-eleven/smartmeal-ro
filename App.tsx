@@ -20,6 +20,7 @@ import { GroceryScreen } from './src/screens/GroceryScreen';
 import { AuthModal } from './src/screens/AuthModal';
 import { AuthGate, isGateShowing } from './src/screens/AuthGate';
 import { BiometricOptInPrompt } from './src/components/BiometricOptInPrompt';
+import { ExistingGoalsSafetyPrompt } from './src/components/ExistingGoalsSafetyPrompt';
 import { InformativeNoticeModal } from './src/components/InformativeNoticeModal';
 import { ConfirmDialog } from './src/components/ConfirmDialog';
 import { SUPERMARKETS } from './src/data/supermarkets';
@@ -540,7 +541,8 @@ function AppShell() {
 
       {/* Global Informative Notice Pop-up */}
       <InformativeNoticeModal notice={activeNotice} onDismiss={clearNotice} isDark={isDark} />
-      <BiometricOptInPrompt isDark={isDark} />
+      <BiometricOptInPrompt isDark={isDark} waitsForSafetyQuestion />
+      <ExistingGoalsSafetyPrompt isDark={isDark} isSuppressed={authModalVisible} />
 
       <UndoBanner
         visible={Boolean(lastDiscardedPlan)}

@@ -38,7 +38,7 @@ afterEach(() => {
 
 const AGE = 'Am cel puțin 16 ani';
 const NAME = 'Cum te numești?';
-const HEALTH = 'Sunt de acord ca alergiile și dieta mea să fie păstrate în cont';
+const HEALTH = 'Sunt de acord ca alergiile, dieta și obiectivele mele de sănătate să fie păstrate în cont';
 
 function tickBothConsents() {
   fireEvent.press(screen.getByLabelText(AGE));

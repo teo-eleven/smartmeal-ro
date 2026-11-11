@@ -1,4 +1,5 @@
 import { DayOfWeek, FoodTier, MealSlot } from '../../types';
+import { areHealthGoalsAvailable } from '../../utils/platformHealth';
 
 export interface StepMeta {
   step: number;
@@ -8,7 +9,13 @@ export interface StepMeta {
 }
 
 export const ONBOARDING_STEPS_META: StepMeta[] = [
-  { step: 1, title: 'Dietă', icon: '🥗', shortDesc: 'Restricții & Sănătate' },
+  {
+    step: 1,
+    title: 'Dietă',
+    icon: '🥗',
+    // No health wording on iOS (A.8); the platform is fixed at build time.
+    shortDesc: areHealthGoalsAvailable() ? 'Restricții & Sănătate' : 'Restricții & preferințe',
+  },
   { step: 2, title: 'Pofte', icon: '⚡', shortDesc: 'Stiluri & Vibe' },
   { step: 3, title: 'Persoane', icon: '👥', shortDesc: 'Porții' },
   { step: 4, title: 'Zile & Mese', icon: '🍽️', shortDesc: 'Program & Calitate' },

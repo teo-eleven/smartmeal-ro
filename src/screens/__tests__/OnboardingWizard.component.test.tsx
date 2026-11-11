@@ -4,6 +4,10 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { OnboardingWizard } from '../onboarding/OnboardingWizard';
 import { useAppStore } from '../../store/useAppStore';
 import { getRetailProductsByCategory } from '../../data/retailProducts';
+import { HEALTH_DISCLAIMER_SHORT_RO } from '../../data/healthDisclaimer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useHealthSafetyStore } from '../../store/healthSafetyStore';
+import { HEALTH_SAFETY_BLOCKED_RO, HEALTH_SAFETY_QUESTION_RO } from '../../utils/healthSafety';
 
 function reset() {
   useAppStore.getState().resetOnboarding();
@@ -12,6 +16,22 @@ function reset() {
 
 describe('OnboardingWizard', () => {
   beforeEach(reset);
+
+  test('a health goal shows the condition it suits as information, with the doctor caveat', () => {
+    render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
+
+    expect(screen.getByText('Atent la zaharuri')).toBeTruthy();
+    expect(
+      screen.getByText(/Relevant dacă ai diabet sau prediabet\. Nu înlocuiește medicul\.$/)
+    ).toBeTruthy();
+    expect(screen.queryByText(/medicale/)).toBeNull();
+  });
+
+  test('the health goals carry the short "not medical advice" disclaimer (A.5)', () => {
+    render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
+
+    expect(screen.getByText(HEALTH_DISCLAIMER_SHORT_RO)).toBeTruthy();
+  });
 
   test('opens on the diet step', () => {
     render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
@@ -125,7 +145,10 @@ describe('OnboardingWizard pe ecran lat', () => {
   beforeEach(() => {
     reset();
     jest.spyOn(Dimensions, 'get').mockReturnValue({
-      width: 1440, height: 900, scale: 2, fontScale: 1,
+      width: 1440,
+      height: 900,
+      scale: 2,
+      fontScale: 1,
     });
   });
 
@@ -275,5 +298,106 @@ describe('ultimul pas, când generarea se strică', () => {
     expect(notice?.type).toBe('error');
     expect(notice?.message).not.toMatch(/Cannot read|undefined/);
     useAppStore.setState({ generatePlan: realGenerate });
+  });
+});
+
+describe('OnboardingWizard, întrebarea de siguranță (A.7b)', () => {
+  const YES = 'Da, mi se aplică';
+  const NO = 'Nu, niciuna';
+  const goals = () => useAppStore.getState().preferences.healthGoalTags ?? [];
+
+  beforeEach(async () => {
+    reset();
+    await AsyncStorage.clear();
+    useHealthSafetyStore.setState({ answer: null, isLoaded: true });
+  });
+
+  const renderWizard = () =>
+    render(<OnboardingWizard isDark={false} onPlanGenerated={jest.fn()} />);
+
+  test('the first health goal asks the question before anything is ticked', () => {
+    renderWizard();
+
+    fireEvent.press(screen.getByText('Atent la zaharuri'));
+
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+    expect(goals()).toEqual([]);
+  });
+
+  test('"Nu" ticks the goal, and the next goal does not ask again', () => {
+    renderWizard();
+
+    fireEvent.press(screen.getByText('Atent la zaharuri'));
+    fireEvent.press(screen.getByRole('button', { name: NO }));
+    fireEvent.press(screen.getByText('Bogat în fibre'));
+
+    expect(goals()).toEqual(['diabetic_friendly', 'high_fiber']);
+    expect(useHealthSafetyStore.getState().answer).toBe('no');
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+  });
+
+  test('"Da" ticks nothing, removes goals already chosen, keeps pork-free, shows the doctor message', () => {
+    useAppStore.getState().setHealthGoalTags(['heart_healthy', 'pork_free']);
+    renderWizard();
+
+    fireEvent.press(screen.getByText('Atent la zaharuri'));
+    fireEvent.press(screen.getByRole('button', { name: YES }));
+
+    expect(goals()).toEqual(['pork_free']);
+    expect(screen.getByText(HEALTH_SAFETY_BLOCKED_RO)).toBeTruthy();
+  });
+
+  test('after "Da" the health goals cannot be ticked; pork-free still can', () => {
+    useHealthSafetyStore.setState({ answer: 'yes', isLoaded: true });
+    renderWizard();
+
+    fireEvent.press(screen.getByText('Bogat în fibre'));
+    fireEvent.press(screen.getByText('Fără carne de porc (Halal)'));
+
+    expect(goals()).toEqual(['pork_free']);
+    expect(screen.getByRole('checkbox', { name: /Bogat în fibre/, disabled: true })).toBeTruthy();
+  });
+
+  test('a goal ticked before "Da" can still be unticked in onboarding', () => {
+    useAppStore.getState().setHealthGoalTags(['high_fiber']);
+    useHealthSafetyStore.setState({ answer: 'yes', isLoaded: true });
+    useAppStore.setState((s) => ({
+      preferences: { ...s.preferences, healthGoalTags: ['high_fiber'] },
+    }));
+    renderWizard();
+
+    expect(screen.getByRole('checkbox', { name: /Bogat în fibre/, disabled: false })).toBeTruthy();
+  });
+
+  test('closing the question without answering ticks nothing and saves nothing', () => {
+    renderWizard();
+
+    fireEvent.press(screen.getByText('Atent la zaharuri'));
+    fireEvent.press(screen.getByLabelText('Închide întrebarea', { includeHiddenElements: true }));
+
+    expect(goals()).toEqual([]);
+    expect(useHealthSafetyStore.getState().answer).toBeNull();
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+  });
+
+  test('"Am răspuns greșit" forgets the answer, so the goals open again', () => {
+    useHealthSafetyStore.setState({ answer: 'yes', isLoaded: true });
+    renderWizard();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Am răspuns greșit' }));
+
+    expect(useHealthSafetyStore.getState().answer).toBeNull();
+    expect(screen.queryByText(HEALTH_SAFETY_BLOCKED_RO)).toBeNull();
+  });
+
+  test('pork-free never asks; unticking a goal chosen earlier never asks', () => {
+    useAppStore.getState().setHealthGoalTags(['high_fiber']);
+    renderWizard();
+
+    fireEvent.press(screen.getByText('Fără carne de porc (Halal)'));
+    fireEvent.press(screen.getByText('Bogat în fibre'));
+
+    expect(goals()).toEqual(['pork_free']);
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
   });
 });

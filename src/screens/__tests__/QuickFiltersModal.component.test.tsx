@@ -1,7 +1,12 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { act, render, screen, fireEvent } from '@testing-library/react-native';
 import { QuickFiltersModal } from '../QuickFiltersModal';
 import { DayOfWeek, UserPreferences } from '../../types';
+import { HEALTH_DISCLAIMER_LONG_RO, HEALTH_DISCLAIMER_SHORT_RO } from '../../data/healthDisclaimer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppStore } from '../../store/useAppStore';
+import { useHealthSafetyStore } from '../../store/healthSafetyStore';
+import { HEALTH_SAFETY_BLOCKED_RO, HEALTH_SAFETY_QUESTION_RO } from '../../utils/healthSafety';
 
 const WEEK: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
 
@@ -198,5 +203,134 @@ describe('QuickFiltersModal, zilele și persoanele', () => {
     apply();
 
     expect(onApplyFilters.mock.calls[0][0].peopleCount).toBe(8);
+  });
+});
+
+test('the health goals section carries the short "not medical advice" disclaimer (A.5)', () => {
+  setup();
+
+  expect(screen.getByText(HEALTH_DISCLAIMER_SHORT_RO)).toBeTruthy();
+});
+
+test('the filters open the long disclaimer from "Despre obiectivele de sănătate" (A.6)', () => {
+  setup();
+
+  fireEvent.press(screen.getByRole('button', { name: 'Despre obiectivele de sănătate' }));
+
+  expect(screen.getByText(HEALTH_DISCLAIMER_LONG_RO)).toBeTruthy();
+});
+
+describe('the safety question in the filters (A.7c)', () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    useHealthSafetyStore.setState({ answer: null, isLoaded: true });
+    useAppStore.getState().setHealthGoalTags([]);
+  });
+
+  test('the first health goal asks; "Nu" ticks it and it is applied', () => {
+    const { onApplyFilters } = setup();
+
+    fireEvent.press(screen.getByText('Bogat în fibre'));
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Nu, niciuna' }));
+    apply();
+
+    expect(onApplyFilters.mock.calls[0][0].healthGoalTags).toEqual(['high_fiber']);
+  });
+
+  test('"Da" drops the health goals from the filters and from the saved preferences', () => {
+    useAppStore.getState().setHealthGoalTags(['heart_healthy', 'pork_free']);
+    const { onApplyFilters } = setup({ healthGoalTags: ['heart_healthy', 'pork_free'] });
+
+    fireEvent.press(screen.getByText('Bogat în fibre'));
+    fireEvent.press(screen.getByRole('button', { name: 'Da, mi se aplică' }));
+
+    // Closing without "Aplică" must not leave the old goals active.
+    expect(useAppStore.getState().preferences.healthGoalTags).toEqual(['pork_free']);
+    expect(screen.getByText(HEALTH_SAFETY_BLOCKED_RO)).toBeTruthy();
+    apply();
+    expect(onApplyFilters.mock.calls[0][0].healthGoalTags).toEqual(['pork_free']);
+  });
+
+  test('after "Da" the health chips cannot be ticked; the answer can be taken back', () => {
+    useHealthSafetyStore.setState({ answer: 'yes', isLoaded: true });
+    setup();
+
+    expect(screen.getByRole('checkbox', { name: /Bogat în fibre/, disabled: true })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Am răspuns greșit' }));
+
+    expect(useHealthSafetyStore.getState().answer).toBeNull();
+    expect(screen.getByRole('checkbox', { name: /Bogat în fibre/, disabled: false })).toBeTruthy();
+  });
+  test('"Aplică" never hands over a blocked goal, even one ticked before the answer was "Da"', () => {
+    const { onApplyFilters } = setup({ healthGoalTags: ['heart_healthy', 'pork_free'] });
+    act(() => useHealthSafetyStore.setState({ answer: 'yes', isLoaded: true }));
+
+    apply();
+
+    expect(onApplyFilters.mock.calls[0][0].healthGoalTags).toEqual(['pork_free']);
+  });
+  test('with the answer "Nu", a health goal ticks directly, with no question', () => {
+    useHealthSafetyStore.setState({ answer: 'no', isLoaded: true });
+    const { onApplyFilters } = setup();
+
+    fireEvent.press(screen.getByText('Bogat în fibre'));
+    apply();
+
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
+    expect(onApplyFilters.mock.calls[0][0].healthGoalTags).toEqual(['high_fiber']);
+  });
+
+  test('closing the question ticks nothing and saves no answer', () => {
+    const { onApplyFilters } = setup();
+
+    fireEvent.press(screen.getByText('Bogat în fibre'));
+    fireEvent.press(screen.getByLabelText('Închide întrebarea', { includeHiddenElements: true }));
+    apply();
+
+    expect(useHealthSafetyStore.getState().answer).toBeNull();
+    expect(onApplyFilters.mock.calls[0][0].healthGoalTags).toEqual([]);
+  });
+
+  test('a goal ticked before "Da" can be unticked, while the others stay blocked', () => {
+    useHealthSafetyStore.setState({ answer: 'yes', isLoaded: true });
+    const { onApplyFilters } = setup({ healthGoalTags: ['heart_healthy'] });
+
+    expect(screen.getByRole('checkbox', { name: /Puțină sare/, disabled: false })).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: /Bogat în fibre/, disabled: true })).toBeTruthy();
+    fireEvent.press(screen.getByText('Puțină sare'));
+    apply();
+
+    expect(onApplyFilters.mock.calls[0][0].healthGoalTags).toEqual([]);
+  });
+
+  test('closing the filters while the question is open dismisses it for good', () => {
+    const view = render(
+      <QuickFiltersModal
+        visible
+        onClose={jest.fn()}
+        preferences={PREFS}
+        onApplyFilters={jest.fn()}
+        onResetOnboarding={jest.fn()}
+        isDark={false}
+      />
+    );
+    fireEvent.press(screen.getByText('Bogat în fibre'));
+    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+
+    const props = (visible: boolean) => (
+      <QuickFiltersModal
+        visible={visible}
+        onClose={jest.fn()}
+        preferences={PREFS}
+        onApplyFilters={jest.fn()}
+        onResetOnboarding={jest.fn()}
+        isDark={false}
+      />
+    );
+    view.rerender(props(false));
+    view.rerender(props(true));
+
+    expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
   });
 });

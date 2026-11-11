@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { UserPreferences } from '../types';
+import { useHealthSafetyStore } from '../store/healthSafetyStore';
+import { effectivePreferences } from '../utils/healthSafety';
 import {
   checkPlanFeasibility,
   suggestAppliancesToUnlock,
@@ -22,8 +24,14 @@ const COMFORTABLE_RECIPE_COUNT = 12;
  * the table. Discovering that a combination is impossible after nine steps is the kind of
  * dead end this is meant to prevent.
  */
-export const EligibilityMeter: React.FC<EligibilityMeterProps> = ({ preferences, isDark }) => {
+export const EligibilityMeter: React.FC<EligibilityMeterProps> = ({
+  preferences: chosen,
+  isDark,
+}) => {
   const theme = getAppTheme(isDark);
+  const answer = useHealthSafetyStore((s) => s.answer);
+  // Counts what the planner will really use: goals do not apply until a "no" (A.7e-2).
+  const preferences = effectivePreferences(chosen, answer);
   const feasibility = checkPlanFeasibility(preferences);
   const count = feasibility.eligibleRecipeCount;
 

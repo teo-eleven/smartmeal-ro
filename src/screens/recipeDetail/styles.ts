@@ -174,11 +174,11 @@ export const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 14,
   },
+  healthBlock: { gap: 8, marginBottom: 14 },
   healthTagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 14,
   },
   healthTagBadge: {
     flexDirection: 'row',

@@ -1,3 +1,4 @@
+import * as platformHealth from '../../utils/platformHealth';
 import { useAppStore } from '../useAppStore';
 import { checkPlanFeasibility } from '../../engine/plannerEngine';
 
@@ -54,5 +55,25 @@ describe('quick start skips the questionnaire without breaking anything', () => 
     // Assert
     const state = useAppStore.getState();
     expect(state.maxVisitedStep).toBe(state.totalSteps);
+  });
+});
+
+describe('quick start on iOS keeps the health goals it cannot show (A.8)', () => {
+  beforeEach(() => {
+    useAppStore.getState().resetOnboarding();
+    useAppStore.getState().dismissUndo();
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  test('stored goals survive, so a later platform or step can still use them', () => {
+    jest.spyOn(platformHealth, 'areHealthGoalsAvailable').mockReturnValue(false);
+    useAppStore.setState((s) => ({
+      preferences: { ...s.preferences, healthGoalTags: ['high_fiber', 'pork_free'] },
+    }));
+
+    useAppStore.getState().quickStart();
+
+    expect(useAppStore.getState().preferences.healthGoalTags).toEqual(['high_fiber', 'pork_free']);
+    expect(useAppStore.getState().currentPlan).not.toBeNull();
   });
 });

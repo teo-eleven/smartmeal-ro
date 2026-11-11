@@ -11,14 +11,14 @@ import { InformativeNoticeModal } from '../../components/InformativeNoticeModal'
  * notice waits in the queue until the screen is clear.
  */
 
-function Window({ visible }: { visible: boolean }) {
-  useBlockingWindow(visible);
+function Window({ visible, id }: { visible: boolean; id?: string }) {
+  useBlockingWindow(visible, id);
   return <Text>fereastră</Text>;
 }
 
 const NOTICE = { id: '1', title: 'Plan gata', message: 'Totul e pregătit.', type: 'info' as const };
 
-beforeEach(() => useAppStore.setState({ openWindowCount: 0 }));
+beforeEach(() => useAppStore.setState({ openWindowCount: 0, openWindowIds: [] }));
 
 describe('ferestrele deschise', () => {
   test('o fereastră vizibilă se numără, iar la închidere nu mai contează', () => {
@@ -42,6 +42,38 @@ describe('ferestrele deschise', () => {
     render(<Window visible={false} />);
 
     expect(useAppStore.getState().openWindowCount).toBe(0);
+  });
+});
+
+describe('ferestre cu id (A.7h-2)', () => {
+  const registry = () => {
+    const { openWindowCount, openWindowIds } = useAppStore.getState();
+    return { openWindowCount, openWindowIds };
+  };
+
+  test('o fereastră cu id se înregistrează cu id-ul ei și dispare la închidere', () => {
+    const { rerender } = render(<Window visible id="a" />);
+    expect(registry()).toEqual({ openWindowCount: 1, openWindowIds: ['a'] });
+
+    rerender(<Window visible={false} id="a" />);
+
+    expect(registry()).toEqual({ openWindowCount: 0, openWindowIds: [] });
+  });
+
+  test('o fereastră cu id demontată în timp ce era deschisă nu rămâne înregistrată', () => {
+    const { unmount } = render(<Window visible id="a" />);
+
+    unmount();
+
+    expect(registry()).toEqual({ openWindowCount: 0, openWindowIds: [] });
+  });
+
+  test('o închidere fără id nu scade fereastra unei ferestre cu id', () => {
+    useAppStore.getState().windowOpened('a');
+
+    useAppStore.getState().windowClosed();
+
+    expect(registry()).toEqual({ openWindowCount: 1, openWindowIds: ['a'] });
   });
 });
 
