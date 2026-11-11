@@ -44,11 +44,12 @@ describe('End-to-End User Flow & Inter-Phase Synchronization', () => {
     store.nextStep();
     expect(useAppStore.getState().currentStep).toBe(5);
 
-    // Step 5: Set Mood Tags (initial has ['speedy', 'family_fav'])
-    // Toggling 'speedy' removes it, toggling 'high_protein' adds it
-    store.toggleMoodTag('speedy'); // removes 'speedy'
-    store.toggleMoodTag('high_protein'); // adds 'high_protein'
-    expect(useAppStore.getState().preferences.moodTags).toEqual(['family_fav', 'high_protein']);
+    // Step 5: Set Mood Tags. None is preselected, so the user's picks are the whole list.
+    expect(useAppStore.getState().preferences.moodTags).toEqual([]);
+    store.toggleMoodTag('speedy');
+    store.toggleMoodTag('high_protein');
+    store.toggleMoodTag('speedy'); // a second tap removes it again
+    expect(useAppStore.getState().preferences.moodTags).toEqual(['high_protein']);
     store.nextStep();
     expect(useAppStore.getState().currentStep).toBe(6);
 
