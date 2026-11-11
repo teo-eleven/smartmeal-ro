@@ -123,20 +123,15 @@ describe('other windows and the question, in any order (A.7g-2)', () => {
   };
 
   /** Visible state of the question's Modal after every commit, so a transient flash shows up. */
-  const isRendered = () => {
-    try {
-      screen.toJSON();
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
   const recordVisibleCommits = () => {
     const seen: boolean[] = [];
+    // The first commit happens inside render(), before `screen` exists: record after start().
+    let isRecording = false;
+    const start = () => {
+      isRecording = true;
+    };
     const onRender = () => {
-      // The first commit happens inside render(), before `screen` exists; later ones are read.
-      if (!isRendered()) return;
+      if (!isRecording) return;
       seen.push(screen.UNSAFE_queryAllByType(Modal).some((m) => m.props.visible === true));
     };
     const wrap = (open: boolean) => (
@@ -145,15 +140,16 @@ describe('other windows and the question, in any order (A.7g-2)', () => {
         <ExistingGoalsSafetyPrompt isDark={false} />
       </React.Profiler>
     );
-    return { seen, wrap };
+    return { seen, wrap, start };
   };
 
-  test('another window opening hides the question, with no re-show in between', () => {
-    const { seen, wrap } = recordVisibleCommits();
+  // Regression guard: this passes on the pre-A.7g-2 code too; it did not reproduce a bug.
+  test('regression guard: another window opening hides the question without a re-show', () => {
+    const { seen, wrap, start } = recordVisibleCommits();
     const view = render(wrap(false));
     expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
 
-    seen.length = 0;
+    start();
     view.rerender(wrap(true));
 
     // The commit that opens the other window still shows it (the window registers after that
@@ -165,11 +161,11 @@ describe('other windows and the question, in any order (A.7g-2)', () => {
   });
 
   test('it stays hidden until that window closes, then returns', () => {
-    const { seen, wrap } = recordVisibleCommits();
+    const { seen, wrap, start } = recordVisibleCommits();
     const view = render(wrap(false));
     view.rerender(wrap(true));
 
-    seen.length = 0;
+    start();
     view.rerender(wrap(true));
     expect(seen.every((isVisible) => !isVisible)).toBe(true);
 
@@ -257,13 +253,15 @@ describe('closed without an answer lasts the whole launch (A.7g-3)', () => {
     expect(await AsyncStorage.getAllKeys()).toEqual([]);
   });
 
-  test('a reset of the answer does not bring the question back in the same launch', async () => {
-    render(<ExistingGoalsSafetyPrompt isDark={false} />);
+  test('after closing, a reset and a remount do not bring the question back this launch', async () => {
+    const first = render(<ExistingGoalsSafetyPrompt isDark={false} />);
     await dismiss();
+    first.unmount();
 
     await act(async () => {
       await useHealthSafetyStore.getState().reset();
     });
+    render(<ExistingGoalsSafetyPrompt isDark={false} />);
 
     expect(screen.queryByText(HEALTH_SAFETY_QUESTION_RO)).toBeNull();
   });

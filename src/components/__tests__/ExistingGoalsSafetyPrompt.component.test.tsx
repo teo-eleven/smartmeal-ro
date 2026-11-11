@@ -100,15 +100,19 @@ describe('ExistingGoalsSafetyPrompt (A.7e-3)', () => {
     expect(useHealthSafetyStore.getState().answer).toBeNull();
     expect(await AsyncStorage.getItem('@smartmeal_health_safety_answer')).toBeNull();
     expect(goals()).toEqual(['heart_healthy', 'pork_free']);
-
+    expect(await AsyncStorage.getAllKeys()).toEqual([]);
+    expect(useHealthSafetyStore.getState().isReminderDismissed).toBe(true);
     first.unmount();
-    // A new launch starts from the store's initial state (nothing was persisted).
-    useHealthSafetyStore.setState({ isReminderDismissed: false });
-    render(<ExistingGoalsSafetyPrompt isDark={false} />);
-    expect(screen.getByText(HEALTH_SAFETY_QUESTION_RO)).toBeTruthy();
+
+    // A new launch is a fresh module: the dismissal lived only in memory.
+    let freshStore: typeof useHealthSafetyStore | undefined;
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      freshStore = require('../../store/healthSafetyStore').useHealthSafetyStore;
+    });
+    expect(freshStore?.getState().isReminderDismissed).toBe(false);
   });
 });
-
 
 const FACE_ID_TEXT = 'Folosești Face ID data viitoare?';
 
