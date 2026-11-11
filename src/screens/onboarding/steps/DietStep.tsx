@@ -5,7 +5,6 @@ import { EligibilityMeter } from '../../../components/EligibilityMeter';
 import { HealthDisclaimer } from '../../../components/HealthDisclaimer';
 import { HealthSafetyBlockedNotice } from '../../../components/HealthSafetyBlockedNotice';
 import { HealthSafetyPrompt } from '../../../components/HealthSafetyPrompt';
-import { HEALTH_GOALS_CATALOG } from '../../../data/healthTags';
 import { useHealthGoalToggle } from '../../../hooks/useHealthGoalToggle';
 import { useAppStore } from '../../../store/useAppStore';
 import { glass } from '../../../styles/glass';
@@ -16,6 +15,8 @@ import {
   isBaseDiet,
   isModifierDiet,
 } from '../../../utils/dietCompatibility';
+import { OTHER_PREFERENCES_TITLE_RO, shownGoalCatalog } from '../../../utils/healthGoalVisibility';
+import { areHealthGoalsAvailable } from '../../../utils/platformHealth';
 import { sharedStyles } from '../onboardingStyles';
 import { OnboardingStepProps } from './stepProps';
 
@@ -46,6 +47,8 @@ export function DietStep({
     replaceGoals: setHealthGoalTags,
   });
 
+  // On iOS only pork-free is offered, with no health wording around it (A.8).
+  const showsHealthGoals = areHealthGoalsAvailable();
   const baseDietOptions = DIET_OPTIONS_CATALOG.filter((d) => isBaseDiet(d.id));
   const modifierDietOptions = DIET_OPTIONS_CATALOG.filter((d) => isModifierDiet(d.id));
 
@@ -248,18 +251,22 @@ export function DietStep({
       {/* HEALTH & WELLNESS GOALS */}
       <View style={styles.healthGoalsBlock}>
         <Text style={[sharedStyles.questionTitle, { color: theme.text, fontSize: 17 }]}>
-          🥗 Obiective de sănătate & stil de viață
+          {showsHealthGoals
+            ? '🥗 Obiective de sănătate & stil de viață'
+            : OTHER_PREFERENCES_TITLE_RO}
         </Text>
-        <Text style={[sharedStyles.questionSubtitle, { color: theme.textMuted }]}>
-          Opțional: cum vrei să arate farfuria. Meniul pune pe primul loc rețetele potrivite.
-        </Text>
+        {showsHealthGoals && (
+          <Text style={[sharedStyles.questionSubtitle, { color: theme.textMuted }]}>
+            Opțional: cum vrei să arate farfuria. Meniul pune pe primul loc rețetele potrivite.
+          </Text>
+        )}
 
-        {healthGoals.answer === 'yes' && (
+        {healthGoals.isBlockedNoticeShown && (
           <HealthSafetyBlockedNotice isDark={isDark} onChangeAnswer={healthGoals.changeAnswer} />
         )}
 
         <View style={[styles.dietList, isLargeScreen && styles.dietListDesktop]}>
-          {HEALTH_GOALS_CATALOG.map((goal) => {
+          {shownGoalCatalog().map((goal) => {
             const isSelected = (preferences.healthGoalTags || []).includes(goal.id);
             const isDisabled = healthGoals.isDisabled(goal.id);
             return (
@@ -321,13 +328,15 @@ export function DietStep({
           })}
         </View>
 
-        <HealthDisclaimer isDark={isDark} />
-        <HealthSafetyPrompt
-          visible={healthGoals.isAsking}
-          onAnswer={healthGoals.answerQuestion}
-          onDismiss={healthGoals.dismissQuestion}
-          isDark={isDark}
-        />
+        {showsHealthGoals && <HealthDisclaimer isDark={isDark} />}
+        {showsHealthGoals && (
+          <HealthSafetyPrompt
+            visible={healthGoals.isAsking}
+            onAnswer={healthGoals.answerQuestion}
+            onDismiss={healthGoals.dismissQuestion}
+            isDark={isDark}
+          />
+        )}
       </View>
 
       <EligibilityMeter preferences={preferences} isDark={isDark} />

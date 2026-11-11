@@ -10,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import { Appliance, DayOfWeek, HealthGoalTag, MoodTag, UserPreferences } from '../types';
-import { HEALTH_GOALS_CATALOG } from '../data/healthTags';
 import { HealthDisclaimer } from '../components/HealthDisclaimer';
 import { HealthGoalsAbout } from '../components/HealthGoalsAbout';
 import { HealthSafetyBlockedNotice } from '../components/HealthSafetyBlockedNotice';
@@ -21,6 +20,8 @@ import { useHealthGoalToggle } from '../hooks/useHealthGoalToggle';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { pressedState } from '../utils/pressedState';
+import { OTHER_PREFERENCES_TITLE_RO, shownGoalCatalog, shownGoalTags } from '../utils/healthGoalVisibility';
+import { areHealthGoalsAvailable } from '../utils/platformHealth';
 
 interface QuickFiltersModalProps {
   visible: boolean;
@@ -117,6 +118,8 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
   if (!visible) return null;
 
   const theme = getAppTheme(isDark);
+  // On iOS only pork-free is shown; the hidden goals stay in the local copy untouched (A.8).
+  const showsHealthGoals = areHealthGoalsAvailable();
 
   const toggleDay = (day: DayOfWeek) => {
     if (cookingDays.includes(day)) {
@@ -415,18 +418,20 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
             {/* Section 6: Obiective de Sănătate & Stil de Viață */}
             <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={styles.sectionHeaderRow}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>🥗 Obiective de Sănătate & Nutriție</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                  {showsHealthGoals ? '🥗 Obiective de Sănătate & Nutriție' : OTHER_PREFERENCES_TITLE_RO}
+                </Text>
                 <Text style={[styles.sectionSubtitle, { color: theme.textMuted }]}>
-                  {healthGoalTags.length} active
+                  {shownGoalTags(healthGoalTags).length} active
                 </Text>
               </View>
 
-              {healthGoals.answer === 'yes' && (
+              {healthGoals.isBlockedNoticeShown && (
                 <HealthSafetyBlockedNotice isDark={isDark} onChangeAnswer={healthGoals.changeAnswer} />
               )}
 
               <View style={styles.moodGrid}>
-                {HEALTH_GOALS_CATALOG.map((goal) => {
+                {shownGoalCatalog().map((goal) => {
                   const isActive = healthGoalTags.includes(goal.id);
                   const isDisabled = healthGoals.isDisabled(goal.id);
                   return (
@@ -465,10 +470,12 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
                 })}
               </View>
 
-              <View style={styles.disclaimerSpacing}>
-                <HealthDisclaimer isDark={isDark} />
-                <HealthGoalsAbout isDark={isDark} />
-              </View>
+              {showsHealthGoals && (
+                <View style={styles.disclaimerSpacing}>
+                  <HealthDisclaimer isDark={isDark} />
+                  <HealthGoalsAbout isDark={isDark} />
+                </View>
+              )}
             </View>
 
             {/* Actions Bottom Bar */}
@@ -503,12 +510,14 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
         </View>
       </View>
       {/* A sibling of the card, not inside the ScrollView: the question is not part of the list. */}
-      <HealthSafetyPrompt
-        visible={healthGoals.isAsking}
-        onAnswer={healthGoals.answerQuestion}
-        onDismiss={healthGoals.dismissQuestion}
-        isDark={isDark}
-      />
+      {showsHealthGoals && (
+        <HealthSafetyPrompt
+          visible={healthGoals.isAsking}
+          onAnswer={healthGoals.answerQuestion}
+          onDismiss={healthGoals.dismissQuestion}
+          isDark={isDark}
+        />
+      )}
     </Modal>
   );
 };

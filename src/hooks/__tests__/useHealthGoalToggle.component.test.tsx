@@ -5,6 +5,7 @@ import { useHealthGoalToggle } from '../useHealthGoalToggle';
 import { useHealthSafetyStore } from '../../store/healthSafetyStore';
 import { useAppStore } from '../../store/useAppStore';
 import { HealthGoalTag } from '../../types';
+import * as platformHealth from '../../utils/platformHealth';
 
 const setAnswer = (answer: 'yes' | 'no' | null, isLoaded = true) =>
   act(() => useHealthSafetyStore.setState({ answer, isLoaded }));
@@ -152,5 +153,36 @@ describe('useHealthGoalToggle keeps render pure (A.7f-5)', () => {
 
     expect(committedToggle).toHaveBeenCalledWith('pork_free');
     expect(abandonedToggle).not.toHaveBeenCalled();
+  });
+});
+
+describe('useHealthGoalToggle on iOS (A.8)', () => {
+  beforeEach(() => jest.spyOn(platformHealth, 'areHealthGoalsAvailable').mockReturnValue(false));
+  afterEach(() => jest.restoreAllMocks());
+
+  test('a health goal can neither be ticked nor ask the question', () => {
+    const { result, toggleGoal } = setup();
+
+    act(() => result.current.pressGoal('high_fiber'));
+
+    expect(toggleGoal).not.toHaveBeenCalled();
+    expect(result.current.isAsking).toBe(false);
+    expect(result.current.isDisabled('high_fiber')).toBe(true);
+  });
+
+  test('pork-free toggles as everywhere else', () => {
+    const { result, toggleGoal } = setup(['high_fiber']);
+
+    act(() => result.current.pressGoal('pork_free'));
+
+    expect(toggleGoal).toHaveBeenCalledWith('pork_free');
+    expect(result.current.isDisabled('pork_free')).toBe(false);
+  });
+
+  test('the blocked notice has nothing to say: the answer reads as not applying', () => {
+    useHealthSafetyStore.setState({ answer: 'yes', isLoaded: true });
+    const { result } = setup();
+
+    expect(result.current.isBlockedNoticeShown).toBe(false);
   });
 });

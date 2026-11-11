@@ -2,6 +2,9 @@ import { HEALTH_GOALS_CATALOG, HealthGoalMeta, isHealthGoal } from '../data/heal
 import { HealthGoalTag } from '../types';
 import { areHealthGoalsAvailable } from './platformHealth';
 
+/** Where only pork-free is offered (iOS), its section gets a title with no health wording. */
+export const OTHER_PREFERENCES_TITLE_RO = 'Alte preferințe';
+
 /**
  * What the screens may show of the goals (A.8). Pork-free is always shown; the health goals
  * only where the platform allows them (platformHealth.ts). Nothing here changes stored data.

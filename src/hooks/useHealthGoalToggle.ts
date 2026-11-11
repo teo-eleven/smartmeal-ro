@@ -3,6 +3,7 @@ import { isHealthGoal } from '../data/healthTags';
 import { useHealthSafetyStore } from '../store/healthSafetyStore';
 import { useAppStore } from '../store/useAppStore';
 import { HealthGoalTag } from '../types';
+import { areHealthGoalsAvailable } from '../utils/platformHealth';
 import {
   HealthSafetyAnswer,
   isGoalBlocked,
@@ -28,6 +29,8 @@ export interface HealthGoalToggle {
   /** The goal cannot be ticked now: blocked by the answer, or the answer is not read yet. */
   isDisabled: (goal: HealthGoalTag) => boolean;
   pressGoal: (goal: HealthGoalTag) => void;
+  /** The "not suitable without a doctor" notice: only after a "yes", never on iOS (A.8). */
+  isBlockedNoticeShown: boolean;
   isAsking: boolean;
   answerQuestion: (answer: 'yes' | 'no') => void;
   dismissQuestion: () => void;
@@ -43,6 +46,36 @@ function dropBlockedFromSavedPreferences(): void {
   const saved = preferences.healthGoalTags || [];
   const kept = withoutBlockedGoals(saved, 'yes');
   if (kept.length !== saved.length) setHealthGoalTags(kept);
+}
+
+/** Hidden goals cannot be pressed at all, everywhere they are hidden (iOS, A.8). */
+const isHiddenGoal = (goal: HealthGoalTag) => isHealthGoal(goal) && !areHealthGoalsAvailable();
+
+/** What a press on a goal does, from the live answer in the store. */
+function pressOutcome(goal: HealthGoalTag, isSelected: boolean): 'toggle' | 'ask' | 'ignore' {
+  if (isHiddenGoal(goal)) return 'ignore';
+  // Unticking never asks: taking a goal away is always safe.
+  if (isSelected) return 'toggle';
+  const live = useHealthSafetyStore.getState();
+  // Until the stored answer is read, nothing is decided either way (the control is disabled).
+  if (isHealthGoal(goal) && !live.isLoaded) return 'ignore';
+  if (isGoalBlocked(goal, live.answer)) return 'ignore';
+  return needsSafetyQuestion(goal, live.answer) ? 'ask' : 'toggle';
+}
+
+/** Saves the answer; "yes" clears the blocked goals, "no" ticks the goal that was asked about. */
+function applyAnswer(
+  given: 'yes' | 'no',
+  current: HealthGoalToggleOptions & { pendingGoal: HealthGoalTag | null }
+): void {
+  const { selectedGoals, toggleGoal, replaceGoals, pendingGoal: goal } = current;
+  void useHealthSafetyStore.getState().setAnswer(given);
+  if (given === 'yes') {
+    replaceGoals(withoutBlockedGoals(selectedGoals, 'yes'));
+    dropBlockedFromSavedPreferences();
+    return;
+  }
+  if (goal && !selectedGoals.includes(goal)) toggleGoal(goal);
 }
 
 /**
@@ -74,32 +107,14 @@ export function useHealthGoalToggle(options: HealthGoalToggleOptions): HealthGoa
 
   const pressGoal = (goal: HealthGoalTag) => {
     const { selectedGoals, toggleGoal } = latest.current;
-    // Unticking never asks: taking a goal away is always safe.
-    if (selectedGoals.includes(goal)) {
-      toggleGoal(goal);
-      return;
-    }
-    const live = useHealthSafetyStore.getState();
-    // Until the stored answer is read, nothing is decided either way (the control is disabled).
-    if (isHealthGoal(goal) && !live.isLoaded) return;
-    if (isGoalBlocked(goal, live.answer)) return;
-    if (needsSafetyQuestion(goal, live.answer)) {
-      setPendingGoal(goal);
-      return;
-    }
-    toggleGoal(goal);
+    const outcome = pressOutcome(goal, selectedGoals.includes(goal));
+    if (outcome === 'ask') setPendingGoal(goal);
+    if (outcome === 'toggle') toggleGoal(goal);
   };
 
   const answerQuestion = (given: 'yes' | 'no') => {
-    const { selectedGoals, toggleGoal, replaceGoals, pendingGoal: goal } = latest.current;
     setPendingGoal(null);
-    void useHealthSafetyStore.getState().setAnswer(given);
-    if (given === 'yes') {
-      replaceGoals(withoutBlockedGoals(selectedGoals, 'yes'));
-      dropBlockedFromSavedPreferences();
-      return;
-    }
-    if (goal && !selectedGoals.includes(goal)) toggleGoal(goal);
+    applyAnswer(given, latest.current);
   };
 
   const isSelected = (goal: HealthGoalTag) => options.selectedGoals.includes(goal);
@@ -109,8 +124,10 @@ export function useHealthGoalToggle(options: HealthGoalToggleOptions): HealthGoa
     isBlocked: (goal) => isGoalBlocked(goal, answer),
     // A ticked goal can always be unticked, whatever the answer says.
     isDisabled: (goal) =>
-      !isSelected(goal) && isHealthGoal(goal) && (!isLoaded || isGoalBlocked(goal, answer)),
+      isHiddenGoal(goal) ||
+      (!isSelected(goal) && isHealthGoal(goal) && (!isLoaded || isGoalBlocked(goal, answer))),
     pressGoal,
+    isBlockedNoticeShown: answer === 'yes' && areHealthGoalsAvailable(),
     isAsking: pendingGoal !== null,
     answerQuestion,
     dismissQuestion: () => setPendingGoal(null),
