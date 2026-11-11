@@ -153,6 +153,9 @@ Ramura: `feat/health-texts`. Obiectivele de sănătate nu se schimbă încă în
 | A.8c-1 | ✅ Mesajul de reparare a preferințelor nu mai vorbește de sănătate pe iOS: „Verifică-ți preferințele” și „Nu am putut citi complet preferințele tale salvate, inclusiv „Fără porc”. Verifică-le din Filtre înainte să gătești.” (`preferenceRepairNotice.ts`); Android/web neschimbat | `Minimal Change Engineer` |
 | A.8c-2 | ✅ Eticheta pasului 1 din onboarding: „Restricții & preferințe” pe iOS, „Restricții & Sănătate” în rest (`onboardingOptions.ts`, calculată la încărcare, platforma e fixă la build) | `Minimal Change Engineer` |
 | A.8c-3 | ✅ Test de gardă (`src/services/__tests__/platformOs.test.ts`): `platformOs.ts` compilat cu `babel.config.js` și caller Metro ios/android returnează literalul platformei; pică dacă cineva rescrie `process.env.EXPO_OS` (verificat cu `const { EXPO_OS } = process.env`) | `Minimal Change Engineer` |
+| A.8b-1 | ✅ Test roșu (`healthClaims.test.ts`): `BODY_FUNCTION_CLAIM` (antioxidant, energizant, glicemic, probiotic, microbiom, tranzit, digestie, detox, balonare, recuperare, odihnitor, sațietate, „sănătos” ca promisiune, „susțin”, „fără regrete” etc.) pe titlurile și descrierile rețetelor și un test nou pe cardurile de poftă (nume, descriere, stare, evidențieri, exemple); „somn” (peștele) și „hidratat” (chia) rămân permise | `Technical Writer` |
+| A.8b-2 | ✅ Texte care descriu mâncarea, nu efecte pe corp: 9 rețete (smoothie bowl, fasole verde, salata de castraveți, chili, năut cu spanac, terci de ovăz, mixul de nuci, micul dejun la tigaie) și 11 câmpuri din cardurile de poftă; plus mențiuni nutriționale neverificate sau false scoase (tartine cu unt de arahide „bogat în proteine”, linte „sursă de fier”, cod „conținut caloric redus”, zinc, omega-3, grăsimi mononesaturate, „Fără zahăr rafinat” la deserturi, „Hidratare”, „Proteine pure”) și titlul chili-ului corectat („… porumb și cartofi”, rețeta n-are mărar; id-ul rămâne). Doar texte, niciun id sau cheie | `Technical Writer` |
+| A.8b-3 | ✅ Cardurile de poftă promit doar ce verifică `moodTagHonesty.test.ts`: „Bogat în Proteine (>28g)”, „Peste 28g proteină”, „Cină Ușoară de Seară (<420 kcal)”, „Sub 420 kcal”; test nou care leagă numerele din card de praguri; `FoodMoodSwiper.component.test.tsx` actualizat (schimbare legitimă: eticheta s-a schimbat intenționat) | `Technical Writer` |
 | A.9  | Utilizatorii iOS care au deja obiective salvate: se păstrează în date, dar nu se aplică pe iOS; mesaj o singură dată                                                                                                                                                                                                        | `tdd-guide`                      |
 | A.10 | `STORE_LISTING.md`: fraza obligatorie Google + declarația „Nutrition and Weight Management”                                                                                                                                                                                                                                 | `doc-updater`                    |
 | A.11 | **Poarta de tester**                                                                                                                                                                                                                                                                                                        | vezi mai sus                     |
@@ -287,6 +290,18 @@ Ramura: `feat/new-health-goals`. Ascunse pe iOS, ca restul (decizia ta).
 | G.3 | Avocat: textele finale, Reg. 1924/2006, încadrarea MDR                                     | tu            |
 | G.4 | Eu aplic observațiile avocatului; obiectivele rămân ascunse până la ambele avize           | eu            |
 | G.5 | `LAUNCH_PLAN.md`: cont Apple pe persoană fizică, sănătate ascunsă pe iOS, firmă mai târziu | `doc-updater` |
+
+**Pentru dietetician (Etapa G)** — rămase neschimbate în A.8b, de verificat cu valorile calculate (estimările mele, nu ale aplicației):
+
+- C1 `healthSpecialtyRecipes.ts` somon cu turmeric: „Somon bogat în omega-3” (pragul: EPA+DHA ≥ 80 mg/100 g; probabil atins).
+- C2 `extendedRecipes.ts` păstrăv la cuptor: „O cină ușoară, bogată în omega-3.” (același prag; probabil atins).
+- C3 `healthSpecialtyRecipes.ts` budincă de chia: „bogată în fibre, fără zahăr adăugat” (~3,9 g fibre/100 kcal ≥ 3; „fără zahăr adăugat” e adevărat).
+- C4 `healthSpecialtyRecipes.ts` omletă: „Mic dejun proteic” (~20 g proteine; formulare vagă).
+- C5 `extendedRecipes.ts` salata de ton: „concentrat în proteine” (probabil ≥ 20 % din energie).
+- „sățios / sățioasă” (mai multe descrieri, „🥣 Sățios”, „Proteic & Sățios”): sațietatea e tehnic o mențiune de funcție, dar în română e cuvânt culinar.
+- „🥑 Grăsimi bune” (cardul de salate): aceeași formulare ca obiectivul „Grăsimi bune, puțină sare”.
+- „Bogat în Proteine” e o mențiune reglementată (≥ 20 % din energie din proteine); testul verifică doar ≥ 28 g pe porție.
+- `src/utils/dietCompatibility.ts:52`: „grăsimi sănătoase” (în afara catalogului; nu e verificat de test).
 
 ---
 
