@@ -1,5 +1,6 @@
 import { isHealthGoal } from '../data/healthTags';
 import { HealthGoalTag } from '../types';
+import { areHealthGoalsAvailable } from './platformHealth';
 
 /**
  * The safety question asked before the first health goal (HEALTH_GUIDELINES.md §9.1–9.3).
@@ -37,13 +38,16 @@ export function withoutBlockedGoals(
 /**
  * The preferences the planner may see. Health goals only apply after an explicit "no": with
  * "yes" they are blocked, and with no answer (not asked yet, or not read yet) nothing is
- * assumed. Pork-free always applies. Returns the same object when nothing has to change.
+ * assumed. Where the platform hides health goals (iOS, A.8) they never apply, whatever the
+ * answer; the stored ones are kept. Pork-free always applies. Returns the same object when
+ * nothing has to change.
  */
 export function effectivePreferences<T extends { healthGoalTags?: HealthGoalTag[] }>(
   preferences: T,
   answer: HealthSafetyAnswer
 ): T {
   const goals = preferences.healthGoalTags;
-  if (answer === 'no' || !goals || !goals.some(isHealthGoal)) return preferences;
+  const mayApply = answer === 'no' && areHealthGoalsAvailable();
+  if (mayApply || !goals || !goals.some(isHealthGoal)) return preferences;
   return { ...preferences, healthGoalTags: goals.filter((goal) => !isHealthGoal(goal)) };
 }

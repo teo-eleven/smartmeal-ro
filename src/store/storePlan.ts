@@ -4,6 +4,7 @@ import { checkPlanFeasibility, generateMealPlan } from './guardedEngine';
 import { storageService } from '../services/storage';
 import { useHealthSafetyStore } from './healthSafetyStore';
 import { MealPlan, SavedPlan, UserPreferences } from '../types';
+import { areHealthGoalsAvailable } from '../utils/platformHealth';
 import { parseUserPreferences } from '../utils/preferencesValidation';
 import {
   collectMealsFromDays,
@@ -26,6 +27,35 @@ import { keepForUndo, keepingDessertDays, promotePendingStock } from './storeTra
 
 type SetState = StoreApi<AppState>['setState'];
 type GetState = () => AppState;
+
+/**
+ * The quick-start defaults. The supermarket is kept if already chosen, since it is the one
+ * answer that cannot be guessed. Budget is derived, never hardcoded, so the plan always fits it.
+ */
+function quickStartPreferences(preferences: UserPreferences): UserPreferences {
+  const base: UserPreferences = {
+    ...DEFAULT_PREFERENCES,
+    supermarketId: preferences.supermarketId,
+    peopleCount: preferences.peopleCount,
+    cookingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+    mealSlots: ['dinner'],
+    moodTags: ['speedy', 'family_fav'],
+    appliances: ['hob', 'oven', 'air_fryer'],
+    foodTier: 'medium',
+    // Where health goals are hidden (iOS, A.8) the user cannot see them to choose again, so
+    // the stored ones are kept; they are still not applied there.
+    ...(areHealthGoalsAvailable() ? {} : { healthGoalTags: preferences.healthGoalTags }),
+  };
+  const minimum = calculateMinimumViableBudget(
+    base.peopleCount,
+    base.cookingDays.length,
+    base.supermarketId,
+    base.excludePantryStaples,
+    1,
+    base.foodTier
+  );
+  return { ...base, budgetRon: Math.max(base.budgetRon, minimum * 2) };
+}
 
 /** Whole-plan operations: generate, reshuffle, rebuild, reset and the plan library. */
 export function createPlanActions(set: SetState, get: GetState) {
@@ -59,38 +89,13 @@ export function createPlanActions(set: SetState, get: GetState) {
     },
 
     /**
-     * Generates a plan from sensible defaults so the app is useful before answering nine
-     * questions. The supermarket is kept if already chosen, since it is the one answer that
-     * cannot be guessed. Budget is derived, never hardcoded, so the plan always fits it.
+     * Generates a plan from sensible defaults (quickStartPreferences) so the app is useful
+     * before answering nine questions.
      */
     quickStart: () => {
       const { preferences } = get();
 
-      const baseQuickPrefs: UserPreferences = {
-        ...DEFAULT_PREFERENCES,
-        supermarketId: preferences.supermarketId,
-        peopleCount: preferences.peopleCount,
-        cookingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-        mealSlots: ['dinner'],
-        moodTags: ['speedy', 'family_fav'],
-        appliances: ['hob', 'oven', 'air_fryer'],
-        foodTier: 'medium',
-      };
-
-      const quickPrefs: UserPreferences = {
-        ...baseQuickPrefs,
-        budgetRon: Math.max(
-          baseQuickPrefs.budgetRon,
-          calculateMinimumViableBudget(
-            baseQuickPrefs.peopleCount,
-            baseQuickPrefs.cookingDays.length,
-            baseQuickPrefs.supermarketId,
-            baseQuickPrefs.excludePantryStaples,
-            1,
-            baseQuickPrefs.foodTier
-          ) * 2
-        ),
-      };
+      const quickPrefs = quickStartPreferences(preferences);
 
       const feasibility = checkPlanFeasibility(quickPrefs);
       if (!feasibility.isFeasible) {

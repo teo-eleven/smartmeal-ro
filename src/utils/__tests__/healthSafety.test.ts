@@ -7,6 +7,7 @@ import {
 } from '../healthSafety';
 import { HEALTH_GOALS_CATALOG, isHealthGoal } from '../../data/healthTags';
 import { HealthGoalTag } from '../../types';
+import * as platformHealth from '../platformHealth';
 
 const MEDICAL_GOALS = HEALTH_GOALS_CATALOG.map((g) => g.id).filter(isHealthGoal);
 
@@ -82,5 +83,29 @@ describe('effectivePreferences: health goals apply only after a "no" (A.7e-2)', 
   test('preferences without goals are returned as they are', () => {
     const bare = { peopleCount: 1, healthGoalTags: [] as HealthGoalTag[] };
     expect(effectivePreferences(bare, null)).toBe(bare);
+  });
+});
+
+describe('effectivePreferences on iOS: health goals are never applied (A.8)', () => {
+  const prefs = {
+    peopleCount: 2,
+    healthGoalTags: ['heart_healthy', 'pork_free', 'high_fiber'] as HealthGoalTag[],
+  };
+  beforeEach(() => jest.spyOn(platformHealth, 'areHealthGoalsAvailable').mockReturnValue(false));
+  afterEach(() => jest.restoreAllMocks());
+
+  test.each([null, 'yes', 'no'] as const)('with answer %s only pork-free applies', (answer) => {
+    expect(effectivePreferences(prefs, answer).healthGoalTags).toEqual(['pork_free']);
+  });
+
+  test('keeps the stored goals untouched: only the copy the planner sees loses them', () => {
+    const result = effectivePreferences(prefs, 'no');
+    expect(result).not.toBe(prefs);
+    expect(prefs.healthGoalTags).toEqual(['heart_healthy', 'pork_free', 'high_fiber']);
+  });
+
+  test('pork-free alone comes back as the same object', () => {
+    const porkOnly = { peopleCount: 1, healthGoalTags: ['pork_free'] as HealthGoalTag[] };
+    expect(effectivePreferences(porkOnly, 'no')).toBe(porkOnly);
   });
 });

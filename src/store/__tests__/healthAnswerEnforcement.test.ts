@@ -3,6 +3,7 @@ import * as engine from '../../engine/plannerEngine';
 import { useAppStore } from '../useAppStore';
 import { useHealthSafetyStore } from '../healthSafetyStore';
 import { applyCloudPlan } from '../storeTransforms';
+import * as platformHealth from '../../utils/platformHealth';
 import { DayOfWeek, HealthGoalTag, MealPlan, UserPreferences } from '../../types';
 
 jest.mock('../../engine/plannerEngine', () => {
@@ -191,6 +192,39 @@ describe('cloud restore under "yes" (A.7e-2)', () => {
   });
 
   test('applyCloudPlan keeps goals when the local answer is "no"', () => {
+    setAnswer('no');
+    useAppStore.getState().generatePlan();
+    const state = useAppStore.getState();
+    const cloud = { plan: state.currentPlan!, preferences: BASE, updatedAt: 'x' };
+
+    const result = applyCloudPlan(state, cloud);
+
+    expect(result.preferences?.healthGoalTags).toEqual(GOALS);
+  });
+});
+
+describe('on iOS health goals are kept in the data but never applied (A.8)', () => {
+  beforeEach(() => jest.spyOn(platformHealth, 'areHealthGoalsAvailable').mockReturnValue(false));
+  afterEach(() => jest.restoreAllMocks());
+
+  test('even after a "no", the planner sees pork-free only', () => {
+    setAnswer('no');
+
+    useAppStore.getState().generatePlan();
+
+    expect(lastGoals(generate)).toEqual(['pork_free']);
+    expect(lastGoals(feasibility)).toEqual(['pork_free']);
+  });
+
+  test('generating and rebuilding leave the stored goals as they were', () => {
+    setAnswer('no');
+    useAppStore.getState().generatePlan();
+    useAppStore.getState().setMealsPerDayCount(2);
+
+    expect(useAppStore.getState().preferences.healthGoalTags).toEqual(GOALS);
+  });
+
+  test('a cloud restore keeps the goals it brings, for the platforms that apply them', () => {
     setAnswer('no');
     useAppStore.getState().generatePlan();
     const state = useAppStore.getState();
