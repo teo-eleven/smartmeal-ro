@@ -216,7 +216,7 @@ Legendă: **[LIPSĂ?]** = probabil lipsește din catalogul de 148 de rețete, î
 11. Tocăniță de năut cu harissa **[LIPSĂ?]**
 12. Paste arrabbiata
 
-### light_dinner (<420 kcal): Pinch of Nom, Mayo, Doctor's Kitchen
+### light_dinner (max. 420 kcal): Pinch of Nom, Mayo, Doctor's Kitchen
 
 1. Supă cremă de dovleac / legume
 2. Omletă cu spanac + salată

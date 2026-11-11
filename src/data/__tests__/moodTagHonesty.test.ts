@@ -82,6 +82,15 @@ describe('etichetele de poftă spun adevărul', () => {
     expect(new Set(numbersBefore(cardTexts('light_dinner'), 'kcal'))).toEqual(
       new Set([LIGHT_DINNER_MAX_KCAL])
     );
+    expect(cardTexts('high_protein').match(/\b(min\.|max\.|peste|sub)\s*\d+/gi)).toEqual([
+      `min. ${HIGH_PROTEIN_MIN_G}`,
+      `Min. ${HIGH_PROTEIN_MIN_G}`,
+    ]);
+    expect(cardTexts('light_dinner').match(/\b(min\.|max\.|peste|sub)\s*\d+/gi)).toEqual([
+      `max. ${LIGHT_DINNER_MAX_KCAL}`,
+      `max. ${LIGHT_DINNER_MAX_KCAL}`,
+      `Max. ${LIGHT_DINNER_MAX_KCAL}`,
+    ]);
   });
 
   test('fiecare rețetă păstrează cel puțin o etichetă de poftă', () => {
