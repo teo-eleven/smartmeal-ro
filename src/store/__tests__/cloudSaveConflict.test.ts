@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppStore } from '../useAppStore';
 import { cloudSyncService } from '../../services/supabase';
 import { asSubscriber } from '../../__tests__/helpers/subscriber';
+import * as platformHealth from '../../utils/platformHealth';
 
 jest.mock('../../services/supabase', () => ({
   cloudSyncService: {
@@ -149,4 +150,23 @@ describe('fără internet', () => {
 
     expect(store().activeNotice?.title).toBe('Sesiune expirată');
   });
+});
+
+test('pe iOS obiectivele de sănătate salvate urcă neschimbate, deși nu se aplică (A.8)', async () => {
+  const onIos = jest.spyOn(platformHealth, 'areHealthGoalsAvailable').mockReturnValue(false);
+  try {
+    useAppStore.setState((s) => ({
+      preferences: { ...s.preferences, healthGoalTags: ['diabetic_friendly', 'pork_free'] },
+    }));
+    save.mockResolvedValue({ status: 'saved', updatedAt: V2, error: null });
+
+    await store().syncWithCloud();
+
+    expect(save.mock.calls[0][0].preferences.healthGoalTags).toEqual([
+      'diabetic_friendly',
+      'pork_free',
+    ]);
+  } finally {
+    onIos.mockRestore();
+  }
 });
