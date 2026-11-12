@@ -93,28 +93,30 @@ nativ sau schimbi `app.json`.
 
 ## Faza 4 · Abonamentul (~2–3 ore, plus aprobarea produselor)
 
-Aplicația așteaptă în RevenueCat un **entitlement `premium`** și o **ofertă curentă cu un
-pachet lunar** (`src/services/subscription.ts`, `subscriptionParse.ts`).
+Aplicația așteaptă în RevenueCat un **entitlement `plus`** și o **ofertă curentă cu două pachete**,
+lunar și anual (`src/services/subscription.ts`, `subscriptionParse.ts`). Planurile, prețurile și
+perioada de probă sunt descrise în `docs/HEALTH_CRAVINGS_STEPS.md`, Etapa P (P.3, P.4, P.17–P.19).
+Premium vine mai târziu (1.x), nu la lansare.
 
 **App Store Connect**
 
 - [ ] creezi aplicația (bundle id `ro.smartmeal.app`);
-- [ ] _Subscriptions_ → un grup → produsul lunar, **preț în lei** (LG-11; alegi prețul în RON), cu ofertă introductivă **7 zile gratuit** (AS-32); îl trimiți odată cu versiunea 1.0 (AS-28);
+- [ ] _Subscriptions_ → grupul „SmartMeal RO” → două produse: `ro.smartmeal.plus.monthly` (**29,99 lei/lună**) și `ro.smartmeal.plus.annual` (**199,99 lei/an**), prețuri în lei (LG-11); oferta introductivă de **7 zile gratuit**, doar pe anual (AS-32); **Family Sharing oprit**, grace period pornit (P.17); le trimiți odată cu versiunea 1.0 (AS-28);
 - [ ] _Agreements, Tax and Banking_: semnezi acordul pentru aplicații plătite și completezi banca și taxele (fără ele produsele nu funcționează);
 - [ ] _Users and Access_ → _Sandbox testers_: un cont de test pentru plăți.
 
 **Google Play Console**
 
 - [ ] creezi aplicația (package `ro.smartmeal.app`) și urci un prim build (Faza 6; Play nu permite produse înainte de primul upload);
-- [ ] _Monetize_ → _Subscriptions_ → produsul lunar, _base plan_ în lei (LG-11), ofertă _free trial_ 7 zile;
+- [ ] _Monetize_ → _Subscriptions_ → abonamentul `plus` cu planurile `monthly` (29,99 lei) și `annual` (199,99 lei), în lei (LG-11); ofertă _free trial_ de 7 zile doar pe `annual`; grace period (P.18);
 - [ ] _Payments profile_ completat.
 
 **RevenueCat**
 
 - [ ] un proiect, cu cele două aplicații (iOS și Android, același bundle/package);
 - [ ] iOS: cheia _In-App Purchase_ din App Store Connect; Android: un _service account_ Google cu acces la Play Console (ghidul RevenueCat te duce pas cu pas);
-- [ ] _Entitlements_ → `premium`; _Products_ → cele două produse, atașate la `premium`;
-- [ ] _Offerings_ → `default` (curentă) → pachetul **Monthly** cu ambele produse;
+- [ ] _Entitlements_ → `plus`; _Products_ → produsele de iOS și de Android (`monthly`, `annual`), atașate la `plus` (P.19);
+- [ ] _Offerings_ → `default` (curentă) → pachetele **Monthly** și **Annual**; o ofertă pe plasare, ca să știm ce funcție a vândut abonamentul;
 - [ ] cheile publice în EAS:
       `eas env:set --environment production --name EXPO_PUBLIC_REVENUECAT_IOS_KEY --value appl_...`
       `eas env:set --environment production --name EXPO_PUBLIC_REVENUECAT_ANDROID_KEY --value goog_...`;
