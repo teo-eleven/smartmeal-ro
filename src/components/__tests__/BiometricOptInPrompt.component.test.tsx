@@ -1,6 +1,12 @@
 import React from 'react';
 import { Modal } from 'react-native';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+} from '@testing-library/react-native';
 import { BiometricOptInPrompt } from '../BiometricOptInPrompt';
 import { useAppStore } from '../../store/useAppStore';
 import { useAuthSessionStore } from '../../store/authSessionStore';
@@ -85,7 +91,10 @@ describe('întrebarea despre Face ID', () => {
 
     fireEvent.press(screen.getByLabelText('Nu acum'));
 
-    await waitFor(() => expect(screen.queryByText(/data viitoare/)).toBeNull());
+    // waitForElementToBeRemoved, not waitFor(expect(...).toBeNull()): while the element is
+    // still there that expect fails, and Jest then pretty-prints the whole React tree into
+    // the failure message, which costs seconds and is thrown away at once.
+    await waitForElementToBeRemoved(() => screen.queryByText(/data viitoare/));
   });
 
   test('butonul Înapoi de pe Android o închide ca „Nu acum”', async () => {
