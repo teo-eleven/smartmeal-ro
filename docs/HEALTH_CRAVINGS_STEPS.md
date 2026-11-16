@@ -19,6 +19,8 @@ pași mici, unul câte unul, bifați pe măsură ce se termină.
 | Temă vizuală (2026-11-02)   | **„Midnight Forest & Smoked Walnut”**: verde pădure, nuc afumat, crem și bronz, după imaginea trimisă (Etapa T). **Fundal: verde pădure întunecat**; aplicația rămâne în mod întunecat (varianta crem există în temă, verificată, dar nu se afișează). **Font titluri: Libre Caslon** (OFL). **Insignele magazinelor: pe paletă**, magazinul se recunoaște din nume. **Marginea de bronz: discretă**, doar pe cardurile importante (T.9). **Iconița: recolorată** (T.10). **Fotografii pentru toate rețetele**: Commons → Unsplash → AI (marcat „imagine ilustrativă”) (E.14) |
 | Abonament (2026-11-12)      | **Două niveluri la lansare: Gratuit și Plus** (Premium, mai târziu). **Plus: 29,99 lei/lună sau 199,99 lei/an**, cu 7 zile de probă doar pe anual, arătată celor eligibili. Gratuitul limitează mesele, regenerările, schimbările și planurile salvate; siguranța și funcțiile de sănătate rămân gratuite. Detalii: Etapa P.                                                                                                                                                                                                                                                  |
 | Lansare (2026-11-11)        | Prima versiune în magazine după Etapele A + S; D, B, C, E, F vin ca actualizări                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Sezon (2026-11-16) | Meniul se adaptează automat la anotimp și la calendarul românesc (sărbători, post); toate gratuite; comutator „Meniu după anotimp” pornit implicit |
+| Ordine (2026-11-16) | Testul Google pornește după P + S-prioritar; postul și calendarul vin în prima actualizare (Etapa Z) |
 
 Amânate, cu motiv: low-FODMAP (datele Monash sunt proprietare), gută (nu există date deschise despre purine). Nu le oferim deloc: diabet gestațional, boală de rinichi, warfarină, IMAO, tulburări de alimentație.
 
@@ -33,6 +35,7 @@ Amânate, cu motiv: low-FODMAP (datele Monash sunt proprietare), gută (nu exist
 - **Întrebări cu răspuns scurt:** fiecare întrebare are variante numerotate (1A, 1B…), cu cea recomandată marcată; poți răspunde „1A, 2B” sau „ACCEPT RECOMANDĂRILE”.
 - **Când pică ceva:** raport scurt de cauză: de ce s-a întâmplat, ce garanție adăugăm ca să nu se repete, ce altceva ar putea fi afectat, apoi testele reluate.
 - **Doar rezultate reale:** raportez numai teste rulate cu adevărat, cu cifrele lor. Niciun rezultat „simulat”.
+- **Consum cumpătat** (regulă definitorie, 2026-11-16): un singur agent per pas, refolosit pentru pasul următor; revieweri doar la poarta de tester (excepție: `security-reviewer` imediat la date sensibile, plăți, server); cel mult 2 runde de reparații, restul trece în lista porții; suita completă de teste doar la poartă; modele mai mici pentru pașii simpli (texte, documente); cercetare doar când lipsește informația.
 
 ## Poarta de tester (la finalul fiecărei etape)
 
@@ -245,6 +248,8 @@ Depășirea unui prag e semnal de revizuire, nu decizie automată.
 
 Ramura: `feat/store-ready`. Versiunea 1.0 iese după A + S.
 
+**Ordine în etapă:** întâi S.2, S.11 și S.7 (cerute de Google pentru testul închis), apoi pornește testul Google de 14 zile, iar restul pașilor S se fac în timpul celor 14 zile.
+
 | #    | Pas                                                                                                                                                                                                                                 | Unealtă                                               |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | S.1  | Termeni și condiții în română, cu link la EULA standard Apple (APP-1, LG-12, LG-13, AS-34); avocatul le revizuiește la G.3                                                                                                          | `Technical Writer`                                    |
@@ -287,6 +292,37 @@ Ramura: `feat/cravings-constraints`
 | D.7b | Fără repetiții: nu două preparate pe aceeași bază în zile la rând, iar „Regenerează” aduce alte mese (P1, P2 din raportul de reper)                     | `tdd-guide`          |
 | D.8  | Raport: câte rețete are fiecare poftă înainte și după                                                                                                   | –                    |
 | D.9  | **Poarta de tester**                                                                                                                                    |                      |
+
+---
+
+## Etapa Z · Sezon și calendar
+
+Ramura: `feat/season`. Prima actualizare după lansare. Totul gratuit.
+
+| #    | Pas | Unealtă |
+| ---- | --- | ------- |
+| Z.1  | Tipul `Season` și anotimpul din data curentă (ora României), funcție pură + teste la granițele lunilor | `tdd-guide` |
+| Z.2  | „Temperatura” fiecărei rețete (rece / caldă și consistentă / neutră) calculată din ingrediente și pași (fără gătire → rece; ciorbe, tocănițe, cuptor → caldă), cu corecturi manuale; test pe tot catalogul | `tdd-guide` |
+| Z.3  | Regulile pe anotimp în generator: iarna fără deserturi reci (înghețată, parfait) și mai des ciorbe/tocănițe/cuptor; vara mai des salate, grătar, supe reci și mai rar tocănițe grele; primăvara/toamna echilibrat. Preferință, nu zid, cu excepția deserturilor reci iarna; o rețetă aleasă de utilizator e respectată | `tdd-guide` |
+| Z.4  | Tabelul ingredientelor de sezon din România (legume și fructe, lunile de sezon), cu sursa în `docs/research/` | `Technical Writer` |
+| Z.5  | Prioritate pentru rețetele cu ingrediente de sezon + insigna discretă „De sezon” pe card; nota din lista de cumpărături („căpșunile sunt în sezon”) | `Mobile App Builder` |
+| Z.6  | Poftele de sezon: ordinea cardurilor din onboarding după anotimp | `react-specialist` |
+| Z.7  | Calendarul românesc: datele fixe (Crăciun, Moș Nicolae, 1 Decembrie, Lăsata secului) și Paștele ortodox calculat pentru orice an, + teste pe ani cunoscuți | `tdd-guide` |
+| Z.8  | Perioadele de post (Postul Crăciunului 15 nov–24 dec, Postul Paștelui, miercurea și vinerea) din calendar | `tdd-guide` |
+| Z.9  | Logica postului mutată din Etapa E: E.1–E.5 (`fastingLevel` din ingrediente, preferința `fastingMode`, dezlegarea la pește, planificatorul pe zilele alese, comutatorul „De post”) | `tdd-guide`, `Mobile App Builder` |
+| Z.10 | Propunerile din calendar: „E post. Vrei meniu de post?” și „Vrei rețete pentru Crăciun?” cu o săptămână înainte; nu schimbă meniul singure | `Mobile App Builder` |
+| Z.11 | Comutatorul „Meniu după anotimp” în Filtre (pornit implicit), sincronizat ca preferință | `react-specialist` |
+| Z.12 | Raport: câte rețete rămân pe fiecare anotimp și slot (ex. destule deserturi iarna fără cele reci) | `Test Results Analyzer` |
+| Z.13 | (Opțional, cu decizia ta înainte) Vremea de azi: o zi caniculară aduce mâncare rece. Cere locația (blocată acum), un serviciu de vreme și o declarare nouă în magazine | `Privacy Engineer` |
+| Z.14 | **Poarta de tester** | vezi mai sus |
+
+**Riscuri anticipate și prevenire (Etapa Z):**
+
+- _Fusul orar și schimbarea orei:_ anotimpul și calendarul se calculează în `Europe/Bucharest`, nu în ora telefonului.
+- _Catalogul golit iarna:_ Z.12 arată din timp câte rețete rămân; relaxare controlată, ca la D.4.
+- _Data Paștelui greșită:_ teste pe anii 2020–2035.
+- _Propunerile din calendar_ nu modifică meniul fără acordul tău.
+- _Postul_ e practică religioasă: rămâne gratuit.
 
 ---
 
@@ -339,11 +375,11 @@ Ramura: `feat/recipes-and-fasting`. Rețete scrise de noi, după preparatele-tip
 
 | #     | Pas                                                                                                                                                                              | Unealtă                              |
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| E.1   | Postul: `fastingLevel` calculat din ingrediente (`strict`, `fish_allowed`, `none`) + teste pe 10 rețete                                                                          | `tdd-guide`                          |
-| E.2   | Preferința `fastingMode` (oprit / tot timpul / miercuri și vineri) + validare + sync (preferințele noi trec prin `parseUserPreferences`)                                         | `tdd-guide`, `security-reviewer`     |
-| E.3   | Dezlegarea la pește (comutator separat)                                                                                                                                          | `tdd-guide`                          |
-| E.4   | Planificatorul respectă postul pe zilele alese + test pe o săptămână                                                                                                             | `tdd-guide`                          |
-| E.5   | Ecranul: comutatorul „De post” în onboarding și în filtre                                                                                                                        | `frontend-developer`                 |
+| E.1   | **Mutat în Z.9.** Postul: `fastingLevel` calculat din ingrediente (`strict`, `fish_allowed`, `none`) + teste pe 10 rețete | `tdd-guide`                          |
+| E.2   | **Mutat în Z.9.** Preferința `fastingMode` (oprit / tot timpul / miercuri și vineri) + validare + sync (preferințele noi trec prin `parseUserPreferences`) | `tdd-guide`, `security-reviewer`     |
+| E.3   | **Mutat în Z.9.** Dezlegarea la pește (comutator separat) | `tdd-guide`                          |
+| E.4   | **Mutat în Z.9.** Planificatorul respectă postul pe zilele alese + test pe o săptămână | `tdd-guide`                          |
+| E.5   | **Mutat în Z.9.** Ecranul: comutatorul „De post” în onboarding și în filtre | `frontend-developer`                 |
 | E.6   | Lotul 1: **10 rețete de post** (fasole bătută, iahnie, linte, plachie, sarmale de post…)                                                                                         | `tdd-guide` (testele de catalog)     |
 | E.7   | Lotul 2: **11 paste** (pomodoro, aglio olio, pasta e fagioli, paste cu ton…)                                                                                                     |                                      |
 | E.8   | Lotul 3: **11 salate și bowl-uri** (linte cu feta, tabbouleh, năut, niçoise de buget…)                                                                                           |                                      |
@@ -352,6 +388,7 @@ Ramura: `feat/recipes-and-fasting`. Rețete scrise de noi, după preparatele-tip
 | E.11  | Lotul 6: **8 fast-food de casă** (shaorma, „KFC” la cuptor, egg fried rice…)                                                                                                     |                                      |
 | E.12  | Lotul 7: **8 pește ieftin și leguminoase** (cod, merluciu, macrou, năut), ca să avem mai puțin pui și somon                                                                      |                                      |
 | E.13  | Lotul 8: **7 clasice românești lipsă** (ciorbă de fasole cu tarhon, zamă, gulaș…), verificate ca idee după Sanda Marin și Radu Anton Roman                                       |                                      |
+| E.17 | Lotul de sărbătoare: Crăciun (sarmale, cozonac, piftie), Paște (drob, ouă roșii, pască), Moș Nicolae; legat de calendarul din Z.7 | `Technical Writer`, `tdd-guide` |
 | E.14a | Fotografii, sursa 1: **Wikimedia Commons** (credit afișat), pentru cele **13 rețete fără poză** de azi și pentru rețetele noi; fiecare poză trebuie să arate exact acel preparat | `verify-render`                      |
 | E.14b | Sursa 2: **Unsplash** (cheie gratuită de dezvoltator, ținută doar local, niciodată în git), pentru ce n-a acoperit Commons                                                       | `security-reviewer`, `verify-render` |
 | E.14c | Sursa 3: **imagini generate cu AI** (serviciul tău), marcate „imagine ilustrativă” în aplicație, pentru ce a rămas                                                               | `verify-render`                      |
@@ -411,6 +448,8 @@ Ramura: `feat/new-health-goals`. Ascunse pe iOS, ca restul (decizia ta).
 
 ## Ordinea
 
-**0 → T → A → P → S → lansare 1.0 → D → B → C → E → F**, cu G pornit acum: G.0a–c înainte de conturile din magazine, iar dieteticianul are nevoie de fișa din C.12.
+`A → P → S-prioritar (S.2, S.11, S.7) → test Google 14 zile ║ restul S → lansare 1.0 → D → Z → B → C → E → F`
 
-Testul închis Google (12 testeri × 14 zile, GP-4) pornește cu primul build după A + S, în paralel cu D. E drumul critic.
+G pornește acum (G.0a–c, de tine): S.1/S.2 au nevoie de identitatea juridică, iar dieteticianul are nevoie de fișa din C.12.
+
+Testul Google de 12 testeri × 14 zile (GP-4) rulează în paralel cu restul Etapei S, după S-prioritar. E drumul critic. Postul și calendarul vin în prima actualizare (Etapa Z).
