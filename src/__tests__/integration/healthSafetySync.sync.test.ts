@@ -256,5 +256,8 @@ describe('deleting the account (edge function delete-account)', () => {
     expect(await phone.storage.getItem(phone.iosNoticeKey)).toBeNull();
     const { data } = await adminClient().auth.admin.getUserById(userId);
     expect(data.user).toBeNull();
+    // The iPhone-notice flag leaves with the account too (A.11c-2).
+    await waitUntil(async () => (await phone.storage.getItem(phone.iosNoticeKey)) === null);
+    expect(await phone.storage.getItem(phone.iosNoticeKey)).toBeNull();
   });
 });
