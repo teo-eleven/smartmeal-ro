@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SignUpConsent as Consent } from '../types';
 import { getAppTheme } from '../styles/theme';
 import { PrivacyPolicyLink } from './PrivacyPolicyLink';
+import { areHealthGoalsAvailable } from '../utils/platformHealth';
 
 interface SignUpConsentProps {
   consent: Consent;
@@ -17,13 +18,14 @@ interface Row {
 }
 
 // The labels double as the accessibility labels, so a screen reader says exactly what the
-// person is agreeing to.
-const ROWS: Row[] = [
+// person is agreeing to. On iOS there are no health goals to agree to (A.8, A.12).
+const consentRows = (): Row[] => [
   { key: 'isAtLeast16', label: 'Am cel puțin 16 ani', detail: null },
   {
     key: 'healthDataConsent',
-    label:
-      'Sunt de acord ca alergiile, dieta și obiectivele mele de sănătate să fie păstrate în cont',
+    label: areHealthGoalsAvailable()
+      ? 'Sunt de acord ca alergiile, dieta și obiectivele mele de sănătate să fie păstrate în cont'
+      : 'Sunt de acord ca alergiile și dieta mea să fie păstrate în cont',
     detail:
       'Sunt date de sănătate. Le folosim doar ca să nu-ți propunem ce nu poți mânca și ' +
       'le poți șterge oricând, odată cu contul.',
@@ -39,7 +41,7 @@ export const SignUpConsent: React.FC<SignUpConsentProps> = ({ consent, onChange,
 
   return (
     <View style={styles.group}>
-      {ROWS.map((row) => {
+      {consentRows().map((row) => {
         const isChecked = consent[row.key];
         return (
           <TouchableOpacity

@@ -11,8 +11,11 @@ jest.mock('../../../config/env', () => ({
   },
 }));
 
-// Imported after the mock, so the component reads it.
+jest.mock('../../services/platformOs', () => ({ currentOs: jest.fn() }));
+
+// Imported after the mocks, so the component reads them.
 import { SignUpConsent } from '../SignUpConsent';
+import { currentOs } from '../../services/platformOs';
 
 const NONE = { isAtLeast16: false, healthDataConsent: false };
 
@@ -41,15 +44,30 @@ describe('bifele de la cont nou', () => {
   });
 });
 
-describe('the consent names health goals (A.7e-6)', () => {
-  const LABEL =
-    'Sunt de acord ca alergiile, dieta și obiectivele mele de sănătate să fie păstrate în cont';
+describe('the consent names health goals (A.7e-6), except on iOS (A.12)', () => {
+  const WITH_GOALS = 'alergiile, dieta și obiectivele mele de sănătate';
+  const WITHOUT_GOALS = 'alergiile și dieta mea';
+  const label = (data: string) => `Sunt de acord ca ${data} să fie păstrate în cont`;
 
-  test('the checkbox says so, and docs/PRIVACY.md quotes the same wording', () => {
+  test.each(['android', 'web', undefined])('on %s the checkbox names health goals', (os) => {
+    jest.mocked(currentOs).mockReturnValue(os);
     render(<SignUpConsent consent={NONE} onChange={jest.fn()} isDark={false} />);
+
+    expect(screen.getByLabelText(label(WITH_GOALS))).toBeTruthy();
+  });
+
+  test('on iOS, where health goals are hidden, it names only allergies and diet', () => {
+    jest.mocked(currentOs).mockReturnValue('ios');
+    render(<SignUpConsent consent={NONE} onChange={jest.fn()} isDark={false} />);
+
+    expect(screen.getByLabelText(label(WITHOUT_GOALS))).toBeTruthy();
+    expect(screen.queryByText(/obiectiv/)).toBeNull();
+  });
+
+  test('docs/PRIVACY.md quotes both wordings', () => {
     const privacy = readFileSync(join(__dirname, '../../../docs/PRIVACY.md'), 'utf8');
 
-    expect(screen.getByLabelText(LABEL)).toBeTruthy();
-    expect(privacy).toContain('„alergiile, dieta și obiectivele mele de sănătate”');
+    expect(privacy).toContain(`„${WITH_GOALS}”`);
+    expect(privacy).toContain(`„${WITHOUT_GOALS}”`);
   });
 });
