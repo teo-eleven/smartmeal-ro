@@ -85,7 +85,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
         useNativeDriver: USE_NATIVE_DRIVER,
       }),
     ]).start();
-  }, [currentStep]);
+  }, [currentStep, fadeAnim, slideAnim]);
 
   return (
     <View

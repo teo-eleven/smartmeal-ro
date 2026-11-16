@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   SafeAreaView,
@@ -68,7 +68,16 @@ const ALL_APPLIANCES: { id: Appliance; label: string; icon: string }[] = [
   { id: 'microwave', label: 'Microunde', icon: '⚡' },
 ];
 
-export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
+/**
+ * The form is mounted only while the modal is open, so every opening starts its local state
+ * from the preferences in force now (copied once per opening: syncing while open would erase
+ * what the person is editing). Kept mounted while hidden, it copied them once and "Aplică"
+ * then wrote stale values over newer ones.
+ */
+export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = (props) =>
+  props.visible ? <QuickFiltersForm {...props} /> : null;
+
+const QuickFiltersForm: React.FC<QuickFiltersModalProps> = ({
   visible,
   onClose,
   preferences,
@@ -85,20 +94,6 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
   const [healthGoalTags, setHealthGoalTags] = useState<HealthGoalTag[]>(preferences.healthGoalTags || []);
   const [budgetInputText, setBudgetInputText] = useState<string>(String(preferences.budgetRon));
 
-  // The modal stays mounted while hidden, so every opening starts from the preferences in
-  // force now. It copied them once, and "Aplică" then wrote stale values over newer ones.
-  useEffect(() => {
-    if (!visible) return;
-    setCookingDays(preferences.cookingDays);
-    setPeopleCount(preferences.peopleCount);
-    setBudgetRon(preferences.budgetRon);
-    setMoodTags(preferences.moodTags);
-    setAppliances(preferences.appliances || ['hob', 'oven']);
-    setHealthGoalTags(preferences.healthGoalTags || []);
-    setBudgetInputText(String(preferences.budgetRon));
-    // Only on opening: syncing while open would erase what the user is editing.
-  }, [visible]);
-
   // Hooks run on every render, so this sits above the early return below.
   const toggleHealthGoal = (tag: HealthGoalTag) => {
     if (healthGoalTags.includes(tag)) {
@@ -114,8 +109,6 @@ export const QuickFiltersModal: React.FC<QuickFiltersModalProps> = ({
     replaceGoals: setHealthGoalTags,
     isOpen: visible,
   });
-
-  if (!visible) return null;
 
   const theme = getAppTheme(isDark);
   // On iOS only pork-free is shown; the hidden goals stay in the local copy untouched (A.8).
