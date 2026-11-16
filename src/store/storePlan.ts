@@ -3,6 +3,7 @@ import { aggregateGroceryList } from '../engine/groceryAggregator';
 import { checkPlanFeasibility, generateMealPlan } from './guardedEngine';
 import { storageService } from '../services/storage';
 import { useHealthSafetyStore } from './healthSafetyStore';
+import { useIosGoalsNoticeStore } from './iosGoalsNoticeStore';
 import { MealPlan, SavedPlan, UserPreferences } from '../types';
 import { areHealthGoalsAvailable } from '../utils/platformHealth';
 import { parseUserPreferences } from '../utils/preferencesValidation';
@@ -64,6 +65,7 @@ export function createPlanActions(set: SetState, get: GetState) {
       void storageService.clearAll();
       // The safety answer lives under its own key, which clearAll() does not know about.
       void useHealthSafetyStore.getState().reset();
+      void useIosGoalsNoticeStore.getState().reset();
       // clearAll() wipes stored preferences, so memory has to follow: keeping the old
       // preferences in memory left the two disagreeing until the next reload silently
       // reverted everything to defaults.

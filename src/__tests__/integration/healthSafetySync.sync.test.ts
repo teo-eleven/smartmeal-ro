@@ -185,7 +185,11 @@ describe('the answer follows the person, not the phone', () => {
     expect(await phone.storage.getItem(phone.safetyKey)).toBe('yes');
 
     await phone.store.getState().signOutToLogin();
-    await waitUntil(async () => (await phone.storage.getItem(phone.safetyKey)) === null);
+    await waitUntil(
+      async () =>
+        (await phone.storage.getItem(phone.safetyKey)) === null &&
+        (await phone.storage.getItem(phone.iosNoticeKey)) === null
+    );
 
     expect(phone.safety.getState().answer).toBeNull();
     expect(await phone.storage.getItem(phone.safetyKey)).toBeNull();
@@ -248,6 +252,8 @@ describe('deleting the account (edge function delete-account)', () => {
 
     expect(phone.safety.getState().answer).toBeNull();
     expect(await phone.storage.getItem(phone.safetyKey)).toBeNull();
+    expect(phone.iosNotice.getState().status).toBe('unknown');
+    expect(await phone.storage.getItem(phone.iosNoticeKey)).toBeNull();
     const { data } = await adminClient().auth.admin.getUserById(userId);
     expect(data.user).toBeNull();
   });
