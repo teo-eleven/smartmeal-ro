@@ -16,6 +16,7 @@ export interface DeviceKit {
 type AppStoreModule = typeof import('../../store/useAppStore');
 type HealthSafetyModule = typeof import('../../store/healthSafetyStore');
 type IosNoticeModule = typeof import('../../store/iosGoalsNoticeStore');
+type GoalsConsentModule = typeof import('../../store/goalsSyncConsentStore');
 type AsyncStorageModule = typeof import('@react-native-async-storage/async-storage');
 type PlatformHealthModule = typeof import('../../utils/platformHealth');
 type PlannerEngineModule = typeof import('../../engine/plannerEngine');
@@ -28,6 +29,8 @@ export interface AppDevice {
   safetyKey: string;
   iosNotice: IosNoticeModule['useIosGoalsNoticeStore'];
   iosNoticeKey: string;
+  goalsConsent: GoalsConsentModule['useGoalsSyncConsentStore'];
+  goalsChoiceKey: string;
   storage: AsyncStorageModule['default'];
   platformHealth: PlatformHealthModule;
   planner: PlannerEngineModule;
@@ -96,6 +99,7 @@ export function newAppDevice(): AppDevice {
   jest.isolateModules(() => {
     const safety = require('../../store/healthSafetyStore');
     const iosNotice = require('../../store/iosGoalsNoticeStore');
+    const goalsConsent = require('../../store/goalsSyncConsentStore');
     const asyncStorage = require('@react-native-async-storage/async-storage');
     device = {
       sync: require('../../services/supabase').cloudSyncService,
@@ -104,6 +108,8 @@ export function newAppDevice(): AppDevice {
       safetyKey: safety.HEALTH_SAFETY_STORAGE_KEY,
       iosNotice: iosNotice.useIosGoalsNoticeStore,
       iosNoticeKey: iosNotice.IOS_GOALS_NOTICE_STORAGE_KEY,
+      goalsConsent: goalsConsent.useGoalsSyncConsentStore,
+      goalsChoiceKey: goalsConsent.GOALS_SYNC_CHOICE_STORAGE_KEY,
       storage: asyncStorage.default ?? asyncStorage,
       platformHealth: require('../../utils/platformHealth'),
       planner: require('../../engine/plannerEngine'),

@@ -12,6 +12,12 @@ export interface SavePlanRequest {
   preferences?: UserPreferences;
   /** The cloud's updated_at this device last saw; null if it never saw one. */
   expectedUpdatedAt: string | null;
+  /**
+   * What happens to the health goals in `preferences` (utils/goalsSyncPolicy.ts). Default
+   * 'send'. 'keep-cloud' needs `userId`, to read back the goals the account already holds.
+   */
+  healthGoals?: 'send' | 'strip' | 'keep-cloud';
+  userId?: string;
 }
 
 export interface SavePlanResult {
@@ -32,6 +38,8 @@ export interface SignUpResult {
 export interface RecordedConsent {
   age_confirmed_16: boolean;
   health_data_consent: boolean;
+  /** Whether health goals are part of what was agreed to (migration 0011). */
+  goals_included: boolean;
   privacy_policy_version: string | null;
   consented_at: string | null;
 }

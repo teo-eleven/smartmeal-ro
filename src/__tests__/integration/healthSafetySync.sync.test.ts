@@ -165,14 +165,14 @@ describe('restoring a cloud plan after a "yes"', () => {
 });
 
 describe('a phone that hides health goals (iOS)', () => {
-  test('uploads preferences with their health goals unchanged', async () => {
+  test('uploads its preferences without the goals it kept locally (M3: it never changes the cloud goals)', async () => {
     const { userId, phone } = await signedInPhone('ios-goals', withGoals(GOALS));
     jest.spyOn(phone.platformHealth, 'areHealthGoalsAvailable').mockReturnValue(false);
     await phone.safety.getState().setAnswer('no');
 
     await phone.store.getState().syncWithCloud();
 
-    expect((await cloudPreferences(userId)).healthGoalTags).toEqual(GOALS);
+    expect((await cloudPreferences(userId)).healthGoalTags).toEqual(['pork_free']);
     // On this phone the goals are kept in the data and left out of what the planner sees.
     expect(phone.store.getState().preferences.healthGoalTags).toEqual(GOALS);
   });
@@ -227,7 +227,7 @@ describe('the consent record of a new account', () => {
       .single();
 
     expect(error).toBeNull();
-    expect(PRIVACY_POLICY_VERSION).toBe('2026-11-06');
+    expect(PRIVACY_POLICY_VERSION).toBe('2026-11-17');
     expect(data).toEqual({
       privacy_policy_version: PRIVACY_POLICY_VERSION,
       health_data_consent: true,

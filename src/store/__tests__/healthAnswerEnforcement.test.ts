@@ -224,14 +224,36 @@ describe('on iOS health goals are kept in the data but never applied (A.8)', () 
     expect(useAppStore.getState().preferences.healthGoalTags).toEqual(GOALS);
   });
 
-  test('a cloud restore keeps the goals it brings, for the platforms that apply them', () => {
+  test('a cloud restore does not load the account goals; the phone keeps what it had (M3)', () => {
     setAnswer('no');
     useAppStore.getState().generatePlan();
     const state = useAppStore.getState();
-    const cloud = { plan: state.currentPlan!, preferences: BASE, updatedAt: 'x' };
+    const fromAccount: UserPreferences = {
+      ...BASE,
+      healthGoalTags: ['heart_healthy', 'diabetic_friendly', 'pork_free'],
+    };
+    const cloud = { plan: state.currentPlan!, preferences: fromAccount, updatedAt: 'x' };
 
     const result = applyCloudPlan(state, cloud);
 
     expect(result.preferences?.healthGoalTags).toEqual(GOALS);
+  });
+
+  test('pork-free chosen on another device is adopted without any health goal with it', () => {
+    setAnswer('no');
+    useAppStore.setState({
+      preferences: { ...BASE, healthGoalTags: ['high_fiber'] },
+    });
+    useAppStore.getState().generatePlan();
+    const state = useAppStore.getState();
+    const fromAccount: UserPreferences = {
+      ...BASE,
+      healthGoalTags: ['heart_healthy', 'pork_free'],
+    };
+    const cloud = { plan: state.currentPlan!, preferences: fromAccount, updatedAt: 'x' };
+
+    const result = applyCloudPlan(state, cloud);
+
+    expect(result.preferences?.healthGoalTags).toEqual(['high_fiber', 'pork_free']);
   });
 });
