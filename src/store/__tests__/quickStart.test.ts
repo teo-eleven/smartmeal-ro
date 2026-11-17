@@ -1,3 +1,4 @@
+import { useHealthSafetyStore } from '../healthSafetyStore';
 import * as platformHealth from '../../utils/platformHealth';
 import { useAppStore } from '../useAppStore';
 import { checkPlanFeasibility } from '../../engine/plannerEngine';
@@ -110,5 +111,24 @@ describe('quick start never drops what keeps the user safe (A.11f-8)', () => {
     expect(preferences.dislikedRecipeIds).toContain('some_rejected_dish');
     expect(currentPlan).not.toBeNull();
     jest.restoreAllMocks();
+  });
+});
+
+describe('undoing a reset does not bring back goals the safety answer has blocked since (A.11f-9)', () => {
+  test('reset, answer "Da", undo: health goals stay off, pork-free is kept', async () => {
+    useAppStore.getState().resetOnboarding();
+    useAppStore.getState().dismissUndo();
+    useAppStore.getState().quickStart();
+    useAppStore.getState().setHealthGoalTags(['heart_healthy', 'pork_free']);
+    expect(useAppStore.getState().preferences.healthGoalTags).toContain('heart_healthy');
+    useAppStore.getState().resetOnboarding();
+    expect(useAppStore.getState().lastDiscardedPlan).not.toBeNull();
+
+    await useHealthSafetyStore.getState().setAnswer('yes');
+    useAppStore.getState().undoReset();
+
+    const { healthGoalTags } = useAppStore.getState().preferences;
+    expect(healthGoalTags).toEqual(['pork_free']);
+    await useHealthSafetyStore.getState().reset();
   });
 });

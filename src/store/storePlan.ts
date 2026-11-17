@@ -6,6 +6,7 @@ import { useHealthSafetyStore } from './healthSafetyStore';
 import { useIosGoalsNoticeStore } from './iosGoalsNoticeStore';
 import { MealPlan, SavedPlan, UserPreferences } from '../types';
 import { areHealthGoalsAvailable } from '../utils/platformHealth';
+import { withoutBlockedGoals } from '../utils/healthSafety';
 import { parseUserPreferences } from '../utils/preferencesValidation';
 import {
   collectMealsFromDays,
@@ -134,10 +135,19 @@ export function createPlanActions(set: SetState, get: GetState) {
 
         // An allergy or diet added since the snapshot must survive the undo: the old menu comes
         // back under today's protections and is re-checked, exactly like a restored plan.
-        const preferences: UserPreferences = {
+        const merged: UserPreferences = {
           ...discarded.preferences,
           ...mergeProtections(discarded.preferences, state.preferences),
           ...stricterDiet(discarded.preferences, state.preferences),
+        };
+        // The answer may have changed since the snapshot: a "Da" given meanwhile blocks goals
+        // the old preferences still carry.
+        const preferences: UserPreferences = {
+          ...merged,
+          healthGoalTags: withoutBlockedGoals(
+            merged.healthGoalTags ?? [],
+            useHealthSafetyStore.getState().answer
+          ),
         };
         const checked = tryMakePlanSafe(discarded.plan.days, preferences);
         if (!checked) {
