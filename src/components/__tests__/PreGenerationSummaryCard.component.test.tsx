@@ -3,6 +3,12 @@ import { render, screen } from '@testing-library/react-native';
 import { PreGenerationSummaryCard } from '../PreGenerationSummaryCard';
 import { UserPreferences } from '../../types';
 import * as platformHealth from '../../utils/platformHealth';
+import { useHealthSafetyStore } from '../../store/healthSafetyStore';
+
+const setAnswer = (answer: 'yes' | 'no' | null) =>
+  useHealthSafetyStore.setState({ answer, isLoaded: true });
+
+afterEach(() => setAnswer(null));
 
 describe('PreGenerationSummaryCard Component', () => {
   const samplePrefs: UserPreferences = {
@@ -19,6 +25,7 @@ describe('PreGenerationSummaryCard Component', () => {
   };
 
   it('renders pre-generation summary title and metrics correctly', () => {
+    setAnswer('no');
     render(<PreGenerationSummaryCard preferences={samplePrefs} isDark={true} extrasCost={25} />);
 
     expect(screen.getByText('Pregătim săptămâna ta')).toBeTruthy();
@@ -55,6 +62,7 @@ describe('PreGenerationSummaryCard on iOS (A.8)', () => {
   afterEach(() => jest.restoreAllMocks());
 
   test('on Android the goals show and the balanced goal raises the protein target', () => {
+    setAnswer('no');
     render(<PreGenerationSummaryCard preferences={prefs} isDark={false} />);
 
     expect(screen.getByText(/Mediteranean/)).toBeTruthy();
@@ -70,5 +78,18 @@ describe('PreGenerationSummaryCard on iOS (A.8)', () => {
     expect(screen.queryByText(/Echilibrat/)).toBeNull();
     expect(screen.getByText(/Fără porc/)).toBeTruthy();
     expect(screen.queryByText(/~125g/)).toBeNull();
+  });
+
+  test.each([
+    ['no answer yet', null],
+    ['the answer "Da, mi se aplică"', 'yes' as const],
+  ])('with %s the health goals are not listed, but pork-free is (A.11f-10)', (_label, answer) => {
+    setAnswer(answer);
+
+    render(<PreGenerationSummaryCard preferences={prefs} isDark={false} />);
+
+    expect(screen.queryByText(/Mediteranean/)).toBeNull();
+    expect(screen.queryByText(/~125g/)).toBeNull();
+    expect(screen.getByText(/Fără porc/)).toBeTruthy();
   });
 });

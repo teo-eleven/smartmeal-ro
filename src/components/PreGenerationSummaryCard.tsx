@@ -3,20 +3,26 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SUPERMARKETS } from '../data/supermarkets';
 import { getHealthGoalMeta } from '../data/healthTags';
 import { getAppTheme } from '../styles/theme';
+import { useHealthSafetyStore } from '../store/healthSafetyStore';
+import { effectivePreferences } from '../utils/healthSafety';
 import { shownGoalTags } from '../utils/healthGoalVisibility';
 import { UserPreferences } from '../types';
 
 interface PreGenerationSummaryCardProps {
+  /** As stored; the card shows only what applies under the current safety answer. */
   preferences: UserPreferences;
   isDark: boolean;
   extrasCost?: number;
 }
 
 export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> = ({
-  preferences,
+  preferences: storedPreferences,
   isDark,
   extrasCost = 0,
 }) => {
+  const answer = useHealthSafetyStore((state) => state.answer);
+  // Without a "Nu" no health goal is applied, so none is promised here either.
+  const preferences = effectivePreferences(storedPreferences, answer);
   const theme = getAppTheme(isDark);
 
   const peopleCount = preferences.peopleCount || 1;
