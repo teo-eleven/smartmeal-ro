@@ -1,6 +1,6 @@
 # Politica de confidențialitate — SmartMeal RO
 
-**Ultima actualizare:** 6 noiembrie 2026 (versiunea `2026-11-06`)
+**Ultima actualizare:** 17 noiembrie 2026 (versiunea `2026-11-17`)
 **Operator:** *[completează: nume / firmă, adresă, email de contact]*
 
 Aceasta este o primă variantă, scrisă pe ce face aplicația azi. **Citește-o și
@@ -29,6 +29,19 @@ transmitem date către brokeri sau agenții de publicitate.
 - preferința de temă (luminoasă / întunecată)
 
 Acestea sunt stocate local. Le poți șterge oricând din aplicație, prin „Reia configuratorul".
+
+Tot pe dispozitiv, separat de preferințe și fără să ajungă vreodată în cloud, păstrăm câteva
+semne tehnice: răspunsul la întrebarea de siguranță (mai jos), faptul că ai văzut mesajul
+despre obiectivele de sănătate de pe iPhone (un simplu „văzut", fără alte date) și, dacă ai
+ales „Nu, doar pe acest dispozitiv" la sincronizarea obiectivelor, lista obiectivelor pentru
+care ai ales asta, ca să nu te întrebăm de două ori.
+
+- **Pe web**, datele de pe dispozitiv, inclusiv răspunsul la întrebarea de siguranță, stau în
+  `localStorage`-ul browserului. Nu sunt criptate; oricine are acces la browserul tău le poate
+  citi. Pe telefon sunt în spațiul de stocare al aplicației.
+- **Dacă sesiunea ta expiră**, răspunsul și datele locale rămân pe telefon până se conectează
+  alt cont; atunci sunt șterse, ca să nu ajungă la altcineva. Dacă te deconectezi tu, sunt
+  șterse imediat.
 
 ### În cloud, **numai dacă îți faci cont**
 
@@ -59,9 +72,19 @@ sănătatea, pentru că pot arăta o afecțiune. Le folosim doar ca să alegem r
 obiectivului tău, nu în alt scop.
 
 - **Fără cont**, rămân doar pe telefonul tău.
-- **Cu cont**, se sincronizează în cloud, împreună cu preferințele tale, pe baza aceluiași
-  consimțământ. Căsuța bifată la crearea contului acoperă „alergiile, dieta și obiectivele mele de sănătate”.
-  Pe iPhone, unde obiectivele de sănătate nu sunt disponibile, căsuța acoperă „alergiile și dieta mea”.
+- **Cu cont**, se sincronizează în cloud, împreună cu preferințele tale, **numai dacă ai
+  acceptat asta**. Contul păstrează ce text ai văzut la creare: la Android și pe web căsuța
+  acoperă „alergiile, dieta și obiectivele mele de sănătate”, iar pe iPhone, unde obiectivele
+  nu sunt disponibile, doar „alergiile și dieta mea”. Dacă acordul din cont nu include
+  obiectivele, aplicația te întreabă **o singură dată**, înainte de prima trimitere a unui
+  obiectiv, dacă să le sincronizeze. „Da, sincronizează” se înregistrează în cont, cu data și
+  versiunea acestei politici. „Nu, doar pe acest dispozitiv” înseamnă că preferințele se
+  sincronizează fără obiective, iar obiectivele rămân pe telefon; nu te mai întrebăm decât
+  dacă bifezi un obiectiv nou.
+- **Pe iPhone**, obiectivele de sănătate din cont nu sunt nici afișate, nici modificate: nu
+  se descarcă pe telefon, iar când salvezi de pe iPhone, obiectivele salvate de pe alt
+  dispozitiv rămân în cont exact cum erau. „Fără carne de porc” nu e obiectiv de sănătate și
+  se sincronizează normal.
 
 **Întrebarea de siguranță.** Înainte de primul obiectiv de sănătate, aplicația te întreabă o
 dată, cu da sau nu, dacă ești însărcinată sau alăptezi, ai boală de rinichi, iei insulină,
@@ -91,7 +114,7 @@ Date de plată. Aplicația cere o singură permisiune Android: accesul la intern
 | Cui | Ce | De ce |
 | --- | --- | --- |
 | **Supabase** (găzduire UE) | email, plan, preferințe | doar dacă ai cont; stocare și autentificare |
-| **Anthropic** (Claude) | id-uri de rețete, preferințele planului și, dacă o scrii, dorința ta pentru înlocuire, **fără email și fără date de identificare** | doar când apeși explicit „Întreabă AI" pentru o sugestie de înlocuire |
+| **Anthropic** (Claude) | id-uri de rețete (rețeta de înlocuit și lista rețetelor candidate), preferințele planului și, dacă o scrii, dorința ta pentru înlocuire, **fără email și fără date de identificare** | doar când apeși explicit „Întreabă AI" pentru o sugestie de înlocuire |
 | **Resend** (livrare de email) | adresa de email și conținutul mementoului | doar dacă ai pornit mementourile pe email |
 
 Cererea către Anthropic pleacă de pe serverul nostru, nu de pe telefonul tău, și nu conține
