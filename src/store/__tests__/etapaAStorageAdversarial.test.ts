@@ -176,6 +176,30 @@ describe('stored preferences with odd health goals', () => {
     expect(state.preferences.healthGoalTags).toEqual(['heart_healthy']);
   });
 
+  test('duplicates are collapsed to one each', async () => {
+    const state = await bootWith(
+      GOALS_RAW(['heart_healthy', 'heart_healthy', 'pork_free', 'pork_free']),
+      'no'
+    );
+    expect(state.preferences.healthGoalTags).toEqual(['heart_healthy', 'pork_free']);
+  });
+
+  test('unticking a goal that was stored twice leaves no copy behind', async () => {
+    await bootWith(GOALS_RAW(['heart_healthy', 'heart_healthy', 'pork_free']), 'no');
+    useAppStore.getState().toggleHealthGoalTag('heart_healthy');
+    expect(useAppStore.getState().preferences.healthGoalTags).toEqual(['pork_free']);
+  });
+
+  test.each([
+    ['dietTypes', ['vegan', 'vegan', 'vegetarian'], ['vegan', 'vegetarian']],
+    ['avoidedAllergens', ['gluten', 'gluten', 'lactate'], ['gluten', 'lactate']],
+    ['moodTags', ['speedy', 'speedy'], ['speedy']],
+    ['appliances', ['oven', 'oven', 'hob'], ['oven', 'hob']],
+  ])('%s duplicates are collapsed', async (key, list, expected) => {
+    const state = await bootWith({ ...GOALS_RAW([]), [key]: list }, 'no');
+    expect((state.preferences as unknown as Record<string, unknown>)[key]).toEqual(expected);
+  });
+
   test.each([
     ['a string', 'heart_healthy'],
     ['an object', { heart_healthy: true }],

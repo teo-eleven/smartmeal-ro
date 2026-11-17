@@ -66,10 +66,19 @@ function pickString<T extends string>(value: unknown, allowed: Set<string>, fall
   return typeof value === 'string' && allowed.has(value) ? (value as T) : fallback;
 }
 
-/** Keeps only recognised members. A non-array yields an empty list, never the raw value. */
-function pickList<T extends string>(value: unknown, allowed: Set<string>): T[] {
+/** Recognised members in the order stored, duplicates kept (so a repair can be detected). */
+function recognisedMembers<T extends string>(value: unknown, allowed: Set<string>): T[] {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is T => typeof item === 'string' && allowed.has(item));
+}
+
+/**
+ * Keeps only recognised members, each once, first occurrence wins. A non-array yields an empty
+ * list, never the raw value. Every list read through here is a set of choices, so a repeat
+ * is never meaningful.
+ */
+function pickList<T extends string>(value: unknown, allowed: Set<string>): T[] {
+  return Array.from(new Set(recognisedMembers<T>(value, allowed)));
 }
 
 function pickStringList(value: unknown): string[] {
@@ -133,7 +142,7 @@ export function wasDietRepaired(value: unknown): boolean {
   if (raw.dietTypes === undefined || raw.dietTypes === null) return dietTypeBroken;
   if (!Array.isArray(raw.dietTypes)) return true;
 
-  const validCount = pickList<DietType>(raw.dietTypes, VALID_DIETS).length;
+  const validCount = recognisedMembers<DietType>(raw.dietTypes, VALID_DIETS).length;
   return dietTypeBroken || validCount !== raw.dietTypes.length;
 }
 
@@ -146,7 +155,7 @@ export function wasHealthGoalsRepaired(value: unknown): boolean {
   const tags = (value as Record<string, unknown>).healthGoalTags;
   if (tags === undefined || tags === null) return false;
   if (!Array.isArray(tags)) return true;
-  return pickList<HealthGoalTag>(tags, VALID_HEALTH_GOALS).length !== tags.length;
+  return recognisedMembers<HealthGoalTag>(tags, VALID_HEALTH_GOALS).length !== tags.length;
 }
 
 export function parseUserPreferences(
