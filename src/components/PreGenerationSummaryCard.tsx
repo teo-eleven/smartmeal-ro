@@ -7,6 +7,7 @@ import { useHealthSafetyStore } from '../store/healthSafetyStore';
 import { effectivePreferences } from '../utils/healthSafety';
 import { shownGoalTags } from '../utils/healthGoalVisibility';
 import { UserPreferences } from '../types';
+import { formatRon } from '../utils/formatRon';
 
 interface PreGenerationSummaryCardProps {
   /** As stored; the card shows only what applies under the current safety answer. */
@@ -55,7 +56,7 @@ export const PreGenerationSummaryCard: React.FC<PreGenerationSummaryCardProps> =
   else if (preferences.foodTier === 'premium') targetProteinGrams = 115;
 
   const costPerPortion =
-    totalPortions > 0 ? (preferences.budgetRon / totalPortions).toFixed(1) : '15.0';
+    totalPortions > 0 ? formatRon(preferences.budgetRon / totalPortions) : '15,00';
 
   const selectedDiets =
     preferences.dietTypes && preferences.dietTypes.length > 0

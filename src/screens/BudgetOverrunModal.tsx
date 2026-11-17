@@ -9,6 +9,7 @@ import {
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { titleFont } from '../styles/typography';
+import { formatRon } from '../utils/formatRon';
 
 interface BudgetOverrunModalProps {
   visible: boolean;
@@ -72,7 +73,7 @@ export const BudgetOverrunModal: React.FC<BudgetOverrunModalProps> = ({
           <Text style={[styles.description, { color: theme.textMuted }]}>
             Preparatele și opțiunile alese ridică totalul coșului la{' '}
             <Text style={[styles.boldText, { color: theme.text }]}>
-              ~{currentCostRon.toFixed(1)} lei
+              ~{formatRon(currentCostRon)} lei
             </Text>
             , depășind bugetul tău săptămânal de{' '}
             <Text style={[styles.boldText, { color: theme.text }]}>
@@ -80,7 +81,7 @@ export const BudgetOverrunModal: React.FC<BudgetOverrunModalProps> = ({
             </Text>{' '}
             cu{' '}
             <Text style={[styles.excessText, { color: theme.danger }]}>
-              +{excessRon.toFixed(1)} lei
+              +{formatRon(excessRon)} lei
             </Text>
             .
           </Text>

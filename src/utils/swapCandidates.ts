@@ -1,6 +1,7 @@
 import { DayOfWeek, MealPlan, MealSlot, Recipe, UserPreferences } from '../types';
 import { getEligibleDessertRecipes, getEligibleRecipes } from '../engine/plannerEngine';
 import { calculateRecipePortionCost } from '../engine/budgetCalculator';
+import { formatRon } from './formatRon';
 
 export interface RankedCandidate {
   recipe: Recipe;
@@ -78,6 +79,6 @@ export function rankSwapCandidates(
 /** "+3,20 lei" / "−1,50 lei" / "același preț", for the badge next to each candidate. */
 export function formatCostDelta(deltaRon: number): string {
   if (Math.abs(deltaRon) < 0.05) return 'același preț';
-  const amount = Math.abs(deltaRon).toFixed(2).replace('.', ',');
+  const amount = formatRon(Math.abs(deltaRon));
   return `${deltaRon > 0 ? '+' : '−'}${amount} lei`;
 }

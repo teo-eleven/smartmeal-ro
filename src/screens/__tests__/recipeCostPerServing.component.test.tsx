@@ -25,12 +25,13 @@ describe('the recipe sheet shows what one serving costs (A.11f-7)', () => {
     const { supermarketId } = useAppStore.getState().preferences;
     const { formattedCostPerServing } = estimateRecipeCost(recipe, supermarketId, 2);
 
+    expect(formattedCostPerServing).toMatch(/^\d+,\d{2}$/);
     expect(screen.getByText(`💰 ~${formattedCostPerServing} lei/porție`)).toBeTruthy();
   });
 
   test('its accessible name says it in Romanian words', () => {
     expect(
-      screen.getByLabelText(/^Cost estimat: aproximativ \d+\.\d{2} lei pe porție$/)
+      screen.getByLabelText(/^Cost estimat: aproximativ \d+,\d{2} lei pe porție$/)
     ).toBeTruthy();
   });
 

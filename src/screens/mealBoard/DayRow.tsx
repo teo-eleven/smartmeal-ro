@@ -8,6 +8,7 @@ import { AppTheme } from '../../styles/theme';
 import { DAY_LABELS_RO } from '../../constants/days';
 import { AnimatedMealSlot } from './AnimatedMealSlot';
 import { styles } from './styles';
+import { formatRonAuto } from '../../utils/formatRon';
 
 const CANONICAL_ORDER: Record<string, number> = {
   breakfast: 1,
@@ -97,7 +98,7 @@ export const DayRow: React.FC<DayRowProps> = ({
               ]}
             >
               <Text style={[styles.dayGroupCost, { color: theme.text }]}>
-                Total zi: ~{day.estimatedCostRon} lei
+                Total zi: ~{formatRonAuto(day.estimatedCostRon)} lei
               </Text>
             </View>
           </View>

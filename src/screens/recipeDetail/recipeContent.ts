@@ -1,6 +1,7 @@
 import { INGREDIENTS } from '../../data/ingredients';
 import { shoppingAmount } from '../../engine/ingredientUnits';
 import { Appliance, Recipe, SupermarketId } from '../../types';
+import { formatRon } from '../../utils/formatRon';
 
 export const APPLIANCE_MAP: Record<Appliance, { name: string; icon: string }> = {
   hob: { name: 'Plită / Tigaie', icon: '🍳' },
@@ -83,10 +84,9 @@ export function estimateRecipeCost(
     const unitPrice = (item.typicalPriceRon[supermarketId] ?? 5) / (item.standardPackSize || 100);
     return acc + unitPrice * shoppingAmount(ing, item);
   }, 0);
-  const formattedCostPerServing = Math.max(
-    3.5,
-    Math.round(estimatedCostPerServing * 10) / 10
-  ).toFixed(2);
-  const formattedTotalCost = (parseFloat(formattedCostPerServing) * activeServings).toFixed(2);
-  return { formattedCostPerServing, formattedTotalCost };
+  const costPerServing = Math.max(3.5, Math.round(estimatedCostPerServing * 10) / 10);
+  return {
+    formattedCostPerServing: formatRon(costPerServing),
+    formattedTotalCost: formatRon(costPerServing * activeServings),
+  };
 }

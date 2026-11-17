@@ -34,3 +34,25 @@ describe('the picture button of a meal card (WCAG 2.5.3 Label in Name)', () => {
     expect(screen.getByRole('button', { name: expected })).toBeTruthy();
   });
 });
+
+describe('the portion price on a meal card (A.11f-11)', () => {
+  test('is written with a comma, two decimals', () => {
+    render(
+      <CardHero
+        day={DAY}
+        recipe={RECIPE}
+        isDessert={false}
+        costRon={20}
+        servings={2}
+        portionCost={7.9}
+        theme={getAppTheme(false)}
+        isDark={false}
+        onPressRecipe={jest.fn()}
+        onPressIn={jest.fn()}
+        onPressOut={jest.fn()}
+      />
+    );
+
+    expect(screen.getByText(/~7,90\/p/)).toBeTruthy();
+  });
+});

@@ -5,6 +5,7 @@ import { SUPERMARKET_LIST } from '../../../data/supermarkets';
 import { sharedStyles } from '../onboardingStyles';
 import { OnboardingStepProps } from './stepProps';
 import { pressedState } from '../../../utils/pressedState';
+import { formatRon } from '../../../utils/formatRon';
 
 /** Step 7: retail snacks & beverages */
 export function ExtrasStep({
@@ -147,7 +148,7 @@ export function ExtrasStep({
                           { color: isSelected ? theme.primary : theme.text },
                         ]}
                       >
-                        {price.toFixed(2)} lei
+                        {formatRon(price)} lei
                       </Text>
                       <View
                         style={[
@@ -218,7 +219,7 @@ export function ExtrasStep({
                           { color: isSelected ? theme.primary : theme.text },
                         ]}
                       >
-                        {price.toFixed(2)} lei
+                        {formatRon(price)} lei
                       </Text>
                       <View
                         style={[
@@ -292,7 +293,7 @@ export function ExtrasStep({
                     { color: isSelected ? theme.primary : theme.text },
                   ]}
                 >
-                  {price.toFixed(2)} lei
+                  {formatRon(price)} lei
                 </Text>
                 <View
                   style={[
@@ -409,7 +410,7 @@ export function ExtrasStep({
                       { color: isSelected ? theme.primary : theme.text },
                     ]}
                   >
-                    {price.toFixed(2)} lei
+                    {formatRon(price)} lei
                   </Text>
                   <View
                     style={[
@@ -451,7 +452,7 @@ export function ExtrasStep({
               <View style={{ flex: 1 }}>
                 <Text style={[sharedStyles.stepImpactTitle, { color: theme.text }]}>
                   {totalExtras > 0
-                    ? `${totalExtras} gustări & băuturi adăugate (+${extrasCost.toFixed(2)} lei)`
+                    ? `${totalExtras} gustări & băuturi adăugate (+${formatRon(extrasCost)} lei)`
                     : 'Fără gustări sau băuturi extra adăugate'}
                 </Text>
                 <Text style={[sharedStyles.stepImpactDesc, { color: theme.textMuted }]}>
