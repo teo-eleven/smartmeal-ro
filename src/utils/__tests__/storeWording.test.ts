@@ -1,5 +1,5 @@
 import { currentOs } from '../../services/platformOs';
-import { storeAccountName } from '../storeWording';
+import { IOS_DEVICE_NAME, storeAccountName } from '../storeWording';
 
 jest.mock('../../services/platformOs', () => ({ currentOs: jest.fn() }));
 
@@ -25,5 +25,11 @@ describe('storeAccountName (A.12)', () => {
   test.each(['web', undefined])('stays neutral on %s', (os) => {
     runOn(os);
     expect(storeAccountName()).toBe('de magazin');
+  });
+});
+
+describe('the device name the iOS-only notice uses (A.11f-14)', () => {
+  test('is iPhone, written once here so no screen hard-codes a platform name', () => {
+    expect(IOS_DEVICE_NAME).toBe('iPhone');
   });
 });

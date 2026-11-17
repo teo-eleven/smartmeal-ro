@@ -14,7 +14,7 @@ import * as platformHealth from '../../utils/platformHealth';
 
 const TITLE = 'Obiectivele de sănătate';
 const MESSAGE =
-  'Pe iPhone, obiectivele de sănătate nu sunt disponibile deocamdată. Preferințele tale sunt păstrate și se aplică în continuare pe Android și pe web.';
+  'Pe iPhone, obiectivele de sănătate nu sunt disponibile deocamdată. Preferințele tale sunt păstrate în cont.';
 
 const setGoals = (healthGoalTags: HealthGoalTag[]) =>
   useAppStore.setState((s) => ({ preferences: { ...s.preferences, healthGoalTags } }));

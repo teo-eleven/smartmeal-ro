@@ -12,9 +12,7 @@ const SRC = path.join(ROOT, 'src');
 const PLATFORM_WORD = /\b(?:Apple|iPhone|iPad|iOS|App Store|Android|Google|Play)\b/;
 
 const ALLOWED: Record<string, string> = {
-  'src/utils/storeWording.ts': 'the one place that names the store, per platform',
-  'src/components/IosGoalsNotice.tsx':
-    'approved exception: the A.9 notice mentions Android and web',
+  'src/utils/storeWording.ts': 'the one place that names the store and the device, per platform',
   'src/utils/deviceLabel.ts': "names the user's own devices in Cont → Dispozitive",
   'src/data/retailProducts.ts': 'a product name ("Strongbow Gold Apple"), not a platform',
 };

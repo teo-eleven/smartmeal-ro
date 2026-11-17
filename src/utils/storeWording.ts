@@ -11,3 +11,6 @@ export function storeAccountName(): string {
   if (os === 'android') return 'Google Play';
   return 'de magazin';
 }
+
+/** What an iOS-only message calls the device. Written here so no screen names a platform. */
+export const IOS_DEVICE_NAME = 'iPhone';

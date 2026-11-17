@@ -6,6 +6,7 @@ import { useIosGoalsNoticeStore } from '../store/iosGoalsNoticeStore';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { isHealthGoal } from '../data/healthTags';
 import { areHealthGoalsAvailable } from '../utils/platformHealth';
+import { IOS_DEVICE_NAME } from '../utils/storeWording';
 import { getAppTheme } from '../styles/theme';
 import { titleFont } from '../styles/typography';
 
@@ -13,7 +14,7 @@ const NOTICE_WINDOW_ID = 'ios-goals-notice';
 
 export const IOS_GOALS_NOTICE_TITLE_RO = 'Obiectivele de sănătate';
 export const IOS_GOALS_NOTICE_MESSAGE_RO =
-  'Pe iPhone, obiectivele de sănătate nu sunt disponibile deocamdată. Preferințele tale sunt păstrate și se aplică în continuare pe Android și pe web.';
+  `Pe ${IOS_DEVICE_NAME}, obiectivele de sănătate nu sunt disponibile deocamdată. Preferințele tale sunt păstrate în cont.`;
 const ACKNOWLEDGE_LABEL_RO = 'Am înțeles';
 
 const BACKDROP_PADDING_H = 24;
