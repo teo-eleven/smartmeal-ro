@@ -55,7 +55,14 @@ function quickStartPreferences(preferences: UserPreferences): UserPreferences {
     1,
     base.foodTier
   );
-  return { ...base, budgetRon: Math.max(base.budgetRon, minimum * 2) };
+  return {
+    ...base,
+    // What keeps the user safe is never a default to be reset: allergies, the diet, rejected
+    // dishes and "Fără porc" are carried over on every platform.
+    ...mergeProtections(base, preferences),
+    ...stricterDiet(base, preferences),
+    budgetRon: Math.max(base.budgetRon, minimum * 2),
+  };
 }
 
 /** Whole-plan operations: generate, reshuffle, rebuild, reset and the plan library. */

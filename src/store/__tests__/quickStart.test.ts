@@ -77,3 +77,38 @@ describe('quick start on iOS keeps the health goals it cannot show (A.8)', () =>
     expect(useAppStore.getState().currentPlan).not.toBeNull();
   });
 });
+
+describe('quick start never drops what keeps the user safe (A.11f-8)', () => {
+  beforeEach(() => {
+    useAppStore.getState().resetOnboarding();
+    useAppStore.getState().dismissUndo();
+  });
+
+  test.each([
+    ['on Android and web', true],
+    ['on iOS', false],
+  ])('a declared allergy, diet and pork-free survive %s', (_platform, areGoalsShown) => {
+    jest.spyOn(platformHealth, 'areHealthGoalsAvailable').mockReturnValue(areGoalsShown);
+    useAppStore.setState((s) => ({
+      preferences: {
+        ...s.preferences,
+        avoidedAllergens: ['gluten', 'lactate'],
+        dietType: 'vegan',
+        dietTypes: ['vegan'],
+        healthGoalTags: ['pork_free'],
+        dislikedRecipeIds: ['some_rejected_dish'],
+      },
+    }));
+
+    useAppStore.getState().quickStart();
+
+    const { preferences, currentPlan } = useAppStore.getState();
+    expect(preferences.avoidedAllergens).toEqual(expect.arrayContaining(['gluten', 'lactate']));
+    expect(preferences.dietType).toBe('vegan');
+    expect(preferences.dietTypes).toEqual(['vegan']);
+    expect(preferences.healthGoalTags).toContain('pork_free');
+    expect(preferences.dislikedRecipeIds).toContain('some_rejected_dish');
+    expect(currentPlan).not.toBeNull();
+    jest.restoreAllMocks();
+  });
+});
