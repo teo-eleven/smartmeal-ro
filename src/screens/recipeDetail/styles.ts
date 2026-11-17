@@ -4,6 +4,8 @@ import { titleFont } from '../../styles/typography';
 /** The room between the header's buttons, and the smallest tap target a thumb can hit. */
 const HEADER_GAP = 8;
 const MIN_TOUCH_TARGET = 44;
+/** Tall enough that up to three rows of chips never cover the picture's own ingredient line. */
+const HERO_HEIGHT = 340;
 
 export const styles = StyleSheet.create({
   modalOverlay: {
@@ -117,7 +119,7 @@ export const styles = StyleSheet.create({
   },
   heroCard: {
     width: '100%',
-    height: 260,
+    height: HERO_HEIGHT,
     borderRadius: 20,
     overflow: 'hidden',
     position: 'relative',
