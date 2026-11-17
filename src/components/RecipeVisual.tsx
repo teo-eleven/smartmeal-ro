@@ -38,6 +38,13 @@ const CARD_SCRIM_DARK = ['rgba(0,0,0,0.10)', 'rgba(19, 25, 20, 0.75)'] as const;
 const CARD_SCRIM_LIGHT = ['rgba(0,0,0,0.05)', 'rgba(30, 38, 32, 0.65)'] as const;
 
 /**
+ * The title and the ingredient line are two blocks, and a browser joins their text with
+ * nothing between ("wedgesPIEPT DE PUI"), which no accessible name can match (WCAG 2.5.3).
+ * A trailing space on the title is invisible and gives the join its separator.
+ */
+const TITLE_LINE_SEPARATOR = ' ';
+
+/**
  * The picture at the top of a recipe card.
  *
  * A verified photograph of this dish when the manifest has one (ADR-20). Otherwise, or when
@@ -117,6 +124,7 @@ export const RecipeVisual: React.FC<RecipeVisualProps> = ({
         <View style={styles.titleContainer}>
           <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={2}>
             {recipe.title}
+            {compact ? '' : TITLE_LINE_SEPARATOR}
           </Text>
         </View>
 

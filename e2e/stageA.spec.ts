@@ -256,6 +256,17 @@ test.describe('Etapa A: the disclaimers after onboarding', () => {
   });
 });
 
+test.describe('Etapa A: a recipe opened while the board is still fading in', () => {
+  test('axe finds no violation (meal card names match their visible words)', async ({ page }) => {
+    await reachMealBoard(page);
+    await dismissNoticeIfShown(page);
+    // Deliberately no waitForStillScreen: this is the timing that exposed the meal card name.
+    await page.getByRole('button', { name: 'Vezi Rețeta →' }).first().click();
+    await expect(page.getByText(/Ingrediente necesare/)).toBeVisible();
+    expect(await accessibilityFailures(page, 'recipe opened before the board settled')).toEqual([]);
+  });
+});
+
 /** The disclaimer box sits right below a health badge of the same recipe. */
 async function expectDisclaimerUnderBadges(page: Page, disclaimer: Locator): Promise<void> {
   const disclaimerBox = await disclaimer.boundingBox();
