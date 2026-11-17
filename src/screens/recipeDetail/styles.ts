@@ -64,21 +64,9 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
-  topCenter: {
-    alignItems: 'center',
+  topSpacer: {
     flex: 1,
     minWidth: 0,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
-    textAlign: 'center',
   },
   swapHeaderBtn: {
     paddingHorizontal: 14,

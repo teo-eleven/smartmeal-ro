@@ -102,7 +102,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
   const chefTips = getChefTipsForRecipe(recipe);
   const substitutions = getSubstitutionsForRecipe(recipe);
-  const { formattedCostPerServing, formattedTotalCost } = estimateRecipeCost(
+  const { formattedTotalCost } = estimateRecipeCost(
     recipe,
     preferences.supermarketId,
     activeServings
@@ -123,10 +123,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           ]}
         >
           <RecipeTopBar
-            recipe={recipe}
             theme={theme}
-            totalTime={totalTime}
-            formattedCostPerServing={formattedCostPerServing}
             targetDay={targetDay}
             isEatenOut={isEatenOut}
             onClose={onClose}

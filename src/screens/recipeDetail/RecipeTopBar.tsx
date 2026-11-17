@@ -1,14 +1,11 @@
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { DayOfWeek, Recipe } from '../../types';
+import { DayOfWeek } from '../../types';
 import { RecipeDetailTheme } from './types';
 import { styles } from './styles';
 
 interface RecipeTopBarProps {
-  recipe: Recipe;
   theme: RecipeDetailTheme;
-  totalTime: number;
-  formattedCostPerServing: string;
   targetDay?: DayOfWeek | null;
   isEatenOut: boolean;
   onClose: () => void;
@@ -17,10 +14,7 @@ interface RecipeTopBarProps {
 }
 
 export const RecipeTopBar: React.FC<RecipeTopBarProps> = ({
-  recipe,
   theme,
-  totalTime,
-  formattedCostPerServing,
   targetDay,
   isEatenOut,
   onClose,
@@ -40,14 +34,8 @@ export const RecipeTopBar: React.FC<RecipeTopBarProps> = ({
       <Text style={[styles.closeIcon, { color: theme.text }]}>✕ Închide</Text>
     </TouchableOpacity>
 
-    <View style={styles.topCenter}>
-      <Text style={[styles.headerTitle, { color: theme.text }]} numberOfLines={1}>
-        {recipe.title}
-      </Text>
-      <Text style={[styles.headerSubtitle, { color: theme.primary }]} numberOfLines={1}>
-        ⏱️ {totalTime} min • ~{formattedCostPerServing} lei/porție
-      </Text>
-    </View>
+    {/* The title is in the hero and the summary card below; this only keeps the buttons apart. */}
+    <View style={styles.topSpacer} />
 
     <TouchableOpacity
       accessibilityRole="button"
