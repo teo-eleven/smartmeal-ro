@@ -1,6 +1,10 @@
 import { StyleSheet } from 'react-native';
 import { titleFont } from '../../styles/typography';
 
+/** The room between the header's buttons, and the smallest tap target a thumb can hit. */
+const HEADER_GAP = 8;
+const MIN_TOUCH_TARGET = 44;
+
 export const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
@@ -42,6 +46,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
+    gap: HEADER_GAP,
     borderBottomWidth: 1,
     zIndex: 10,
   },
@@ -50,6 +55,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
+    minHeight: MIN_TOUCH_TARGET,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -61,7 +67,7 @@ export const styles = StyleSheet.create({
   topCenter: {
     alignItems: 'center',
     flex: 1,
-    paddingHorizontal: 12,
+    minWidth: 0,
   },
   headerTitle: {
     fontSize: 16,
@@ -79,6 +85,8 @@ export const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1.5,
+    minHeight: MIN_TOUCH_TARGET,
+    justifyContent: 'center',
     flexShrink: 0,
   },
   swapHeaderText: {

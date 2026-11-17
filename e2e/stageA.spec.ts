@@ -267,6 +267,39 @@ test.describe('Etapa A: a recipe opened while the board is still fading in', () 
   });
 });
 
+test.describe('Etapa A: the recipe header on a 390 px phone', () => {
+  const MIN_GAP_PX = 8;
+  const MIN_TOUCH_PX = 44;
+
+  test('Înlocuiește and În oraș have a gap, a 44 px touch target and do not overlap', async ({
+    page,
+  }) => {
+    await reachMealBoard(page);
+    await dismissNoticeIfShown(page);
+    await waitForStillScreen(page, 'meal board');
+    await page.getByRole('button', { name: 'Vezi Rețeta →' }).first().click();
+    await expect(page.getByText(/Ingrediente necesare/)).toBeVisible();
+    await waitForStillScreen(page, 'recipe');
+
+    const close = await page.getByRole('button', { name: 'Închide', exact: true }).first().boundingBox();
+    const swap = await page.getByRole('button', { name: 'Înlocuiește rețeta' }).boundingBox();
+    const eatOut = await page.getByRole('checkbox', { name: 'Mănânc în oraș' }).boundingBox();
+    if (!close || !swap || !eatOut) throw new Error('a header button is not on screen');
+
+    expect(eatOut.x - (swap.x + swap.width), 'gap between the two buttons').toBeGreaterThanOrEqual(
+      MIN_GAP_PX
+    );
+    expect(swap.x - (close.x + close.width), 'gap to the close button').toBeGreaterThanOrEqual(
+      MIN_GAP_PX
+    );
+    for (const box of [close, swap, eatOut]) {
+      expect(box.height, 'touch target height').toBeGreaterThanOrEqual(MIN_TOUCH_PX);
+    }
+    expect(eatOut.x + eatOut.width, 'inside the 390 px screen').toBeLessThanOrEqual(390);
+    await snap(page, 'recipe-header-spacing');
+  });
+});
+
 /** The disclaimer box sits right below a health badge of the same recipe. */
 async function expectDisclaimerUnderBadges(page: Page, disclaimer: Locator): Promise<void> {
   const disclaimerBox = await disclaimer.boundingBox();
