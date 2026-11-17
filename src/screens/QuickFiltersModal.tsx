@@ -475,12 +475,12 @@ const QuickFiltersForm: React.FC<QuickFiltersModalProps> = ({
             <View style={styles.bottomActionsCol}>
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityLabel="Aplică Filtre și Actualizează Meniul"
+                accessibilityLabel="Aplică filtrele și actualizează meniul"
                 onPress={handleSave}
                 style={[styles.applyBtn, { backgroundColor: theme.primary }]}
                 activeOpacity={0.85}
               >
-                <Text style={[styles.applyBtnText, { color: theme.primaryText }]}>✓ Aplică Filtre & Actualizează Meniul</Text>
+                <Text style={[styles.applyBtnText, { color: theme.primaryText }]}>✓ Aplică filtrele și actualizează meniul</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

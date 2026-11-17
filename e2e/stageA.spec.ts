@@ -48,16 +48,6 @@ const RECIPE_BADGES = [
 const REMOVED_CLAIMS = /detox|somn odihnitor|energizant|antioxidant/i;
 const RETAIL_ENERGY_DRINK_LINE = /^Băutură energizantă /;
 
-/**
- * Found by this spec (A.11d), not part of Etapa A, left for a product fix: the filters'
- * apply button reads "✓ Aplică Filtre & Actualizează Meniul" but is named "Aplică Filtre și
- * Actualizează Meniul", so a voice-control user saying what they see does not hit it
- * (WCAG 2.5.3 Label in Name). Pinned by name so any other violation still fails the scan;
- * remove it once the label matches and this test will insist on an empty list again.
- */
-const KNOWN_FILTERS_APPLY_LABEL_MISMATCH =
-  /^label-content-name-mismatch <button aria-label="Aplică Filtre și Act/;
-
 const SCREENS_DIR = path.join(__dirname, '..', 'docs', 'testing', 'screens', 'stage-a');
 const MAX_ONBOARDING_STEPS = 12;
 
@@ -220,16 +210,7 @@ test.describe('Etapa A: the disclaimers after onboarding', () => {
     await expect(about).toHaveAttribute('aria-expanded', 'true');
     await snapAround(page, longText, 'filters-long-disclaimer-open');
     const failures = await accessibilityFailures(page, 'filters, long disclaimer open');
-    const known = failures.filter((f) => KNOWN_FILTERS_APPLY_LABEL_MISMATCH.test(f));
-    if (known.length) {
-      test.info().annotations.push({
-        type: 'known issue',
-        description: 'filters apply button: visible text "&" vs label "și" (WCAG 2.5.3)',
-      });
-      const apply = page.getByRole('button', { name: 'Aplică Filtre și Actualizează Meniul' });
-      await snapAround(page, apply, 'known-issue-filters-apply-label');
-    }
-    expect(failures.filter((f) => !known.includes(f))).toEqual([]);
+    expect(failures).toEqual([]);
 
     await about.click();
     await expect(longText).toHaveCount(0);
