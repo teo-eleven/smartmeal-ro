@@ -1,4 +1,14 @@
-import { ESLint } from 'eslint';
+interface LintMessage {
+  ruleId: string | null;
+  message: string;
+}
+interface EslintModule {
+  ESLint: new () => {
+    lintText(code: string, options: { filePath: string }): Promise<{ messages: LintMessage[] }[]>;
+  };
+}
+// eslint ships no type declarations; only what this test calls is described.
+const { ESLint } = jest.requireActual<EslintModule>('eslint');
 
 /**
  * The planner and eligibility engine must be reached through store/guardedEngine.ts, which
