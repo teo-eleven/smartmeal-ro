@@ -10,10 +10,14 @@ import { titleFont } from '../styles/typography';
 
 const DIALOG_WINDOW_ID = 'goals-sync-consent';
 
+/** Dialog title, shown in GoalsSyncConsentDialog before the first upload of health goals. */
 export const GOALS_SYNC_TITLE_RO = 'Sincronizăm și obiectivele tale de sănătate?';
+/** Dialog body: goals are health data, kept in the account, deletable with it; shown under the title. */
 export const GOALS_SYNC_MESSAGE_RO =
   'Obiectivele de sănătate sunt date privind sănătatea. Dacă răspunzi „Da", le păstrăm în contul tău, ca să le regăsești pe alt dispozitiv; le poți șterge oricând, odată cu contul. Dacă nu, rămân doar pe acest dispozitiv.';
+/** Primary button of GoalsSyncConsentDialog: records the consent, then uploads the goals. */
 export const GOALS_SYNC_YES_RO = 'Da, sincronizează';
+/** Second button of GoalsSyncConsentDialog: goals stay on this device, the rest still syncs. */
 export const GOALS_SYNC_NO_RO = 'Nu, doar pe acest dispozitiv';
 
 const BACKDROP_PADDING_H = 24;

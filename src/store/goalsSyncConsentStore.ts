@@ -32,6 +32,7 @@ export interface GoalsConsentRequest {
   onSettled: (outcome: 'retry' | 'failed') => Promise<void>;
 }
 
+/** The person's answer to the goals sync question: 'yes' syncs them, 'no' keeps them on the device. */
 export type GoalsConsentAnswer = 'yes' | 'no';
 
 interface GoalsSyncConsentState {
@@ -82,6 +83,7 @@ async function saveChoice(choice: DeclinedChoice): Promise<void> {
   }
 }
 
+/** The open goals sync question and the per-account "only on this device" choice, device-only. */
 export const useGoalsSyncConsentStore = create<GoalsSyncConsentState>((set, get) => ({
   declined: null,
   isLoaded: false,

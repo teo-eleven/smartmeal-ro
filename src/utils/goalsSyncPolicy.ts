@@ -24,10 +24,12 @@ interface DecisionInput {
   declinedGoals: readonly HealthGoalTag[];
 }
 
+/** The health goals among the tags (everything except pork-free), as a new array. */
 export function healthGoalsOf(tags: readonly HealthGoalTag[] | undefined): HealthGoalTag[] {
   return (tags ?? []).filter(isHealthGoal);
 }
 
+/** Decides what an upload does with the health goals, from platform, consent and past choices. */
 export function decideGoalsUpload(input: DecisionInput): GoalsUpload {
   if (!input.areGoalsAvailable) return 'keep-cloud';
   const goals = healthGoalsOf(input.goals);

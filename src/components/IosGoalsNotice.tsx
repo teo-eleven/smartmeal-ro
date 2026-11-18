@@ -12,7 +12,9 @@ import { titleFont } from '../styles/typography';
 
 const NOTICE_WINDOW_ID = 'ios-goals-notice';
 
+/** Title of the one-time iPhone notice (IosGoalsNotice) about hidden health goals. */
 export const IOS_GOALS_NOTICE_TITLE_RO = 'Obiectivele de sănătate';
+/** Body of the one-time iPhone notice: goals are unavailable here, kept for Android and web. */
 export const IOS_GOALS_NOTICE_MESSAGE_RO =
   `Pe ${IOS_DEVICE_NAME}, obiectivele de sănătate nu sunt disponibile deocamdată. Preferințele tale sunt păstrate în cont.`;
 const ACKNOWLEDGE_LABEL_RO = 'Am înțeles';
@@ -48,6 +50,7 @@ interface IosGoalsNoticeProps {
   isSuppressed?: boolean;
 }
 
+/** The one-time iPhone notice; see the description above IosGoalsNoticeProps for when it shows. */
 export const IosGoalsNotice: React.FC<IosGoalsNoticeProps> = ({ isDark, isSuppressed = false }) => {
   const isHydrated = useAppStore((s) => s.isHydrated);
   const hasGoal = useHasStoredHealthGoal();

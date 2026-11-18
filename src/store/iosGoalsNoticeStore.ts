@@ -47,6 +47,7 @@ async function readStatus(): Promise<NoticeStatus> {
   }
 }
 
+/** Whether the iPhone goals notice was acknowledged on this phone; a device flag, never synced. */
 export const useIosGoalsNoticeStore = create<IosGoalsNoticeState>((set, get) => ({
   status: 'unknown',
 
