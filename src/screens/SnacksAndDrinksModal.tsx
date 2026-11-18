@@ -45,7 +45,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
       setSnackTastePreference: state.setSnackTastePreference,
     }))
   );
-  const { contentMaxWidth, isDesktop, isTablet } = useResponsive();
+  const { isDesktop, isTablet } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;
 
   const supermarket = SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId);
