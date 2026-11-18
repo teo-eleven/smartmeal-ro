@@ -68,4 +68,11 @@ describe('keepCloudHealthGoals', () => {
       'pork_free',
     ]);
   });
+
+  test('keeps every cloud tag this build does not know, in place', () => {
+    const cloud = ['future_goal', 'pork_free', 'heart_healthy', 'halal'] as HealthGoalTag[];
+
+    expect(keepCloudHealthGoals([], cloud)).toEqual(['future_goal', 'heart_healthy', 'halal']);
+    expect(keepCloudHealthGoals(['pork_free'], cloud)).toEqual(cloud);
+  });
 });

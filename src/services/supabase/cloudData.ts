@@ -73,7 +73,7 @@ async function prepareGoals(
   request: SavePlanRequest
 ): Promise<{ failed: boolean; preferences: UserPreferences | null }> {
   const preferences = request.preferences ?? null;
-  const mode = request.healthGoals ?? 'send';
+  const mode = request.healthGoals;
   if (!preferences || mode === 'send') return { failed: false, preferences };
   if (mode === 'strip') {
     const healthGoalTags = withoutHealthGoals(preferences.healthGoalTags);

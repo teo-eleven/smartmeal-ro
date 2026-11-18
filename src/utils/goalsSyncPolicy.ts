@@ -1,4 +1,4 @@
-import { isHealthGoal } from '../data/healthTags';
+import { PORK_FREE_TAG, isHealthGoal } from '../data/healthTags';
 import { HealthGoalTag } from '../types';
 
 /**
@@ -54,8 +54,10 @@ export function keepCloudHealthGoals(
   local: readonly HealthGoalTag[] | undefined,
   cloud: readonly HealthGoalTag[]
 ): HealthGoalTag[] {
-  const localOther = withoutHealthGoals(local);
-  const fromCloud = cloud.filter((tag) => isHealthGoal(tag) || localOther.includes(tag));
-  const added = localOther.filter((tag) => !fromCloud.includes(tag));
+  // The phone owns one thing only: whether pork-free is ticked. Every other cloud tag,
+  // including ones a newer build added that this one has never heard of, is the cloud's.
+  const localOwned = withoutHealthGoals(local);
+  const fromCloud = cloud.filter((tag) => tag !== PORK_FREE_TAG || localOwned.includes(tag));
+  const added = localOwned.filter((tag) => !fromCloud.includes(tag));
   return [...fromCloud, ...added];
 }

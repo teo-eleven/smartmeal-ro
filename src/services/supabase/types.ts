@@ -13,10 +13,11 @@ export interface SavePlanRequest {
   /** The cloud's updated_at this device last saw; null if it never saw one. */
   expectedUpdatedAt: string | null;
   /**
-   * What happens to the health goals in `preferences` (utils/goalsSyncPolicy.ts). Default
-   * 'send'. 'keep-cloud' needs `userId`, to read back the goals the account already holds.
+   * What happens to the health goals in `preferences` (utils/goalsSyncPolicy.ts). Required, so
+   * no caller can send goals by forgetting to say so. 'keep-cloud' needs `userId`, to read
+   * back the goals the account already holds.
    */
-  healthGoals?: 'send' | 'strip' | 'keep-cloud';
+  healthGoals: 'send' | 'strip' | 'keep-cloud';
   userId?: string;
 }
 

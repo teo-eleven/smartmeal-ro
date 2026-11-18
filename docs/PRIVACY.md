@@ -81,10 +81,12 @@ obiectivului tău, nu în alt scop.
   versiunea acestei politici. „Nu, doar pe acest dispozitiv” înseamnă că preferințele se
   sincronizează fără obiective, iar obiectivele rămân pe telefon; nu te mai întrebăm decât
   dacă bifezi un obiectiv nou.
-- **Pe iPhone**, obiectivele de sănătate din cont nu sunt nici afișate, nici modificate: nu
-  se descarcă pe telefon, iar când salvezi de pe iPhone, obiectivele salvate de pe alt
-  dispozitiv rămân în cont exact cum erau. „Fără carne de porc” nu e obiectiv de sănătate și
-  se sincronizează normal.
+- **Pe iPhone**, obiectivele de sănătate din cont nu sunt încărcate pe telefon, nu sunt
+  afișate și nu sunt niciodată modificate: când salvezi de pe iPhone, obiectivele salvate de
+  pe alt dispozitiv rămân în cont exact cum erau. „Fără carne de porc” nu e obiectiv de
+  sănătate și se sincronizează normal.
+- Regula e aplicată și de server: un cont al cărui acord nu include obiectivele nu poate
+  păstra obiective în cloud, indiferent de aplicația care le trimite.
 
 **Întrebarea de siguranță.** Înainte de primul obiectiv de sănătate, aplicația te întreabă o
 dată, cu da sau nu, dacă ești însărcinată sau alăptezi, ai boală de rinichi, iei insulină,

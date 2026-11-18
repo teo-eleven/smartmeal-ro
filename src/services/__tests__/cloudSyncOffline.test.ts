@@ -70,6 +70,7 @@ describe('cloud sync without a configured backend', () => {
     const result = await cloudSyncService.saveMealPlan({
       plan: buildPlan(),
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: null,
     });
     expect(result.status).toBe('error');
@@ -80,6 +81,7 @@ describe('cloud sync without a configured backend', () => {
     const result = await cloudSyncService.saveMealPlan({
       plan: null,
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: null,
     });
     expect(result.status).toBe('error');

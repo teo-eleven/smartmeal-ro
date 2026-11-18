@@ -97,7 +97,12 @@ describe('signing out', () => {
   test('signs out only this device; the other keeps its access', async () => {
     const { userId, phone, laptop } = await accountOnTwoDevices('sign-out');
     const plan = makePlan();
-    await phone.sync.saveMealPlan({ plan, groceryItems: [], expectedUpdatedAt: null });
+    await phone.sync.saveMealPlan({
+      plan,
+      groceryItems: [],
+      healthGoals: 'send',
+      expectedUpdatedAt: null,
+    });
 
     await phone.sync.signOut();
 
@@ -110,7 +115,12 @@ describe('signing out', () => {
 describe('deleting the account (edge function delete-account)', () => {
   test('a wrong password deletes nothing', async () => {
     const { userId, phone } = await accountOnTwoDevices('delete-wrong');
-    await phone.sync.saveMealPlan({ plan: makePlan(), groceryItems: [], expectedUpdatedAt: null });
+    await phone.sync.saveMealPlan({
+      plan: makePlan(),
+      groceryItems: [],
+      healthGoals: 'send',
+      expectedUpdatedAt: null,
+    });
 
     const result = await phone.sync.deleteAccount('parola-gresita');
 
@@ -121,7 +131,12 @@ describe('deleting the account (edge function delete-account)', () => {
 
   test('removes the account and everything stored against it', async () => {
     const { email, userId, phone } = await accountOnTwoDevices('delete');
-    await phone.sync.saveMealPlan({ plan: makePlan(), groceryItems: [], expectedUpdatedAt: null });
+    await phone.sync.saveMealPlan({
+      plan: makePlan(),
+      groceryItems: [],
+      healthGoals: 'send',
+      expectedUpdatedAt: null,
+    });
     await phone.notes.save(RECIPE, 'Notiță de șters');
     await phone.sync.saveReminders(userId, { cookingEnabled: true });
 

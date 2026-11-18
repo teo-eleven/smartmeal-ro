@@ -80,9 +80,9 @@ describe('grantGoalsConsent', () => {
 });
 
 describe('saveMealPlan and the health goals', () => {
-  const base = { plan, groceryItems: [], expectedUpdatedAt: null };
+  const base = { plan, groceryItems: [], healthGoals: 'send' as const, expectedUpdatedAt: null };
 
-  test("'send' (the default) leaves the goals as they are", async () => {
+  test("'send' leaves the goals as they are", async () => {
     await cloudSyncService.saveMealPlan({
       ...base,
       preferences: prefs(['heart_healthy', 'pork_free']),

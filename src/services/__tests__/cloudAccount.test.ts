@@ -584,6 +584,7 @@ describe('salvarea planului', () => {
       plan,
       groceryItems: [],
       preferences: { avoidedAllergens: ['arahide'] } as never,
+      healthGoals: 'send',
       expectedUpdatedAt: '2026-10-22T09:00:00Z',
     });
 
@@ -605,6 +606,7 @@ describe('salvarea planului', () => {
     const result = await cloudSyncService.saveMealPlan({
       plan,
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: null,
     });
 
@@ -615,6 +617,7 @@ describe('salvarea planului', () => {
     const result = await cloudSyncService.saveMealPlan({
       plan: null,
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: null,
     });
 
@@ -627,7 +630,12 @@ describe('salvarea planului', () => {
     rpc.mockResolvedValueOnce({ data: null, error: { message: 'too large' } } as never);
 
     expect(
-      await cloudSyncService.saveMealPlan({ plan, groceryItems: [], expectedUpdatedAt: null })
+      await cloudSyncService.saveMealPlan({
+        plan,
+        groceryItems: [],
+        healthGoals: 'send',
+        expectedUpdatedAt: null,
+      })
     ).toEqual({
       status: 'error',
       updatedAt: null,
@@ -643,6 +651,7 @@ describe('salvarea planului', () => {
     const result = await cloudSyncService.saveMealPlan({
       plan,
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: null,
     });
 
