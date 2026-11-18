@@ -242,6 +242,38 @@ describe('the first upload of health goals', () => {
   });
 });
 
+describe('the server refuses goals without the consent (0012)', () => {
+  test('a client that sends goals anyway stores none for an account without the consent', async () => {
+    const { userId, phone } = await phoneWithoutGoalsConsent('forced', withGoals([HEART, PORK]));
+
+    const result = await phone.sync.saveMealPlan({
+      plan: makePlan(),
+      groceryItems: [],
+      preferences: withGoals([HEART, PORK]),
+      expectedUpdatedAt: null,
+      healthGoals: 'send',
+    });
+
+    expect(result.status).toBe('saved');
+    expect((await cloudRow(userId))?.preferences.healthGoalTags).toEqual([PORK]);
+  });
+
+  test('after the consent the same call keeps them', async () => {
+    const { userId, phone } = await phoneWithoutGoalsConsent('forced-ok', withGoals([HEART]));
+    expect(await phone.sync.grantGoalsConsent()).toBe(true);
+
+    await phone.sync.saveMealPlan({
+      plan: makePlan(),
+      groceryItems: [],
+      preferences: withGoals([HEART, PORK]),
+      expectedUpdatedAt: null,
+      healthGoals: 'send',
+    });
+
+    expect((await cloudRow(userId))?.preferences.healthGoalTags).toEqual([HEART, PORK]);
+  });
+});
+
 describe('an iPhone never touches health goals (M3)', () => {
   async function androidWithSavedGoals(label: string) {
     const made = await phoneWithGoalsConsent(label, withGoals([HEART, FIBER, PORK]));
