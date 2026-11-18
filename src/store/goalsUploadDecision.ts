@@ -1,3 +1,4 @@
+import { warnSafely } from '../services/authErrors';
 import { cloudSyncService } from '../services/supabase';
 import { UserPreferences } from '../types';
 import {
@@ -9,11 +10,21 @@ import {
 import { areHealthGoalsAvailable } from '../utils/platformHealth';
 import { GoalsConsentRequest, useGoalsSyncConsentStore } from './goalsSyncConsentStore';
 
-/** Reads the account's consent only when there are goals to send; otherwise it cannot matter. */
+const WARN_CONSENT_UNREADABLE_RO = 'Nu s-a putut citi acordul pentru obiective; rămân pe telefon.';
+
+/**
+ * Reads the account's consent only when there are goals to send. A read that fails counts as
+ * unreadable, which keeps the goals on the phone: a failure must never open the gate.
+ */
 async function readGoalsConsent(userId: string): Promise<GoalsConsentState> {
-  const consent = await cloudSyncService.loadConsent(userId);
-  if (!consent || !consent.health_data_consent) return 'unreadable';
-  return consent.goals_included ? 'granted' : 'not-granted';
+  try {
+    const consent = await cloudSyncService.loadConsent(userId);
+    if (!consent || !consent.health_data_consent) return 'unreadable';
+    return consent.goals_included ? 'granted' : 'not-granted';
+  } catch (e) {
+    warnSafely(WARN_CONSENT_UNREADABLE_RO, e);
+    return 'unreadable';
+  }
 }
 
 /**

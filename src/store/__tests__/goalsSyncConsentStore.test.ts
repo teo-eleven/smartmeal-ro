@@ -101,4 +101,106 @@ describe('the goals sync question', () => {
     expect(useGoalsSyncConsentStore.getState().declined).toBeNull();
     expect(await AsyncStorage.getItem(GOALS_SYNC_CHOICE_STORAGE_KEY)).toBeNull();
   });
+
+  test('two loads at once share one read', async () => {
+    const read = jest.spyOn(AsyncStorage, 'getItem');
+
+    await Promise.all([
+      useGoalsSyncConsentStore.getState().load(),
+      useGoalsSyncConsentStore.getState().load(),
+    ]);
+    await useGoalsSyncConsentStore.getState().load();
+
+    expect(read).toHaveBeenCalledTimes(1);
+  });
+
+  test('a read that started before an answer does not bring the old choice back', async () => {
+    await AsyncStorage.setItem(
+      GOALS_SYNC_CHOICE_STORAGE_KEY,
+      JSON.stringify({ userId: 'u1', goals: ['high_fiber'] })
+    );
+    const loading = useGoalsSyncConsentStore.getState().load();
+    useGoalsSyncConsentStore.getState().ask(request);
+    await useGoalsSyncConsentStore.getState().answer('no');
+    await loading;
+
+    expect(useGoalsSyncConsentStore.getState().declinedGoalsFor('u1')).toEqual(['heart_healthy']);
+    expect(useGoalsSyncConsentStore.getState().isLoaded).toBe(true);
+  });
+
+  test("a choice stored for another account is not this account's", async () => {
+    await AsyncStorage.setItem(
+      GOALS_SYNC_CHOICE_STORAGE_KEY,
+      JSON.stringify({ userId: 'someone-else', goals: ['heart_healthy'] })
+    );
+    await useGoalsSyncConsentStore.getState().load();
+
+    expect(useGoalsSyncConsentStore.getState().declinedGoalsFor('u1')).toEqual([]);
+  });
+
+  test.each([
+    ['an empty marker', ''],
+    ['null JSON', 'null'],
+    ['a number', '7'],
+    ['a missing user', JSON.stringify({ goals: ['heart_healthy'] })],
+    ['goals that are not a list', JSON.stringify({ userId: 'u1', goals: 'heart_healthy' })],
+  ])('%s reads back as no choice', async (_label, stored) => {
+    await AsyncStorage.setItem(GOALS_SYNC_CHOICE_STORAGE_KEY, stored);
+
+    await useGoalsSyncConsentStore.getState().load();
+
+    expect(useGoalsSyncConsentStore.getState().declinedGoalsFor('u1')).toEqual([]);
+  });
+
+  describe('when storage fails', () => {
+    let warn: jest.SpyInstance;
+    beforeEach(() => {
+      warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    });
+    afterEach(() => jest.restoreAllMocks());
+
+    test('a failed read warns and counts as no choice', async () => {
+      jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('disk'));
+
+      await useGoalsSyncConsentStore.getState().load();
+
+      expect(warn).toHaveBeenCalled();
+      expect(useGoalsSyncConsentStore.getState().isLoaded).toBe(true);
+      expect(useGoalsSyncConsentStore.getState().declinedGoalsFor('u1')).toEqual([]);
+    });
+
+    test('a failed save warns, keeps the choice in memory and still retries the upload', async () => {
+      jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('disk full'));
+      useGoalsSyncConsentStore.getState().ask(request);
+
+      await useGoalsSyncConsentStore.getState().answer('no');
+
+      expect(warn).toHaveBeenCalled();
+      expect(useGoalsSyncConsentStore.getState().declinedGoalsFor('u1')).toEqual(['heart_healthy']);
+      expect(onSettled).toHaveBeenCalledWith('retry');
+    });
+
+    test('a failed removal overwrites the choice with an empty marker', async () => {
+      useGoalsSyncConsentStore.getState().ask(request);
+      await useGoalsSyncConsentStore.getState().answer('no');
+      jest.spyOn(AsyncStorage, 'removeItem').mockRejectedValueOnce(new Error('disk'));
+      const write = jest.spyOn(AsyncStorage, 'setItem');
+
+      await useGoalsSyncConsentStore.getState().reset();
+
+      expect(warn).toHaveBeenCalled();
+      expect(write).toHaveBeenCalledWith(GOALS_SYNC_CHOICE_STORAGE_KEY, '');
+      expect(useGoalsSyncConsentStore.getState().declined).toBeNull();
+    });
+
+    test('when the marker cannot be written either, it warns twice and does not throw', async () => {
+      jest.spyOn(AsyncStorage, 'removeItem').mockRejectedValueOnce(new Error('disk'));
+      jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('disk'));
+
+      await expect(useGoalsSyncConsentStore.getState().reset()).resolves.toBeUndefined();
+
+      expect(warn).toHaveBeenCalledTimes(2);
+      expect(useGoalsSyncConsentStore.getState().declined).toBeNull();
+    });
+  });
 });
