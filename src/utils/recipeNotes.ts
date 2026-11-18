@@ -21,6 +21,6 @@ export function parseRecipeNotes(raw: unknown): RecipeNotes {
 
 /** A new set of notes with this one written; an emptied note is removed. */
 export function withRecipeNote(notes: RecipeNotes, recipeId: string, text: string): RecipeNotes {
-  const { [recipeId]: _previous, ...others } = notes;
+  const others = Object.fromEntries(Object.entries(notes).filter(([id]) => id !== recipeId));
   return text.trim().length > 0 ? { ...others, [recipeId]: clean(text) } : others;
 }

@@ -6,6 +6,7 @@ import { reminderScheduler } from '../services/reminderScheduler';
 import { storageService } from '../services/storage';
 import { withoutBlockedGoals } from '../utils/healthSafety';
 import { useHealthSafetyStore } from './healthSafetyStore';
+import { resolveGoalsUpload } from './goalsUploadDecision';
 import { cloudSyncService } from '../services/supabase';
 import { ReminderSettings, UserPreferences } from '../types';
 import {
@@ -502,6 +503,19 @@ export function createSessionActions(set: SetState, get: GetState) {
           return;
         }
 
+        // Health goals leave the phone only for an account that agreed to hold them (M2), and
+        // an iPhone never changes the ones the account has (M3).
+        const healthGoals = await resolveGoalsUpload(user.id, preferences, async (outcome) => {
+          if (outcome === 'retry') return get().syncWithCloud(options);
+          get().showNotice(
+            'Obiectivele nu au fost sincronizate',
+            'Nu am putut salva acordul. Obiectivele rămân pe acest dispozitiv; încearcă din nou.',
+            'error'
+          );
+        });
+        // The question is on screen; the upload carries on from the answer.
+        if (healthGoals === 'ask') return;
+
         // Replaces only the cloud version this phone last saw, or the newer one the user just
         // agreed to replace; anything else comes back as a conflict.
         const res = await cloudSyncService.saveMealPlan({
@@ -509,6 +523,8 @@ export function createSessionActions(set: SetState, get: GetState) {
           groceryItems,
           preferences,
           expectedUpdatedAt: options.overwriteVersion ?? get().cloudPlanVersion,
+          healthGoals,
+          userId: user.id,
         });
         if (res.status === 'saved') {
           set({

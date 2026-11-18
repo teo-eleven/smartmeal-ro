@@ -16,6 +16,7 @@ import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { useShallow } from 'zustand/react/shallow';
 import { titleFont } from '../styles/typography';
 import { pressedState } from '../utils/pressedState';
+import { formatRon } from '../utils/formatRon';
 
 interface SnacksAndDrinksModalProps {
   visible: boolean;
@@ -44,7 +45,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
       setSnackTastePreference: state.setSnackTastePreference,
     }))
   );
-  const { contentMaxWidth, isDesktop, isTablet } = useResponsive();
+  const { isDesktop, isTablet } = useResponsive();
   const isLargeScreen = isDesktop || isTablet;
 
   const supermarket = SUPERMARKET_LIST.find((s) => s.id === preferences.supermarketId);
@@ -183,7 +184,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                           </View>
                           <View style={styles.priceContainer}>
                             <Text style={[styles.productPrice, { color: isSelected ? theme.primary : theme.text }]}>
-                              {price.toFixed(2)} lei
+                              {formatRon(price)} lei
                             </Text>
                             <View
                               style={[
@@ -240,7 +241,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                           </View>
                           <View style={styles.priceContainer}>
                             <Text style={[styles.productPrice, { color: isSelected ? theme.primary : theme.text }]}>
-                              {price.toFixed(2)} lei
+                              {formatRon(price)} lei
                             </Text>
                             <View
                               style={[
@@ -300,7 +301,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                     </View>
                     <View style={styles.priceContainer}>
                       <Text style={[styles.productPrice, { color: isSelected ? theme.primary : theme.text }]}>
-                        {price.toFixed(2)} lei
+                        {formatRon(price)} lei
                       </Text>
                       <View
                         style={[
@@ -401,7 +402,7 @@ export const SnacksAndDrinksModal: React.FC<SnacksAndDrinksModalProps> = ({
                       </View>
                       <View style={styles.priceContainer}>
                         <Text style={[styles.productPrice, { color: isSelected ? theme.primary : theme.text }]}>
-                          {price.toFixed(2)} lei
+                          {formatRon(price)} lei
                         </Text>
                         <View
                           style={[

@@ -18,6 +18,7 @@ import { DevicesSection } from './DevicesSection';
 import { useSubscriptionStore } from '../store/subscriptionStore';
 import { useAppStore } from '../store/useAppStore';
 import { currentOs } from '../services/platformOs';
+import { storeAccountName } from '../utils/storeWording';
 
 /**
  * The store's own subscriptions page, for when RevenueCat does not hand one over. Managing
@@ -266,7 +267,7 @@ export const AccountPanel: React.FC<AccountPanelProps> = ({
             // does not stop the payments. Said here, where it matters.
             <Text style={[styles.note, { color: theme.text }]}>
               Ștergerea contului nu anulează abonamentul. Îl anulezi din setările abonamentelor
-              contului tău Apple sau Google Play, altfel plata continuă.
+              contului tău {storeAccountName()}, altfel plata continuă.
             </Text>
           )}
           <TextInput

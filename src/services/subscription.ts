@@ -92,7 +92,7 @@ function wasCancelled(e: unknown): boolean {
   );
 }
 
-const UNAVAILABLE = 'Abonamentul se face din aplicația de pe telefon (iPhone sau Android).';
+const UNAVAILABLE = 'Abonamentul se face din aplicația de pe telefon.';
 
 export const subscriptionService = {
   mode(): SubscriptionMode {

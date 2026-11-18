@@ -85,6 +85,7 @@ describe('exportul de date', () => {
     mocked.loadConsent.mockResolvedValue({
       age_confirmed_16: true,
       health_data_consent: true,
+      goals_included: false,
       privacy_policy_version: '2026-09-28',
       consented_at: '2026-09-01T00:00:00Z',
     });
@@ -103,6 +104,7 @@ describe('exportul de date', () => {
     expect(data.inYourAccount?.consent).toEqual({
       age_confirmed_16: true,
       health_data_consent: true,
+      goals_included: false,
       privacy_policy_version: '2026-09-28',
       consented_at: '2026-09-01T00:00:00Z',
     });

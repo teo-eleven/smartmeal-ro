@@ -13,6 +13,29 @@ export interface DeviceKit {
   notes: RecipeNotesCloud;
 }
 
+type AppStoreModule = typeof import('../../store/useAppStore');
+type HealthSafetyModule = typeof import('../../store/healthSafetyStore');
+type IosNoticeModule = typeof import('../../store/iosGoalsNoticeStore');
+type GoalsConsentModule = typeof import('../../store/goalsSyncConsentStore');
+type AsyncStorageModule = typeof import('@react-native-async-storage/async-storage');
+type PlatformHealthModule = typeof import('../../utils/platformHealth');
+type PlannerEngineModule = typeof import('../../engine/plannerEngine');
+
+/** One phone with the whole app on it: the store, its device-only stores and its own storage. */
+export interface AppDevice {
+  sync: CloudSyncService;
+  store: AppStoreModule['useAppStore'];
+  safety: HealthSafetyModule['useHealthSafetyStore'];
+  safetyKey: string;
+  iosNotice: IosNoticeModule['useIosGoalsNoticeStore'];
+  iosNoticeKey: string;
+  goalsConsent: GoalsConsentModule['useGoalsSyncConsentStore'];
+  goalsChoiceKey: string;
+  storage: AsyncStorageModule['default'];
+  platformHealth: PlatformHealthModule;
+  planner: PlannerEngineModule;
+}
+
 export const FULL_CONSENT: SignUpConsent = { isAtLeast16: true, healthDataConsent: true };
 export const TEST_PASSWORD = 'Sync-test-parola-1!';
 const TEST_EMAIL_DOMAIN = 'smartmeal.test';
@@ -65,6 +88,35 @@ export function newDeviceKit(): DeviceKit {
   });
   if (!kit) throw new Error('Serviciile dispozitivului nu s-au încărcat');
   return kit;
+}
+
+/**
+ * A phone running the real store on top of its own services and its own AsyncStorage (the
+ * mock is per module registry), so two of them never share anything but the account.
+ */
+export function newAppDevice(): AppDevice {
+  let device: AppDevice | undefined;
+  jest.isolateModules(() => {
+    const safety = require('../../store/healthSafetyStore');
+    const iosNotice = require('../../store/iosGoalsNoticeStore');
+    const goalsConsent = require('../../store/goalsSyncConsentStore');
+    const asyncStorage = require('@react-native-async-storage/async-storage');
+    device = {
+      sync: require('../../services/supabase').cloudSyncService,
+      store: require('../../store/useAppStore').useAppStore,
+      safety: safety.useHealthSafetyStore,
+      safetyKey: safety.HEALTH_SAFETY_STORAGE_KEY,
+      iosNotice: iosNotice.useIosGoalsNoticeStore,
+      iosNoticeKey: iosNotice.IOS_GOALS_NOTICE_STORAGE_KEY,
+      goalsConsent: goalsConsent.useGoalsSyncConsentStore,
+      goalsChoiceKey: goalsConsent.GOALS_SYNC_CHOICE_STORAGE_KEY,
+      storage: asyncStorage.default ?? asyncStorage,
+      platformHealth: require('../../utils/platformHealth'),
+      planner: require('../../engine/plannerEngine'),
+    };
+  });
+  if (!device) throw new Error('Aplicația dispozitivului nu s-a încărcat');
+  return device;
 }
 
 export function newDevice(): CloudSyncService {

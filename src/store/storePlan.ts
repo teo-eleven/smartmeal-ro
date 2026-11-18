@@ -3,8 +3,10 @@ import { aggregateGroceryList } from '../engine/groceryAggregator';
 import { checkPlanFeasibility, generateMealPlan } from './guardedEngine';
 import { storageService } from '../services/storage';
 import { useHealthSafetyStore } from './healthSafetyStore';
+import { useIosGoalsNoticeStore } from './iosGoalsNoticeStore';
 import { MealPlan, SavedPlan, UserPreferences } from '../types';
 import { areHealthGoalsAvailable } from '../utils/platformHealth';
+import { withoutBlockedGoals } from '../utils/healthSafety';
 import { parseUserPreferences } from '../utils/preferencesValidation';
 import {
   collectMealsFromDays,
@@ -54,7 +56,14 @@ function quickStartPreferences(preferences: UserPreferences): UserPreferences {
     1,
     base.foodTier
   );
-  return { ...base, budgetRon: Math.max(base.budgetRon, minimum * 2) };
+  return {
+    ...base,
+    // What keeps the user safe is never a default to be reset: allergies, the diet, rejected
+    // dishes and "Fără porc" are carried over on every platform.
+    ...mergeProtections(base, preferences),
+    ...stricterDiet(base, preferences),
+    budgetRon: Math.max(base.budgetRon, minimum * 2),
+  };
 }
 
 /** Whole-plan operations: generate, reshuffle, rebuild, reset and the plan library. */
@@ -64,6 +73,7 @@ export function createPlanActions(set: SetState, get: GetState) {
       void storageService.clearAll();
       // The safety answer lives under its own key, which clearAll() does not know about.
       void useHealthSafetyStore.getState().reset();
+      void useIosGoalsNoticeStore.getState().reset();
       // clearAll() wipes stored preferences, so memory has to follow: keeping the old
       // preferences in memory left the two disagreeing until the next reload silently
       // reverted everything to defaults.
@@ -125,10 +135,19 @@ export function createPlanActions(set: SetState, get: GetState) {
 
         // An allergy or diet added since the snapshot must survive the undo: the old menu comes
         // back under today's protections and is re-checked, exactly like a restored plan.
-        const preferences: UserPreferences = {
+        const merged: UserPreferences = {
           ...discarded.preferences,
           ...mergeProtections(discarded.preferences, state.preferences),
           ...stricterDiet(discarded.preferences, state.preferences),
+        };
+        // The answer may have changed since the snapshot: a "Da" given meanwhile blocks goals
+        // the old preferences still carry.
+        const preferences: UserPreferences = {
+          ...merged,
+          healthGoalTags: withoutBlockedGoals(
+            merged.healthGoalTags ?? [],
+            useHealthSafetyStore.getState().answer
+          ),
         };
         const checked = tryMakePlanSafe(discarded.plan.days, preferences);
         if (!checked) {

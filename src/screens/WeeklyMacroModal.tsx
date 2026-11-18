@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Modal,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,7 +8,6 @@ import {
   View,
 } from 'react-native';
 import { MealPlan } from '../types';
-import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { titleFont } from '../styles/typography';
@@ -28,7 +26,6 @@ export const WeeklyMacroModal: React.FC<WeeklyMacroModalProps> = ({
   isDark,
 }) => {
   useBlockingWindow(visible && Boolean(plan));
-  const { contentMaxWidth } = useResponsive();
 
   if (!visible || !plan) return null;
 

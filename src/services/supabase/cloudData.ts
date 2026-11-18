@@ -1,4 +1,6 @@
-import { GroceryListItem, ReminderSettings, UserPreferences } from '../../types';
+import { PRIVACY_POLICY_VERSION } from '../../../config/legal';
+import { GroceryListItem, HealthGoalTag, ReminderSettings, UserPreferences } from '../../types';
+import { keepCloudHealthGoals, withoutHealthGoals } from '../../utils/goalsSyncPolicy';
 import { parseReminderSettings } from '../../utils/preferencesValidation';
 import { describeFailure } from '../authErrors';
 import { isWellFormedPlan } from '../storage';
@@ -43,6 +45,47 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+type Client = NonNullable<ReturnType<typeof getSupabaseClient>>;
+
+/** The health goals the account already holds, exactly as stored; null if it cannot be read. */
+async function readCloudGoalTags(client: Client, userId: string): Promise<HealthGoalTag[] | null> {
+  const { data, error } = await client
+    .from('user_meal_plans')
+    .select('preferences')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) {
+    console.warn('[Supabase] Could not read the goals already in the account:', error.message);
+    return null;
+  }
+  const tags = isPlainObject(data?.preferences) ? data.preferences.healthGoalTags : undefined;
+  if (!Array.isArray(tags)) return [];
+  return tags.filter((tag): tag is HealthGoalTag => typeof tag === 'string');
+}
+
+/**
+ * Applies the goals rule to what is about to be sent. 'keep-cloud' reads before the write,
+ * and the write only happens if the row still has the version the caller expects, so what was
+ * read is what gets replaced and nothing another device saved in between is lost.
+ */
+async function prepareGoals(
+  client: Client,
+  request: SavePlanRequest
+): Promise<{ failed: boolean; preferences: UserPreferences | null }> {
+  const preferences = request.preferences ?? null;
+  const mode = request.healthGoals;
+  if (!preferences || mode === 'send') return { failed: false, preferences };
+  if (mode === 'strip') {
+    const healthGoalTags = withoutHealthGoals(preferences.healthGoalTags);
+    return { failed: false, preferences: { ...preferences, healthGoalTags } };
+  }
+  if (!request.userId) return { failed: true, preferences: null };
+  const cloudTags = await readCloudGoalTags(client, request.userId);
+  if (!cloudTags) return { failed: true, preferences: null };
+  const healthGoalTags = keepCloudHealthGoals(preferences.healthGoalTags, cloudTags);
+  return { failed: false, preferences: { ...preferences, healthGoalTags } };
+}
+
 export const cloudDataMethods = {
   /**
    * The consent recorded when the account was opened, from the table only the sign-up
@@ -55,7 +98,9 @@ export const cloudDataMethods = {
     try {
       const { data, error } = await client
         .from('user_consents')
-        .select('age_confirmed_16, health_data_consent, privacy_policy_version, consented_at')
+        .select(
+          'age_confirmed_16, health_data_consent, goals_included, privacy_policy_version, consented_at'
+        )
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -63,6 +108,7 @@ export const cloudDataMethods = {
       return {
         age_confirmed_16: data.age_confirmed_16 === true,
         health_data_consent: data.health_data_consent === true,
+        goals_included: data.goals_included === true,
         privacy_policy_version:
           typeof data.privacy_policy_version === 'string' ? data.privacy_policy_version : null,
         consented_at: typeof data.consented_at === 'string' ? data.consented_at : null,
@@ -70,6 +116,28 @@ export const cloudDataMethods = {
     } catch (e) {
       console.warn('[Supabase] Could not read the consent record:', e);
       return null;
+    }
+  },
+
+  /**
+   * Extends the signed-in account's consent to health goals (migration 0011). The server
+   * decides, for auth.uid() only; true means the consent now includes goals.
+   */
+  async grantGoalsConsent(): Promise<boolean> {
+    const client = getSupabaseClient();
+    if (!client) return false;
+    try {
+      const { data, error } = await client.rpc('grant_goals_consent', {
+        p_policy_version: PRIVACY_POLICY_VERSION,
+      });
+      if (error) {
+        console.warn('[Supabase] Could not record the goals consent:', error.message);
+        return false;
+      }
+      return data === true;
+    } catch (e) {
+      console.warn('[Supabase] Could not record the goals consent:', e);
+      return false;
     }
   },
 
@@ -158,11 +226,13 @@ export const cloudDataMethods = {
       };
     }
     try {
+      const prepared = await prepareGoals(client, request);
+      if (prepared.failed) return { status: 'error', updatedAt: null, error: CLOUD_SAVE_FAILED };
       const { data, error } = await client.rpc('save_meal_plan_if_unchanged', {
         p_plan_data: request.plan,
         p_grocery_items: request.groceryItems,
         // Diet and allergies travel with the plan; null keeps what the row already holds.
-        p_preferences: request.preferences ?? null,
+        p_preferences: prepared.preferences,
         p_expected_updated_at: request.expectedUpdatedAt,
       });
       if (error) {

@@ -83,16 +83,15 @@ export function useMealBoardState() {
 
   // Prompt once per cart total, remembered in the store: the board unmounts on every tab
   // switch, and a per-mount ref brought the prompt back each time the user returned.
+  const cartCostRon = currentPlan?.totalCartCostRon;
+  const budgetRon = currentPlan?.totalBudgetRon;
   useEffect(() => {
-    if (!currentPlan) return;
-    if (
-      currentPlan.totalCartCostRon > currentPlan.totalBudgetRon &&
-      budgetOverrunPromptedCost !== currentPlan.totalCartCostRon
-    ) {
-      markBudgetOverrunPrompted(currentPlan.totalCartCostRon);
+    if (cartCostRon === undefined || budgetRon === undefined) return;
+    if (cartCostRon > budgetRon && budgetOverrunPromptedCost !== cartCostRon) {
+      markBudgetOverrunPrompted(cartCostRon);
       setBudgetOverrunModalVisible(true);
     }
-  }, [currentPlan?.totalCartCostRon, currentPlan?.totalBudgetRon]);
+  }, [cartCostRon, budgetRon, budgetOverrunPromptedCost, markBudgetOverrunPrompted]);
 
   // Attempted only once per mount: a plan that cannot be built must not re-trigger the
   // effect on every render, which previously turned an impossible setup into a crash loop.

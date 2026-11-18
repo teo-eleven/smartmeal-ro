@@ -508,7 +508,10 @@ describe('TESTARE EXHAUSTIVĂ: Toate butoanele și scenariile din aplicație', (
         />
       );
       expect(screen.getByText(/📅 Zile de Gătit/i)).toBeTruthy();
-      fireEvent.press(screen.getByText('✓ Aplică Filtre & Actualizează Meniul'));
+      // WCAG 2.5.3: the name a voice user hears contains the words on the button.
+      const apply = screen.getByLabelText('Aplică filtrele și actualizează meniul');
+      expect(screen.getByText(/Aplică filtrele și actualizează meniul/)).toBeTruthy();
+      fireEvent.press(apply);
       expect(onApply).toHaveBeenCalled();
     });
 

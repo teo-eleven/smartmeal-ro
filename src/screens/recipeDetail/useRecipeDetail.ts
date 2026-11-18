@@ -3,7 +3,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../store/useAppStore';
 import { useHealthSafetyStore } from '../../store/healthSafetyStore';
 import { useBlockingWindow } from '../../hooks/useBlockingWindow';
-import { getEligibleRecipes, getEligibleDessertRecipes } from '../../store/guardedEngine';
+import { getEligibleRecipes, getEligibleDessertRecipes } from '../../engine/plannerEngine';
+import { effectivePreferences } from '../../utils/healthSafety';
 import { DayOfWeek, MealSlot, Recipe } from '../../types';
 
 interface UseRecipeDetailArgs {
@@ -61,8 +62,8 @@ export function useRecipeDetail({
     }))
   );
 
-  // The guarded engine reads the answer when it is called, so the memo below has to re-run
-  // when the answer changes, or the suggestion would still follow the old one.
+  // Health goals reach the planner only after a "no" (A.7e-2), so the answer is passed in
+  // explicitly below and the memo re-runs when it changes.
   const safetyAnswer = useHealthSafetyStore((state) => state.answer);
 
   const targetMeal = useMemo(() => {
@@ -80,9 +81,10 @@ export function useRecipeDetail({
     if (!recipe) return null;
     const target = targetSlot || (recipe.suitableSlots && recipe.suitableSlots[0]) || 'dinner';
     const isDessert = target === 'dessert' || Boolean(recipe.suitableSlots?.includes('dessert'));
+    const seenByPlanner = effectivePreferences(preferences, safetyAnswer);
     const eligible = isDessert
-      ? getEligibleDessertRecipes(preferences)
-      : getEligibleRecipes(preferences);
+      ? getEligibleDessertRecipes(seenByPlanner)
+      : getEligibleRecipes(seenByPlanner);
     const slotFiltered = isDessert
       ? eligible.filter((r) => r.id !== recipe.id)
       : eligible.filter(

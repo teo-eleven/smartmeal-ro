@@ -12,6 +12,7 @@ import { PrivacyPolicyLink, TermsLink } from '../components/PrivacyPolicyLink';
 import { subscriptionService } from '../services/subscription';
 import { SubscriptionOffer } from '../services/subscriptionParse';
 import { useSubscriptionStore } from '../store/subscriptionStore';
+import { storeAccountName } from '../utils/storeWording';
 import { getAppTheme } from '../styles/theme';
 import { titleFont } from '../styles/typography';
 
@@ -109,7 +110,7 @@ export const PaywallScreen: React.FC<PaywallScreenProps> = ({ isDark, onBackToQu
         ) : isUnavailable || !offer ? (
           <Text style={[styles.notice, { color: theme.text }]}>
             {isUnavailable
-              ? 'Abonamentul se face din aplicația de pe telefon (iPhone sau Android).'
+              ? 'Abonamentul se face din aplicația de pe telefon.'
               : 'Oferta nu a putut fi încărcată. Verifică conexiunea și deschide din nou aplicația.'}
           </Text>
         ) : (
@@ -141,8 +142,9 @@ export const PaywallScreen: React.FC<PaywallScreenProps> = ({ isDark, onBackToQu
         <Text style={[styles.fineprint, { color: theme.textMuted }]}>
           Abonamentul se reînnoiește automat în fiecare lună, la prețul de mai sus, dacă nu îl
           anulezi cu cel puțin 24 de ore înainte de sfârșitul perioadei curente
-          {hasTrial ? ', inclusiv a perioadei gratuite' : ''}. Plata se face prin contul tău Apple
-          sau Google Play. Îl anulezi oricând din setările abonamentelor contului tău de magazin.
+          {hasTrial ? ', inclusiv a perioadei gratuite' : ''}. Plata se face prin contul tău{' '}
+          {storeAccountName()}. Îl anulezi oricând din setările abonamentelor contului tău de
+          magazin.
         </Text>
 
         <TouchableOpacity

@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+} from '@testing-library/react-native';
 import { DevicesSection } from '../DevicesSection';
 import { DeviceInfo, listDevices, revokeDevice } from '../../services/devices';
 
@@ -68,7 +74,10 @@ describe('dispozitivele contului', () => {
     fireEvent.press(screen.getByLabelText('Deconectează Chrome pe Mac'));
     fireEvent.press(screen.getByText('Deconectează-l'));
 
-    await waitFor(() => expect(screen.queryByText('Chrome pe Mac')).toBeNull());
+    // waitForElementToBeRemoved, not waitFor(expect(...).toBeNull()): while the row is still
+    // there that expect fails, and Jest pretty-prints the whole React tree into the failure
+    // message, which costs seconds and is thrown away at once.
+    await waitForElementToBeRemoved(() => screen.queryByText('Chrome pe Mac'));
     expect(revoke).toHaveBeenCalledWith('laptop');
     expect(screen.getByText(/Chrome pe Mac a fost deconectat/)).toBeTruthy();
   });

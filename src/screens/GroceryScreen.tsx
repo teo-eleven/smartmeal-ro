@@ -11,6 +11,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
 import { useShallow } from 'zustand/react/shallow';
+import { formatRonAuto } from '../utils/formatRon';
 
 interface GroceryScreenProps {
   isDark: boolean;
@@ -141,8 +142,8 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
 
     const listText = [
       `🛒 SmartMeal RO — Lista de Cumpărături la ${market.name}`,
-      `Estimare totală: ~${currentPlan.totalCartCostRon} lei\n`,
-      ...remaining.map((item) => `• [ ] ${item.name} (${item.packsToBuy} × ${item.packSize}${item.unit}) ~${item.estimatedPriceRon} lei`),
+      `Estimare totală: ~${formatRonAuto(currentPlan.totalCartCostRon)} lei\n`,
+      ...remaining.map((item) => `• [ ] ${item.name} (${item.packsToBuy} × ${item.packSize}${item.unit}) ~${formatRonAuto(item.estimatedPriceRon)} lei`),
       `\nGenerat cu SmartMeal RO • Mănâncă sănătos și economisește!`,
     ].join('\n');
 
@@ -320,7 +321,7 @@ export const GroceryScreen: React.FC<GroceryScreenProps> = ({ isDark }) => {
               ↻ Îți rămân {surplusCount} {surplusCount === 1 ? 'ingredient' : 'ingrediente'} după săptămâna asta
             </Text>
             <Text style={[styles.surplusHint, { color: theme.textMuted }]}>
-              Cam {surplusValueRon} lei. Apasă după ce ai făcut cumpărăturile și se scad din lista următoare.
+              Cam {formatRonAuto(surplusValueRon)} lei. Apasă după ce ai făcut cumpărăturile și se scad din lista următoare.
             </Text>
           </TouchableOpacity>
         )}

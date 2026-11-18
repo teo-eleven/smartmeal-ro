@@ -1,4 +1,5 @@
 import { MealPlan } from '../types';
+import { formatRonAuto } from './formatRon';
 
 export type BudgetState =
   /** Budget was never binding — nothing had to be downgraded. */
@@ -83,8 +84,8 @@ export function buildBudgetMessageRo(summary: BudgetSummary, budgetRon: number):
         summary.swapsApplied === 1 ? 'masă' : 'mese'
       } cu variante mai accesibile ca să intre în buget.`;
     case 'at_cheapest_possible':
-      return `⚠️ Buget prea mic pentru configurația ta. Am ales deja cele mai ieftine rețete compatibile cu dieta și aparatele tale, iar minimul realist este ${summary.minimumAchievableRon} lei.`;
+      return `⚠️ Buget prea mic pentru configurația ta. Am ales deja cele mai ieftine rețete compatibile cu dieta și aparatele tale, iar minimul realist este ${formatRonAuto(summary.minimumAchievableRon ?? 0)} lei.`;
     case 'over_after_manual_edits':
-      return `⚠️ Coșul depășește bugetul cu ${summary.overspendRon} lei după modificările tale. Apasă „Amestecă" pentru un plan reîncadrat în buget.`;
+      return `⚠️ Coșul depășește bugetul cu ${formatRonAuto(summary.overspendRon)} lei după modificările tale. Apasă „Amestecă" pentru un plan reîncadrat în buget.`;
   }
 }

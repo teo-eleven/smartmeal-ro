@@ -18,6 +18,7 @@ import { getStoreSignatureBadge } from '../utils/storeBadge';
 import { useHealthSafetyStore } from '../store/healthSafetyStore';
 import { effectivePreferences } from '../utils/healthSafety';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { formatRonAuto } from '../utils/formatRon';
 
 interface MealSwapModalProps {
   visible: boolean;
@@ -233,7 +234,7 @@ export const MealSwapModal: React.FC<MealSwapModalProps> = ({
                         🔥 {candidate.nutritionPerServing.calories} kcal
                       </Text>
                       <Text style={[styles.costText, { color: theme.primary }]}>
-                        ~{perPortion} lei / porție
+                        ~{formatRonAuto(perPortion)} lei / porție
                       </Text>
                       <Text
                         style={[

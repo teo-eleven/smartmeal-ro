@@ -17,7 +17,10 @@ pași mici, unul câte unul, bifați pe măsură ce se termină.
 | Testare                     | **Completă la finalul fiecărei etape** (poarta de tester de mai jos)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Sync real                   | **Supabase local pe Mac** (Docker + Supabase CLI)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Temă vizuală (2026-11-02)   | **„Midnight Forest & Smoked Walnut”**: verde pădure, nuc afumat, crem și bronz, după imaginea trimisă (Etapa T). **Fundal: verde pădure întunecat**; aplicația rămâne în mod întunecat (varianta crem există în temă, verificată, dar nu se afișează). **Font titluri: Libre Caslon** (OFL). **Insignele magazinelor: pe paletă**, magazinul se recunoaște din nume. **Marginea de bronz: discretă**, doar pe cardurile importante (T.9). **Iconița: recolorată** (T.10). **Fotografii pentru toate rețetele**: Commons → Unsplash → AI (marcat „imagine ilustrativă”) (E.14) |
+| Abonament (2026-11-12)      | **Două niveluri la lansare: Gratuit și Plus** (Premium, mai târziu). **Plus: 29,99 lei/lună sau 199,99 lei/an**, cu 7 zile de probă doar pe anual, arătată celor eligibili. Gratuitul limitează mesele, regenerările, schimbările și planurile salvate; siguranța și funcțiile de sănătate rămân gratuite. Detalii: Etapa P.                                                                                                                                                                                                                                                  |
 | Lansare (2026-11-11)        | Prima versiune în magazine după Etapele A + S; D, B, C, E, F vin ca actualizări                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Sezon (2026-11-16) | Meniul se adaptează automat la anotimp și la calendarul românesc (sărbători, post); toate gratuite; comutator „Meniu după anotimp” pornit implicit |
+| Ordine (2026-11-16) | Testul Google pornește după P + S-prioritar; postul și calendarul vin în prima actualizare (Etapa Z) |
 
 Amânate, cu motiv: low-FODMAP (datele Monash sunt proprietare), gută (nu există date deschise despre purine). Nu le oferim deloc: diabet gestațional, boală de rinichi, warfarină, IMAO, tulburări de alimentație.
 
@@ -32,6 +35,7 @@ Amânate, cu motiv: low-FODMAP (datele Monash sunt proprietare), gută (nu exist
 - **Întrebări cu răspuns scurt:** fiecare întrebare are variante numerotate (1A, 1B…), cu cea recomandată marcată; poți răspunde „1A, 2B” sau „ACCEPT RECOMANDĂRILE”.
 - **Când pică ceva:** raport scurt de cauză: de ce s-a întâmplat, ce garanție adăugăm ca să nu se repete, ce altceva ar putea fi afectat, apoi testele reluate.
 - **Doar rezultate reale:** raportez numai teste rulate cu adevărat, cu cifrele lor. Niciun rezultat „simulat”.
+- **Consum cumpătat** (regulă definitorie, 2026-11-16): un singur agent per pas, refolosit pentru pasul următor; revieweri doar la poarta de tester (excepție: `security-reviewer` imediat la date sensibile, plăți, server); cel mult 2 runde de reparații, restul trece în lista porții; suita completă de teste doar la poartă; modele mai mici pentru pașii simpli (texte, documente); cercetare doar când lipsește informația.
 
 ## Poarta de tester (la finalul fiecărei etape)
 
@@ -128,7 +132,7 @@ Ramura: `feat/health-texts`. Obiectivele de sănătate nu se schimbă încă în
 | A.4  | ✅ Componenta `HealthDisclaimer` (scurt și lung) + testul ei                                                                                                                                                                                                                                                                   | `react-specialist`               |
 | A.5  | ✅ Disclaimerul pe ecranul obiectivelor (onboarding + filtre) și în detaliul rețetei                                                                                                                                                                                                                                           | `frontend-developer`             |
 | A.6  | ✅ Disclaimerul lung în Filtre → „Despre obiectivele de sănătate” (nu există ecran Setări; decizia 1A) și în `docs/PRIVACY.md`                                                                                                                                                                                                                                                                         | `doc-updater`                    |
-| A.7  | Întrebarea de siguranță la alegerea unui obiectiv (sarcină, rinichi, insulină, anticoagulante, tulburări de alimentație). Deciziile tale: **o singură întrebare Da/Nu**; „Da” blochează toate cele 5 obiective de sănătate („Fără porc” rămâne); răspunsul stă **doar pe telefon**, separat de preferințe | `tdd-guide`, `security-reviewer` |
+| A.7  | ✅ Întrebarea de siguranță la alegerea unui obiectiv (sarcină, rinichi, insulină, anticoagulante, tulburări de alimentație). Deciziile tale: **o singură întrebare Da/Nu**; „Da” blochează toate cele 5 obiective de sănătate („Fără porc” rămâne); răspunsul stă **doar pe telefon**, separat de preferințe | `tdd-guide`, `security-reviewer` |
 | A.7a | ✅ Logica (`src/utils/healthSafety.ts`) și răspunsul salvat doar pe telefon (`src/store/healthSafetyStore.ts`, cheie proprie); citire eșuată = întrebăm din nou, salvare eșuată = „Da” blochează oricum | `tdd-guide` |
 | A.7b | ✅ Întrebarea în onboarding, la prima bifă a unui obiectiv de sănătate; „Da” scoate obiectivele deja bifate | `frontend-developer` |
 | A.7c | ✅ Întrebarea în Filtre; răspunsul se poate schimba; „Reia configuratorul” îl șterge | `frontend-developer` |
@@ -158,10 +162,10 @@ Ramura: `feat/health-texts`. Obiectivele de sănătate nu se schimbă încă în
 | A.8b-2 | ✅ Texte care descriu mâncarea, nu efecte pe corp: 9 rețete (smoothie bowl, fasole verde, salata de castraveți, chili, năut cu spanac, terci de ovăz, mixul de nuci, micul dejun la tigaie) și 11 câmpuri din cardurile de poftă; plus mențiuni nutriționale neverificate sau false scoase (tartine cu unt de arahide „bogat în proteine”, linte „sursă de fier”, cod „conținut caloric redus”, zinc, omega-3, grăsimi mononesaturate, „Fără zahăr rafinat” la deserturi, „Hidratare”, „Proteine pure”) și titlul chili-ului corectat („… porumb și cartofi”, rețeta n-are mărar; id-ul rămâne). Doar texte, niciun id sau cheie | `Technical Writer` |
 | A.8b-3 | ✅ Cardurile de poftă promit doar ce verifică `moodTagHonesty.test.ts`: „Bogat în Proteine (>28g)”, „Peste 28g proteină”, „Cină Ușoară de Seară (<420 kcal)”, „Sub 420 kcal”; test nou care leagă numerele din card de praguri; `FoodMoodSwiper.component.test.tsx` actualizat (schimbare legitimă: eticheta s-a schimbat intenționat) | `Technical Writer` |
 | A.8b-4 | ✅ Cardurile spun exact ce verifică testele (≥ 28 g, ≤ 420 kcal): „Bogat în Proteine (min. 28g)”, „Min. 28g proteină”, „Cină Ușoară de Seară (max. 420 kcal)”, „max. 420 kcal” în descriere, „Max. 420 kcal”; `moodTagHonesty.test.ts` verifică și formularea „min.”/„max.”; `FoodMoodSwiper.component.test.tsx` actualizat; titlul `light_dinner` din `docs/research/COOKBOOKS.md` aliniat | `Minimal Change Engineer` |
-| A.9  | Utilizatorii iOS care au deja obiective salvate: se păstrează în date, dar nu se aplică pe iOS; mesaj o singură dată                                                                                                                                                                                                        | `tdd-guide`                      |
-| A.10 | `STORE_LISTING.md`: fraza obligatorie Google (GP-26) + declarația „Nutrition and Weight Management” (GP-25); linkul EULA Apple în descriere (AS-34, LG-10); textele despre abonament și perioada de probă; prețul în lei (LG-11); scoatem „Gemini” (APP-13)                                                                 | `doc-updater`                    |
-| A.12 | Texte de platformă: fără Android/Google Play pe iPhone și fără Apple pe Android (APP-6, AS-29); acordul de la cont fără obiectivele de sănătate pe iOS                                                                                                                                                                      | `Minimal Change Engineer`        |
-| A.11 | Repararea CI (APP-14: Ubuntu 24.04, acțiuni Node 24): reparat 2026-11-11. Apoi **Poarta de tester**. Backlog: teste lente (BiometricOptInPrompt, DevicesSection, PaywallScreen), regula de lint react-hooks, verificarea pe iPhone a ferestrelor, folderul `.cursor/`                                                       | vezi mai sus                     |
+| A.9  | ✅ Utilizatorii iOS care au deja obiective salvate: se păstrează în date, dar nu se aplică pe iOS; mesaj o singură dată Construit: `IosGoalsNotice` (+ `iosGoalsNoticeStore`), în `AppShell` lângă celelalte ferestre; apare doar pe iOS, cu cel puțin un obiectiv de sănătate salvat (porc-free nu contează), după hidratare, când nu e deschisă altă fereastră și Face ID-ul a trecut; „Am înțeles” se ține pe telefon sub `@smartmeal_ios_goals_notice_seen` (nu în preferințe, nu în sync). Dacă flag-ul nu se poate citi: nu apare; dacă nu se poate salva: poate reapărea la următoarea pornire. Datele rămân neatinse. | `tdd-guide` |
+| A.10   | ✅ `STORE_LISTING.md`: fraza obligatorie Google (GP-26) + declarația „Nutrition and Weight Management” (GP-25); linkul EULA Apple în descriere (AS-34, LG-10); textele despre abonament și perioada de probă; prețul în lei (LG-11); scoatem „Gemini” (APP-13). Textul despre abonament depinde de Etapa P (planuri, 29,99/199,99 lei, perioada de probă pe anual); textele aprobate 2026-11-16                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `doc-updater`                            |
+| A.12 | ✅ Texte de platformă: fără Android/Google Play pe iPhone și fără Apple pe Android (APP-6, AS-29); acordul de la cont fără obiectivele de sănătate pe iOS; mesajul A.9 a fost rescris la 2026-11-17 („Pe iPhone, obiectivele de sănătate nu sunt disponibile deocamdată. Preferințele tale sunt păstrate în cont.”): nu mai pomenește alte platforme, deci excepția a dispărut; numele dispozitivului vine din `IOS_DEVICE_NAME` (`storeWording.ts`). Făcut: `storeAccountName()` (`src/utils/storeWording.ts`: „Apple” pe iOS, „Google Play” pe Android, „de magazin” pe web) în textul de plată de pe paywall și în avertismentul de la ștergerea contului; „Abonamentul se face din aplicația de pe telefon.” fără „(iPhone sau Android)”; pe iOS acordul spune „alergiile și dieta mea”, iar `PRIVACY.md` citează ambele variante; test de gardă `src/__tests__/platformWording.test.ts` (fără nume de platformă scrise direct în `src`/`App.tsx`, cu excepțiile listate) | `Minimal Change Engineer`        |
+| A.11 | ✅ Poarta trecută 2026-11-18 (`docs/testing/STAGE_A_REPORT.md`). Repararea CI (APP-14: Ubuntu 24.04, acțiuni Node 24): reparat 2026-11-11. Apoi **Poarta de tester**. Backlog: teste lente (BiometricOptInPrompt, DevicesSection, PaywallScreen), regula de lint react-hooks, verificarea pe iPhone a ferestrelor, folderul `.cursor/`                                                       | vezi mai sus                     |
 
 **Riscuri anticipate și prevenire (Etapa A)**
 
@@ -173,9 +177,79 @@ Ramura: `feat/health-texts`. Obiectivele de sănătate nu se schimbă încă în
 
 ---
 
+## Etapa P · Planuri: Gratuit + Plus
+
+Ramura: `feat/tiers`. Decizia din 2026-11-12, după cercetarea Product Manager + Trend Researcher: Samsung Food+ costă 39,99 lei/lună în App Store-ul românesc. Lansăm cu **două niveluri**; Premium vine în 1.x, doar când are o funcție proprie.
+
+| Ce                              | Gratuit                                                                         | Plus                                                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Preț                            | 0 lei                                                                           | **29,99 lei/lună** sau **199,99 lei/an** (≈ 44% față de plata lunară) |
+| Perioadă de probă               | –                                                                               | 7 zile, doar pe anual, arătată doar celor eligibili                   |
+| Mese pe zi                      | până la 2                                                                       | 3, cu structură pe zile                                               |
+| Regenerări și schimbări de masă | 3 regenerări și 5 schimbări pe săptămână (resetare luni, Europe/Bucharest)      | nelimitate                                                            |
+| Schimbarea mesei cu AI          | nu                                                                              | până la 20 de sugestii pe săptămână (limită pe server)                |
+| Comparația magazinelor          | doar rezumat: „Același coș iese cu aproximativ X lei mai ieftin la alt magazin” | completă, cele 8 magazine                                             |
+| Cămara și resturile             | nu                                                                              | da: cămara și mutarea resturilor în săptămâna următoare               |
+| Planuri salvate                 | 1                                                                               | nelimitate                                                            |
+| Planul în cont                  | o copie (salvare și restaurare manuală)                                         | sincronizare completă (fără limită de dispozitive la lansare)         |
+| Macro pe săptămână, meal prep   | nu                                                                              | da                                                                    |
+| Mementouri pe email             | nu                                                                              | da                                                                    |
+
+**Mereu gratuite, pe toate nivelurile:** alergeni, diete, „Fără porc”, post, obiectivele de sănătate (Android/web), disclaimerele, întrebarea de siguranță, exportul și ștergerea contului, Face ID, lista de dispozitive, rețetele (inclusiv cele noi), lista de cumpărături pe raioane și partajarea ei, mementourile pe telefon, reconstruirea planului la schimbarea preferințelor (nelimitată).
+
+| #   | Pas                                                                                                                                                                                                                                                                                               | Unealtă                 |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| P.0  | Refactor (din review-ul PR #24): componentele și funcțiile de peste 50 de rânduri, existente dinainte — `AppShell` din `App.tsx` (~576), `createSessionActions` (~556), `ExtrasStep` (~460), `QuickFiltersForm` (~437), `GroceryScreen` (~402), `MealsPerDayModal`, `OnboardingWizard`, `createPlanActions`, `AccountPanel`, `MealPrepModal`, `PantryInventoryModal`, `MealSwapModal`, `RecipeDetailModal`, `useMealBoardState` — împărțite în bucăți mici, fără schimbare de comportament (testele existente rămân verzi; ramură separată `refactor/long-functions`) | `refactor-cleaner`, `wshobson-code-refactoring-legacy-modernizer` |
+| P.1  | Redenumirea nivelului de ingrediente în **Economic / Standard / Gourmet** (doar textul; cheile salvate rămân)                                                                                                                                      | `Minimal Change Engineer`, `tdd-guide`              |
+| P.2  | Modelul de acces: `Tier = 'free' \| 'plus'`, matricea funcțiilor și limitele ca și constante, `canUse(feature, tier)`; test că fiecare funcție are o decizie și că funcțiile de siguranță sunt gratuite                                            | `tdd-guide`, `typescript-pro`                       |
+| P.3  | `subscriptionParse`: dreptul `plus` (și compatibilitate cu vechiul `premium`), pachetele lunar și anual cu id-uri proprii, perioada de probă afișată doar dacă utilizatorul are dreptul la ea                                                      | `tdd-guide`, `Payments & Billing Engineer`          |
+| P.4  | `subscription.ts`: cumpărare pe pachet, verificarea eligibilității, simularea în lei                                                                                                                                                               | `Payments & Billing Engineer`                       |
+| P.5  | Contoarele săptămânale pe telefon (schimbări, regenerări), resetare luni, teste pentru ora de vară                                                                                                                                                 | `tdd-guide`                                         |
+| P.6  | Migrarea `user_entitlements` + funcția `revenuecat-webhook` (cheie secretă, idempotentă, evenimente în altă ordine, fail-closed)                                                                                                                   | `backend-developer`, `security-reviewer`            |
+| P.7  | Limita de AI pe server: 20 pe săptămână pentru Plus, răspuns `quota_exceeded`, limita pe minut păstrată                                                                                                                                            | `security-reviewer`, `tdd-guide`                    |
+| P.8  | Emailurile de memento doar pentru Plus; setările rămân după expirare                                                                                                                                                                               | `backend-developer`                                 |
+| P.9  | Sincronizarea după nivel: Gratuit = copia planului; Plus = sincronizare completă                                                                                                                                                                   | `backend-developer`, `tdd-guide`                    |
+| P.10 | `App.tsx`: dispare blocajul complet după onboarding; onboarding → tabla de mese; cardul „Planul tău e gata” apare o singură dată; e2e actualizat                                                                                                   | `react-specialist`                                  |
+| P.11 | Ecranul nou de abonament: Plus lunar și anual, prețul anual cel mai vizibil, perioada de probă cu data primei plăți, butonul ✕, „Restaurează”, Termeni, Confidențialitate, texte pe platformă (înlocuiește S.5)                                    | `Payments & Billing Engineer`, `frontend-developer` |
+| P.12 | `UpgradeSheet` + `useFeatureGate`: textele în română, într-un singur fișier                                                                                                                                                                        | `react-specialist`, `tdd-guide`                     |
+| P.13 | Funcțiile blocate pe tablă: 3 mese, „+ masă”, regenerări, schimbări, AI, planuri salvate, rezumatul comparației                                                                                                                                    | `frontend-developer`, `tdd-guide`                   |
+| P.14 | Lista (resturile), Contul (sincronizare, emailuri) și secțiunea „Abonamentul tău” (Gestionează, Restaurează)                                                                                                                                       | `frontend-developer`                                |
+| P.15 | După expirare: nimic nu se șterge; reguli + mesaj o singură dată                                                                                                                                                                                   | `tdd-guide`                                         |
+| P.16 | Teste invariante: siguranța e gratuită; reconstruirea la preferințe nu e limitată; aceleași funcții plătite pe iOS și Android; fără obiective de sănătate în ecranul de abonament                                                                  | `tdd-guide`                                         |
+| P.17 | App Store Connect: grupul „SmartMeal RO”, 2 produse (`ro.smartmeal.plus.monthly`, `ro.smartmeal.plus.annual`), prețuri în lei, oferta introductivă pe anual, Family Sharing oprit, grace period                                                    | tu, ghidat de `Mobile Release Engineer`             |
+| P.18 | Play Console: abonamentul `plus` cu planurile `monthly` și `annual`, oferta de 7 zile pe anual, grace period, license testers                                                                                                                      | tu, ghidat de `Mobile Release Engineer`             |
+| P.19 | RevenueCat: dreptul `plus`, oferta `default` (+ una pe plasare, ca să știm ce funcție a vândut abonamentul), webhook spre P.6, acces promoțional pentru contul demo și testeri                                                                     | tu                                                  |
+| P.20 | Documente: `STORE_LISTING` (planuri, lei, perioada de probă, EULA; alimentează A.10), `PRIVACY` (webhook, nivelul salvat), Termenii (planuri, probă, limita AI), `STORE.md` §5 și §11 (două conturi demo, notițe în engleză), `LAUNCH_PLAN` Faza 4 | `doc-updater`, `Technical Writer`                   |
+| P.21 | Teste: Playwright în simulare (gratuit → funcție blocată → cumpărare simulată → deblocat → expirare) + lista de verificare în sandbox, pe telefon real                                                                                             | `Test Automation Engineer`                          |
+| P.22 | **Poarta de tester**, cu `security-reviewer` pe P.6, P.7, P.9                                                                                                                                                                                      | `security-reviewer`                                 |
+
+**Riscuri anticipate și prevenire (Etapa P):**
+
+- _Limitele gratuite se ocolesc schimbând preferințele:_ acceptat, siguranța înaintea vânzării.
+- _Contoarele de pe telefon se resetează schimbând ceasul:_ acceptat, nu ne costă.
+- _Tot ce costă bani:_ AI, emailurile și sincronizarea sunt verificate pe server, nu pe telefon.
+- _Perioada de probă:_ se promite doar după verificarea eligibilității.
+- _Pragul Apple de 300 lei:_ scumpirile trebuie să rămână sub el, ca să nu ceară acordul fiecărui abonat.
+- _Premium adăugat mai târziu:_ ca nivel superior în același grup Apple, fără să mutăm produsele existente.
+
+**Ce măsurăm după lansare** (fără SDK de analytics: dashboardul RevenueCat, consolele magazinelor și numărători agregate SQL):
+
+- Gratuit → Plus în 30 de zile, **sub 2%**: varianta gratuită e prea generoasă.
+- Perioadă de probă → plată, **sub 35%**: semnal să revizuim proba.
+- Rambursări, **peste 5%**: semnal de revizuire.
+- Costul AI, **peste 5%** din venitul net: semnal să revizuim limita de AI.
+
+Depășirea unui prag e semnal de revizuire, nu decizie automată.
+
+**Premium (mai târziu, 1.x):** candidate: lista comună pentru familie, cu conturi separate; porții pe persoană. Prețul de revizuit: cercetarea arată că 39,99 lei/lună e plafonul realist.
+
+---
+
 ## Etapa S · Pregătire magazine
 
 Ramura: `feat/store-ready`. Versiunea 1.0 iese după A + S.
+
+**Ordine în etapă:** întâi S.2, S.11 și S.7 (cerute de Google pentru testul închis), apoi pornește testul Google de 14 zile, iar restul pașilor S se fac în timpul celor 14 zile.
 
 | #    | Pas                                                                                                                                                                                                                                 | Unealtă                                               |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
@@ -183,7 +257,7 @@ Ramura: `feat/store-ready`. Versiunea 1.0 iese după A + S.
 | S.2  | `PRIVACY.md` completă: operatorul, RevenueCat, transferurile în SUA (SCC/DPF), regiunea Supabase confirmată, retenția cu regulă de inactivitate, funcția AI (APP-3, LG-15–18, LG-23)                                                | `Privacy Engineer`                                    |
 | S.3  | Contact și suport în aplicație; paginile web de ștergere și dezabonare completate (APP-2, AS-53, GP-24)                                                                                                                             | `Mobile App Builder`                                  |
 | S.4  | Ștergerea contului completă: clientul RevenueCat, lista corectă pe web, avertizarea despre abonament pe fiecare platformă (APP-7, GP-24, AS-40)                                                                                     | `tdd-guide`, `security-reviewer`                      |
-| S.5  | Ecranul de abonament: buton de închidere vizibil, prețul mai vizibil decât perioada de probă, „Gestionează abonamentul” și „Restaurează” și în Cont (GP-27, AS-33, AS-35)                                                           | `Payments & Billing Engineer`                         |
+| S.5  | **Înlocuit de P.11.** Ecranul de abonament: buton de închidere vizibil, prețul mai vizibil decât perioada de probă, „Gestionează abonamentul” și „Restaurează” și în Cont (GP-27, AS-33, AS-35)                                     | `Payments & Billing Engineer`                         |
 | S.6  | Retragerea acordului pentru datele de sănătate, fără ștergerea contului (APP-8, AS-39)                                                                                                                                              | `tdd-guide`, `Privacy Engineer`                       |
 | S.7  | Configurare nativă: manifestul de confidențialitate iOS complet, `AD_ID` blocat, `expo-notifications` în `plugins`, `expo-dev-client`, `CFBundleDevelopmentRegion=ro` (APP-4, APP-10, AS-12, AS-14, AS-19, GP-18)                   | `Mobile Release Engineer`                             |
 | S.8  | Ecranele „Credite foto” și „Licențe open-source” (APP-9, LG-26, LG-27, AS-49)                                                                                                                                                       | `Mobile App Builder`                                  |
@@ -219,6 +293,37 @@ Ramura: `feat/cravings-constraints`
 | D.7b | Fără repetiții: nu două preparate pe aceeași bază în zile la rând, iar „Regenerează” aduce alte mese (P1, P2 din raportul de reper)                     | `tdd-guide`          |
 | D.8  | Raport: câte rețete are fiecare poftă înainte și după                                                                                                   | –                    |
 | D.9  | **Poarta de tester**                                                                                                                                    |                      |
+
+---
+
+## Etapa Z · Sezon și calendar
+
+Ramura: `feat/season`. Prima actualizare după lansare. Totul gratuit.
+
+| #    | Pas | Unealtă |
+| ---- | --- | ------- |
+| Z.1  | Tipul `Season` și anotimpul din data curentă (ora României), funcție pură + teste la granițele lunilor | `tdd-guide` |
+| Z.2  | „Temperatura” fiecărei rețete (rece / caldă și consistentă / neutră) calculată din ingrediente și pași (fără gătire → rece; ciorbe, tocănițe, cuptor → caldă), cu corecturi manuale; test pe tot catalogul | `tdd-guide` |
+| Z.3  | Regulile pe anotimp în generator: iarna fără deserturi reci (înghețată, parfait) și mai des ciorbe/tocănițe/cuptor; vara mai des salate, grătar, supe reci și mai rar tocănițe grele; primăvara/toamna echilibrat. Preferință, nu zid, cu excepția deserturilor reci iarna; o rețetă aleasă de utilizator e respectată | `tdd-guide` |
+| Z.4  | Tabelul ingredientelor de sezon din România (legume și fructe, lunile de sezon), cu sursa în `docs/research/` | `Technical Writer` |
+| Z.5  | Prioritate pentru rețetele cu ingrediente de sezon + insigna discretă „De sezon” pe card; nota din lista de cumpărături („căpșunile sunt în sezon”) | `Mobile App Builder` |
+| Z.6  | Poftele de sezon: ordinea cardurilor din onboarding după anotimp | `react-specialist` |
+| Z.7  | Calendarul românesc: datele fixe (Crăciun, Moș Nicolae, 1 Decembrie, Lăsata secului) și Paștele ortodox calculat pentru orice an, + teste pe ani cunoscuți | `tdd-guide` |
+| Z.8  | Perioadele de post (Postul Crăciunului 15 nov–24 dec, Postul Paștelui, miercurea și vinerea) din calendar | `tdd-guide` |
+| Z.9  | Logica postului mutată din Etapa E: E.1–E.5 (`fastingLevel` din ingrediente, preferința `fastingMode`, dezlegarea la pește, planificatorul pe zilele alese, comutatorul „De post”) | `tdd-guide`, `Mobile App Builder` |
+| Z.10 | Propunerile din calendar: „E post. Vrei meniu de post?” și „Vrei rețete pentru Crăciun?” cu o săptămână înainte; nu schimbă meniul singure | `Mobile App Builder` |
+| Z.11 | Comutatorul „Meniu după anotimp” în Filtre (pornit implicit), sincronizat ca preferință | `react-specialist` |
+| Z.12 | Raport: câte rețete rămân pe fiecare anotimp și slot (ex. destule deserturi iarna fără cele reci) | `Test Results Analyzer` |
+| Z.13 | (Opțional, cu decizia ta înainte) Vremea de azi: o zi caniculară aduce mâncare rece. Cere locația (blocată acum), un serviciu de vreme și o declarare nouă în magazine | `Privacy Engineer` |
+| Z.14 | **Poarta de tester** | vezi mai sus |
+
+**Riscuri anticipate și prevenire (Etapa Z):**
+
+- _Fusul orar și schimbarea orei:_ anotimpul și calendarul se calculează în `Europe/Bucharest`, nu în ora telefonului.
+- _Catalogul golit iarna:_ Z.12 arată din timp câte rețete rămân; relaxare controlată, ca la D.4.
+- _Data Paștelui greșită:_ teste pe anii 2020–2035.
+- _Propunerile din calendar_ nu modifică meniul fără acordul tău.
+- _Postul_ e practică religioasă: rămâne gratuit.
 
 ---
 
@@ -271,11 +376,11 @@ Ramura: `feat/recipes-and-fasting`. Rețete scrise de noi, după preparatele-tip
 
 | #     | Pas                                                                                                                                                                              | Unealtă                              |
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| E.1   | Postul: `fastingLevel` calculat din ingrediente (`strict`, `fish_allowed`, `none`) + teste pe 10 rețete                                                                          | `tdd-guide`                          |
-| E.2   | Preferința `fastingMode` (oprit / tot timpul / miercuri și vineri) + validare + sync (preferințele noi trec prin `parseUserPreferences`)                                         | `tdd-guide`, `security-reviewer`     |
-| E.3   | Dezlegarea la pește (comutator separat)                                                                                                                                          | `tdd-guide`                          |
-| E.4   | Planificatorul respectă postul pe zilele alese + test pe o săptămână                                                                                                             | `tdd-guide`                          |
-| E.5   | Ecranul: comutatorul „De post” în onboarding și în filtre                                                                                                                        | `frontend-developer`                 |
+| E.1   | **Mutat în Z.9.** Postul: `fastingLevel` calculat din ingrediente (`strict`, `fish_allowed`, `none`) + teste pe 10 rețete | `tdd-guide`                          |
+| E.2   | **Mutat în Z.9.** Preferința `fastingMode` (oprit / tot timpul / miercuri și vineri) + validare + sync (preferințele noi trec prin `parseUserPreferences`) | `tdd-guide`, `security-reviewer`     |
+| E.3   | **Mutat în Z.9.** Dezlegarea la pește (comutator separat) | `tdd-guide`                          |
+| E.4   | **Mutat în Z.9.** Planificatorul respectă postul pe zilele alese + test pe o săptămână | `tdd-guide`                          |
+| E.5   | **Mutat în Z.9.** Ecranul: comutatorul „De post” în onboarding și în filtre | `frontend-developer`                 |
 | E.6   | Lotul 1: **10 rețete de post** (fasole bătută, iahnie, linte, plachie, sarmale de post…)                                                                                         | `tdd-guide` (testele de catalog)     |
 | E.7   | Lotul 2: **11 paste** (pomodoro, aglio olio, pasta e fagioli, paste cu ton…)                                                                                                     |                                      |
 | E.8   | Lotul 3: **11 salate și bowl-uri** (linte cu feta, tabbouleh, năut, niçoise de buget…)                                                                                           |                                      |
@@ -284,6 +389,7 @@ Ramura: `feat/recipes-and-fasting`. Rețete scrise de noi, după preparatele-tip
 | E.11  | Lotul 6: **8 fast-food de casă** (shaorma, „KFC” la cuptor, egg fried rice…)                                                                                                     |                                      |
 | E.12  | Lotul 7: **8 pește ieftin și leguminoase** (cod, merluciu, macrou, năut), ca să avem mai puțin pui și somon                                                                      |                                      |
 | E.13  | Lotul 8: **7 clasice românești lipsă** (ciorbă de fasole cu tarhon, zamă, gulaș…), verificate ca idee după Sanda Marin și Radu Anton Roman                                       |                                      |
+| E.17 | Lotul de sărbătoare: Crăciun (sarmale, cozonac, piftie), Paște (drob, ouă roșii, pască), Moș Nicolae; legat de calendarul din Z.7 | `Technical Writer`, `tdd-guide` |
 | E.14a | Fotografii, sursa 1: **Wikimedia Commons** (credit afișat), pentru cele **13 rețete fără poză** de azi și pentru rețetele noi; fiecare poză trebuie să arate exact acel preparat | `verify-render`                      |
 | E.14b | Sursa 2: **Unsplash** (cheie gratuită de dezvoltator, ținută doar local, niciodată în git), pentru ce n-a acoperit Commons                                                       | `security-reviewer`, `verify-render` |
 | E.14c | Sursa 3: **imagini generate cu AI** (serviciul tău), marcate „imagine ilustrativă” în aplicație, pentru ce a rămas                                                               | `verify-render`                      |
@@ -343,6 +449,8 @@ Ramura: `feat/new-health-goals`. Ascunse pe iOS, ca restul (decizia ta).
 
 ## Ordinea
 
-**0 → T → A → S → lansare 1.0 → D → B → C → E → F**, cu G pornit acum: G.0a–c înainte de conturile din magazine, iar dieteticianul are nevoie de fișa din C.12.
+`A → P → S-prioritar (S.2, S.11, S.7) → test Google 14 zile ║ restul S → lansare 1.0 → D → Z → B → C → E → F`
 
-Testul închis Google (12 testeri × 14 zile, GP-4) pornește cu primul build după A + S, în paralel cu D. E drumul critic.
+G pornește acum (G.0a–c, de tine): S.1/S.2 au nevoie de identitatea juridică, iar dieteticianul are nevoie de fișa din C.12.
+
+Testul Google de 12 testeri × 14 zile (GP-4) rulează în paralel cu restul Etapei S, după S-prioritar. E drumul critic. Postul și calendarul vin în prima actualizare (Etapa Z).

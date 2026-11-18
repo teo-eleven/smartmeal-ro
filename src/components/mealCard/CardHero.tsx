@@ -8,6 +8,7 @@ import { DAY_LABELS_RO } from '../../constants/days';
 import { getSlotColor } from './cardLabels';
 import { styles } from './styles';
 import { getRecipeHighlights } from '../../utils/recipeVisual';
+import { formatRon, formatRonAuto } from '../../utils/formatRon';
 
 interface CardHeroProps {
   day: MealPlanDay;
@@ -109,7 +110,7 @@ export const CardHero: React.FC<CardHeroProps> = ({
     >
       <View style={styles.priceMainRow}>
         <Text style={[styles.priceBadgeText, { color: theme.primary }]} numberOfLines={1}>
-          ~{costRon} lei
+          ~{formatRonAuto(costRon)} lei
         </Text>
         {servings === 1 && (
           <Text style={[styles.priceSubText, { color: theme.textMuted }]} numberOfLines={1}>
@@ -119,7 +120,7 @@ export const CardHero: React.FC<CardHeroProps> = ({
       </View>
       {servings > 1 && (
         <Text style={[styles.priceSubText, { color: theme.textMuted }]} numberOfLines={1}>
-          total • ~{portionCost.toFixed(2)}/p
+          total • ~{formatRon(portionCost)}/p
         </Text>
       )}
     </View>

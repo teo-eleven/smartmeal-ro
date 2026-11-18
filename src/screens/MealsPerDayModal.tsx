@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   Modal,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,7 +10,6 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { DayOfWeek, MealSlot } from '../types';
 import { getAppTheme } from '../styles/theme';
-import { useResponsive } from '../hooks/useResponsive';
 import { DAY_LABELS_RO } from '../constants/days';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { useShallow } from 'zustand/react/shallow';
@@ -50,7 +48,6 @@ export const MealsPerDayModal: React.FC<MealsPerDayModalProps> = ({
     }))
   );
   const theme = getAppTheme(isDark);
-  const { contentMaxWidth } = useResponsive();
 
   const [activeCount, setActiveCount] = useState<1 | 2 | 3>(initialCount);
   const [dailySlots, setDailySlots] = useState<Partial<Record<DayOfWeek, MealSlot[]>>>({});

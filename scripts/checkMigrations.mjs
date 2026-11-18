@@ -316,6 +316,233 @@ await expectError(
   /permission denied/
 );
 
+// --- health goals consent (0011) ---
+const G_ANDROID = 'cccccccc-0000-0000-0000-000000000001'; // consent text included goals
+const G_IOS = 'cccccccc-0000-0000-0000-000000000002'; // text said "alergiile și dieta mea"
+const G_OLD_APP = 'cccccccc-0000-0000-0000-000000000003'; // sign-up without the new key
+const G_HAND = 'cccccccc-0000-0000-0000-000000000004'; // created by hand, no consent metadata
+const G_FORGED = 'cccccccc-0000-0000-0000-000000000005'; // goals ticked, health data not
+const G_OTHER = 'cccccccc-0000-0000-0000-000000000006'; // bystander for "only my own row"
+const signUpMeta = (goals, health = true) =>
+  JSON.stringify({
+    age_confirmed_16: true,
+    health_data_consent: health,
+    goals_included: goals,
+    privacy_policy_version: '2026-11-17',
+  });
+await db.exec(`
+  reset role;
+  insert into auth.users values ('${G_ANDROID}', '${signUpMeta(true)}');
+  insert into auth.users values ('${G_IOS}', '${signUpMeta(false)}');
+  insert into auth.users values ('${G_OLD_APP}', '{"age_confirmed_16": true, "health_data_consent": true}');
+  insert into auth.users values ('${G_HAND}', null);
+  insert into auth.users values ('${G_FORGED}', '${signUpMeta(true, false)}');
+  insert into auth.users values ('${G_OTHER}', '${signUpMeta(false)}');
+`);
+const goalsRow = async (id) =>
+  (
+    await db.query(
+      `select goals_included, goals_consented_at is not null as has_time, goals_policy_version
+         from public.user_consents where user_id = '${id}'`
+    )
+  ).rows[0];
+r = await goalsRow(G_ANDROID);
+check(
+  'sign-up whose text included goals records goals_included with a server time',
+  r?.goals_included === true && r.has_time === true
+);
+r = await goalsRow(G_IOS);
+check(
+  'sign-up whose text left goals out records goals_included = false',
+  r?.goals_included === false && r.has_time === false
+);
+r = await goalsRow(G_OLD_APP);
+check('a sign-up without the key defaults to false', r?.goals_included === false);
+r = await goalsRow(G_HAND);
+check('an account without consent metadata still gets no row', r === undefined);
+r = await goalsRow(G_FORGED);
+check('goals cannot be included without the health data consent', r?.goals_included === false);
+
+await expectError(
+  'a user cannot set goals_included directly',
+  `${as(G_IOS, S1)} update public.user_consents set goals_included = true`,
+  /permission denied/
+);
+await expectError(
+  'a user cannot insert a consent row',
+  `${as(G_HAND, S1)} insert into public.user_consents (user_id, age_confirmed_16, health_data_consent, goals_included) values ('${G_HAND}', true, true, true)`,
+  /permission denied/
+);
+await expectError(
+  'anon cannot grant the goals consent',
+  `reset role; set role anon; select public.grant_goals_consent('2026-11-17')`,
+  /permission denied/
+);
+await expectError(
+  'a call without a user is refused',
+  `reset role; select set_config('request.jwt.claims', '', false); set role authenticated; select public.grant_goals_consent('2026-11-17')`,
+  /not authenticated/,
+  '28000'
+);
+
+await db.exec(as(G_IOS, S1));
+r = await db.query(`select public.grant_goals_consent('2026-11-17') as ok`);
+check('grant_goals_consent answers true for the caller', r.rows[0].ok === true);
+await db.exec('reset role');
+r = await goalsRow(G_IOS);
+check(
+  'the grant sets the flag, the server time and the policy version',
+  r.goals_included === true && r.has_time === true && r.goals_policy_version === '2026-11-17',
+  JSON.stringify(r)
+);
+r = await goalsRow(G_OTHER);
+check('the grant touches only the caller own row', r.goals_included === false);
+for (const [label, version] of [
+  ['null', 'null'],
+  ['empty', "''"],
+  ['blank', "'   '"],
+]) {
+  await expectError(
+    `a ${label} policy version is refused, nothing is recorded`,
+    `${as(G_OTHER, S1)} select public.grant_goals_consent(${version})`,
+    /policy version/,
+    '22023'
+  );
+}
+await db.exec('reset role');
+r = await goalsRow(G_OTHER);
+check('a refused grant leaves the consent as it was', r.goals_included === false);
+const firstStamp = (
+  await db.query(
+    `select goals_consented_at::text as t from public.user_consents where user_id = '${G_IOS}'`
+  )
+).rows[0].t;
+await db.exec(`${as(G_IOS, S1)} select public.grant_goals_consent('2099-01-01');`);
+await db.exec('reset role');
+r = (
+  await db.query(
+    `select goals_consented_at::text as t, goals_policy_version as v from public.user_consents where user_id = '${G_IOS}'`
+  )
+).rows[0];
+check(
+  'granting twice keeps the first time and version',
+  r.t === firstStamp && r.v === '2026-11-17',
+  JSON.stringify(r)
+);
+await db.exec(as(G_HAND, S1));
+r = await db.query(`select public.grant_goals_consent('2026-11-17') as ok`);
+check('an account with no consent record gets false, not a new row', r.rows[0].ok === false);
+await db.exec(as(G_FORGED, S1));
+r = await db.query(`select public.grant_goals_consent('2026-11-17') as ok`);
+check('without the health data consent the grant is refused', r.rows[0].ok === false);
+await db.exec('reset role');
+r = await db.query(
+  `select count(*)::int as n from public.user_consents where user_id = '${G_HAND}'`
+);
+check('the grant never creates a row', r.rows[0].n === 0);
+await db.exec(
+  `delete from auth.users where id in ('${G_ANDROID}','${G_IOS}','${G_OLD_APP}','${G_HAND}','${G_FORGED}','${G_OTHER}')`
+);
+
+// --- health goals need the goals consent, enforced in the table (0012) ---
+const P_NO = 'dddddddd-1111-0000-0000-000000000001'; // consent text without goals
+const P_YES = 'dddddddd-1111-0000-0000-000000000002'; // consent text with goals
+const P_HAND = 'dddddddd-1111-0000-0000-000000000003'; // no consent record at all
+await db.exec(`
+  reset role;
+  insert into auth.users values ('${P_NO}', '${signUpMeta(false)}');
+  insert into auth.users values ('${P_YES}', '${signUpMeta(true)}');
+  insert into auth.users values ('${P_HAND}', null);
+`);
+const MIXED = `{"peopleCount": 3, "healthGoalTags": ["heart_healthy", "pork_free", "future_tag", "high_fiber"]}`;
+const planTags = async (id) =>
+  (
+    await db.query(
+      `select preferences -> 'healthGoalTags' as tags, preferences ->> 'peopleCount' as n
+         from public.user_meal_plans where user_id = '${id}'`
+    )
+  ).rows[0];
+const insertPlan = (id, prefs) =>
+  `insert into public.user_meal_plans (user_id, plan_data, preferences) values ('${id}', '{"days":[]}', '${prefs}'::jsonb)`;
+const rpcSave = (prefs, expected) =>
+  `select status, updated_at::text as v from public.save_meal_plan_if_unchanged('{"days":[]}'::jsonb, '[]'::jsonb, '${prefs}'::jsonb, ${expected === null ? 'null' : `'${expected}'`})`;
+
+await db.exec(`${as(P_NO, S1)} ${insertPlan(P_NO, MIXED)}`);
+r = await planTags(P_NO);
+check(
+  'a direct insert without the goals consent stores no health goal',
+  JSON.stringify(r.tags) === '["pork_free","future_tag"]' && r.n === '3',
+  JSON.stringify(r)
+);
+await db.exec(
+  `${as(P_NO, S1)} update public.user_meal_plans set preferences = '${MIXED}'::jsonb where user_id = '${P_NO}'`
+);
+r = await planTags(P_NO);
+check(
+  'a direct update without the goals consent stores no health goal',
+  JSON.stringify(r.tags) === '["pork_free","future_tag"]',
+  JSON.stringify(r)
+);
+await db.exec(as(P_NO, S1));
+r = await db.query(rpcSave(MIXED, null));
+check(
+  'the save function still answers conflict for a stale version',
+  r.rows[0].status === 'conflict'
+);
+const noVersion = (await db.query(`select updated_at::text as v from public.user_meal_plans`))
+  .rows[0].v;
+r = await db.query(rpcSave(MIXED, noVersion));
+check('the save function still saves at the current version', r.rows[0].status === 'saved');
+r = await planTags(P_NO);
+check(
+  'the save function stores no health goal without the consent',
+  JSON.stringify(r.tags) === '["pork_free","future_tag"]',
+  JSON.stringify(r)
+);
+await db.exec(
+  `${as(P_NO, S1)} update public.user_meal_plans set preferences = '{"healthGoalTags": "heart_healthy"}'::jsonb where user_id = '${P_NO}'`
+);
+r = await planTags(P_NO);
+check('a healthGoalTags that is not a list is dropped', r.tags === null, JSON.stringify(r));
+await db.exec(
+  `${as(P_NO, S1)} update public.user_meal_plans set preferences = '{"peopleCount": 2}'::jsonb where user_id = '${P_NO}'`
+);
+r = await planTags(P_NO);
+check('preferences without goals pass through untouched', r.tags === null && r.n === '2');
+
+await db.exec(`${as(P_HAND, S1)} ${insertPlan(P_HAND, MIXED)}`);
+r = await planTags(P_HAND);
+check(
+  'an account with no consent record stores no health goal',
+  JSON.stringify(r.tags) === '["pork_free","future_tag"]'
+);
+
+await db.exec(`${as(P_YES, S1)} ${insertPlan(P_YES, MIXED)}`);
+r = await planTags(P_YES);
+check(
+  'with the goals consent a direct insert keeps every tag',
+  JSON.stringify(r.tags) === '["heart_healthy","pork_free","future_tag","high_fiber"]',
+  JSON.stringify(r)
+);
+await db.exec(as(P_YES, S1));
+const yesVersion = (await db.query(`select updated_at::text as v from public.user_meal_plans`))
+  .rows[0].v;
+r = await db.query(rpcSave('{"healthGoalTags": ["diabetic_friendly", "pork_free"]}', yesVersion));
+r = await planTags(P_YES);
+check(
+  'with the goals consent the save function keeps the goals',
+  JSON.stringify(r.tags) === '["diabetic_friendly","pork_free"]',
+  JSON.stringify(r)
+);
+await expectError(
+  'the goals trigger function is not callable',
+  `${as(P_YES, S1)} select public.limit_goals_to_consent()`,
+  /permission denied/
+);
+await db.exec(
+  `reset role; delete from auth.users where id in ('${P_NO}', '${P_YES}', '${P_HAND}');`
+);
+
 // --- plans: save only if unchanged (0009) ---
 const save = (expected) =>
   `select status, updated_at::text as v from public.save_meal_plan_if_unchanged('{"days":[]}'::jsonb, '[]'::jsonb, null, ${expected === null ? 'null' : `'${expected}'`})`;

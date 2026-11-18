@@ -45,7 +45,12 @@ describe('the weekly plan across two devices', () => {
     createdUsers.push(userId);
     const plan = makePlan();
 
-    const saved = await phone.saveMealPlan({ plan, groceryItems: [], expectedUpdatedAt: null });
+    const saved = await phone.saveMealPlan({
+      plan,
+      groceryItems: [],
+      healthGoals: 'send',
+      expectedUpdatedAt: null,
+    });
     expect(saved).toMatchObject({ status: 'saved', error: null });
 
     const laptop = newDevice();
@@ -60,7 +65,12 @@ describe('the weekly plan across two devices', () => {
     const owner = newDevice();
     const ownerId = await signUpOnDevice(owner, uniqueEmail('owner'));
     createdUsers.push(ownerId);
-    await owner.saveMealPlan({ plan: makePlan(), groceryItems: [], expectedUpdatedAt: null });
+    await owner.saveMealPlan({
+      plan: makePlan(),
+      groceryItems: [],
+      healthGoals: 'send',
+      expectedUpdatedAt: null,
+    });
 
     const stranger = newDevice();
     createdUsers.push(await signUpOnDevice(stranger, uniqueEmail('stranger')));
@@ -90,6 +100,7 @@ describe('two devices saving at once (migration 0009)', () => {
     const first = await phone.saveMealPlan({
       plan: makePlan(),
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: null,
     });
     const laptopSaw = (await laptop.loadMealPlan(userId)).updatedAt;
@@ -99,6 +110,7 @@ describe('two devices saving at once (migration 0009)', () => {
     const second = await phone.saveMealPlan({
       plan: phonePlan,
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: first.updatedAt,
     });
     expect(second.status).toBe('saved');
@@ -106,6 +118,7 @@ describe('two devices saving at once (migration 0009)', () => {
     const late = await laptop.saveMealPlan({
       plan: makePlan(),
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: laptopSaw,
     });
     expect(late).toMatchObject({ status: 'conflict', updatedAt: second.updatedAt });
@@ -115,6 +128,7 @@ describe('two devices saving at once (migration 0009)', () => {
     const retry = await laptop.saveMealPlan({
       plan: makePlan(),
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: second.updatedAt,
     });
     expect(retry.status).toBe('saved');
@@ -126,13 +140,19 @@ describe('two devices saving at once (migration 0009)', () => {
     const userId = await signUpOnDevice(phone, email);
     createdUsers.push(userId);
     const existing = makePlan();
-    await phone.saveMealPlan({ plan: existing, groceryItems: [], expectedUpdatedAt: null });
+    await phone.saveMealPlan({
+      plan: existing,
+      groceryItems: [],
+      healthGoals: 'send',
+      expectedUpdatedAt: null,
+    });
 
     const newPhone = newDevice();
     await signInOnDevice(newPhone, email);
     const blind = await newPhone.saveMealPlan({
       plan: makePlan(),
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: null,
     });
     expect(blind.status).toBe('conflict');

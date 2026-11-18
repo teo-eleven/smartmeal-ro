@@ -64,14 +64,20 @@ export function ReauthScreen({ isDark }: { isDark: boolean }) {
       }
     });
 
-  // Face ID is asked for once on its own, as soon as it is known to be on; after a cancel
-  // the button stays for another try.
+  // Face ID is asked for once on its own, as soon as it is known to be on and the screen is
+  // free to take the answer; after a cancel the button stays for another try. If the screen
+  // is busy at that moment (a password check running), the ask waits for it to finish.
+  // Choosing the emailed code is a decision not to use Face ID, so that case never asks.
+  // The latest unlock function is read through a ref: it is a new closure on every render.
+  const unlockWithFaceRef = useRef(unlockWithFace);
+  unlockWithFaceRef.current = unlockWithFace;
   const hasPrompted = useRef(false);
   useEffect(() => {
-    if (!biometricEnabled || hasPrompted.current || form.loading || isCodeMode) return;
+    if (!biometricEnabled || hasPrompted.current || form.loading) return;
     hasPrompted.current = true;
-    void unlockWithFace();
-  }, [biometricEnabled]); // Only when Face ID becomes known to be on; once.
+    if (isCodeMode) return;
+    void unlockWithFaceRef.current();
+  }, [biometricEnabled, form.loading, isCodeMode]);
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: background }]}>

@@ -5,6 +5,8 @@ import { StoreApi } from 'zustand';
 import { AppState } from './appState';
 import { DEFAULT_PREFERENCES } from './defaults';
 import { useHealthSafetyStore } from './healthSafetyStore';
+import { useIosGoalsNoticeStore } from './iosGoalsNoticeStore';
+import { useGoalsSyncConsentStore } from './goalsSyncConsentStore';
 
 type SetState = StoreApi<AppState>['setState'];
 type GetState = () => AppState;
@@ -33,6 +35,8 @@ export function createAccountActions(set: SetState, get: GetState) {
       void storageService.clearAccountData();
       // The safety answer is about this person and lives under its own key (A.7e-4).
       void useHealthSafetyStore.getState().reset();
+      void useIosGoalsNoticeStore.getState().reset();
+      void useGoalsSyncConsentStore.getState().reset();
       set({
         preferences: { ...DEFAULT_PREFERENCES },
         currentPlan: null,

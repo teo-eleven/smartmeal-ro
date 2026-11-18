@@ -6,6 +6,7 @@ import { SUPERMARKETS } from '../data/supermarkets';
 import { getAppTheme } from '../styles/theme';
 import { buildBudgetMessageRo, summarizeBudget } from '../utils/budgetMessaging';
 import { glass } from '../styles/glass';
+import { formatRonAuto } from '../utils/formatRon';
 
 interface PlanHeaderProps {
   plan: MealPlan;
@@ -82,7 +83,7 @@ export const PlanHeader: React.FC<PlanHeaderProps> = ({
         <View style={styles.financeItem}>
           <Text style={[styles.label, { color: theme.textMuted }]}>COST TOTAL ESTIMAT</Text>
           <View style={styles.amountRow}>
-            <Text style={[styles.mainAmount, { color: theme.text }]}>{plan.totalCartCostRon}</Text>
+            <Text style={[styles.mainAmount, { color: theme.text }]}>{formatRonAuto(plan.totalCartCostRon)}</Text>
             <Text style={[styles.currencyLabel, { color: theme.textMuted }]}>LEI</Text>
           </View>
           <Text style={[styles.subLabel, { color: theme.textMuted }]}>la casa de marcat</Text>
@@ -97,7 +98,7 @@ export const PlanHeader: React.FC<PlanHeaderProps> = ({
             <Text style={[styles.currencyLabel, { color: theme.textMuted }]}>LEI</Text>
           </View>
           <Text style={[styles.subLabel, { color: savings >= 0 ? theme.text : theme.danger }]}>
-            {savings >= 0 ? `Economisești ~${savings} lei` : `Depășire de ${Math.abs(savings)} lei`}
+            {savings >= 0 ? `Economisești ~${formatRonAuto(savings)} lei` : `Depășire de ${formatRonAuto(Math.abs(savings))} lei`}
           </Text>
         </View>
       </View>

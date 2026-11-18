@@ -99,6 +99,7 @@ describe('Phase 8: Offline Storage, Cloud Sync & AI Proxy Services', () => {
       const saveRes = await cloudSyncService.saveMealPlan({
         plan: null,
         groceryItems: [],
+        healthGoals: 'send',
         expectedUpdatedAt: null,
       });
       expect(saveRes.status).toBe('error');

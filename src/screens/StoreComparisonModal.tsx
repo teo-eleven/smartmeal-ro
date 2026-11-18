@@ -6,6 +6,7 @@ import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
 import { sheetStyles } from '../styles/sheet';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { formatRonAuto } from '../utils/formatRon';
 
 interface StoreComparisonModalProps {
   visible: boolean;
@@ -75,7 +76,7 @@ export const StoreComparisonModal: React.FC<StoreComparisonModalProps> = ({
               ]}
             >
               {maxSavingRon > 0
-                ? `💰 Ai economisi ${maxSavingRon} lei pe săptămână mutând cumpărăturile la ${cheapest.name}.`
+                ? `💰 Ai economisi ${formatRonAuto(maxSavingRon)} lei pe săptămână mutând cumpărăturile la ${cheapest.name}.`
                 : `✓ ${current.name} este deja cea mai ieftină opțiune pentru coșul tău.`}
             </Text>
           </View>
@@ -113,7 +114,7 @@ export const StoreComparisonModal: React.FC<StoreComparisonModalProps> = ({
                     )}
 
                     <Text style={[styles.price, { color: theme.text }]}>
-                      {quote.totalCartCostRon} lei
+                      {formatRonAuto(quote.totalCartCostRon)} lei
                     </Text>
                   </View>
 
@@ -134,7 +135,7 @@ export const StoreComparisonModal: React.FC<StoreComparisonModalProps> = ({
                     <Text style={[styles.delta, { color: theme.textMuted }]}>
                       {quote.differenceVsCheapestRon === 0
                         ? 'referință'
-                        : `+${quote.differenceVsCheapestRon} lei față de cel mai ieftin`}
+                        : `+${formatRonAuto(quote.differenceVsCheapestRon)} lei față de cel mai ieftin`}
                     </Text>
 
                     {!quote.isCurrent && (

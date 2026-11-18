@@ -13,6 +13,7 @@ import { getAppTheme } from '../styles/theme';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
 import { useShallow } from 'zustand/react/shallow';
 import { titleFont } from '../styles/typography';
+import { formatRonAuto } from '../utils/formatRon';
 
 interface PantryInventoryModalProps {
   visible: boolean;
@@ -264,7 +265,7 @@ export const PantryInventoryModal: React.FC<PantryInventoryModalProps> = ({
                         {item.name}
                       </Text>
                       <Text style={[styles.stapleCat, { color: theme.textMuted }]}>
-                        Raion: {item.cat} {price ? `• economisești ~${price} lei` : ''}
+                        Raion: {item.cat} {price ? `• economisești ~${formatRonAuto(price)} lei` : ''}
                       </Text>
                     </View>
                     <View

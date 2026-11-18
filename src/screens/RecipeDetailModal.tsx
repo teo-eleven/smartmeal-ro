@@ -123,10 +123,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           ]}
         >
           <RecipeTopBar
-            recipe={recipe}
             theme={theme}
-            totalTime={totalTime}
-            formattedCostPerServing={formattedCostPerServing}
             targetDay={targetDay}
             isEatenOut={isEatenOut}
             onClose={onClose}
@@ -152,6 +149,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   theme={theme}
                   isDark={isDark}
                   totalTime={totalTime}
+                  formattedCostPerServing={formattedCostPerServing}
                   supermarketId={preferences.supermarketId}
                 />
                 <RecipeSummaryCard

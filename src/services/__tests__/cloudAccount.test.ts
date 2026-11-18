@@ -169,6 +169,7 @@ describe('conectare și cont nou', () => {
     expect(auth.signUp.mock.calls[0][0].options.data).toEqual({
       age_confirmed_16: true,
       health_data_consent: true,
+      goals_included: true,
       privacy_policy_version: PRIVACY_POLICY_VERSION,
     });
   });
@@ -178,6 +179,7 @@ describe('conectare și cont nou', () => {
       data: {
         age_confirmed_16: true,
         health_data_consent: true,
+        goals_included: true,
         privacy_policy_version: '2026-09-28',
         consented_at: '2026-09-28T10:00:00Z',
       },
@@ -191,6 +193,7 @@ describe('conectare și cont nou', () => {
     expect(consent).toEqual({
       age_confirmed_16: true,
       health_data_consent: true,
+      goals_included: true,
       privacy_policy_version: '2026-09-28',
       consented_at: '2026-09-28T10:00:00Z',
     });
@@ -581,6 +584,7 @@ describe('salvarea planului', () => {
       plan,
       groceryItems: [],
       preferences: { avoidedAllergens: ['arahide'] } as never,
+      healthGoals: 'send',
       expectedUpdatedAt: '2026-10-22T09:00:00Z',
     });
 
@@ -602,6 +606,7 @@ describe('salvarea planului', () => {
     const result = await cloudSyncService.saveMealPlan({
       plan,
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: null,
     });
 
@@ -612,6 +617,7 @@ describe('salvarea planului', () => {
     const result = await cloudSyncService.saveMealPlan({
       plan: null,
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: null,
     });
 
@@ -624,7 +630,12 @@ describe('salvarea planului', () => {
     rpc.mockResolvedValueOnce({ data: null, error: { message: 'too large' } } as never);
 
     expect(
-      await cloudSyncService.saveMealPlan({ plan, groceryItems: [], expectedUpdatedAt: null })
+      await cloudSyncService.saveMealPlan({
+        plan,
+        groceryItems: [],
+        healthGoals: 'send',
+        expectedUpdatedAt: null,
+      })
     ).toEqual({
       status: 'error',
       updatedAt: null,
@@ -640,6 +651,7 @@ describe('salvarea planului', () => {
     const result = await cloudSyncService.saveMealPlan({
       plan,
       groceryItems: [],
+      healthGoals: 'send',
       expectedUpdatedAt: null,
     });
 

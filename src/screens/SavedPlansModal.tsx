@@ -14,6 +14,7 @@ import { getAppTheme } from '../styles/theme';
 import { glass } from '../styles/glass';
 import { sheetStyles } from '../styles/sheet';
 import { useBlockingWindow } from '../hooks/useBlockingWindow';
+import { formatRonAuto } from '../utils/formatRon';
 
 interface SavedPlansModalProps {
   visible: boolean;
@@ -118,7 +119,7 @@ export const SavedPlansModal: React.FC<SavedPlansModalProps> = ({
                         </Text>
                         <Text style={[styles.planMeta, { color: theme.textMuted }]}>
                           {formatSavedAt(entry.savedAt)} • {market?.name} • {entry.plan.days.length}{' '}
-                          zile • {entry.plan.totalCartCostRon} lei
+                          zile • {formatRonAuto(entry.plan.totalCartCostRon)} lei
                         </Text>
                       </View>
                     </View>

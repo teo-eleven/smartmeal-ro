@@ -5,7 +5,9 @@ import { aggregateGroceryList } from '../engine/groceryAggregator';
 import { checkPlanFeasibility, currentSafetyAnswer, generateMealPlan } from './guardedEngine';
 import { storageService } from '../services/storage';
 import { MealPlan, MealPlanDay, PlannedMeal, UserPreferences } from '../types';
+import { healthGoalsOf, withoutHealthGoals } from '../utils/goalsSyncPolicy';
 import { withoutBlockedGoals } from '../utils/healthSafety';
+import { areHealthGoalsAvailable } from '../utils/platformHealth';
 import { parseUserPreferences } from '../utils/preferencesValidation';
 import {
   collectMealsFromDays,
@@ -268,9 +270,20 @@ export function applyCloudPlan(state: AppState, pending: PendingCloudPlan): Part
   // It gets the same whitelist as anything read from storage, falling back field by field to
   // what this device already holds -- a cloud row carrying peopleCount: -3 used to be adopted
   // whole and then threw out of a tap handler.
-  const cloudPrefs = pending.preferences
+  const parsedPrefs = pending.preferences
     ? parseUserPreferences(pending.preferences, state.preferences)
     : state.preferences;
+  // An iPhone never shows or changes health goals (M3): the account's are not loaded into it,
+  // and whatever this phone already held stays as it was. Pork-free is not one of them.
+  const cloudPrefs: UserPreferences = areHealthGoalsAvailable()
+    ? parsedPrefs
+    : {
+        ...parsedPrefs,
+        healthGoalTags: [
+          ...healthGoalsOf(state.preferences.healthGoalTags),
+          ...withoutHealthGoals(parsedPrefs.healthGoalTags),
+        ],
+      };
 
   // Taste follows the cloud, which is what the user asked for; protections only get stricter.
   const merged: UserPreferences = {

@@ -3,6 +3,7 @@ import { localAuthSimulation } from '../localAuthSimulation';
 import { env } from '../../../config/env';
 import { PRIVACY_POLICY_VERSION } from '../../../config/legal';
 import { SignUpConsent } from '../../types';
+import { areHealthGoalsAvailable } from '../../utils/platformHealth';
 import { describeMissingConsent } from '../../utils/signUpConsent';
 import { normalizeDisplayName } from '../../utils/displayName';
 import { describeAuthError, describeFailure } from '../authErrors';
@@ -154,6 +155,8 @@ export const sessionMethods = {
           data: {
             age_confirmed_16: true,
             health_data_consent: true,
+            // Which text was shown: on iOS it names allergies and diet only (migration 0011).
+            goals_included: areHealthGoalsAvailable(),
             privacy_policy_version: PRIVACY_POLICY_VERSION,
             // Copied into profiles by migration 0006's trigger.
             ...(named?.name ? { display_name: named.name } : {}),

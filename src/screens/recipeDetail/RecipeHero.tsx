@@ -13,6 +13,7 @@ interface RecipeHeroProps {
   theme: RecipeDetailTheme;
   isDark: boolean;
   totalTime: number;
+  formattedCostPerServing: string;
   supermarketId: SupermarketId;
 }
 
@@ -21,6 +22,7 @@ export const RecipeHero: React.FC<RecipeHeroProps> = ({
   theme,
   isDark,
   totalTime,
+  formattedCostPerServing,
   supermarketId,
 }) => (
   <>
@@ -45,6 +47,18 @@ export const RecipeHero: React.FC<RecipeHeroProps> = ({
         >
           <Text style={[styles.heroPillText, { color: theme.onPhoto }]}>
             🔥 {recipe.nutritionPerServing.calories} kcal/porție
+          </Text>
+        </View>
+        <View
+          accessible
+          accessibilityLabel={`Cost estimat: aproximativ ${formattedCostPerServing} lei pe porție`}
+          style={[
+            styles.heroPill,
+            { backgroundColor: theme.photoPill, borderColor: theme.onPhotoBorder },
+          ]}
+        >
+          <Text style={[styles.heroPillText, { color: theme.onPhoto }]}>
+            💰 ~{formattedCostPerServing} lei/porție
           </Text>
         </View>
         {recipe.tier && (

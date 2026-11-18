@@ -115,3 +115,31 @@ test('cardul e anunțat ca imagine de cititorul de ecran, cu descrierea felului 
   expect(card.props.accessible).toBe(true);
   expect(card.props.accessibilityRole).toBe('image');
 });
+
+/** Every string drawn in the tree, in order, as a browser would join it into textContent. */
+function drawnText(node: unknown): string {
+  if (typeof node === 'string') return node;
+  if (Array.isArray(node)) return node.map(drawnText).join('');
+  if (node && typeof node === 'object' && 'children' in node) {
+    return drawnText((node as { children: unknown }).children);
+  }
+  return '';
+}
+
+test('the title and the ingredient line never run together in the text a browser reads (WCAG 2.5.3)', () => {
+  const recipe = RECIPES[0];
+  const first = getRecipeHighlights(recipe, 3)[0].toUpperCase();
+  render(<RecipeVisual recipe={recipe} isDark={false} />);
+
+  const text = drawnText(screen.toJSON());
+
+  // Two blocks with no space between them were read as "wedgespiept de pui".
+  expect(text).toContain(`${recipe.title} ${first}`);
+});
+
+test('the compact card, which has no ingredient line, draws the title alone', () => {
+  const recipe = RECIPES[0];
+  render(<RecipeVisual recipe={recipe} isDark={false} compact />);
+
+  expect(drawnText(screen.toJSON())).toBe(recipe.title);
+});
